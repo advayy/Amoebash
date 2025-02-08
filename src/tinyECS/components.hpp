@@ -23,6 +23,21 @@ struct SpriteSize {
 	int height = 32;
 };
 
+struct Tile {
+	int grid_x = 0;
+	int grid_y = 0;
+};
+
+struct Map {
+	// 2D array of numbers representing the map
+	int width = 20; // This is in chunks of grid cells
+	int height = 20;
+	int top=0;
+	int left=0;
+	int bottom=0;
+	int right=0;
+};
+
 // Invader
 struct Enemy {
 	int health;
@@ -150,7 +165,8 @@ enum class TEXTURE_ASSET_ID {
 	ENEMY = 0,
 	PLAYER = ENEMY + 1,
 	PROJECTILE = PLAYER + 1,
-	TEXTURE_COUNT =  PROJECTILE + 1
+	TILE = PROJECTILE + 1,
+	TEXTURE_COUNT =  TILE + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -161,7 +177,8 @@ enum class EFFECT_ASSET_ID {
 	TEXTURED = LINE + 1,
 	VIGNETTE = TEXTURED + 1,
 	ANIMATED_TEXTURED = VIGNETTE + 1,
-	EFFECT_COUNT = ANIMATED_TEXTURED + 1
+	TILE = ANIMATED_TEXTURED + 1,
+	EFFECT_COUNT = TILE + 1
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 

@@ -33,6 +33,8 @@ public:
 	ComponentContainer<Buff> buffs;
 	ComponentContainer<SpriteSize> spritesSizes;
 	ComponentContainer<Dashing> dashes;
+	ComponentContainer<Map> maps;
+	ComponentContainer<Tile> tiles;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
@@ -56,6 +58,7 @@ public:
 		registry_list.push_back(&buffs);
 		registry_list.push_back(&spritesSizes);
 		registry_list.push_back(&dashes);
+
 	}
 
 	void clear_all_components() {

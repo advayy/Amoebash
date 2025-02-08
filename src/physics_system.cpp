@@ -28,6 +28,17 @@ void PhysicsSystem::step(float elapsed_ms)
 	// based on how much time has passed, this is to (partially) avoid
 	// having entities move at different speed based on the machine.
 
+	// MOVE ENTITIES	
+	auto& motion_registry = registry.motions;
+	for(uint i = 0; i< motion_registry.size(); i++)
+	{
+		Motion& motion = motion_registry.components[i];
+		Entity entity = motion_registry.entities[i];
+		float step_seconds = elapsed_ms / 1000.f;
+		motion.position += motion.velocity * step_seconds;
+	}
+
+
 	// Handle player dashing
 	for (uint i = 0; i < registry.dashes.size(); i++)
 	{
@@ -70,15 +81,8 @@ void PhysicsSystem::step(float elapsed_ms)
     	}
 	}
 
-	auto& motion_registry = registry.motions;
-	for(uint i = 0; i< motion_registry.size(); i++)
-	{
-		Motion& motion = motion_registry.components[i];
-		Entity entity = motion_registry.entities[i];
-		float step_seconds = elapsed_ms / 1000.f;
-		motion.position += motion.velocity * step_seconds;
-	}
 
+	// Handle collisions
     ComponentContainer<Motion> &motion_container = registry.motions;
 	for(uint i = 0; i < motion_container.components.size(); i++)
 	{

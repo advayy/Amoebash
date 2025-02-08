@@ -49,6 +49,9 @@ const int GRID_CELL_WIDTH_PX = TILE_SIZE;
 const int GRID_CELL_HEIGHT_PX = TILE_SIZE;
 const int GRID_LINE_WIDTH_PX = 3;
 
+// MAP stuff
+const vec2 WORLD_ORIGIN = {0, 0};
+const int CHUNK_DISTANCE = 1;
 
 // These are hard coded to the dimensions of the entity's texture
 const int PLAYER_SIZE = 32 * WORK_SCALE_FACTOR;

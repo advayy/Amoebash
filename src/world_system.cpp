@@ -160,6 +160,12 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	// Removing out of screen entities
 	auto& motions_registry = registry.motions;
 
+ 	tileMap();
+
+
+    // FLAG THIS WILL BREAK NOW
+	
+	
 	// Remove entities that leave the screen on the left side // REMOVE PROJECTILES
 	// Iterate backwards to be able to remove without unterfering with the next object to visit
 	// (the containers exchange the last element with the current)
@@ -191,6 +197,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			}
 		}
 	}
+
 
 	// spawn new invaders
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -316,7 +323,8 @@ void WorldSystem::restart_game() {
 		}
 	}
 
-	createPlayer(renderer, vec2(WINDOW_WIDTH_PX / 2, WINDOW_HEIGHT_PX / 2));
+	createPlayer(renderer, gridCellToPosition(WORLD_ORIGIN));
+	createMap(renderer, vec2(20, 20));
 }
 
 // Compute collisions between entities
@@ -431,11 +439,10 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 	// on button press
 	if (action == GLFW_PRESS && !gameOver) {
 
-		int tile_x = (int)(mouse_pos_x / GRID_CELL_WIDTH_PX);
-		int tile_y = (int)(mouse_pos_y / GRID_CELL_HEIGHT_PX);
+		vec2 tile = positionToGridCell(vec2(mouse_pos_x, mouse_pos_y));
 
 		std::cout << "mouse position: " << mouse_pos_x << ", " << mouse_pos_y << std::endl;
-		std::cout << "mouse tile position: " << tile_x << ", " << tile_y << std::endl;
+		std::cout << "mouse tile position: " << tile.x << ", " << tile.y << std::endl;
 
 		
 		// CONTROLS

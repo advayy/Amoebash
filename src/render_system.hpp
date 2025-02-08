@@ -32,6 +32,7 @@ class RenderSystem {
 		textures_path("enemies/enemy.png"),
 		textures_path("amoeba/player_dash.png"),
 		textures_path("projectiles/gold_bubble.png"),
+		textures_path("tiles/test_tile.png")
 	};
 
 	std::array<GLuint, effect_count> effects;
@@ -41,7 +42,8 @@ class RenderSystem {
 		shader_path("line"),
 		shader_path("textured"),
 		shader_path("vignette"),
-		shader_path("animated_textured")
+		shader_path("animated_textured"),
+		shader_path("tile")
 	};
 
 	std::array<GLuint, geometry_count> vertex_buffers;
@@ -84,6 +86,7 @@ private:
 	void drawGridLine(Entity entity, const mat3& projection);
 	void drawTexturedMesh(Entity entity, const mat3& projection);
 	void drawAnimatedTexturedMesh(Entity entity, const mat3 &projection);
+	void drawTiles(Entity entity, const mat3 &projection);
 	void drawToScreen();
 
 	// Window handle
