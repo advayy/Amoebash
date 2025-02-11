@@ -209,5 +209,4 @@ struct Animation
 	int end_frame = 3;
 	float timer_ms = 300.0f;
 	float default_frame_timer = 300.0f;
-	TEXTURE_ASSET_ID texture_iD = TEXTURE_ASSET_ID::ENEMY;
 };

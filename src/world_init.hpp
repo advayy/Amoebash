@@ -18,6 +18,9 @@ Entity createLine(vec2 position, vec2 size);
 
 // Animation
 void animation(float elapsed_ms);
+void changeAnimationFrames(Entity entity, int start_frame, int end_frame);
+// void changeAnimationFrames(Entity entity, int start_frame, int end_frame, int current_frame);
+
 
 void InitiatePlayerDash();
 bool canDash();

@@ -58,10 +58,7 @@ void PhysicsSystem::step(float elapsed_ms)
     	    motion.velocity = { 0, 0 };
    	    	player.dash_cooldown_ms = 0;
 
-			Animation& a = registry.animations.get(registry.players.entities[0]);
-			a.start_frame = 0;
-			a.end_frame = 3;
-			a.current_frame = 0;
+			changeAnimationFrames(registry.players.entities[0], 0, 3); // sets current frame to start frame
     	}
     	else
     	{

@@ -71,7 +71,6 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 	a.total_frames = 6;
 	a.start_frame = 0;
 	a.end_frame = 6;
-	a.texture_iD = TEXTURE_ASSET_ID::ENEMY;
 
 	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
 	sprite.width = 32;
@@ -118,7 +117,6 @@ Entity createPlayer(RenderSystem* renderer, vec2 position)
 	a.total_frames = 9;
 	a.start_frame = 0;
 	a.end_frame = 3;
-	a.texture_iD = TEXTURE_ASSET_ID::ENEMY;
 
 	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
 	sprite.width = 32;
@@ -144,6 +142,20 @@ void animation(float elapsed_ms) {
 		}
 	}
 }
+
+void changeAnimationFrames(Entity entity, int start_frame, int end_frame) {
+	Animation& a = registry.animations.get(entity);
+	a.start_frame = start_frame;
+	a.end_frame = end_frame;
+	a.current_frame = start_frame;
+}
+
+// void changeAnimationFrames(Entity entity, int start_frame, int end_frame, int current_frame) {
+// 	Animation& a = registry.animations.get(entity);
+// 	a.start_frame = start_frame;
+// 	a.end_frame = end_frame;
+// 	a.current_frame = current_frame;
+// }
 
 Entity createProjectile(vec2 pos, vec2 size, vec2 velocity)
 {
@@ -221,11 +233,8 @@ void InitiatePlayerDash() {
 	d.timer_ms = DASH_DURATION_MS;
 	player.dash_cooldown_ms = PLAYER_DASH_COOLDOWN_MS;
 
-	
-	// change the animation frames to 0 to 9
-	Animation& a = registry.animations.get(registry.players.entities[0]);
-	a.start_frame = 4;
-	a.end_frame = 7;
+	// Change animation frames
+	changeAnimationFrames(registry.players.entities[0], 4, 7);
 }
 
 bool canDash() {
@@ -274,9 +283,9 @@ void tileMap() {
 	// Get the map
 	Map& map = registry.maps.get(registry.maps.entities[0]);
 
-	for(int x = map.left; x < map.right; x += 1) { // FLAG WASTINGN LOOPS ONLY CHECK AROUND THE CHARACTER.. IE REMOVE ALL TILES AND ONLY ADD THE ONES IN RANGE BACK..
-		for(int y = map.top; y < map.bottom; y += 1) {
-			vec2 gridCoord = {x, y}; // FLAG there must be a better way...
+	for(int x = playerGrid_x - (WINDOW_GRID_WIDTH/2 + 1); x < playerGrid_x + (WINDOW_GRID_WIDTH/2 +1); x += 1) {
+		for(int y = playerGrid_y - (WINDOW_GRID_HEIGHT/2 +1); y < playerGrid_y + (WINDOW_GRID_HEIGHT/2 + 1); y += 1) {
+			vec2 gridCoord = {x, y};
 
 			if (glm::distance({playerGrid_x, playerGrid_y}, gridCoord) <= CHUNK_DISTANCE) {
 				addTile(gridCoord);
