@@ -40,6 +40,7 @@ struct Map {
 
 struct Camera {
     vec2 position = { 0, 0 };
+	bool initialized = false;
 };
 
 // Invader

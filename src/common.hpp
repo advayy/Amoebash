@@ -35,34 +35,37 @@ inline std::string mesh_path(const std::string& name) {return data_path() + "/me
 //
 
 // Required to Scale up the game beyond base... -> View as 1280x720 at 2x WORK_SCALE_FACTOR
-const int WORK_SCALE_FACTOR = 2;
+const float WORK_SCALE_FACTOR = 2;
 
 // Window dimensions
-const int WINDOW_WIDTH_PX = 640 * WORK_SCALE_FACTOR;
-const int WINDOW_HEIGHT_PX = 360 * WORK_SCALE_FACTOR;
+const float WINDOW_WIDTH_PX = 640 * WORK_SCALE_FACTOR;
+const float WINDOW_HEIGHT_PX = 360 * WORK_SCALE_FACTOR;
 
 // TILE DIMENSIONS/ GRID DIMENSIONS
-const int TILE_SIZE = 128 * WORK_SCALE_FACTOR;
+const float TILE_SIZE = 128 * WORK_SCALE_FACTOR;
 
 // USING TILE SIZE
-const int GRID_CELL_WIDTH_PX = TILE_SIZE;
-const int GRID_CELL_HEIGHT_PX = TILE_SIZE;
-const int GRID_LINE_WIDTH_PX = 3;
+const float GRID_CELL_WIDTH_PX = TILE_SIZE;
+const float GRID_CELL_HEIGHT_PX = TILE_SIZE;
+const float GRID_LINE_WIDTH_PX = 3;
 
 // WINDOW GRID DIMENSIONS
 const float WINDOW_GRID_WIDTH = WINDOW_WIDTH_PX / TILE_SIZE;
 const float WINDOW_GRID_HEIGHT = WINDOW_HEIGHT_PX / TILE_SIZE;
 
 // MAP stuff
-const vec2 WORLD_ORIGIN = {0, 0};
-const int CHUNK_DISTANCE = 1;
-const int MAP_WIDTH = 20;
-const int MAP_HEIGHT = 20;
+const float CHUNK_DISTANCE = 5.0;
+const float MAP_WIDTH = 20;
+const float MAP_HEIGHT = 20;
+const vec2 WORLD_ORIGIN = {MAP_WIDTH/2, MAP_HEIGHT/2};
+const bool DEBUG_GRID = false;
+
+vec2 DEADZONE_FACTOR = {0.60f, 0.10f};
 
 // These are hard coded to the dimensions of the entity's texture
-const int PLAYER_SIZE = 32 * WORK_SCALE_FACTOR;
-const int ENEMY_SIZE = 32 * WORK_SCALE_FACTOR;
-const int LARGE_ENEMY_SIZE = 64 * WORK_SCALE_FACTOR;
+const float PLAYER_SIZE = 32 * WORK_SCALE_FACTOR;
+const float ENEMY_SIZE = 32 * WORK_SCALE_FACTOR;
+const float LARGE_ENEMY_SIZE = 64 * WORK_SCALE_FACTOR;
 
 // PLAYER BB
 const float PLAYER_BB_WIDTH = (float)PLAYER_SIZE;
@@ -76,20 +79,23 @@ const float ENEMY_BB_HEIGHT = (float)ENEMY_SIZE;
 const float LARGE_ENEMY_BB_WIDTH = (float)LARGE_ENEMY_SIZE;
 const float LARGE_ENEMY_BB_HEIGHT = (float)LARGE_ENEMY_SIZE;
 
+// BUFF MAP SIZE
+const float BUFF_MAP_SIZE = 20 * WORK_SCALE_FACTOR;
+const float BUFF_HUD_SIZE = 16 * WORK_SCALE_FACTOR; // DONT USE YET!!
 
 // AMOEBA STATS
-const int PLAYER_HEALTH = 100;
-const int PLAYER_SPEED = 500;
-const int PLAYER_DASH_RANGE = 200;
-const int PLAYER_DASH_COOLDOWN_MS = 250;
-const int PLAYER_DASH_DAMAGE = 20;
+const float PLAYER_HEALTH = 100;
+const float PLAYER_SPEED = 500;
+const float PLAYER_DASH_RANGE = 200;
+const float PLAYER_DASH_COOLDOWN_MS = 250;
+const float PLAYER_DASH_DAMAGE = 20;
 
 // ENEMY STATS
-const int ENEMY_HEALTH = 50;
-const int ENEMY_SPAWN_RATE_MS = 2 * 1000;
+const float ENEMY_HEALTH = 50;
+const float ENEMY_SPAWN_RATE_MS = 2 * 1000;
 
 // OTHER CONSTANTS
-const int PROJECTILE_DAMAGE = 10;
+const float PROJECTILE_DAMAGE = 10;
 const float DASH_DURATION_MS = 500.0f;
 const float VELOCITY_DECAY_RATE = 1.01f; // 0.95f;
 

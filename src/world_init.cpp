@@ -273,34 +273,35 @@ void tileMap() {
 	// ADD TILES TO ALL POSITIONS within CHUNK_DISTANCE of the player
 	// REMOVE TILES THAT ARE OUTSIDE OF CHUNK_DISTANCE of the player
 
-	// Get the player position
-	Motion& player_motion = registry.motions.get(registry.players.entities[0]);
-	vec2 player_pos = player_motion.position;
+	vec2 camera_pos = registry.cameras.get(registry.cameras.entities[0]).position;
 
-	float playerGrid_x = positionToGridCell(player_pos).x;
-	float playerGrid_y = positionToGridCell(player_pos).y;
-
-	// Get the map
+	float cameraGrid_x = positionToGridCell(camera_pos).x;
+	float cameraGrid_y = positionToGridCell(camera_pos).y;
 	Map& map = registry.maps.get(registry.maps.entities[0]);
 
-	for(int x = playerGrid_x - (WINDOW_GRID_WIDTH/2 + 1); x < playerGrid_x + (WINDOW_GRID_WIDTH/2 +1); x += 1) {
-		for(int y = playerGrid_y - (WINDOW_GRID_HEIGHT/2 +1); y < playerGrid_y + (WINDOW_GRID_HEIGHT/2 + 1); y += 1) {
+	// remove all tiles that arent in the chunk distance
+	for (Entity& entity : registry.tiles.entities) {
+		Tile& tile = registry.tiles.get(entity);
+		vec2 tilePos = {tile.grid_x, tile.grid_y};
+		vec2 cameraGrid = {cameraGrid_x, cameraGrid_y};
+		if (abs(glm::distance(cameraGrid, tilePos)) > CHUNK_DISTANCE) {
+			removeTile({tile.grid_x, tile.grid_y});
+		}
+	}
+
+	for(int x = cameraGrid_x - (WINDOW_GRID_WIDTH/2 + 1); x < cameraGrid_x + (WINDOW_GRID_WIDTH/2 +1); x += 1) {
+		for(int y = cameraGrid_y - (WINDOW_GRID_HEIGHT/2 +1); y < cameraGrid_y + (WINDOW_GRID_HEIGHT/2 + 1); y += 1) {
 			vec2 gridCoord = {x, y};
 
-			if (glm::distance({playerGrid_x, playerGrid_y}, gridCoord) <= CHUNK_DISTANCE) {
+			if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE) {
+				// std::cout << "CALL Add tile at: " << gridCoord.x << ", " << gridCoord.y << std::endl;
 				addTile(gridCoord);
-				} else {
-				removeTile(gridCoord);
-			}
+				}
 		}
 	}
 }
 
 Entity addTile(vec2 gridCoord) {
-	// if this gridCoord is not in the tiles registry, add it
-	// if it is, do nothing
-	
-	//run a for loop to find a tile that matches the gridCoord
 	for (Entity& entity : registry.tiles.entities) {
 		Tile& tile = registry.tiles.get(entity);
 		if (tile.grid_x == gridCoord.x && tile.grid_y == gridCoord.y) {
@@ -313,14 +314,11 @@ Entity addTile(vec2 gridCoord) {
 	new_tile.grid_x = gridCoord.x;
 	new_tile.grid_y = gridCoord.y;
 
-	// Create a motion component for the tile too
 	Motion& motion = registry.motions.emplace(newTile);
 	motion.position = gridCellToPosition(gridCoord);
 	motion.angle = 0.f;
 	motion.velocity = {0, 0};
 	motion.scale = {GRID_CELL_WIDTH_PX, GRID_CELL_HEIGHT_PX};
-
-	// Store a reference to the potentially re-used mesh object (the value is stored in the resource cache)
 
 	registry.renderRequests.insert(
 		newTile,
@@ -328,10 +326,7 @@ Entity addTile(vec2 gridCoord) {
 			TEXTURE_ASSET_ID::TILE,
 			EFFECT_ASSET_ID::TILE,
 			GEOMETRY_BUFFER_ID::SPRITE
-	});
-
-	// Print added tile 
-	// std::cout << "Added tile at: " << gridCoord.x << ", " << gridCoord.y << std::endl;
+	});	
 	return newTile;
 }
 
@@ -350,17 +345,15 @@ vec2 positionToGridCell(vec2 position) {
 	// map the players position to the closest grid cell
 	vec2 gridCell = {0, 0};
 	// Check which grid cell CONTAINS the players position
-	gridCell.x = (int) (position.x / GRID_CELL_WIDTH_PX);
-	gridCell.y = (int) (position.y / GRID_CELL_HEIGHT_PX);
-
-
+	gridCell.x = (position.x / GRID_CELL_WIDTH_PX);
+	gridCell.y = floor(position.y / GRID_CELL_HEIGHT_PX);
 	return gridCell;
 }
 
 vec2 gridCellToPosition(vec2 gridCell) {
 	vec2 position = {0, 0};
-	position.x = (gridCell.x * GRID_CELL_WIDTH_PX) + GRID_CELL_WIDTH_PX / 2;
-	position.y = (gridCell.y * GRID_CELL_HEIGHT_PX) + GRID_CELL_HEIGHT_PX / 2;
+    position.x = (gridCell.x * GRID_CELL_WIDTH_PX) + (GRID_CELL_WIDTH_PX / 2.0f);
+    position.y = (gridCell.y * GRID_CELL_HEIGHT_PX) + (GRID_CELL_HEIGHT_PX / 2.0f);
 	return position;
 }
 
@@ -369,7 +362,7 @@ Entity createCamera() {
     Entity cameraEntity = Entity();
     Camera& camera = registry.cameras.emplace(cameraEntity);
 
-    camera.position = {0.f, 0.f};
+    camera.position = WORLD_ORIGIN;
 
     return cameraEntity;
 }

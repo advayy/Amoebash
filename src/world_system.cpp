@@ -6,6 +6,8 @@
 #include <cassert>
 #include <sstream>
 #include <iostream>
+// include lerp
+#include <glm/gtx/compatibility.hpp>
 
 #include "physics_system.hpp"
 
@@ -145,7 +147,42 @@ void WorldSystem::updateCamera(float elapsed_ms) {
 
     Motion& player_motion = registry.motions.get(registry.players.entities[0]);
 
-    camera.position = player_motion.position;
+    // Initialize camera position if not already initialized
+    if (!camera.initialized) {
+        camera.position = player_motion.position; // Snap to player
+        camera.initialized = true; // Mark as initialized
+        return; // Skip interpolation for this frame
+    }
+	
+    // Define deadzone size (75% of the screen width and height)
+    float deadzoneWidth = WINDOW_WIDTH_PX * DEADZONE_FACTOR.x;
+    float deadzoneHeight = WINDOW_HEIGHT_PX * DEADZONE_FACTOR.y;
+
+    // Calculate deadzone boundaries relative to the camera's position
+    float deadzoneLeft = camera.position.x - deadzoneWidth / 2;
+    float deadzoneRight = camera.position.x + deadzoneWidth / 2;
+    float deadzoneTop = camera.position.y - deadzoneHeight / 2;
+    float deadzoneBottom = camera.position.y + deadzoneHeight / 2;
+
+    // Check if the player is outside the deadzone
+    bool playerOutsideDeadzone =
+        player_motion.position.x < deadzoneLeft ||
+        player_motion.position.x > deadzoneRight ||
+        player_motion.position.y < deadzoneTop ||
+        player_motion.position.y > deadzoneBottom;
+
+    // Only move the camera if the player is outside the deadzone
+    if (playerOutsideDeadzone) {
+        // Define interpolation factor (0 = no movement, 1 = instant snap)
+        float interpolationFactor = 0.99f; // Adjust this value for smoother or faster follow
+
+        // Convert elapsed_ms to seconds for smoother interpolation
+        float deltaTime = elapsed_ms / 250.0f;
+
+        // Calculate interpolated camera position
+        vec2 targetPosition = player_motion.position; // Target is the player's position
+        camera.position = lerp(camera.position, targetPosition, interpolationFactor * deltaTime);
+    }
 }
 
 void WorldSystem::updateMouseCoords() {
@@ -319,13 +356,10 @@ void WorldSystem::restart_game() {
 	// debugging for memory/component leaks
 	registry.list_all_components();
 
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A1: create grid lines
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	int grid_line_width = GRID_LINE_WIDTH_PX;
 
 	// create grid lines if they do not already exist
-	if (grid_lines.size() == 0) {
+	if (grid_lines.size() == 0 && DEBUG_GRID) {
 		// vertical lines
 		int cell_width = GRID_CELL_WIDTH_PX;
 		for (int col = -MAP_WIDTH; col < MAP_WIDTH; col++) {
@@ -342,7 +376,7 @@ void WorldSystem::restart_game() {
 	}
     
 	createPlayer(renderer, gridCellToPosition(WORLD_ORIGIN));
-	createMap(renderer, vec2(20, 20));
+	createMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
     createCamera();
 }
 
@@ -461,8 +495,8 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 
 		vec2 tile = positionToGridCell(vec2(game_mouse_pos_x, game_mouse_pos_y));
 
-		std::cout << "mouse position: " << game_mouse_pos_x << ", " << game_mouse_pos_y << std::endl;
-		std::cout << "mouse tile position: " << tile.x << ", " << tile.y << std::endl;
+		// std::cout << "mouse position: " << game_mouse_pos_x << ", " << game_mouse_pos_y << std::endl;
+		// std::cout << "mouse tile position: " << tile.x << ", " << tile.y << std::endl;
 
 		
 		// CONTROLS
