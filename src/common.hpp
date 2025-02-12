@@ -60,7 +60,7 @@ const float MAP_HEIGHT = 20;
 const vec2 WORLD_ORIGIN = {MAP_WIDTH/2, MAP_HEIGHT/2};
 const bool DEBUG_GRID = false;
 
-vec2 DEADZONE_FACTOR = {0.60f, 0.10f};
+const vec2 DEADZONE_FACTOR = {0.60f, 0.10f};
 
 // These are hard coded to the dimensions of the entity's texture
 const float PLAYER_SIZE = 32 * WORK_SCALE_FACTOR;
