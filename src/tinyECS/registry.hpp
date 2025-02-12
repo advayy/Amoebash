@@ -35,6 +35,7 @@ public:
 	ComponentContainer<Dashing> dashes;
 	ComponentContainer<Map> maps;
 	ComponentContainer<Tile> tiles;
+    ComponentContainer<Camera> cameras;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()

@@ -56,6 +56,8 @@ const float WINDOW_GRID_HEIGHT = WINDOW_HEIGHT_PX / TILE_SIZE;
 // MAP stuff
 const vec2 WORLD_ORIGIN = {0, 0};
 const int CHUNK_DISTANCE = 1;
+const int MAP_WIDTH = 20;
+const int MAP_HEIGHT = 20;
 
 // These are hard coded to the dimensions of the entity's texture
 const int PLAYER_SIZE = 32 * WORK_SCALE_FACTOR;

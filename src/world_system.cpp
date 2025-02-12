@@ -139,8 +139,26 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
     restart_game();
 }
 
+void WorldSystem::updateCamera(float elapsed_ms) {
+    Entity cameraEntity = registry.cameras.entities[0];
+    Camera& camera = registry.cameras.get(cameraEntity);
+
+    Motion& player_motion = registry.motions.get(registry.players.entities[0]);
+
+    camera.position = player_motion.position;
+}
+
+void WorldSystem::updateMouseCoords() {
+    Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
+    game_mouse_pos_x = device_mouse_pos_x + camera.position.x - WINDOW_WIDTH_PX * 0.5f;
+    game_mouse_pos_y = device_mouse_pos_y + camera.position.y - WINDOW_HEIGHT_PX * 0.5f;
+}
+
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update) {
+
+    updateCamera(elapsed_ms_since_last_update);
+    updateMouseCoords();
 
 	// Updating window title with points
 	std::stringstream title_ss;
@@ -154,7 +172,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 	// Point the player to the mouse
 	Motion& player_motion = registry.motions.get(registry.players.entities[0]);
-	player_motion.angle = atan2(mouse_pos_y - player_motion.position.y, mouse_pos_x- player_motion.position.x)  * 180.0f / M_PI + 90.0f;
+	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x)  * 180.0f / M_PI + 90.0f;
 
 
 	// Removing out of screen entities
@@ -310,21 +328,22 @@ void WorldSystem::restart_game() {
 	if (grid_lines.size() == 0) {
 		// vertical lines
 		int cell_width = GRID_CELL_WIDTH_PX;
-		for (int col = 0; col < WINDOW_WIDTH_PX/GRID_CELL_WIDTH_PX; col++) {
+		for (int col = -MAP_WIDTH; col < MAP_WIDTH; col++) {
 			// width of 2 to make the grid easier to see
-			grid_lines.push_back(createGridLine(vec2(col * cell_width, 0), vec2(grid_line_width, 2 * WINDOW_HEIGHT_PX)));
+			grid_lines.push_back(createGridLine(vec2(col * cell_width, 0), vec2(grid_line_width, 2 * MAP_HEIGHT * GRID_CELL_WIDTH_PX)));
 		}
 
 		// horizontal lines
 		int cell_height = GRID_CELL_HEIGHT_PX;
-		for (int col = 0; col < (WINDOW_HEIGHT_PX/GRID_CELL_HEIGHT_PX) +1; col++) { // FLAG KNOWN BUG HERE?
+		for (int col = -MAP_HEIGHT; col < MAP_HEIGHT + 1; col++) { // FLAG KNOWN BUG HERE?
 			// width of 2 to make the grid easier to see
-			grid_lines.push_back(createGridLine(vec2(0, col * cell_height), vec2(2 * WINDOW_WIDTH_PX, grid_line_width)));
+			grid_lines.push_back(createGridLine(vec2(0, col * cell_height), vec2(2 * MAP_WIDTH * GRID_CELL_WIDTH_PX, grid_line_width)));
 		}
 	}
-
+    
 	createPlayer(renderer, gridCellToPosition(WORLD_ORIGIN));
 	createMap(renderer, vec2(20, 20));
+    createCamera();
 }
 
 // Compute collisions between entities
@@ -423,11 +442,12 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	}
 }
 
+// NOTE: moving mouse position from device coordinates to game coordinates (check WorldSystem::updateMouseCoords)
 void WorldSystem::on_mouse_move(vec2 mouse_position) {
 
 	// record the current mouse position
-	mouse_pos_x = mouse_position.x;
-	mouse_pos_y = mouse_position.y;
+	device_mouse_pos_x = mouse_position.x;
+	device_mouse_pos_y = mouse_position.y;
 }
 
 void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
@@ -439,9 +459,9 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 	// on button press
 	if (action == GLFW_PRESS && !gameOver) {
 
-		vec2 tile = positionToGridCell(vec2(mouse_pos_x, mouse_pos_y));
+		vec2 tile = positionToGridCell(vec2(game_mouse_pos_x, game_mouse_pos_y));
 
-		std::cout << "mouse position: " << mouse_pos_x << ", " << mouse_pos_y << std::endl;
+		std::cout << "mouse position: " << game_mouse_pos_x << ", " << game_mouse_pos_y << std::endl;
 		std::cout << "mouse tile position: " << tile.x << ", " << tile.y << std::endl;
 
 		

@@ -363,3 +363,13 @@ vec2 gridCellToPosition(vec2 gridCell) {
 	position.y = (gridCell.y * GRID_CELL_HEIGHT_PX) + GRID_CELL_HEIGHT_PX / 2;
 	return position;
 }
+
+
+Entity createCamera() {
+    Entity cameraEntity = Entity();
+    Camera& camera = registry.cameras.emplace(cameraEntity);
+
+    camera.position = {0.f, 0.f};
+
+    return cameraEntity;
+}

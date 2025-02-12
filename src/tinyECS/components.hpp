@@ -38,6 +38,10 @@ struct Map {
 	int right=0;
 };
 
+struct Camera {
+    vec2 position = { 0, 0 };
+};
+
 // Invader
 struct Enemy {
 	int health;

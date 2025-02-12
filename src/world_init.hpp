@@ -26,6 +26,8 @@ void InitiatePlayerDash();
 bool canDash();
 bool isDashing();
 
+Entity createCamera();
+
 Entity createMap(RenderSystem* renderer, vec2 size);
 
 void tileMap();

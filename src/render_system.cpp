@@ -545,22 +545,23 @@ void RenderSystem::draw()
 	gl_has_errors();
 }
 
-mat3 RenderSystem::createProjectionMatrix()
-{
-	// fake projection matrix, scaled to window coordinates
-	float left   = 0.f;
-	float top    = 0.f;
-	float right  = (float) WINDOW_WIDTH_PX;
-	float bottom = (float) WINDOW_HEIGHT_PX;
+mat3 RenderSystem::createProjectionMatrix() {
+    Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
+    vec2 cameraPos = camera.position;
+    
+    float left   = cameraPos.x - WINDOW_WIDTH_PX * 0.5f;
+    float right  = left + WINDOW_WIDTH_PX;
+    float top    = cameraPos.y - WINDOW_HEIGHT_PX * 0.5f;
+    float bottom = top + WINDOW_HEIGHT_PX;
 
-	float sx = 2.f / (right - left);
-	float sy = 2.f / (top - bottom);
-	float tx = -(right + left) / (right - left);
-	float ty = -(top + bottom) / (top - bottom);
+    float sx = 2.f / (right - left);
+    float sy = 2.f / (top - bottom);
+    float tx = -(right + left)   / (right - left);
+    float ty = -(top + bottom)   / (top - bottom);
 
-	return {
-		{ sx, 0.f, 0.f},
-		{0.f,  sy, 0.f},
-		{ tx,  ty, 1.f}
-	};
+    return {
+        { sx,   0.f,  0.f },
+        { 0.f,  sy,   0.f },
+        { tx,   ty,   1.f }
+    };
 }
