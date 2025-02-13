@@ -171,7 +171,8 @@ enum class TEXTURE_ASSET_ID {
 	PLAYER = ENEMY + 1,
 	PROJECTILE = PLAYER + 1,
 	TILE = PROJECTILE + 1,
-	TEXTURE_COUNT =  TILE + 1
+	PARALAX_TILE = TILE + 1,
+	TEXTURE_COUNT =  PARALAX_TILE + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -181,8 +182,8 @@ enum class EFFECT_ASSET_ID {
 	LINE = COLOURED + 1,
 	TEXTURED = LINE + 1,
 	VIGNETTE = TEXTURED + 1,
-	ANIMATED_TEXTURED = VIGNETTE + 1,
-	TILE = ANIMATED_TEXTURED + 1,
+	SPRITE_SHEET = VIGNETTE + 1,
+	TILE = SPRITE_SHEET + 1,
 	EFFECT_COUNT = TILE + 1
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
@@ -208,10 +209,13 @@ struct RenderRequest {
 // Animation frame
 struct Animation
 {
-	int total_frames = 3;
-	int current_frame = 0;
 	int start_frame = 0;
 	int end_frame = 3;
 	float timer_ms = 300.0f;
 	float default_frame_timer = 300.0f;
+};
+
+struct SpriteSheetImage {
+	int total_frames = 3;
+	int current_frame = 0;
 };

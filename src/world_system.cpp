@@ -142,7 +142,8 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 }
 
 void WorldSystem::updateCamera(float elapsed_ms) {
-    Entity cameraEntity = registry.cameras.entities[0];
+	// Get camera entity
+	Entity cameraEntity = registry.cameras.entities[0];
     Camera& camera = registry.cameras.get(cameraEntity);
 
     Motion& player_motion = registry.motions.get(registry.players.entities[0]);
@@ -153,16 +154,16 @@ void WorldSystem::updateCamera(float elapsed_ms) {
         camera.initialized = true; // Mark as initialized
         return; // Skip interpolation for this frame
     }
-	
+
     // Define deadzone size (75% of the screen width and height)
     float deadzoneWidth = WINDOW_WIDTH_PX * DEADZONE_FACTOR.x;
     float deadzoneHeight = WINDOW_HEIGHT_PX * DEADZONE_FACTOR.y;
 
     // Calculate deadzone boundaries relative to the camera's position
-    float deadzoneLeft = camera.position.x - deadzoneWidth / 2;
-    float deadzoneRight = camera.position.x + deadzoneWidth / 2;
-    float deadzoneTop = camera.position.y - deadzoneHeight / 2;
-    float deadzoneBottom = camera.position.y + deadzoneHeight / 2;
+    float deadzoneLeft = camera.position.x - deadzoneWidth / 2 - 10.0f; // Buffer of 10 pixels
+    float deadzoneRight = camera.position.x + deadzoneWidth / 2 + 10.0f;
+    float deadzoneTop = camera.position.y - deadzoneHeight / 2 - 10.0f;
+    float deadzoneBottom = camera.position.y + deadzoneHeight / 2 + 10.0f;
 
     // Check if the player is outside the deadzone
     bool playerOutsideDeadzone =
@@ -174,14 +175,22 @@ void WorldSystem::updateCamera(float elapsed_ms) {
     // Only move the camera if the player is outside the deadzone
     if (playerOutsideDeadzone) {
         // Define interpolation factor (0 = no movement, 1 = instant snap)
-        float interpolationFactor = 0.99f; // Adjust this value for smoother or faster follow
+        float interpolationFactor = 0.1f; // Lower value for smoother movement
 
         // Convert elapsed_ms to seconds for smoother interpolation
-        float deltaTime = elapsed_ms / 250.0f;
+        float deltaTime = elapsed_ms / 1000.0f;
 
         // Calculate interpolated camera position
         vec2 targetPosition = player_motion.position; // Target is the player's position
         camera.position = lerp(camera.position, targetPosition, interpolationFactor * deltaTime);
+
+        // Optional: Clamp camera speed
+        vec2 cameraMovement = targetPosition - camera.position;
+        float maxSpeed = 500.0f * deltaTime; // Adjust max speed as needed
+        if (length(cameraMovement) > maxSpeed) {
+            cameraMovement = normalize(cameraMovement) * maxSpeed;
+        }
+        camera.position += cameraMovement;
     }
 }
 
@@ -195,6 +204,9 @@ void WorldSystem::updateMouseCoords() {
 bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
     updateCamera(elapsed_ms_since_last_update);
+	// print camera pos
+	// std::cout << "Camera pos: " << registry.cameras.get(registry.cameras.entities[0]).position.x << ", " << registry.cameras.get(registry.cameras.entities[0]).position.y << std::endl;
+
     updateMouseCoords();
 
 	// Updating window title with points
@@ -353,6 +365,9 @@ void WorldSystem::restart_game() {
 	while (registry.motions.entities.size() > 0)
 	    registry.remove_all_components_of(registry.motions.entities.back());
 
+	// Remove all dashes 
+	while (registry.dashes.entities.size() > 0)
+	    registry.remove_all_components_of(registry.dashes.entities.back());
 	// debugging for memory/component leaks
 	registry.list_all_components();
 
@@ -362,16 +377,16 @@ void WorldSystem::restart_game() {
 	if (grid_lines.size() == 0 && DEBUG_GRID) {
 		// vertical lines
 		int cell_width = GRID_CELL_WIDTH_PX;
-		for (int col = -MAP_WIDTH; col < MAP_WIDTH; col++) {
+		for (int col = MAP_LEFT; col < MAP_RIGHT; col++) {
 			// width of 2 to make the grid easier to see
-			grid_lines.push_back(createGridLine(vec2(col * cell_width, 0), vec2(grid_line_width, 2 * MAP_HEIGHT * GRID_CELL_WIDTH_PX)));
+			grid_lines.push_back(createGridLine(vec2(col * cell_width, 0), vec2(grid_line_width, 2 * MAP_RIGHT * GRID_CELL_WIDTH_PX)));
 		}
 
 		// horizontal lines
 		int cell_height = GRID_CELL_HEIGHT_PX;
-		for (int col = -MAP_HEIGHT; col < MAP_HEIGHT + 1; col++) { // FLAG KNOWN BUG HERE?
+		for (int col = MAP_TOP; col < MAP_BOTTOM + 1; col++) { // FLAG KNOWN BUG HERE?
 			// width of 2 to make the grid easier to see
-			grid_lines.push_back(createGridLine(vec2(0, col * cell_height), vec2(2 * MAP_WIDTH * GRID_CELL_WIDTH_PX, grid_line_width)));
+			grid_lines.push_back(createGridLine(vec2(0, col * cell_height), vec2(2 * MAP_BOTTOM * GRID_CELL_WIDTH_PX, grid_line_width)));
 		}
 	}
     

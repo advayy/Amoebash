@@ -59,18 +59,20 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 		entity,
 		{
 			TEXTURE_ASSET_ID::ENEMY,
-			EFFECT_ASSET_ID::ANIMATED_TEXTURED,
+			EFFECT_ASSET_ID::SPRITE_SHEET,
 			GEOMETRY_BUFFER_ID::SPRITE
 		}
 	);
 
 	Animation& a = registry.animations.emplace(entity);
-	a.current_frame = 0;
 	a.timer_ms = 250;
 	a.default_frame_timer = 250;
-	a.total_frames = 6;
 	a.start_frame = 0;
 	a.end_frame = 6;
+
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 6;
+	spriteSheet.current_frame = 0;
 
 	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
 	sprite.width = 32;
@@ -105,22 +107,24 @@ Entity createPlayer(RenderSystem* renderer, vec2 position)
 		entity,
 		{
 			TEXTURE_ASSET_ID::PLAYER,
-			EFFECT_ASSET_ID::ANIMATED_TEXTURED,
+			EFFECT_ASSET_ID::SPRITE_SHEET,
 			GEOMETRY_BUFFER_ID::SPRITE
 		}
 	);
 
 	Animation& a = registry.animations.emplace(entity);
-	a.current_frame = 0;
 	a.timer_ms = 125;
 	a.default_frame_timer = 125;
-	a.total_frames = 9;
 	a.start_frame = 0;
 	a.end_frame = 3;
 
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 9;
+	spriteSheet.current_frame = 0;
+
 	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
 	sprite.width = 32;
-	sprite.height = 32;
+	sprite.height = 32; 
 
 	return entity;
 }
@@ -130,14 +134,16 @@ void animation(float elapsed_ms) {
 		Animation& a = registry.animations.get(entity);
 		a.timer_ms -= elapsed_ms;
 
+		SpriteSheetImage& s = registry.spriteSheetImages.get(entity);
+
 		if (a.timer_ms <= 0.0f) {
 			a.timer_ms = a.default_frame_timer;
 
-			if (a.current_frame == a.end_frame) {
-				a.current_frame = a.start_frame;
+			if (s.current_frame == a.end_frame) {
+				s.current_frame = a.start_frame;
 			}
 			else {
-				a.current_frame = (a.current_frame + 1);
+				s.current_frame = (s.current_frame + 1);
 			}
 		}
 	}
@@ -147,15 +153,10 @@ void changeAnimationFrames(Entity entity, int start_frame, int end_frame) {
 	Animation& a = registry.animations.get(entity);
 	a.start_frame = start_frame;
 	a.end_frame = end_frame;
-	a.current_frame = start_frame;
-}
 
-// void changeAnimationFrames(Entity entity, int start_frame, int end_frame, int current_frame) {
-// 	Animation& a = registry.animations.get(entity);
-// 	a.start_frame = start_frame;
-// 	a.end_frame = end_frame;
-// 	a.current_frame = current_frame;
-// }
+	SpriteSheetImage& s = registry.spriteSheetImages.get(entity);
+	s.current_frame = start_frame;
+}
 
 Entity createProjectile(vec2 pos, vec2 size, vec2 velocity)
 {
@@ -281,6 +282,7 @@ void tileMap() {
 
 	// remove all tiles that arent in the chunk distance
 	for (Entity& entity : registry.tiles.entities) {
+
 		Tile& tile = registry.tiles.get(entity);
 		vec2 tilePos = {tile.grid_x, tile.grid_y};
 		vec2 cameraGrid = {cameraGrid_x, cameraGrid_y};
@@ -294,7 +296,6 @@ void tileMap() {
 			vec2 gridCoord = {x, y};
 
 			if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE) {
-				// std::cout << "CALL Add tile at: " << gridCoord.x << ", " << gridCoord.y << std::endl;
 				addTile(gridCoord);
 				}
 		}
@@ -323,10 +324,21 @@ Entity addTile(vec2 gridCoord) {
 	registry.renderRequests.insert(
 		newTile,
 		{
-			TEXTURE_ASSET_ID::TILE,
+			TEXTURE_ASSET_ID::PARALAX_TILE,
 			EFFECT_ASSET_ID::TILE,
 			GEOMETRY_BUFFER_ID::SPRITE
 	});	
+
+	// Add spritesheet component to tile
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(newTile);
+	spriteSheet.total_frames = 3;
+	spriteSheet.current_frame = 0;
+
+	// Add sprite size component to tile
+	SpriteSize& sprite = registry.spritesSizes.emplace(newTile);
+	sprite.width = GRID_CELL_WIDTH_PX;
+	sprite.height = GRID_CELL_HEIGHT_PX;
+
 	return newTile;
 }
 
@@ -335,7 +347,6 @@ void removeTile(vec2 gridCoord) {
 		Tile& tile = registry.tiles.get(entity);
 		if (tile.grid_x == gridCoord.x && tile.grid_y == gridCoord.y) {
 			registry.remove_all_components_of(entity);
-			registry.tiles.remove(entity);
 			return;
 		}
 	}
@@ -359,10 +370,17 @@ vec2 gridCellToPosition(vec2 gridCell) {
 
 
 Entity createCamera() {
+	// Remove all cameras
+	for (Entity& entity : registry.cameras.entities) {
+		registry.remove_all_components_of(entity);
+	}
+
+
     Entity cameraEntity = Entity();
     Camera& camera = registry.cameras.emplace(cameraEntity);
 
     camera.position = WORLD_ORIGIN;
+	camera.initialized = false;
 
     return cameraEntity;
 }

@@ -57,10 +57,16 @@ const float WINDOW_GRID_HEIGHT = WINDOW_HEIGHT_PX / TILE_SIZE;
 const float CHUNK_DISTANCE = 5.0;
 const float MAP_WIDTH = 20;
 const float MAP_HEIGHT = 20;
-const vec2 WORLD_ORIGIN = {MAP_WIDTH/2, MAP_HEIGHT/2};
+const vec2 WORLD_ORIGIN = {10, 10};
+
+// Set map left right based on width and origin
+const float MAP_LEFT = WORLD_ORIGIN.x - MAP_WIDTH / 2;
+const float MAP_RIGHT = WORLD_ORIGIN.x + MAP_WIDTH / 2;
+const float MAP_TOP = WORLD_ORIGIN.y - MAP_HEIGHT / 2;
+const float MAP_BOTTOM = WORLD_ORIGIN.y + MAP_HEIGHT / 2;
 const bool DEBUG_GRID = false;
 
-const vec2 DEADZONE_FACTOR = {0.60f, 0.10f};
+const vec2 DEADZONE_FACTOR = {0.50f, 0.50f};
 
 // These are hard coded to the dimensions of the entity's texture
 const float PLAYER_SIZE = 32 * WORK_SCALE_FACTOR;

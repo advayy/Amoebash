@@ -36,6 +36,7 @@ public:
 	ComponentContainer<Map> maps;
 	ComponentContainer<Tile> tiles;
     ComponentContainer<Camera> cameras;
+	ComponentContainer<SpriteSheetImage> spriteSheetImages;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
@@ -59,7 +60,10 @@ public:
 		registry_list.push_back(&buffs);
 		registry_list.push_back(&spritesSizes);
 		registry_list.push_back(&dashes);
-
+		registry_list.push_back(&maps);
+		registry_list.push_back(&tiles);
+		registry_list.push_back(&cameras);
+		registry_list.push_back(&spriteSheetImages);
 	}
 
 	void clear_all_components() {

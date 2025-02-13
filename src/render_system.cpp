@@ -208,7 +208,7 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 	gl_has_errors();
 }
 
-void RenderSystem::drawAnimatedTexturedMesh(Entity entity, const mat3 &projection) {
+void RenderSystem::drawSpriteSheetTexturedMesh(Entity entity, const mat3 &projection) {
 	
 	Motion &motion = registry.motions.get(entity);
 	Transform transform;
@@ -237,7 +237,7 @@ void RenderSystem::drawAnimatedTexturedMesh(Entity entity, const mat3 &projectio
 	gl_has_errors();
 
 	// texture-mapped entities - use data location as in the vertex buffer
-	if (render_request.used_effect == EFFECT_ASSET_ID::ANIMATED_TEXTURED)
+	if (render_request.used_effect == EFFECT_ASSET_ID::SPRITE_SHEET)
 	{
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
@@ -282,9 +282,9 @@ void RenderSystem::drawAnimatedTexturedMesh(Entity entity, const mat3 &projectio
 	GLint sprite_width_uloc = glGetUniformLocation(program, "sprite_width");
 	GLint sprite_height_uloc = glGetUniformLocation(program, "sprite_height");
 
-	Animation &animation = registry.animations.get(entity);
-	glUniform1i(total_frames_uloc, animation.total_frames);
-	glUniform1i(current_frame_uloc, animation.current_frame);
+	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.get(entity);
+	glUniform1i(total_frames_uloc, spriteSheet.total_frames);
+	glUniform1i(current_frame_uloc, spriteSheet.current_frame);
 	SpriteSize &sprite = registry.spritesSizes.get(entity);
 	glUniform1i(sprite_width_uloc, sprite.width);
 	glUniform1i(sprite_height_uloc, sprite.height);
@@ -453,6 +453,25 @@ void RenderSystem::drawTiles(Entity entity, const mat3 &projection) {
 	glUniform3fv(color_uloc, 1, (float *)&color);
 	gl_has_errors();
 
+	GLint total_frames_uloc = glGetUniformLocation(program, "total_frames");
+	GLint current_frame_uloc = glGetUniformLocation(program, "current_frame");
+	GLint sprite_width_uloc = glGetUniformLocation(program, "sprite_width");
+	GLint sprite_height_uloc = glGetUniformLocation(program, "sprite_height");
+
+	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.get(entity);
+	glUniform1i(total_frames_uloc, spriteSheet.total_frames);
+	glUniform1i(current_frame_uloc, spriteSheet.current_frame);
+	SpriteSize &sprite = registry.spritesSizes.get(entity);
+	glUniform1i(sprite_width_uloc, sprite.width);
+	glUniform1i(sprite_height_uloc, sprite.height);
+
+	// also take vec2 camera position
+	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+	vec2 cameraPos = camera.position;
+	GLint camera_position_uloc = glGetUniformLocation(program, "camera_position");
+	glUniform2fv(camera_position_uloc, 1, (float *)&cameraPos);
+
+
 	// Get number of indices from index buffer, which has elements uint16_t
 	GLint size = 0;
 	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
@@ -521,13 +540,13 @@ void RenderSystem::draw()
 	for (Entity entity : registry.renderRequests.entities)
 	{
 		// filter to entities that have a motion component
-		if (registry.motions.has(entity) && !registry.animations.has(entity) && !registry.tiles.has(entity)) { // Moving entity withot animation
+		if (registry.motions.has(entity) && !registry.spriteSheetImages.has(entity) && !registry.tiles.has(entity)) { // Moving entity withot animation
 			// Note, its not very efficient to access elements indirectly via the entity
 			// albeit iterating through all Sprites in sequence. A good point to optimize // FLAG
 			drawTexturedMesh(entity, projection_2D);
 		}
-		if (registry.animations.has(entity)) {
-			drawAnimatedTexturedMesh(entity, projection_2D);
+		if (registry.spriteSheetImages.has(entity) && !registry.tiles.has(entity)) {
+			drawSpriteSheetTexturedMesh(entity, projection_2D);
 		}
 		// draw grid lines separately, as they do not have motion but need to be rendered
 		else if (registry.gridLines.has(entity)) {
