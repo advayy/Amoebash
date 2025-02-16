@@ -253,15 +253,16 @@ Entity createMap(RenderSystem* renderer, vec2 size) {
 
 	// Map
 	// Note Size is in BLOCKS.... a block is a grid Square
-	// MAP Must be even
+	
+	// MAP doesnt need to be even as we ceil and floor
 
 	Map& map = registry.maps.emplace(entity);
 	map.width = size.x;
 	map.height = size.y;
-	map.top = WORLD_ORIGIN.y - size.y / 2;
-	map.left = WORLD_ORIGIN.x - size.x / 2;
-	map.bottom = WORLD_ORIGIN.y + size.y / 2;
-	map.right = WORLD_ORIGIN.x + size.x / 2;
+	map.top = floor(WORLD_ORIGIN.y - size.y / 2);
+	map.left = floor(WORLD_ORIGIN.x - size.x / 2);
+	map.bottom = ceil(WORLD_ORIGIN.y + size.y / 2);
+	map.right = ceil(WORLD_ORIGIN.x + size.x / 2);
 
 	// Store a reference to the potentially re-used mesh object (the value is stored in the resource cache)
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
@@ -292,8 +293,16 @@ void tileMap() {
 		}
 	}
 
-	for(int x = cameraGrid_x - (WINDOW_GRID_WIDTH/2 + 1); x < cameraGrid_x + (WINDOW_GRID_WIDTH/2 +1); x += 1) {
-		for(int y = cameraGrid_y - (WINDOW_GRID_HEIGHT/2 +1); y < cameraGrid_y + (WINDOW_GRID_HEIGHT/2 + 1); y += 1) {
+
+	//setting map bounds
+
+	int left = max((cameraGrid_x - (WINDOW_GRID_WIDTH/2 + CHUNK_DISTANCE/2)), (float) map.left);
+	int right =  min((cameraGrid_x + (WINDOW_GRID_WIDTH/2 +CHUNK_DISTANCE/2)), (float) map.right);
+	int top = max((cameraGrid_y - (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.top);
+	int bottom = min((cameraGrid_y + (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.bottom);
+
+	for(int x = left; x < right; x += 1) {
+		for(int y = top; y < bottom; y += 1) {
 			vec2 gridCoord = {x, y};
 
 			if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE) {
@@ -357,7 +366,7 @@ vec2 positionToGridCell(vec2 position) {
 	// map the players position to the closest grid cell
 	vec2 gridCell = {0, 0};
 	// Check which grid cell CONTAINS the players position
-	gridCell.x = (position.x / GRID_CELL_WIDTH_PX);
+	gridCell.x = floor(position.x / GRID_CELL_WIDTH_PX);
 	gridCell.y = floor(position.y / GRID_CELL_HEIGHT_PX);
 	return gridCell;
 }

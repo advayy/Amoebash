@@ -134,8 +134,9 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	this->renderer = renderer_arg;
 
 	// start playing background music indefinitely
-	std::cout << "Starting music..." << std::endl;
-	Mix_PlayMusic(background_music, -1);
+
+	// std::cout << "Starting music..." << std::endl;
+	// Mix_PlayMusic(background_music, -1);
 
 	
 
@@ -208,9 +209,6 @@ void WorldSystem::updateMouseCoords() {
 bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
     updateCamera(elapsed_ms_since_last_update);
-	// print camera pos
-	// std::cout << "Camera pos: " << registry.cameras.get(registry.cameras.entities[0]).position.x << ", " << registry.cameras.get(registry.cameras.entities[0]).position.y << std::endl;
-
     updateMouseCoords();
 
 	// Updating window title with points
@@ -218,124 +216,31 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	title_ss << "Points: " << points;
 	glfwSetWindowTitle(window, title_ss.str().c_str());
 
-	// Remove debug info from the last step
 	while (registry.debugComponents.entities.size() > 0)
 	    registry.remove_all_components_of(registry.debugComponents.entities.back());
-
 
 	// Point the player to the mouse
 	Motion& player_motion = registry.motions.get(registry.players.entities[0]);
 	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x)  * 180.0f / M_PI + 90.0f;
 
 
-	// Removing out of screen entities
-	auto& motions_registry = registry.motions;
-
- 	tileMap();
-
-
-    // FLAG THIS WILL BREAK NOW
-	
-	
-	// Remove entities that leave the screen on the left side // REMOVE PROJECTILES
-	// Iterate backwards to be able to remove without unterfering with the next object to visit
-	// (the containers exchange the last element with the current)
-	for (int i = (int)motions_registry.components.size()-1; i>=0; --i) {
-	    Motion& motion = motions_registry.components[i];
-		if (motion.position.x + abs(motion.scale.x) < 0.f) {
-			if(!registry.players.has(motions_registry.entities[i])) // don't remove the player
-				registry.remove_all_components_of(motions_registry.entities[i]);
-		}
-	}
-
-	// REMOVE INVADERS that leave screen on rightside and end the game // FLAG wont be required later imo...
-	for (int i = (int)motions_registry.components.size()-1; i>=0; --i) {
-	    Motion& motion = motions_registry.components[i];
-		if (motion.position.x > WINDOW_WIDTH_PX) {
-			if(registry.enemies.has(motions_registry.entities[i])) {
-				registry.remove_all_components_of(motions_registry.entities[i]);
-				
-				
-				// gameOver = true; // FLAG REMOVING CAUSE NOT NEEDED ATM
-				// registry.deathTimers.insert(Entity(), { 1000.f });
-				
-				// //Set velocity for all entities to zero -> doesnt stop all projectiles that are gonna get created
-				// for (int i = 0; i < motions_registry.components.size(); i++) {
-				// 	motions_registry.components[i].velocity = {0, 0};
-				// }
-				
-				// std::cout << "X---------------------------Game Over---------------------------X" << std::endl;
-			}
-		}
-	}
-
-
 	// spawn new invaders
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A1: limit them to cells on the far-left, except (0, 0)
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
-	if (next_enemy_spawn < 0.f && !gameOver) {
-		// reset timer
-		next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
-
-		// create invader with random initial position
-		// FLAG NOT HOW SPAWNS SHOULD WORK
-
-		float x = GRID_CELL_WIDTH_PX/2; // middle of a first cell
-		float y = GRID_CELL_HEIGHT_PX/2 + (GRID_CELL_HEIGHT_PX * ((int) (uniform_dist(rng) * (WINDOW_HEIGHT_PX))/GRID_CELL_HEIGHT_PX));
-		
-		createEnemy(renderer, vec2(x, y)); // flag position wrong
-	}
+	// FLAG THIS IS BROKEN SINCE A1
+	
+	// next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
+	// if (next_enemy_spawn < 0.f && !gameOver) {
+	// 	// reset timer
+	// 	next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
+	// 	float x = GRID_CELL_WIDTH_PX/2; // middle of a first cell
+	// 	float y = GRID_CELL_HEIGHT_PX/2 + (GRID_CELL_HEIGHT_PX * ((int) (uniform_dist(rng) * (WINDOW_HEIGHT_PX))/GRID_CELL_HEIGHT_PX));
+	// 	createEnemy(renderer, vec2(x, y)); // flag position wrong
+	// }
  	
 	if(!gameOver) {
 		animation(elapsed_ms_since_last_update);
 	}
 
-		
-
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A1: game over fade out // flag
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	assert(registry.screenStates.components.size() <= 1);
-    ScreenState &screen = registry.screenStates.components[0];
-	
-	float v_counter_ms = 1000.f;
-	// Vignette section
-	for (Entity entity : registry.vignetteTimers.entities) {
-		VignetteTimer& counter = registry.vignetteTimers.get(entity);
-		counter.counter_ms -= elapsed_ms_since_last_update;
-		
-		if(counter.counter_ms < v_counter_ms){
-			v_counter_ms = counter.counter_ms;
-			if(counter.counter_ms <= 0){
-				registry.vignetteTimers.remove(entity);
-			}
-		}
-		screen.vignette_screen_factor = v_counter_ms / 1000;
-	}
-
-    float min_counter_ms = 3000.f;
-	for (Entity entity : registry.deathTimers.entities) {
-
-		// progress timer
-		DeathTimer& counter = registry.deathTimers.get(entity);
-		counter.counter_ms -= elapsed_ms_since_last_update;
-		if(counter.counter_ms < min_counter_ms){
-		    min_counter_ms = counter.counter_ms;
-		}
-	}
-	// reduce window brightness if any of the present chickens is dying
-	screen.darken_screen_factor = 1 - min_counter_ms / 3000;
-
-	// RESET DOESNT WORK
-				// registry.vignetteTimers.remove(entity);
-
-	// if(!gameOver && screen.vignette_screen_factor == 0){
-	// 	if(registry.vignetteTimers.size() < 1) {
-	// 		screen.vignette_screen_factor = -1; // reset
-	// 	}
-	// }
+	tileMap();
 
 	return true;
 }
@@ -575,15 +480,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 	if (action == GLFW_PRESS && !gameOver) {
 
 		vec2 tile = positionToGridCell(vec2(game_mouse_pos_x, game_mouse_pos_y));
-
-		// std::cout << "mouse position: " << game_mouse_pos_x << ", " << game_mouse_pos_y << std::endl;
-		// std::cout << "mouse tile position: " << tile.x << ", " << tile.y << std::endl;
-
-		
-		// CONTROLS
-
-
-
+				
 		if(button == GLFW_MOUSE_BUTTON_LEFT && canDash() && current_state == GameState::GAME_PLAY){
 			InitiatePlayerDash();
 			Mix_PlayChannel(-1, dash_sound_1, 0);
@@ -757,10 +654,12 @@ bool WorldSystem::buttonClick(screenButton& button) {
 	float y_distance = std::abs(button_y - device_mouse_pos_y);
 
 	bool res = (x_distance < button.w / 2.f) && (y_distance < button.h / 2.f);
-	std::cout << device_mouse_pos_x << " " << device_mouse_pos_y << std::endl;
-	std::cout << game_mouse_pos_x << " " << game_mouse_pos_y << std::endl;
-	std::cout << button_x << " " << button_y << std::endl;
-	std::cout << "button: " << res << std::endl;
+
+
+	// std::cout << device_mouse_pos_x << " " << device_mouse_pos_y << std::endl;
+	// std::cout << game_mouse_pos_x << " " << game_mouse_pos_y << std::endl;
+	// std::cout << button_x << " " << button_y << std::endl;
+	// std::cout << "button: " << res << std::endl;
 
 	return res;
 }

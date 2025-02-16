@@ -57,7 +57,7 @@ const float WINDOW_GRID_HEIGHT = WINDOW_HEIGHT_PX / TILE_SIZE;
 const float CHUNK_DISTANCE = 5.0;
 const float MAP_WIDTH = 20;
 const float MAP_HEIGHT = 20;
-const vec2 WORLD_ORIGIN = {10, 10};
+const vec2 WORLD_ORIGIN = {0, 0};
 
 // Set map left right based on width and origin
 const float MAP_LEFT = WORLD_ORIGIN.x - MAP_WIDTH / 2;
@@ -108,6 +108,11 @@ const float VELOCITY_DECAY_RATE = 1.01f; // 0.95f;
 // LOGO
 const float LOGO_WIDTH_PX = 383 * WORK_SCALE_FACTOR;
 const float LOGO_HEIGHT_PX = 122 * WORK_SCALE_FACTOR;
+
+// CUTSCENES
+const float INTRO_CUTSCENE_DURATION_MS = 5000.f;
+const float GAMEPLAY_CUTSCENE_DURATION_MS = 5000.f;
+const float STATE_TIMER_DEFAULT = 5000.f;
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846f

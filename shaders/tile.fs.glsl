@@ -27,32 +27,21 @@ vec2 get_offset_texcoord(vec2 texcoord, int frame) {
 }
 
 vec2 apply_paralax(vec2 texcoord, int frame, vec2 camera_position) {
-    //if this is the last frame use the original texcoord
-	if(frame == total_frames - 1) {
-		return texcoord;
-	}
 
-	// if(frame == 0) {
-	// 	return texcoord;
-	// }
-	
-	float sprite_width = 1.0 / float(total_frames);
+    float frameIndex = frame;
+    float parallaxFactor = float(frame)/float(total_frames - 1);
 
-	float depth = 1.0 - float(frame) / float(total_frames - 1);
+    vec2 adjustedTexCoord = texcoord + ((camera_position/3000) * parallaxFactor);
 
-    float offset_x = (camera_position.x / 2688.0 * depth);
-    float offset_y = (camera_position.y / 2688.0 * depth);
-	
-	float frame_fac = frame;
+    float frameWidth = 1.0 / float(total_frames);  // Width of each frame in texture space
+    float frameStart = frameIndex * frameWidth;   // Start of the current frame in texture space
+    float frameEnd = frameStart + frameWidth;     // End of the current frame in texture space
 
-	if (frame == 0) {
-		frame_fac = 1.0;
-	}
+    // Clamp the adjusted texture coordinates to the current frame's bounds
+    adjustedTexCoord.x = mod(adjustedTexCoord.x, frameWidth) + frameStart;
+    adjustedTexCoord.y = mod(adjustedTexCoord.y, 1.0);  // Keep y within [0, 1]
 
-	float wrapped_x = frame * sprite_width + mod(texcoord.x + offset_x, (frame_fac) * sprite_width);
-    float wrapped_y = mod(texcoord.y + offset_y, 1.0);
-
-    return vec2(wrapped_x, wrapped_y);
+    return adjustedTexCoord;
 }
 
 void main()

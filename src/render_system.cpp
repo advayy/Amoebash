@@ -537,12 +537,11 @@ void RenderSystem::draw()
 	mat3 projection_2D = createProjectionMatrix();
 
 	// Draw all tiles first
-	for (Entity entity : registry.renderRequests.entities)
+	for (Entity entity : registry.tiles.entities)
 	{
-		if (registry.tiles.has(entity)) {
-			drawTiles(entity, projection_2D);
-		}
+		drawTiles(entity, projection_2D);
 	}
+	
 
 
 	// draw all entities with a render request to the frame buffer
