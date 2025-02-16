@@ -129,6 +129,7 @@ Entity createPlayer(RenderSystem* renderer, vec2 position)
 	return entity;
 }
 
+
 void animation(float elapsed_ms) {
 	for (Entity& entity : registry.animations.entities) {
 		Animation& a = registry.animations.get(entity);
@@ -383,4 +384,213 @@ Entity createCamera() {
 	camera.initialized = false;
 
     return cameraEntity;
+}
+
+
+// Below are the components of the start Screen
+
+Entity createStartScreen() {
+	Entity startScreenEntity = Entity();
+
+	registry.renderRequests.insert(
+		startScreenEntity,
+		{
+			TEXTURE_ASSET_ID::SCREEN,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	GameScreen& screen = registry.gameScreens.emplace(startScreenEntity);
+	screen.type = ScreenType::START;
+
+
+	Motion& motion = registry.motions.emplace(startScreenEntity);
+	vec2 position = {0.f, 0.f};
+	vec2 scale = {LOGO_WIDTH_PX, LOGO_HEIGHT_PX};
+	motion.position = position;
+	motion.scale = scale;
+
+	Entity startButtonEntity = createStartButton();
+    Entity shopButtonEntity  = createShopButton();
+    Entity infoButtonEntity  = createInfoButton();
+
+	return startScreenEntity;
+}
+
+Entity createShopScreen() {
+	Entity shopScreenEntity = Entity();
+
+	registry.renderRequests.insert(
+			shopScreenEntity,
+			{
+				TEXTURE_ASSET_ID::SHOPSCREEN,
+				EFFECT_ASSET_ID::TEXTURED,
+				GEOMETRY_BUFFER_ID::SPRITE
+			}
+	);
+
+	GameScreen& screen = registry.gameScreens.emplace(shopScreenEntity);
+	screen.type = ScreenType::SHOP;
+
+	Motion& motion = registry.motions.emplace(shopScreenEntity);
+	vec2 position = {0.f, 0.f};
+	vec2 scale = {WINDOW_WIDTH_PX / 3.f, WINDOW_HEIGHT_PX / 3.f};
+
+	motion.position = position;
+	motion.scale = scale;
+
+	return shopScreenEntity;
+}
+
+Entity createInfoScreen() {
+	Entity infoScreenEntity = Entity();
+
+	registry.renderRequests.insert(
+			infoScreenEntity,
+			{
+				TEXTURE_ASSET_ID::INFOSCREEN,
+				EFFECT_ASSET_ID::TEXTURED,
+				GEOMETRY_BUFFER_ID::SPRITE
+			}
+	);
+
+	GameScreen& screen = registry.gameScreens.emplace(infoScreenEntity);
+	screen.type = ScreenType::INFO;
+
+	Motion& motion = registry.motions.emplace(infoScreenEntity);
+	vec2 position = {0.f, 0.f};
+	vec2 scale = {WINDOW_WIDTH_PX / 3.f, WINDOW_HEIGHT_PX / 3.f};
+
+	motion.position = position;
+	motion.scale = scale;
+
+	return infoScreenEntity;
+}
+
+Entity createGameOverScreen() {
+	Entity gameOverScreenEntity = Entity();
+
+	registry.renderRequests.insert(
+		gameOverScreenEntity,
+		{
+				TEXTURE_ASSET_ID::GAMEOVER,
+				EFFECT_ASSET_ID::TEXTURED,
+				GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	Over& over = registry.overs.emplace(gameOverScreenEntity);
+
+	GameScreen& screen = registry.gameScreens.emplace(gameOverScreenEntity);
+	screen.type = ScreenType::GAMEOVER;
+
+	Motion& motion = registry.motions.emplace(gameOverScreenEntity);
+	Camera& camera = registry.cameras.components[0];
+
+	vec2 scale = {WINDOW_WIDTH_PX / 3.f, WINDOW_HEIGHT_PX / 3.f};
+	motion.position = camera.position;
+	motion.scale = scale;
+
+	return gameOverScreenEntity;
+}
+
+Entity createPauseScreen() {
+	Entity pauseScreenEntity = Entity();
+
+	registry.renderRequests.insert(
+			pauseScreenEntity,
+			{
+				TEXTURE_ASSET_ID::PAUSE,
+				EFFECT_ASSET_ID::TEXTURED,
+				GEOMETRY_BUFFER_ID::SPRITE
+			}
+		);
+
+	Pause& pause = registry.pauses.emplace(pauseScreenEntity);
+
+	GameScreen& screen = registry.gameScreens.emplace(pauseScreenEntity);
+	screen.type = ScreenType::PAUSE;
+		
+	Motion& motion = registry.motions.emplace(pauseScreenEntity);
+	
+	vec2 scale = {WINDOW_WIDTH_PX / 3.f, WINDOW_HEIGHT_PX / 3.f};
+
+
+	Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
+	motion.position = camera.position;
+	motion.scale = scale;
+	return pauseScreenEntity;
+}
+
+void removePauseScreen() {
+	if (registry.pauses.size() == 0) return;
+
+	Entity pause = registry.pauses.entities[0];
+	registry.remove_all_components_of(pause);
+}
+
+void removeGameOverScreen() {
+	if (registry.overs.size() == 0) return;
+
+	Entity over = registry.overs.entities[0];
+	registry.remove_all_components_of(over);
+}
+
+Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID texture) {
+	Entity buttonEntity = Entity();
+
+	registry.renderRequests.insert(
+			buttonEntity,
+			{
+				texture,
+				EFFECT_ASSET_ID::TEXTURED,
+				GEOMETRY_BUFFER_ID::SPRITE
+			}
+		);
+
+	Motion& motion = registry.motions.emplace(buttonEntity);
+	
+	motion.position = position;
+	motion.scale = scale;
+
+	screenButton& button = registry.buttons.emplace(buttonEntity);
+	button.w = scale[0];
+	button.h = scale[1];
+	button.center = position + vec2{WINDOW_WIDTH_PX / 2.f, WINDOW_HEIGHT_PX /2.f};
+	button.type = type;
+
+	return buttonEntity;
+}
+
+Entity createStartButton() {
+	vec2 position = { 0.f, WINDOW_HEIGHT_PX / 4.5f };
+    vec2 scale    = { WINDOW_WIDTH_PX / 7.f, WINDOW_HEIGHT_PX / 7.f };
+    
+	return createButton(ButtonType::STARTBUTTON, 
+						position, 
+						scale, 
+						TEXTURE_ASSET_ID::BUTTON);
+}
+
+Entity createShopButton() {
+	vec2 scale    = { WINDOW_WIDTH_PX / 20.f, WINDOW_HEIGHT_PX / 20.f * 1.78f };
+    vec2 position = { scale.x - WINDOW_WIDTH_PX / 2.f,
+                      scale.y - WINDOW_HEIGHT_PX / 2.f };
+    
+	return createButton(ButtonType::SHOPBUTTON, 
+						position, 
+						scale, 
+						TEXTURE_ASSET_ID::SHOPBUTTON);
+}
+
+Entity createInfoButton() {
+    vec2 scale    = { WINDOW_WIDTH_PX / 20.f, WINDOW_HEIGHT_PX / 20.f * 1.78f };
+    vec2 position = { scale.x - WINDOW_WIDTH_PX / 2.f,
+                      scale.y + WINDOW_HEIGHT_PX / 3.f };
+
+    return createButton(ButtonType::INFOBUTTON, 
+						position, 
+						scale, 
+						TEXTURE_ASSET_ID::NUCLEUS);
 }

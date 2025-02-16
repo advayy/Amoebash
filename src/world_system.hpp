@@ -13,6 +13,19 @@
 
 #include "render_system.hpp"
 
+enum class GameState {
+	INITIAL_CUTSCENE,
+    START_SCREEN,
+    GAME_PLAY,
+    GAME_OVER,
+	PAUSE,
+	SHOP,
+	INFO,
+	GAMEPLAY_CUTSCENE
+};
+
+
+
 // Container for all our entities and game logic.
 // Individual rendering / updates are deferred to the update() methods.
 class WorldSystem
@@ -44,6 +57,9 @@ public:
 	// should the game be over ?
 	bool is_over() const;
 
+	GameState current_state = GameState::INITIAL_CUTSCENE;
+	GameState previous_state = GameState::INITIAL_CUTSCENE;
+
 private:	
 
 	bool gameOver = false;
@@ -58,6 +74,9 @@ private:
 	void on_key(int key, int, int action, int mod);
 	void on_mouse_move(vec2 pos);
 	void on_mouse_button_pressed(int button, int action, int mods);
+
+	// to check if button was clicked
+	bool buttonClick(screenButton& button);
 
 	// restart level
 	void restart_game();

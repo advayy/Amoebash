@@ -38,6 +38,12 @@ public:
     ComponentContainer<Camera> cameras;
 	ComponentContainer<SpriteSheetImage> spriteSheetImages;
 
+	// mercury
+	ComponentContainer<screenButton> buttons;
+	ComponentContainer<GameScreen> gameScreens;
+	ComponentContainer<Pause> pauses;
+	ComponentContainer<Over> overs;
+
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
 	{
@@ -63,7 +69,12 @@ public:
 		registry_list.push_back(&maps);
 		registry_list.push_back(&tiles);
 		registry_list.push_back(&cameras);
-		registry_list.push_back(&spriteSheetImages);
+		registry_list.push_back(&spriteSheetImages);		
+		registry_list.push_back(&buttons);
+		registry_list.push_back(&gameScreens);
+		registry_list.push_back(&pauses);
+		registry_list.push_back(&overs);
+
 	}
 
 	void clear_all_components() {

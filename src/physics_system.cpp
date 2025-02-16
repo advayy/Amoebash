@@ -29,11 +29,17 @@ void PhysicsSystem::step(float elapsed_ms)
 	// having entities move at different speed based on the machine.
 
 	// MOVE ENTITIES	
+
+
 	auto& motion_registry = registry.motions;
 	for(uint i = 0; i< motion_registry.size(); i++)
 	{
-		Motion& motion = motion_registry.components[i];
 		Entity entity = motion_registry.entities[i];
+		if (registry.buttons.has(entity) || registry.gameScreens.has(entity)) {
+			continue;
+		} 
+		
+		Motion& motion = motion_registry.components[i];
 		float step_seconds = elapsed_ms / 1000.f;
 		motion.position += motion.velocity * step_seconds;
 	}

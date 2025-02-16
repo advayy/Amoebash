@@ -137,8 +137,12 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	std::cout << "Starting music..." << std::endl;
 	Mix_PlayMusic(background_music, -1);
 
+	
+
 	// Set all states to default
     restart_game();
+	// set initial game state
+	current_state = GameState::INITIAL_CUTSCENE;
 }
 
 void WorldSystem::updateCamera(float elapsed_ms) {
@@ -353,13 +357,15 @@ void WorldSystem::restart_game() {
 
 	//FLAG
 	gameOver = false;
+
+	//STATE
+	current_state = GameState::START_SCREEN;
 	
 	// Not sure if we need to touch screen state here
 	// ScreenState &screen = registry.screenStates.components[0];
 	// screen.darken_screen_factor = -1; // FLAG doesnt seem to help
 	
 	registry.deathTimers.clear(); // this seems to work
-
 	// Remove all entities that we created
 	// All that have a motion, we could also iterate over all bug, eagles, ... but that would be more cumbersome
 	while (registry.motions.entities.size() > 0)
@@ -368,6 +374,13 @@ void WorldSystem::restart_game() {
 	// Remove all dashes 
 	while (registry.dashes.entities.size() > 0)
 	    registry.remove_all_components_of(registry.dashes.entities.back());
+	
+	while (registry.gameScreens.entities.size() > 0) 
+		registry.remove_all_components_of(registry.gameScreens.entities.back());
+	
+	while (registry.buttons.entities.size() > 0 )
+		registry.remove_all_components_of(registry.buttons.entities.back());
+
 	// debugging for memory/component leaks
 	registry.list_all_components();
 
@@ -389,10 +402,17 @@ void WorldSystem::restart_game() {
 			grid_lines.push_back(createGridLine(vec2(0, col * cell_height), vec2(2 * MAP_BOTTOM * GRID_CELL_WIDTH_PX, grid_line_width)));
 		}
 	}
-    
+
 	createPlayer(renderer, gridCellToPosition(WORLD_ORIGIN));
 	createMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
     createCamera();
+
+	// screens
+	createStartScreen();
+	createShopScreen();
+	createInfoScreen();
+	// createGameOverScreen();
+	// createPauseScreen();
 }
 
 // Compute collisions between entities
@@ -478,6 +498,20 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
         restart_game();
 	}
 
+	// Pausing Game
+	if (action == GLFW_RELEASE && key == GLFW_KEY_SPACE) {
+		if (current_state == GameState::GAME_PLAY) {
+			current_state = GameState::PAUSE;
+
+			// renderer.
+			createPauseScreen();
+
+		} else if (current_state == GameState::PAUSE) {
+			current_state = GameState::GAME_PLAY;
+			removePauseScreen();
+		}
+	}
+
 	// Debugging - not used in A1, but left intact for the debug lines
 	if (key == GLFW_KEY_D) {
 		if (action == GLFW_RELEASE) {
@@ -489,9 +523,41 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			}
 		}
 	}
+
+	// using O key for gameover, for now
+	if (key == GLFW_KEY_O) {
+		if (action == GLFW_RELEASE) {
+			if (current_state == GameState::GAME_PLAY) {
+				previous_state = GameState::GAME_PLAY;
+				current_state = GameState::GAME_OVER;
+				createGameOverScreen();
+			}
+		}
+	}
+
+	// Q for going to start screen
+	if (key == GLFW_KEY_Q) {
+		if (action == GLFW_RELEASE) {
+			restart_game();
+			current_state = GameState::START_SCREEN;
+		}
+	}
+
+	// if (key == GLFW_KEY_E) {
+	// 	if (action == GLFW_RELEASE && (current_state == GameState::START_SCREEN || current_state == GameState::INFO)) {
+	// 		GameState temp = current_state;
+	// 		current_state = current_state == GameState::INFO ? GameState::START_SCREEN : GameState::INFO;
+	// 		previous_state = temp;
+	// 		for (uint i = 0; i < registry.renderRequests.components.size(); i++) {
+	// 			if (registry.renderRequests.components[i].used_texture == TEXTURE_ASSET_ID::INFOSCREEN) {
+	// 				Entity entity = registry.renderRequests.entities[i];
+	// 				registry.remove_all_components_of(entity);
+	// 			}
+	// 		}
+	// 	}
+	// }
 }
 
-// NOTE: moving mouse position from device coordinates to game coordinates (check WorldSystem::updateMouseCoords)
 void WorldSystem::on_mouse_move(vec2 mouse_position) {
 
 	// record the current mouse position
@@ -517,9 +583,184 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 		// CONTROLS
 
 
-		if(button == GLFW_MOUSE_BUTTON_LEFT && canDash()){
+
+		if(button == GLFW_MOUSE_BUTTON_LEFT && canDash() && current_state == GameState::GAME_PLAY){
 			InitiatePlayerDash();
 			Mix_PlayChannel(-1, dash_sound_1, 0);
 		}
+
+
+		if(button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::START_SCREEN) {
+			
+			screenButton* startButton = nullptr; 
+
+			for (auto& button : registry.buttons.components) {
+				if (button.type == ButtonType::STARTBUTTON) {
+					startButton = &button;  
+					break;
+				}
+			} 
+
+			if (!startButton) {
+				return;
+			} 
+
+			// Find shop button
+			screenButton* shopButton = nullptr; 
+			for (auto& button : registry.buttons.components) {
+				if (button.type == ButtonType::SHOPBUTTON) {
+					shopButton = &button; 
+					break;  
+				}
+			}
+
+			if (!shopButton) {
+				return;
+			} 
+
+			screenButton* nucleusButton = nullptr; 
+			for (auto& button : registry.buttons.components) {
+				if (button.type == ButtonType::INFOBUTTON) {
+					nucleusButton = &button; 
+					break;  
+				}
+			}
+
+			if (!nucleusButton) {
+				return;
+			} 
+
+
+			bool on_button_shop = buttonClick(*shopButton);
+			bool on_button_nucleus = buttonClick(*nucleusButton);
+			bool on_button = buttonClick(*startButton);
+			
+
+
+
+
+
+			if (on_button_shop) {
+				previous_state = current_state;
+				current_state = GameState::SHOP;
+
+			} else if (on_button_nucleus) {
+				previous_state = current_state;
+				current_state = GameState::INFO;
+
+			} else if (on_button) {
+				previous_state = current_state;
+				current_state = GameState::GAME_PLAY;
+			}
+		}
+
+		// gameplay -> shop
+		else if(button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::GAME_PLAY) {
+			
+			// Find shop button
+			screenButton* shopButton = nullptr; 
+			for (auto& button : registry.buttons.components) {
+				if (button.type == ButtonType::SHOPBUTTON) {
+					shopButton = &button; 
+					break;  
+				}
+			}
+
+			if (!shopButton) {
+				return;
+			} 
+
+			screenButton* nucleusButton = nullptr; 
+			for (auto& button : registry.buttons.components) {
+				if (button.type == ButtonType::INFOBUTTON) {
+					nucleusButton = &button; 
+					break;  
+				}
+			}
+
+			if (!nucleusButton) {
+				return;
+			} 
+
+
+			bool on_button_shop = buttonClick(*shopButton);
+			bool on_button_nucleus = buttonClick(*nucleusButton);
+			
+
+			if (on_button_shop) {
+				previous_state = current_state;
+				current_state = GameState::SHOP;
+			} else if (on_button_nucleus) {
+				previous_state = current_state;
+				current_state = GameState::INFO;
+			}
+		}
+
+		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::SHOP) {
+			// Find shop button
+			screenButton* shopButton = nullptr; 
+			for (auto& button : registry.buttons.components) {
+				if (button.type == ButtonType::SHOPBUTTON) {
+					shopButton = &button; 
+					break;  
+				}
+			}
+
+			if (!shopButton) {
+				return;
+			} 
+
+			bool on_button_shop = buttonClick(*shopButton);
+			if (on_button_shop) {
+				GameState temp = current_state;
+				current_state = previous_state;
+				previous_state = temp;
+			}
+
+		} 
+		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::INFO) {
+			screenButton* nucleusButton = nullptr; 
+			for (auto& button : registry.buttons.components) {
+				if (button.type == ButtonType::INFOBUTTON) {
+					nucleusButton = &button; 
+					break;  
+				}
+			}
+
+			if (!nucleusButton) {
+				return;
+			} 
+
+			bool on_button_shop = buttonClick(*nucleusButton);
+			if (on_button_shop) {
+				GameState temp = current_state;
+				current_state = previous_state;
+				previous_state = temp;
+			}
+		}
+
+		// gameover state -> start screen state
+		else if(button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::GAME_OVER) {
+			previous_state = current_state;
+			current_state = GameState::START_SCREEN;
+			removeGameOverScreen();
+			restart_game();
+		}
 	}
+}
+
+bool WorldSystem::buttonClick(screenButton& button) {
+	float button_x = button.center[0];
+	float button_y = button.center[1];
+
+	float x_distance = std::abs(button_x - device_mouse_pos_x);
+	float y_distance = std::abs(button_y - device_mouse_pos_y);
+
+	bool res = (x_distance < button.w / 2.f) && (y_distance < button.h / 2.f);
+	std::cout << device_mouse_pos_x << " " << device_mouse_pos_y << std::endl;
+	std::cout << game_mouse_pos_x << " " << game_mouse_pos_y << std::endl;
+	std::cout << button_x << " " << button_y << std::endl;
+	std::cout << "button: " << res << std::endl;
+
+	return res;
 }

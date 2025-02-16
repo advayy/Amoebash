@@ -105,6 +105,10 @@ const float PROJECTILE_DAMAGE = 10;
 const float DASH_DURATION_MS = 500.0f;
 const float VELOCITY_DECAY_RATE = 1.01f; // 0.95f;
 
+// LOGO
+const float LOGO_WIDTH_PX = 383 * WORK_SCALE_FACTOR;
+const float LOGO_HEIGHT_PX = 122 * WORK_SCALE_FACTOR;
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846f
 #endif

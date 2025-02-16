@@ -6,6 +6,7 @@
 
 Entity createEnemy(RenderSystem* renderer, vec2 position);
 Entity createPlayer(RenderSystem* renderer, vec2 position);
+void createButtons();
 
 // projectile
 Entity createProjectile(vec2 pos, vec2 size, vec2 velocity);
@@ -36,3 +37,17 @@ void removeTile(vec2 gridCoord);
 
 vec2 positionToGridCell(vec2 position);
 vec2 gridCellToPosition(vec2 gridCell);
+
+Entity createStartScreen();
+Entity createShopScreen();
+Entity createInfoScreen();
+Entity createGameOverScreen();
+Entity createPauseScreen();
+
+void removePauseScreen();
+void removeGameOverScreen();
+
+Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID texture);
+Entity createStartButton();
+Entity createShopButton();
+Entity createInfoButton();

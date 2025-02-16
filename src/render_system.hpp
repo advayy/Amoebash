@@ -33,7 +33,15 @@ class RenderSystem {
 		textures_path("amoeba/player_dash.png"),
 		textures_path("projectiles/gold_bubble.png"),
 		textures_path("tiles/test_tile.png"),
-		textures_path("tiles/paralax_tile_1_128x.png")
+		textures_path("tiles/paralax_tile_1_128x.png"),
+		textures_path("ui_art/amoebash_logo.png"),
+		textures_path("ui_art/gameOver.png"),
+		textures_path("ui_art/start.png"),
+		textures_path("ui_art/pausescreen.png"),
+		textures_path("ui_art/shop.png"),
+		textures_path("ui_art/nucleus_full_size.png"),
+		textures_path("ui_art/shopscreen.png"),
+		textures_path("ui_art/infoscreen.png")
 	};
 
 	std::array<GLuint, effect_count> effects;
@@ -78,6 +86,13 @@ public:
 	// Draw all entities
 	void draw();
 
+	// Screen specific functionalities
+	void drawStartScreen();
+	void drawGameOverScreen();
+	void drawShopScreen();
+	void drawInfoScreen();
+	
+
 	mat3 createProjectionMatrix();
 
 	Entity get_screen_state_entity() { return screen_state_entity; }
@@ -89,6 +104,8 @@ private:
 	void drawSpriteSheetTexturedMesh(Entity entity, const mat3 &projection);
 	void drawTiles(Entity entity, const mat3 &projection);
 	void drawToScreen();
+
+	void drawScreenAndButtons(ScreenType screenType, const std::vector<ButtonType>& buttonTypes);
 
 	// Window handle
 	GLFWwindow* window;

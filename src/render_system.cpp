@@ -6,6 +6,7 @@
 // internal
 #include "render_system.hpp"
 #include "tinyECS/registry.hpp"
+#include "world_system.hpp"
 
 void RenderSystem::drawGridLine(Entity entity,
 								const mat3& projection) {
@@ -98,6 +99,7 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 									const mat3 &projection)
 {
 	Motion &motion = registry.motions.get(entity);
+
 	// Transformation code, see Rendering and Transformation in the template
 	// specification for more info Incrementally updates transformation matrix,
 	// thus ORDER IS IMPORTANT
@@ -149,12 +151,15 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		glActiveTexture(GL_TEXTURE0);
 		gl_has_errors();
 
+
 		assert(registry.renderRequests.has(entity));
 		GLuint texture_id =
 			texture_gl_handles[(GLuint)registry.renderRequests.get(entity).used_texture];
 
 		glBindTexture(GL_TEXTURE_2D, texture_id);
 		gl_has_errors();
+
+
 	}
 	// .obj entities
 	else if (render_request.used_effect == EFFECT_ASSET_ID::LINE)
@@ -184,6 +189,7 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 	glUniform3fv(color_uloc, 1, (float *)&color);
 	gl_has_errors();
 
+
 	// Get number of indices from index buffer, which has elements uint16_t
 	GLint size = 0;
 	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
@@ -199,9 +205,11 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float *)&transform.mat);
 	gl_has_errors();
 
+
 	GLuint projection_loc = glGetUniformLocation(currProgram, "projection");
 	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
 	gl_has_errors();
+
 
 	// Drawing of num_indices/3 triangles specified in the index buffer
 	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
@@ -438,11 +446,11 @@ void RenderSystem::drawTiles(Entity entity, const mat3 &projection) {
 		// Enabling and binding texture to slot 0
 		glActiveTexture(GL_TEXTURE0);
 		gl_has_errors();
-
+		
 		assert(registry.renderRequests.has(entity));
 		GLuint texture_id =
 			texture_gl_handles[(GLuint)registry.renderRequests.get(entity).used_texture];
-
+		
 		glBindTexture(GL_TEXTURE_2D, texture_id);
 		gl_has_errors();
 	}
@@ -536,11 +544,12 @@ void RenderSystem::draw()
 		}
 	}
 
+
 	// draw all entities with a render request to the frame buffer
 	for (Entity entity : registry.renderRequests.entities)
 	{
 		// filter to entities that have a motion component
-		if (registry.motions.has(entity) && !registry.spriteSheetImages.has(entity) && !registry.tiles.has(entity)) { // Moving entity withot animation
+		if (registry.motions.has(entity) && !registry.spriteSheetImages.has(entity) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity)) { // Moving entity withot animation
 			// Note, its not very efficient to access elements indirectly via the entity
 			// albeit iterating through all Sprites in sequence. A good point to optimize // FLAG
 			drawTexturedMesh(entity, projection_2D);
@@ -554,6 +563,13 @@ void RenderSystem::draw()
 		}
 		
 	}
+
+	
+	if (registry.pauses.size() != 0) {
+		auto& pause = registry.pauses.entities[0];
+		drawTexturedMesh(pause, projection_2D);
+	}
+
 
 	// draw framebuffer to screen
 	// adding "vignette" effect when applied
@@ -578,9 +594,102 @@ mat3 RenderSystem::createProjectionMatrix() {
     float tx = -(right + left)   / (right - left);
     float ty = -(top + bottom)   / (top - bottom);
 
-    return {
-        { sx,   0.f,  0.f },
-        { 0.f,  sy,   0.f },
-        { tx,   ty,   1.f }
+	return {
+		{ sx, 0.f, 0.f},
+		{0.f,  sy, 0.f},
+		{ tx,  ty, 1.f}
+	};
+}
+
+void RenderSystem::drawStartScreen() {
+
+    std::vector<ButtonType> buttons = {
+        ButtonType::STARTBUTTON,
+        ButtonType::SHOPBUTTON,
+        ButtonType::INFOBUTTON
     };
+
+    // Call the generic function
+    drawScreenAndButtons(ScreenType::START, buttons);
+}
+
+
+void RenderSystem::drawShopScreen() {
+
+	std::vector<ButtonType> buttons = {
+        ButtonType::SHOPBUTTON
+    };
+
+	drawScreenAndButtons(ScreenType::SHOP, buttons);
+}
+
+
+void RenderSystem::drawInfoScreen() {
+	
+	std::vector<ButtonType> buttons = {
+		ButtonType::INFOBUTTON
+	};
+
+	drawScreenAndButtons(ScreenType::INFO, buttons);
+}
+
+void RenderSystem::drawGameOverScreen() {
+	std::vector<ButtonType> buttons = {
+		
+	};
+
+	drawScreenAndButtons(ScreenType::GAMEOVER, buttons);
+
+}
+
+void RenderSystem::drawScreenAndButtons(
+    ScreenType screenType,
+    const std::vector<ButtonType>& buttonTypes) {
+
+    int w, h;
+    glfwGetFramebufferSize(window, &w, &h);
+    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+    gl_has_errors();
+
+    glViewport(0, 0, w, h);
+    glDepthRange(0.00001, 10);
+
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearDepth(10.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
+
+    mat3 projection_matrix = createProjectionMatrix();
+
+    for (uint i = 0; i < registry.gameScreens.size(); i++) {
+        const auto& screenComp = registry.gameScreens.components[i];
+        if (screenComp.type == screenType) {
+            Entity screenEntity = registry.gameScreens.entities[i];
+            drawTexturedMesh(screenEntity, projection_matrix);
+        }
+    }
+
+	if (buttonTypes.size() != 0) {
+		for (uint i = 0; i < registry.buttons.components.size(); i++) {
+			const screenButton& buttonComp = registry.buttons.components[i];
+
+			for (auto bt : buttonTypes)
+			{
+				if (buttonComp.type == bt)
+				{
+					Entity buttonEntity = registry.buttons.entities[i];
+					drawTexturedMesh(buttonEntity, projection_matrix);
+					break;
+				}
+			}
+		}
+	}
+    
+    drawToScreen();
+    glfwSwapBuffers(window);
+    gl_has_errors();
+
 }

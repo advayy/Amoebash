@@ -141,6 +141,44 @@ struct Mesh
 	std::vector<uint16_t> vertex_indices;
 };
 
+// Button Types
+enum ButtonType {
+	STARTBUTTON = 0,
+	SHOPBUTTON = STARTBUTTON + 1,
+	INFOBUTTON = SHOPBUTTON + 1
+};
+
+// Coordinates and bounding box of start button on start screen
+struct screenButton
+{
+	float w;
+	float h;
+	vec2 center;
+	ButtonType type;
+};
+
+enum ScreenType {
+	START = 0,
+	GAMEPLAY = START + 1,
+	INFO = GAMEPLAY + 1,
+	SHOP = INFO + 1,
+	NUCLEUS = SHOP + 1,
+	GAMEOVER = NUCLEUS + 1,
+	PAUSE = GAMEOVER + 1
+};
+
+struct GameScreen {
+	ScreenType type;
+	std::vector<screenButton> screenButtons;
+};
+
+struct Pause {
+
+};
+
+struct Over {
+
+};
 
 /**
  * The following enumerators represent global identifiers refering to graphic
@@ -172,7 +210,15 @@ enum class TEXTURE_ASSET_ID {
 	PROJECTILE = PLAYER + 1,
 	TILE = PROJECTILE + 1,
 	PARALAX_TILE = TILE + 1,
-	TEXTURE_COUNT =  PARALAX_TILE + 1
+	SCREEN = PARALAX_TILE + 1,
+	GAMEOVER = SCREEN + 1,
+	BUTTON = GAMEOVER + 1,
+	PAUSE = BUTTON + 1,
+	SHOPBUTTON = PAUSE + 1,
+	NUCLEUS = SHOPBUTTON + 1,
+	SHOPSCREEN = NUCLEUS + 1,
+	INFOSCREEN = SHOPSCREEN + 1,
+	TEXTURE_COUNT = INFOSCREEN + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -219,3 +265,4 @@ struct SpriteSheetImage {
 	int total_frames = 3;
 	int current_frame = 0;
 };
+
