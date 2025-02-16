@@ -46,6 +46,10 @@ vec2 apply_paralax(vec2 texcoord, int frame, vec2 camera_position) {
 
 void main()
 {	
+	if (total_frames == 1) {
+		color = texture(sampler0, texcoord);
+		return;
+	}
 
 	vec4 fcolor = vec4(0.0, 0.0, 0.0, 0.0);
 

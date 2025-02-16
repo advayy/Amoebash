@@ -42,6 +42,17 @@ void PhysicsSystem::step(float elapsed_ms)
 		Motion& motion = motion_registry.components[i];
 		float step_seconds = elapsed_ms / 1000.f;
 		motion.position += motion.velocity * step_seconds;
+		// dont let player move out of bounds, knockback when they do that (reducing velocity)
+		if (registry.players.has(entity)) {
+			Player& player = registry.players.get(entity);
+			if (motion.position.x >= MAP_RIGHT*GRID_CELL_WIDTH_PX || motion.position.x <= MAP_LEFT*GRID_CELL_WIDTH_PX || motion.position.y <= MAP_TOP*GRID_CELL_HEIGHT_PX || motion.position.y >= MAP_BOTTOM*GRID_CELL_HEIGHT_PX) {
+				motion.velocity *= -0.5f;
+				// clamp position
+				motion.position.x = std::clamp(motion.position.x, MAP_LEFT*GRID_CELL_WIDTH_PX, (MAP_RIGHT+1)*GRID_CELL_WIDTH_PX);
+				motion.position.y = std::clamp(motion.position.y, MAP_TOP*GRID_CELL_HEIGHT_PX, (MAP_BOTTOM+1)*GRID_CELL_HEIGHT_PX);
+			}
+		}
+
 	}
 
 

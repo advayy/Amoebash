@@ -34,6 +34,7 @@ Entity createMap(RenderSystem* renderer, vec2 size);
 void tileMap();
 Entity addTile(vec2 gridCoord);
 void removeTile(vec2 gridCoord);
+Entity addWallTile(vec2 gridCoord);
 
 vec2 positionToGridCell(vec2 position);
 vec2 gridCellToPosition(vec2 gridCell);

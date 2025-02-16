@@ -41,7 +41,8 @@ class RenderSystem {
 		textures_path("ui_art/shop.png"),
 		textures_path("ui_art/nucleus_full_size.png"),
 		textures_path("ui_art/shopscreen.png"),
-		textures_path("ui_art/infoscreen.png")
+		textures_path("ui_art/infoscreen.png"),
+		textures_path("tiles/wall_tile.png")
 	};
 
 	std::array<GLuint, effect_count> effects;
