@@ -40,14 +40,22 @@ Entity addWallTile(vec2 gridCoord);
 vec2 positionToGridCell(vec2 position);
 vec2 gridCellToPosition(vec2 gridCell);
 
-Entity createStartScreen();
+Entity createStartScreen(vec2 position = {-WINDOW_WIDTH_PX / 2.f, 0.f});
 Entity createShopScreen();
 Entity createInfoScreen();
 Entity createGameOverScreen();
 Entity createPauseScreen();
 
+void createGameplayCutScene();
+Entity createNose();
+Entity createCutSceneBackGround();
+Entity createNoseAccent();
+Entity createEnteringNucleus();
+
 void removePauseScreen();
 void removeGameOverScreen();
+void removeStartScreen();
+void removeCutScene();
 
 Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID texture);
 Entity createStartButton();

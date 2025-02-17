@@ -277,9 +277,6 @@ void WorldSystem::restart_game() {
 
 	//FLAG
 	gameOver = false;
-
-	//STATE
-	current_state = GameState::START_SCREEN;
 	
 	// Not sure if we need to touch screen state here
 	// ScreenState &screen = registry.screenStates.components[0];
@@ -330,11 +327,20 @@ void WorldSystem::restart_game() {
     createCamera();
 
 	// screens
-	createStartScreen();
+	if (previous_state == GameState::GAME_OVER) {
+		createStartScreen(WORLD_ORIGIN);
+	} else {
+		createStartScreen();
+	}
 	createShopScreen();
 	createInfoScreen();
-	// createGameOverScreen();
-	// createPauseScreen();
+
+	// timer settings depending on previous state
+	if (current_state == GameState::INITIAL_CUTSCENE) {
+		stateTimer = BOOT_CUTSCENE_DURATION_MS;
+	} else {
+		stateTimer = INTRO_CUTSCENE_DURATION_MS;
+	}
 }
 
 // Compute collisions between entities
@@ -418,6 +424,14 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 		glfwGetWindowSize(window, &w, &h);
 
         restart_game();
+
+		previous_state = current_state;
+		current_state = GameState::START_SCREEN;
+
+		Entity startScreen = registry.starts.entities[0];
+		Motion& startScreenMotion = registry.motions.get(startScreen);
+		startScreenMotion.velocity = {0.f, 0.f};
+		startScreenMotion.position = {0.f, 0.f};
 	}
 
 	// Pausing Game
@@ -464,20 +478,6 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 			current_state = GameState::START_SCREEN;
 		}
 	}
-
-	// if (key == GLFW_KEY_E) {
-	// 	if (action == GLFW_RELEASE && (current_state == GameState::START_SCREEN || current_state == GameState::INFO)) {
-	// 		GameState temp = current_state;
-	// 		current_state = current_state == GameState::INFO ? GameState::START_SCREEN : GameState::INFO;
-	// 		previous_state = temp;
-	// 		for (uint i = 0; i < registry.renderRequests.components.size(); i++) {
-	// 			if (registry.renderRequests.components[i].used_texture == TEXTURE_ASSET_ID::INFOSCREEN) {
-	// 				Entity entity = registry.renderRequests.entities[i];
-	// 				registry.remove_all_components_of(entity);
-	// 			}
-	// 		}
-	// 	}
-	// }
 }
 
 void WorldSystem::on_mouse_move(vec2 mouse_position) {
@@ -564,7 +564,10 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 
 			} else if (on_button) {
 				previous_state = current_state;
-				current_state = GameState::GAME_PLAY;
+				current_state = GameState::GAMEPLAY_CUTSCENE;
+				// need to add render request for cutscene animations
+				removeStartScreen();
+				createGameplayCutScene();
 			}
 		}
 
@@ -657,6 +660,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 		else if(button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::GAME_OVER) {
 			previous_state = current_state;
 			current_state = GameState::START_SCREEN;
+
 			removeGameOverScreen();
 			restart_game();
 		}

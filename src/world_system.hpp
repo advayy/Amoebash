@@ -60,6 +60,9 @@ public:
 	GameState current_state = GameState::INITIAL_CUTSCENE;
 	GameState previous_state = GameState::INITIAL_CUTSCENE;
 
+	float stateTimer = BOOT_CUTSCENE_DURATION_MS;
+
+
 private:	
 
 	bool gameOver = false;
@@ -109,4 +112,5 @@ private:
 	// C++ random number generator
 	std::default_random_engine rng;
 	std::uniform_real_distribution<float> uniform_dist; // number between 0..1
+
 };

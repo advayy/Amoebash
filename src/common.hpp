@@ -110,9 +110,17 @@ const float LOGO_WIDTH_PX = 383 * WORK_SCALE_FACTOR;
 const float LOGO_HEIGHT_PX = 122 * WORK_SCALE_FACTOR;
 
 // CUTSCENES
-const float INTRO_CUTSCENE_DURATION_MS = 1000.f;
-const float GAMEPLAY_CUTSCENE_DURATION_MS = 1000.f;
-const float STATE_TIMER_DEFAULT = 1000.f;
+const float INTRO_CUTSCENE_DURATION_MS = 3000.f; // for animation after clicking start
+const float BOOT_CUTSCENE_DURATION_MS = 3000.f; // for logo movement at boot
+const float GAMEPLAY_CUTSCENE_DURATION_MS = 3000.f;
+const float STATE_TIMER_DEFAULT = 3000.f;
+
+// button positions, scales
+const vec2 START_BUTTON_COORDINATES = { 0.f, WINDOW_HEIGHT_PX / 4.5f };
+const vec2 START_BUTTON_SCALE = { WINDOW_WIDTH_PX / 7.f, WINDOW_HEIGHT_PX / 7.f };
+
+const vec2 SHOP_INFO_BUTTON_SCALE = { WINDOW_WIDTH_PX / 20.f, WINDOW_HEIGHT_PX / 20.f * 1.78f };
+
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846f

@@ -42,7 +42,11 @@ class RenderSystem {
 		textures_path("ui_art/nucleus_full_size.png"),
 		textures_path("ui_art/shopscreen.png"),
 		textures_path("ui_art/infoscreen.png"),
-		textures_path("tiles/wall_tile.png")
+		textures_path("tiles/wall_tile.png"),
+		textures_path("transition_animations/noses_spritesheet.png"),
+		textures_path("transition_animations/into_game_transition_sheet.png"),
+		textures_path("transition_animations/nose_accent_spritesheet.png"),
+		textures_path("transition_animations/nucleus_entering_nose_sheet.png")
 	};
 
 	std::array<GLuint, effect_count> effects;
@@ -93,7 +97,7 @@ public:
 	void drawGameOverScreen();
 	void drawShopScreen();
 	void drawInfoScreen();
-	
+	void drawCutScreneAnimation();
 
 	mat3 createProjectionMatrix();
 
@@ -108,6 +112,8 @@ private:
 	void drawToScreen();
 
 	void drawScreenAndButtons(ScreenType screenType, const std::vector<ButtonType>& buttonTypes);
+
+
 
 	// Window handle
 	GLFWwindow* window;

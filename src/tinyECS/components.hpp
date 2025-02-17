@@ -185,6 +185,14 @@ struct Over {
 
 };
 
+struct Start {
+	std::vector<Entity> buttons;
+};
+
+struct GameplayCutScene {
+
+};
+
 /**
  * The following enumerators represent global identifiers refering to graphic
  * assets. For example TEXTURE_ASSET_ID are the identifiers of each texture
@@ -224,7 +232,11 @@ enum class TEXTURE_ASSET_ID {
 	SHOPSCREEN = NUCLEUS + 1,
 	INFOSCREEN = SHOPSCREEN + 1,
 	WALL_TILE = INFOSCREEN + 1,
-	TEXTURE_COUNT = WALL_TILE + 1
+	NOSE = WALL_TILE + 1,
+	CUTSCENEBACKGROUND = NOSE + 1,
+	NOSEACCENT = CUTSCENEBACKGROUND + 1,
+	ENTERINGNUCLEUS = NOSEACCENT + 1,
+	TEXTURE_COUNT = ENTERINGNUCLEUS + 1, 
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;

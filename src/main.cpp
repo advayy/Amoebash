@@ -47,7 +47,7 @@ int main()
 
 	// variable timestep loop
 	auto t = Clock::now();
-	float stateTimer = STATE_TIMER_DEFAULT;
+	float& stateTimer = world_system.stateTimer;
 	
 	while (!world_system.is_over()) {
 		
@@ -61,13 +61,14 @@ int main()
 		t = now;
 
 
-
 		switch (current_state) {
 
 			case GameState::INITIAL_CUTSCENE :
 				stateTimer -= elapsed_ms;
-
+				renderer_system.drawStartScreen();
+				physics_system.step(elapsed_ms);
 				if (stateTimer <= 0.f) {
+					previous_state = GameState::INITIAL_CUTSCENE;
 					current_state = GameState::START_SCREEN;
 					stateTimer = INTRO_CUTSCENE_DURATION_MS;
 				}
@@ -106,12 +107,14 @@ int main()
 			
 			case GameState::GAMEPLAY_CUTSCENE :
 				stateTimer -= elapsed_ms;
+				renderer_system.drawCutScreneAnimation();
+				animation(elapsed_ms);
 
 				if (stateTimer <= 0.f) {
-					stateTimer = GAMEPLAY_CUTSCENE_DURATION_MS;
-
-					current_state = previous_state;
-					previous_state = GameState::GAMEPLAY_CUTSCENE;
+					stateTimer = BOOT_CUTSCENE_DURATION_MS;
+					removeCutScene();
+					previous_state = current_state;
+					current_state = GameState::GAME_PLAY;
 				}
 				break;
 

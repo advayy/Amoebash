@@ -35,10 +35,6 @@ void PhysicsSystem::step(float elapsed_ms)
 	for(uint i = 0; i< motion_registry.size(); i++)
 	{
 		Entity entity = motion_registry.entities[i];
-		if (registry.buttons.has(entity) || registry.gameScreens.has(entity)) {
-			continue;
-		} 
-		
 		Motion& motion = motion_registry.components[i];
 		float step_seconds = elapsed_ms / 1000.f;
 		motion.position += motion.velocity * step_seconds;

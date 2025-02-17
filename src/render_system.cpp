@@ -633,7 +633,6 @@ void RenderSystem::drawStartScreen() {
         ButtonType::INFOBUTTON
     };
 
-    // Call the generic function
     drawScreenAndButtons(ScreenType::START, buttons);
 }
 
@@ -686,6 +685,8 @@ void RenderSystem::drawScreenAndButtons(
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_DEPTH_TEST);
 
+	gl_has_errors();
+
     mat3 projection_matrix = createProjectionMatrix();
 
     for (uint i = 0; i < registry.gameScreens.size(); i++) {
@@ -715,5 +716,35 @@ void RenderSystem::drawScreenAndButtons(
     drawToScreen();
     glfwSwapBuffers(window);
     gl_has_errors();
+}
 
+void RenderSystem::drawCutScreneAnimation() {
+
+    int w, h;
+    glfwGetFramebufferSize(window, &w, &h);
+    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+    gl_has_errors();
+
+    glViewport(0, 0, w, h);
+    glDepthRange(0.00001, 10);
+
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearDepth(10.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
+
+	gl_has_errors();
+
+    mat3 projection_matrix = createProjectionMatrix();
+
+	for (auto& entity : registry.cutscenes.entities) {
+		drawSpriteSheetTexturedMesh(entity, projection_matrix);
+	}
+    
+    drawToScreen();
+    glfwSwapBuffers(window);
+    gl_has_errors();
 }

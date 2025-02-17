@@ -21,3 +21,19 @@ Throughout your journey, you’ll face off against hordes of enemies in procedur
 Don’t sweat it if the Neuron Dragon or any other enemies get the best of you—just retreat and regroup! On your way out, you get to keep at least one buff you collected for the next run through a “Nucleus Menu”. You might’ve stumbled upon a powerful buff, giving you an edge for your next daring attempt, which means a good run is never wasted!
 
 Each enemy can also give you “Germoney”, which you can use in the Shop to buy new buffs, or increase how many buffs you can keep when you die.
+
+## 🎮 **Game Controls Guide**  
+
+### 🖱️ **Mouse Controls**  
+- **Menu Navigation:** Click on buttons to access the **Shop**, **Information Screens**, or **Start the Game**.  
+- **In-Game Actions:** Click anywhere during gameplay to make the **Amoeba** dash in the chosen direction. **Attacks** will automatically trigger during the dash.  
+
+---
+
+### ⌨️ **Keyboard Controls**  
+- **R:** Restart the game.  
+- **Space:** Pause or resume gameplay.  
+- **O:** Instantly trigger the **Game Over** screen.  
+- **Q:** Quit the game and return to the **Start Screen**.  
+
+---
