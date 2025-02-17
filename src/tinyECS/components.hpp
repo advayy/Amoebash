@@ -38,9 +38,13 @@ struct Map {
 	int right=0;
 };
 
+struct MiniMap {
+};
+
 struct Camera {
     vec2 position = { 0, 0 };
 	bool initialized = false;
+	vec2 grid_position = { 0, 0 };
 };
 
 // Invader
@@ -231,7 +235,8 @@ enum class EFFECT_ASSET_ID {
 	VIGNETTE = TEXTURED + 1,
 	SPRITE_SHEET = VIGNETTE + 1,
 	TILE = SPRITE_SHEET + 1,
-	EFFECT_COUNT = TILE + 1
+	MINI_MAP = TILE + 1,
+	EFFECT_COUNT = MINI_MAP + 1
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 

@@ -177,8 +177,32 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		glVertexAttribPointer(in_color_loc, 3, GL_FLOAT, GL_FALSE,
 							  sizeof(ColoredVertex), (void *)sizeof(vec3));
 		gl_has_errors();
-	}
-	else
+	} else if (render_request.used_effect == EFFECT_ASSET_ID::MINI_MAP) {
+		GLint in_position_loc = glGetAttribLocation(program, "in_position");
+		GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+		gl_has_errors();
+		assert(in_texcoord_loc >= 0);
+
+		glEnableVertexAttribArray(in_position_loc);
+		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)0);
+		gl_has_errors();
+
+		glEnableVertexAttribArray(in_texcoord_loc);
+		glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)sizeof(vec3));
+		gl_has_errors();
+
+		GLint map_width_uloc = glGetUniformLocation(program, "map_width");
+		GLint map_height_uloc = glGetUniformLocation(program, "map_height");
+		GLint camera_grid_position_uloc = glGetUniformLocation(program, "camera_grid_position");
+
+		glUniform1i(map_width_uloc, MAP_WIDTH);
+		glUniform1i(map_height_uloc, MAP_HEIGHT);
+
+		// get camera position
+		Camera camera = registry.cameras.get(registry.cameras.entities[0]);
+		
+		glUniform2fv(camera_grid_position_uloc, 1, (float*)&camera.grid_position);
+	} else
 	{
 		assert(false && "Type of render request not supported");
 	}
@@ -548,7 +572,7 @@ void RenderSystem::draw()
 	for (Entity entity : registry.renderRequests.entities)
 	{
 		// filter to entities that have a motion component
-		if (registry.motions.has(entity) && !registry.spriteSheetImages.has(entity) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity)) { // Moving entity withot animation
+		if (registry.motions.has(entity) && !registry.spriteSheetImages.has(entity) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity)) { // Moving entity withot animation
 			// Note, its not very efficient to access elements indirectly via the entity
 			// albeit iterating through all Sprites in sequence. A good point to optimize // FLAG
 			drawTexturedMesh(entity, projection_2D);
@@ -560,9 +584,10 @@ void RenderSystem::draw()
 		else if (registry.gridLines.has(entity)) {
 			drawGridLine(entity, projection_2D);
 		}
-		
 	}
-
+	
+	// draw the mini map
+	drawTexturedMesh(registry.miniMaps.entities[0], projection_2D);
 	
 	if (registry.pauses.size() != 0) {
 		auto& pause = registry.pauses.entities[0];

@@ -197,6 +197,20 @@ void WorldSystem::updateCamera(float elapsed_ms) {
         }
         camera.position += cameraMovement;
     }
+
+	// Update camera grid position
+	camera.grid_position = positionToGridCell(camera.position);
+}
+
+void WorldSystem::updateHuds() {
+
+	vec2 offset = {WINDOW_WIDTH_PX/2 - 100, -WINDOW_HEIGHT_PX/2 + 100};
+	
+	Entity minimapEntity = registry.miniMaps.entities[0];
+	Motion& minimapMotion = registry.motions.get(minimapEntity);
+
+	Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
+	minimapMotion.position = { camera.position.x + offset.x, camera.position.y + offset.y};
 }
 
 void WorldSystem::updateMouseCoords() {
@@ -210,6 +224,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
     updateCamera(elapsed_ms_since_last_update);
     updateMouseCoords();
+	updateHuds();
 
 	// Updating window title with points
 	std::stringstream title_ss;
@@ -310,6 +325,8 @@ void WorldSystem::restart_game() {
 
 	createPlayer(renderer, gridCellToPosition(WORLD_ORIGIN));
 	createMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
+	createMiniMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
+
     createCamera();
 
 	// screens

@@ -43,6 +43,7 @@ public:
 	ComponentContainer<GameScreen> gameScreens;
 	ComponentContainer<Pause> pauses;
 	ComponentContainer<Over> overs;
+	ComponentContainer<MiniMap> miniMaps;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
@@ -74,6 +75,7 @@ public:
 		registry_list.push_back(&gameScreens);
 		registry_list.push_back(&pauses);
 		registry_list.push_back(&overs);
+		registry_list.push_back(&miniMaps);
 
 	}
 

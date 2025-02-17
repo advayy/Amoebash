@@ -30,6 +30,7 @@ bool isDashing();
 Entity createCamera();
 
 Entity createMap(RenderSystem* renderer, vec2 size);
+Entity createMiniMap(RenderSystem* renderer, vec2 size);
 
 void tileMap();
 Entity addTile(vec2 gridCoord);

@@ -53,7 +53,8 @@ class RenderSystem {
 		shader_path("textured"),
 		shader_path("vignette"),
 		shader_path("sprite_sheet_textured"),
-		shader_path("tile")
+		shader_path("tile"),
+		shader_path("minimap")
 	};
 
 	std::array<GLuint, geometry_count> vertex_buffers;

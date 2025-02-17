@@ -267,6 +267,32 @@ Entity createMap(RenderSystem* renderer, vec2 size) {
 	// Store a reference to the potentially re-used mesh object (the value is stored in the resource cache)
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
 	registry.meshPtrs.emplace(entity, &mesh);
+	return entity;
+}
+
+Entity createMiniMap(RenderSystem* renderer, vec2 size) {
+	auto entity = Entity();
+
+	// create motion component
+	Motion& motion = registry.motions.emplace(entity);
+	
+	motion.position = { 0, 0};
+	motion.angle = 0.f;
+	motion.velocity = { 0, 0 };
+	motion.scale = { 32*2*WORK_SCALE_FACTOR, 32*2*WORK_SCALE_FACTOR };
+
+	// add render request
+	registry.renderRequests.insert(
+		entity,
+		{
+			TEXTURE_ASSET_ID::ENEMY,
+			EFFECT_ASSET_ID::MINI_MAP,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	// add entity to minimaps
+	registry.miniMaps.emplace(entity);
 
 	return entity;
 }
@@ -276,10 +302,11 @@ void tileMap() {
 	// ADD TILES TO ALL POSITIONS within CHUNK_DISTANCE of the player
 	// REMOVE TILES THAT ARE OUTSIDE OF CHUNK_DISTANCE of the player
 
-	vec2 camera_pos = registry.cameras.get(registry.cameras.entities[0]).position;
+	vec2 camera_pos = registry.cameras.get(registry.cameras.entities[0]).grid_position;
 
-	float cameraGrid_x = positionToGridCell(camera_pos).x;
-	float cameraGrid_y = positionToGridCell(camera_pos).y;
+	float cameraGrid_x = camera_pos.x;
+	float cameraGrid_y = camera_pos.y;
+
 	Map& map = registry.maps.get(registry.maps.entities[0]);
 
 	// remove all tiles that arent in the chunk distance
@@ -435,6 +462,7 @@ Entity createCamera() {
 
     camera.position = WORLD_ORIGIN;
 	camera.initialized = false;
+	camera.grid_position = WORLD_ORIGIN;
 
     return cameraEntity;
 }
