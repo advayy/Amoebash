@@ -255,7 +255,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		animation(elapsed_ms_since_last_update);
 	}
 
-	tileMap();
+	//tileMap();
+	tileProceduralMap();
 
 	return true;
 }
@@ -324,7 +325,10 @@ void WorldSystem::restart_game() {
 	}
 
 	createPlayer(renderer, gridCellToPosition(WORLD_ORIGIN));
-	createMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
+	
+	// createMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
+	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
+
 	createMiniMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
 
     createCamera();

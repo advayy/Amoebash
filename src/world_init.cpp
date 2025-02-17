@@ -248,13 +248,41 @@ bool isDashing() {
 	return registry.dashes.size() > 0;
 }
 
-Entity createMap(RenderSystem* renderer, vec2 size) {
+std::vector<std::vector<tileType>> generateEmptyMap(int width, int height) {
+	std::vector<std::vector<tileType>> map;
+	map.resize(width);
+	for (int i = 0; i < width; i++) {
+		map[i].resize(height);
+		for (int j = 0; j < height; j++) {
+
+			// randomly generate walls
+			if (rand() % 100 < 20) {
+				map[i][j] = tileType::WALL;
+			}
+			else {map[i][j] = tileType::EMPTY;}
+		}
+	}
+	return map;
+}
+
+Entity createProceduralMap(RenderSystem* renderer, vec2 size) {
 	auto entity = Entity();
 
-	// Map
-	// Note Size is in BLOCKS.... a block is a grid Square
-	
-	// MAP doesnt need to be even as we ceil and floor
+	ProceduralMap& map = registry.proceduralMaps.emplace(entity);
+	map.map = generateEmptyMap(size.x, size.y);
+
+	map.width = size.x;
+	map.height = size.y;
+	map.top = floor(WORLD_ORIGIN.y - size.y / 2);
+	map.left = floor(WORLD_ORIGIN.x - size.x / 2);
+	map.bottom = ceil(WORLD_ORIGIN.y + size.y / 2);
+	map.right = ceil(WORLD_ORIGIN.x + size.x / 2);
+
+	return entity;
+}
+
+Entity createMap(RenderSystem* renderer, vec2 size) {
+	auto entity = Entity();
 
 	Map& map = registry.maps.emplace(entity);
 	map.width = size.x;
@@ -264,9 +292,6 @@ Entity createMap(RenderSystem* renderer, vec2 size) {
 	map.bottom = ceil(WORLD_ORIGIN.y + size.y / 2);
 	map.right = ceil(WORLD_ORIGIN.x + size.x / 2);
 
-	// Store a reference to the potentially re-used mesh object (the value is stored in the resource cache)
-	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
-	registry.meshPtrs.emplace(entity, &mesh);
 	return entity;
 }
 
@@ -341,6 +366,55 @@ void tileMap() {
 		}
 	}
 }
+
+
+void tileProceduralMap() {
+	vec2 camera_pos = registry.cameras.get(registry.cameras.entities[0]).grid_position;
+
+	float cameraGrid_x = camera_pos.x;
+	float cameraGrid_y = camera_pos.y;
+
+	ProceduralMap& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]);
+
+	// remove all tiles that arent in the chunk distance
+	for (Entity& entity : registry.tiles.entities) {
+
+		Tile& tile = registry.tiles.get(entity);
+		vec2 tilePos = {tile.grid_x, tile.grid_y};
+		vec2 cameraGrid = {cameraGrid_x, cameraGrid_y};
+		if (abs(glm::distance(cameraGrid, tilePos)) > CHUNK_DISTANCE) {
+			removeTile({tile.grid_x, tile.grid_y});
+		}
+	}
+
+
+	//setting map bounds
+
+	int left = (cameraGrid_x - (WINDOW_GRID_WIDTH/2) - CHUNK_DISTANCE/2); //max((cameraGrid_x - (WINDOW_GRID_WIDTH/2 + CHUNK_DISTANCE/2)), (float) map.left);
+	int right =  (cameraGrid_x + (WINDOW_GRID_WIDTH/2 )+ CHUNK_DISTANCE/2); // min((cameraGrid_x + (WINDOW_GRID_WIDTH/2 +CHUNK_DISTANCE/2)), (float) map.right);
+	int top = (cameraGrid_y - (WINDOW_GRID_HEIGHT/2 )- CHUNK_DISTANCE/2) ; //max((cameraGrid_y - (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.top);
+	int bottom = (cameraGrid_y + (WINDOW_GRID_HEIGHT/2) + CHUNK_DISTANCE/2); //min((cameraGrid_y + (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.bottom);
+
+	for(int x = left; x < right; x += 1) {
+		for(int y = top; y < bottom; y += 1) {
+			vec2 gridCoord = {x, y};
+
+			if (x < map.left || x >= map.right || y < map.top || y >= map.bottom) {
+				addWallTile(gridCoord);
+			} else if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE) {
+				
+				// print here
+				std::cout << "x: " << x << " y: " << y << std::endl;
+				if (map.map[x][y] == tileType::EMPTY) { // if its being tiled what tile to put
+					addTile(gridCoord);
+				} else {
+					addWallTile(gridCoord);
+				}
+			}
+		}
+	}
+}
+
 
 Entity addTile(vec2 gridCoord) {
 	for (Entity& entity : registry.tiles.entities) {

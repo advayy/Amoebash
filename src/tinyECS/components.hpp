@@ -39,6 +39,23 @@ struct Map {
 	int right=0;
 };
 
+enum class tileType {
+	EMPTY = 0,
+	WALL = 1
+};
+
+struct ProceduralMap {
+	// 2D array of numbers representing the map
+	std::vector<std::vector<tileType>> map;
+
+	int width = 20; // This is in chunks of grid cells
+	int height = 20;
+	int top=0;
+	int left=0;
+	int bottom=0;
+	int right=0;
+};
+
 struct MiniMap {
 };
 

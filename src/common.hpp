@@ -57,7 +57,7 @@ const float WINDOW_GRID_HEIGHT = WINDOW_HEIGHT_PX / TILE_SIZE;
 const float CHUNK_DISTANCE = 5.0;
 const float MAP_WIDTH = 20;
 const float MAP_HEIGHT = 20;
-const vec2 WORLD_ORIGIN = {0, 0};
+const vec2 WORLD_ORIGIN = {10, 10};
 
 // Set map left right based on width and origin
 const float MAP_LEFT = WORLD_ORIGIN.x - MAP_WIDTH / 2;

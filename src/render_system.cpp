@@ -202,6 +202,22 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		Player &player = registry.players.get(registry.players.entities[0]);
 
 		glUniform2fv(player_grid_position_uloc, 1, (float*)&player.grid_position);
+
+
+
+		// map array logic
+		GLint map_array_uloc = glGetUniformLocation(program, "map_array");
+		std::vector<std::vector<tileType>> map_array = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map;
+		std::vector<int> flat_array;
+		flat_array.reserve(MAP_WIDTH * MAP_HEIGHT);
+
+		for (const auto& row : map_array) {
+			for (const auto& tile : row) {
+				flat_array.push_back(static_cast<int>(tile));
+			}
+		}
+	    glUniform1iv(map_array_uloc, MAP_WIDTH * MAP_HEIGHT, flat_array.data());
+
 	} else
 	{
 		assert(false && "Type of render request not supported");

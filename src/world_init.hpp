@@ -29,6 +29,10 @@ bool isDashing();
 
 Entity createCamera();
 
+std::vector<std::vector<tileType>> generateEmptyMap(int width, int height);
+Entity createProceduralMap(RenderSystem* renderer, vec2 size);
+void tileProceduralMap();
+
 Entity createMap(RenderSystem* renderer, vec2 size);
 Entity createMiniMap(RenderSystem* renderer, vec2 size);
 
