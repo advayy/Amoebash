@@ -14,7 +14,7 @@ uniform mat3 projection;
 
 uniform int map_width;
 uniform int map_height;
-uniform vec2 camera_grid_position;
+uniform vec2 player_grid_position;
 
 void main()
 {

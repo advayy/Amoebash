@@ -193,15 +193,15 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 
 		GLint map_width_uloc = glGetUniformLocation(program, "map_width");
 		GLint map_height_uloc = glGetUniformLocation(program, "map_height");
-		GLint camera_grid_position_uloc = glGetUniformLocation(program, "camera_grid_position");
+		GLint player_grid_position_uloc = glGetUniformLocation(program, "player_grid_position");
 
 		glUniform1i(map_width_uloc, MAP_WIDTH);
 		glUniform1i(map_height_uloc, MAP_HEIGHT);
 
-		// get camera position
-		Camera camera = registry.cameras.get(registry.cameras.entities[0]);
-		
-		glUniform2fv(camera_grid_position_uloc, 1, (float*)&camera.grid_position);
+		// get player position
+		Player &player = registry.players.get(registry.players.entities[0]);
+
+		glUniform2fv(player_grid_position_uloc, 1, (float*)&player.grid_position);
 	} else
 	{
 		assert(false && "Type of render request not supported");

@@ -10,6 +10,7 @@ struct Player
 	int speed = PLAYER_SPEED;
 	int dash_cooldown_ms = 0;
 	int dash_damage = PLAYER_DASH_DAMAGE;
+	vec2 grid_position = { 0, 0 };
 };
 
 struct Dashing {

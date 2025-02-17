@@ -323,20 +323,19 @@ void tileMap() {
 
 	//setting map bounds
 
-	int left = (cameraGrid_x - (WINDOW_GRID_WIDTH/2 + CHUNK_DISTANCE/2)); //max((cameraGrid_x - (WINDOW_GRID_WIDTH/2 + CHUNK_DISTANCE/2)), (float) map.left);
-	int right =  (cameraGrid_x + (WINDOW_GRID_WIDTH/2 +CHUNK_DISTANCE/2)); // min((cameraGrid_x + (WINDOW_GRID_WIDTH/2 +CHUNK_DISTANCE/2)), (float) map.right);
-	int top = (cameraGrid_y - (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)) ; //max((cameraGrid_y - (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.top);
-	int bottom = (cameraGrid_y + (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)); //min((cameraGrid_y + (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.bottom);
+	int left = (cameraGrid_x - (WINDOW_GRID_WIDTH/2) - CHUNK_DISTANCE/2); //max((cameraGrid_x - (WINDOW_GRID_WIDTH/2 + CHUNK_DISTANCE/2)), (float) map.left);
+	int right =  (cameraGrid_x + (WINDOW_GRID_WIDTH/2 )+ CHUNK_DISTANCE/2); // min((cameraGrid_x + (WINDOW_GRID_WIDTH/2 +CHUNK_DISTANCE/2)), (float) map.right);
+	int top = (cameraGrid_y - (WINDOW_GRID_HEIGHT/2 )- CHUNK_DISTANCE/2) ; //max((cameraGrid_y - (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.top);
+	int bottom = (cameraGrid_y + (WINDOW_GRID_HEIGHT/2) + CHUNK_DISTANCE/2); //min((cameraGrid_y + (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.bottom);
 
 	for(int x = left; x < right; x += 1) {
 		for(int y = top; y < bottom; y += 1) {
 			vec2 gridCoord = {x, y};
 
 			// if gridcoord is past the map bounds, plant a wall tile
-			if (x < map.left || x > map.right || y < map.top || y > map.bottom) {
+			if (x < map.left || x >= map.right || y < map.top || y >= map.bottom) {
 				addWallTile(gridCoord);
-			}
-			if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE) {
+			} else if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE) {
 				addTile(gridCoord);
 			}
 		}
