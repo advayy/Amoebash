@@ -71,7 +71,7 @@ void PhysicsSystem::step(float elapsed_ms)
     	    motion.velocity = { 0, 0 };
    	    	player.dash_cooldown_ms = 0;
 
-			changeAnimationFrames(registry.players.entities[0], 0, 3); // sets current frame to start frame
+			toggleDashAnimation(player_entity, false); // goes back to idle animation
     	}
     	else
     	{

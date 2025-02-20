@@ -11,19 +11,13 @@ void createButtons();
 // projectile
 Entity createProjectile(vec2 pos, vec2 size, vec2 velocity);
 
-// grid lines to show tile positions
-Entity createGridLine(vec2 start_pos, vec2 end_pos);
-
 // debugging red lines
 Entity createLine(vec2 position, vec2 size);
 
 // Animation
-void animation(float elapsed_ms);
-void changeAnimationFrames(Entity entity, int start_frame, int end_frame);
-// void changeAnimationFrames(Entity entity, int start_frame, int end_frame, int current_frame);
+void toggleDashAnimation(Entity entity, bool is_dashing);
 
-
-void InitiatePlayerDash();
+void initiatePlayerDash();
 bool canDash();
 bool isDashing();
 

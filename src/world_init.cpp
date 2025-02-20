@@ -6,33 +6,6 @@
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // !!! TODO A1: implement grid lines as gridLines with renderRequests and colors
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-Entity createGridLine(vec2 start_pos, vec2 end_pos)
-{
-	Entity entity = Entity();
-
-	// TODO A1: create a gridLine component
-	registry.gridLines.insert(entity, { start_pos, end_pos });
-
-	// re-use the "DEBUG_LINE" renderRequest
-	registry.renderRequests.insert(
-		entity,
-		{
-			TEXTURE_ASSET_ID::TEXTURE_COUNT,
-			EFFECT_ASSET_ID::LINE,
-			GEOMETRY_BUFFER_ID::DEBUG_LINE
-		}
-	);
-	
-	// TODO A1: grid line color (choose your own color) // THIS IS A COMPONENT
-	vec3 fcolor = { 0.0f, 0.5f, 0.5f }; 
-    registry.colors.insert(entity, { fcolor });
-	
-	return entity;
-}
-
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// !!! TODO A1: implement grid lines as gridLines with renderRequests and colors
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Entity createEnemy(RenderSystem* renderer, vec2 position)
 {
 	// reserve an entity
@@ -66,14 +39,12 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 	);
 
 	Animation& a = registry.animations.emplace(entity);
-	a.timer_ms = 250;
-	a.default_frame_timer = 250;
 	a.start_frame = 0;
 	a.end_frame = 6;
+	a.loop = ANIM_LOOP_TYPES::PING_PONG;
 
 	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
 	spriteSheet.total_frames = 6;
-	spriteSheet.current_frame = 0;
 
 	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
 	sprite.width = 32;
@@ -113,15 +84,12 @@ Entity createPlayer(RenderSystem* renderer, vec2 position)
 		}
 	);
 
-	Animation& a = registry.animations.emplace(entity);
-	a.timer_ms = 125;
-	a.default_frame_timer = 125;
-	a.start_frame = 0;
-	a.end_frame = 3;
-
 	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
-	spriteSheet.total_frames = 9;
-	spriteSheet.current_frame = 0;
+	spriteSheet.total_frames = total_player_frames;
+
+	Animation& a = registry.animations.emplace(entity);
+	a.time_per_frame = MS_PER_S / total_player_frames;
+	toggleDashAnimation(entity, false);
 
 	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
 	sprite.width = 32;
@@ -130,34 +98,25 @@ Entity createPlayer(RenderSystem* renderer, vec2 position)
 	return entity;
 }
 
-
-void animation(float elapsed_ms) {
-	for (Entity& entity : registry.animations.entities) {
-		Animation& a = registry.animations.get(entity);
-		a.timer_ms -= elapsed_ms;
-
-		SpriteSheetImage& s = registry.spriteSheetImages.get(entity);
-
-		if (a.timer_ms <= 0.0f) {
-			a.timer_ms = a.default_frame_timer;
-
-			if (s.current_frame == a.end_frame) {
-				s.current_frame = a.start_frame;
-			}
-			else {
-				s.current_frame = (s.current_frame + 1);
-			}
-		}
-	}
-}
-
-void changeAnimationFrames(Entity entity, int start_frame, int end_frame) {
+void toggleDashAnimation(Entity entity, bool is_dashing) {
 	Animation& a = registry.animations.get(entity);
-	a.start_frame = start_frame;
-	a.end_frame = end_frame;
-
 	SpriteSheetImage& s = registry.spriteSheetImages.get(entity);
-	s.current_frame = start_frame;
+
+	if (is_dashing)
+	{
+		a.start_frame = player_dash_start;
+		a.end_frame = player_dash_end;
+		a.loop = ANIM_LOOP_TYPES::LOOP;
+	}
+	else
+	{
+		a.start_frame = player_idle_start;
+		a.end_frame = player_idle_end;
+		a.loop = ANIM_LOOP_TYPES::PING_PONG;
+	}
+
+	s.current_frame = a.start_frame;
+	a.forwards = true;
 }
 
 Entity createProjectile(vec2 pos, vec2 size, vec2 velocity)
@@ -191,35 +150,10 @@ Entity createProjectile(vec2 pos, vec2 size, vec2 velocity)
 	return entity;
 }
 
-Entity createLine(vec2 position, vec2 scale)
-{
-	Entity entity = Entity();
-
-	// Store a reference to the potentially re-used mesh object (the value is stored in the resource cache)
-	registry.renderRequests.insert(
-		entity,
-		{
-			// usage TEXTURE_COUNT when no texture is needed, i.e., an .obj or other vertices are used instead
-			TEXTURE_ASSET_ID::TEXTURE_COUNT,
-			EFFECT_ASSET_ID::LINE,
-			GEOMETRY_BUFFER_ID::DEBUG_LINE
-		}
-	);
-
-	// Create motion
-	Motion& motion = registry.motions.emplace(entity);
-	motion.angle = 0.f;
-	motion.velocity = { 0, 0 };
-	motion.position = position;
-	motion.scale = scale;
-
-	registry.debugComponents.emplace(entity);
-	return entity;
-}
-
-void InitiatePlayerDash() {
-	Player& player = registry.players.get(registry.players.entities[0]);
-	Motion& player_motion = registry.motions.get(registry.players.entities[0]);
+void initiatePlayerDash() {
+	Entity& player_e = registry.players.entities[0];
+	Player& player = registry.players.get(player_e);
+	Motion& player_motion = registry.motions.get(player_e);
 	
 	if (isDashing())
 	{
@@ -237,7 +171,7 @@ void InitiatePlayerDash() {
 	player.dash_cooldown_ms = PLAYER_DASH_COOLDOWN_MS;
 
 	// Change animation frames
-	changeAnimationFrames(registry.players.entities[0], 4, 7);
+	toggleDashAnimation(player_e, true);
 }
 
 bool canDash() {
@@ -373,7 +307,6 @@ Entity addTile(vec2 gridCoord) {
 	// Add spritesheet component to tile
 	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(newTile);
 	spriteSheet.total_frames = 3;
-	spriteSheet.current_frame = 0;
 
 	// Add sprite size component to tile
 	SpriteSize& sprite = registry.spritesSizes.emplace(newTile);
@@ -413,7 +346,6 @@ Entity addWallTile(vec2 gridCoord) {
 	// Add spritesheet component to tile
 	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(newTile);
 	spriteSheet.total_frames = 1;
-	spriteSheet.current_frame = 0;
 
 	// Add sprite size component to tile
 	SpriteSize& sprite = registry.spritesSizes.emplace(newTile);
@@ -649,14 +581,12 @@ Entity createCutSceneBackGround() {
 	);
 
 	Animation& animation = registry.animations.emplace(backGroundEntity);
-	animation.timer_ms = INTRO_CUTSCENE_DURATION_MS / 8;
-	animation.default_frame_timer = INTRO_CUTSCENE_DURATION_MS / 8;
+	animation.time_per_frame = INTRO_CUTSCENE_DURATION_MS / 8;
 	animation.start_frame = 0;
 	animation.end_frame = 8;
 
 	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(backGroundEntity);
 	spriteSheet.total_frames = 8;
-	spriteSheet.current_frame = 0;
 
 	// not used at the moment
 	SpriteSize& sprite = registry.spritesSizes.emplace(backGroundEntity);
@@ -715,7 +645,7 @@ Entity createNoseAccent() {
 	motion.velocity = {0.0f, 0.0f};
 
 
-motion.scale = vec2({ 67.f* 5* WORK_SCALE_FACTOR, 41.f * 5 * WORK_SCALE_FACTOR });
+	motion.scale = vec2({ 67.f* 5* WORK_SCALE_FACTOR, 41.f * 5 * WORK_SCALE_FACTOR });
 
 	motion.position = { (67.f/2 - 3)  * 5 * WORK_SCALE_FACTOR, (+0.5) * 5 * WORK_SCALE_FACTOR  };
 
@@ -769,14 +699,12 @@ Entity createEnteringNucleus() {
 	);
 
 	Animation& animation = registry.animations.emplace(nucleusEntity);
-	animation.timer_ms = INTRO_CUTSCENE_DURATION_MS / 8;
-	animation.default_frame_timer = INTRO_CUTSCENE_DURATION_MS / 8;
+	animation.time_per_frame = INTRO_CUTSCENE_DURATION_MS / 8;
 	animation.start_frame = 0;
 	animation.end_frame = 8;
 
 	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(nucleusEntity);
 	spriteSheet.total_frames = 8;
-	spriteSheet.current_frame = 0;
 
 	// not used at the moment
 	SpriteSize& sprite = registry.spritesSizes.emplace(nucleusEntity);

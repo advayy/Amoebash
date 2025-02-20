@@ -143,7 +143,7 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	// Set all states to default
     restart_game();
 	// set initial game state
-	current_state = GameState::INITIAL_CUTSCENE;
+	current_state = GameState::START_SCREEN_ANIMATION;
 }
 
 void WorldSystem::updateCamera(float elapsed_ms) {
@@ -238,23 +238,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	Motion& player_motion = registry.motions.get(registry.players.entities[0]);
 	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x)  * 180.0f / M_PI + 90.0f;
 
-
-	// spawn new invaders
-	// FLAG THIS IS BROKEN SINCE A1
-	
-	// next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
-	// if (next_enemy_spawn < 0.f && !gameOver) {
-	// 	// reset timer
-	// 	next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
-	// 	float x = GRID_CELL_WIDTH_PX/2; // middle of a first cell
-	// 	float y = GRID_CELL_HEIGHT_PX/2 + (GRID_CELL_HEIGHT_PX * ((int) (uniform_dist(rng) * (WINDOW_HEIGHT_PX))/GRID_CELL_HEIGHT_PX));
-	// 	createEnemy(renderer, vec2(x, y)); // flag position wrong
-	// }
- 	
-	if(!gameOver) {
-		animation(elapsed_ms_since_last_update);
-	}
-
 	tileMap();
 
 	return true;
@@ -301,25 +284,6 @@ void WorldSystem::restart_game() {
 	// debugging for memory/component leaks
 	registry.list_all_components();
 
-	int grid_line_width = GRID_LINE_WIDTH_PX;
-
-	// create grid lines if they do not already exist
-	if (grid_lines.size() == 0 && DEBUG_GRID) {
-		// vertical lines
-		int cell_width = GRID_CELL_WIDTH_PX;
-		for (int col = MAP_LEFT; col < MAP_RIGHT; col++) {
-			// width of 2 to make the grid easier to see
-			grid_lines.push_back(createGridLine(vec2(col * cell_width, 0), vec2(grid_line_width, 2 * MAP_RIGHT * GRID_CELL_WIDTH_PX)));
-		}
-
-		// horizontal lines
-		int cell_height = GRID_CELL_HEIGHT_PX;
-		for (int col = MAP_TOP; col < MAP_BOTTOM + 1; col++) { // FLAG KNOWN BUG HERE?
-			// width of 2 to make the grid easier to see
-			grid_lines.push_back(createGridLine(vec2(0, col * cell_height), vec2(2 * MAP_BOTTOM * GRID_CELL_WIDTH_PX, grid_line_width)));
-		}
-	}
-
 	createPlayer(renderer, gridCellToPosition(WORLD_ORIGIN));
 	createMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
 	createMiniMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
@@ -336,7 +300,7 @@ void WorldSystem::restart_game() {
 	createInfoScreen();
 
 	// timer settings depending on previous state
-	if (current_state == GameState::INITIAL_CUTSCENE) {
+	if (current_state == GameState::START_SCREEN_ANIMATION) {
 		stateTimer = BOOT_CUTSCENE_DURATION_MS;
 	} else {
 		stateTimer = INTRO_CUTSCENE_DURATION_MS;
@@ -494,17 +458,18 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	// on button press
-	if (action == GLFW_PRESS && !gameOver) {
+	if (action == GLFW_RELEASE && !gameOver) {
 
 		vec2 tile = positionToGridCell(vec2(game_mouse_pos_x, game_mouse_pos_y));
+
 				
-		if(button == GLFW_MOUSE_BUTTON_LEFT && canDash() && current_state == GameState::GAME_PLAY){
-			InitiatePlayerDash();
+		if(button == GLFW_MOUSE_BUTTON_LEFT && canDash() && current_state == GameState::GAME_PLAY)
+		{
+			initiatePlayerDash();
 			Mix_PlayChannel(-1, dash_sound_1, 0);
 		}
-
-
-		if(button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::START_SCREEN) {
+		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::START_SCREEN) 
+		{
 			
 			screenButton* startButton = nullptr; 
 

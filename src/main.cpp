@@ -11,6 +11,7 @@
 #include "physics_system.hpp"
 #include "render_system.hpp"
 #include "world_system.hpp"
+#include "animation_system.hpp"
 #include "world_init.hpp"
 
 using Clock = std::chrono::high_resolution_clock;
@@ -19,10 +20,11 @@ using Clock = std::chrono::high_resolution_clock;
 int main()
 {
 	// global systems
-	AISystem	  ai_system;
-	WorldSystem   world_system;
-	RenderSystem  renderer_system;
-	PhysicsSystem physics_system;
+	AISystem		ai_system;
+	AnimationSystem animation_system;
+	WorldSystem		world_system;
+	RenderSystem	renderer_system;
+	PhysicsSystem	physics_system;
 
 	// initialize window
 	GLFWwindow* window = world_system.create_window();
@@ -60,15 +62,14 @@ int main()
 			(float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
 		t = now;
 
-
 		switch (current_state) {
 
-			case GameState::INITIAL_CUTSCENE :
+			case GameState::START_SCREEN_ANIMATION :
 				stateTimer -= elapsed_ms;
 				renderer_system.drawStartScreen();
 				physics_system.step(elapsed_ms);
 				if (stateTimer <= 0.f) {
-					previous_state = GameState::INITIAL_CUTSCENE;
+					previous_state = GameState::START_SCREEN_ANIMATION;
 					current_state = GameState::START_SCREEN;
 					stateTimer = INTRO_CUTSCENE_DURATION_MS;
 				}
@@ -83,6 +84,7 @@ int main()
 				// CK: be mindful of the order of your systems and rearrange this list only if necessary
 				world_system.step(elapsed_ms);
 				ai_system.step(elapsed_ms);
+				animation_system.step(elapsed_ms);
 				physics_system.step(elapsed_ms);
 				world_system.handle_collisions();
 
@@ -108,7 +110,7 @@ int main()
 			case GameState::GAMEPLAY_CUTSCENE :
 				stateTimer -= elapsed_ms;
 				renderer_system.drawCutScreneAnimation();
-				animation(elapsed_ms);
+				animation_system.step(elapsed_ms);
 
 				if (stateTimer <= 0.f) {
 					stateTimer = BOOT_CUTSCENE_DURATION_MS;
