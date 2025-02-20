@@ -218,35 +218,24 @@ Entity createLine(vec2 position, vec2 scale)
 }
 
 void InitiatePlayerDash() {
-	Player& player = registry.players.get(registry.players.entities[0]);
-	Motion& player_motion = registry.motions.get(registry.players.entities[0]);
+	Entity& player_entity = registry.players.entities[0];
+	Player& player = registry.players.get(player_entity);
+	Motion& player_motion = registry.motions.get(player_entity);
 	
-	if (isDashing())
-	{
-		// remove all other dashes - dash cancel...
-		for (Entity& entity : registry.dashes.entities)
-		{
-			registry.remove_all_components_of(entity);
-		}
-	}
-
+	registry.velocities.remove(player_entity);
 	
-	Dashing& d = registry.dashes.emplace(Entity());
-	d.angle = player_motion.angle;
-	d.timer_ms = DASH_DURATION_MS;
+	Velocity& velocity = registry.velocities.emplace(player_entity);
+	velocity.speed = PLAYER_MAX_DASH_SPEED;
+	velocity.angle = player_motion.angle;
 	player.dash_cooldown_ms = PLAYER_DASH_COOLDOWN_MS;
 
 	// Change animation frames
-	changeAnimationFrames(registry.players.entities[0], 4, 7);
+	changeAnimationFrames(player_entity, 4, 7);
 }
 
 bool canDash() {
 	Player& player = registry.players.get(registry.players.entities[0]);
 	return player.dash_cooldown_ms <= 0;
-}
-
-bool isDashing() {
-	return registry.dashes.size() > 0;
 }
 
 Entity createMap(RenderSystem* renderer, vec2 size) {
@@ -493,7 +482,7 @@ Entity createStartScreen(vec2 position) {
 	motion.position = position;
 	motion.scale = scale;
 
-	motion.velocity = {WINDOW_WIDTH_PX / 2.f / BOOT_CUTSCENE_DURATION_MS * 1000.f, 0.f};
+	motion.velocity = {WINDOW_WIDTH_PX / 2.f / BOOT_CUTSCENE_DURATION_MS, 0.f};
 
 	Entity startButtonEntity = createStartButton();
     Entity shopButtonEntity  = createShopButton();

@@ -288,9 +288,9 @@ void WorldSystem::restart_game() {
 	while (registry.motions.entities.size() > 0)
 	    registry.remove_all_components_of(registry.motions.entities.back());
 
-	// Remove all dashes 
-	while (registry.dashes.entities.size() > 0)
-	    registry.remove_all_components_of(registry.dashes.entities.back());
+	// Remove all velocities 
+	while (registry.velocities.entities.size() > 0)
+	    registry.remove_all_components_of(registry.velocities.entities.back());
 	
 	while (registry.gameScreens.entities.size() > 0) 
 		registry.remove_all_components_of(registry.gameScreens.entities.back());
@@ -494,7 +494,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	// on button press
-	if (action == GLFW_PRESS && !gameOver) {
+	if (action == GLFW_RELEASE && !gameOver) {
 
 		vec2 tile = positionToGridCell(vec2(game_mouse_pos_x, game_mouse_pos_y));
 				

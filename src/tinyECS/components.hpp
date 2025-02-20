@@ -7,16 +7,14 @@
 struct Player
 {
 	int health = PLAYER_HEALTH;
-	int speed = PLAYER_SPEED;
 	int dash_cooldown_ms = 0;
 	int dash_damage = PLAYER_DASH_DAMAGE;
 	vec2 grid_position = { 0, 0 };
 };
 
-struct Dashing {
-	float timer_ms = 700.0f;
-	float angle    = 0.0;
-	float speed_factor = 1.0;
+struct Velocity {
+	float speed = 0.0f;
+	float angle = 0.0f;
 };
 
 struct SpriteSize {

@@ -36,8 +36,7 @@ void PhysicsSystem::step(float elapsed_ms)
 	{
 		Entity entity = motion_registry.entities[i];
 		Motion& motion = motion_registry.components[i];
-		float step_seconds = elapsed_ms / 1000.f;
-		motion.position += motion.velocity * step_seconds;
+		motion.position += motion.velocity * elapsed_ms;
 		// dont let player move out of bounds, knockback when they do that (reducing velocity)
 		if (registry.players.has(entity)) {
 			Player& player = registry.players.get(entity);
@@ -53,21 +52,21 @@ void PhysicsSystem::step(float elapsed_ms)
 
 
 	// Handle player dashing
-	for (uint i = 0; i < registry.dashes.size(); i++)
+	for (uint i = 0; i < registry.velocities.size(); i++)
 	{
     	Entity player_entity = registry.players.entities[0];
-    	Entity dash_entity = registry.dashes.entities[i];
 
     	Player& player = registry.players.get(player_entity);
-    	Dashing& dash = registry.dashes.components[i];
+		Velocity& dash = registry.velocities.get(player_entity);
     	Motion& motion = registry.motions.get(player_entity);
 
-    	dash.timer_ms -= elapsed_ms;
     	player.dash_cooldown_ms -= elapsed_ms;
 
-    	if (dash.timer_ms <= 0)
+		std::cout << "SPEED: " << dash.speed << " ANGLE: " << dash.angle << std::endl;
+
+    	if (dash.speed <= 0)
   		{
-   	    	registry.dashes.remove(dash_entity);
+   	    	registry.velocities.remove(player_entity);
     	    motion.velocity = { 0, 0 };
    	    	player.dash_cooldown_ms = 0;
 
@@ -75,19 +74,13 @@ void PhysicsSystem::step(float elapsed_ms)
     	}
     	else
     	{
-        	// Compute base velocity for dash
+        	// Compute new velocity for dash
+			dash.speed += PLAYER_DASH_DECELERATION * elapsed_ms;
         	float angle_radians = (dash.angle - 90) * (M_PI / 180.0f);
-        	vec2 base_velocity = {
-        	    PLAYER_SPEED * cosf(angle_radians), 
-    	        PLAYER_SPEED * sinf(angle_radians)
-	        };
 
         	// Apply velocity decay
-    	    motion.velocity.x = base_velocity.x * dash.speed_factor;
-	        motion.velocity.y = base_velocity.y * dash.speed_factor;
-
-        	// Gradually reduce speed factor
-        	dash.speed_factor *= VELOCITY_DECAY_RATE;
+    	    motion.velocity.x = dash.speed * cosf(angle_radians);
+			motion.velocity.y = dash.speed * sinf(angle_radians);
     	}
 	}
 
