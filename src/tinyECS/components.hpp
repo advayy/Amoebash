@@ -33,6 +33,8 @@ struct Tile {
 	int grid_y = 0;
 };
 
+struct Wall : Tile {};
+
 struct Map {
 	// 2D array of numbers representing the map
 	int width = 20; // This is in chunks of grid cells

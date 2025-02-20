@@ -33,9 +33,11 @@ Entity createMap(RenderSystem* renderer, vec2 size);
 Entity createMiniMap(RenderSystem* renderer, vec2 size);
 
 void tileMap();
-Entity addTile(vec2 gridCoord);
-void removeTile(vec2 gridCoord);
+Entity addParalaxTile(vec2 gridCoord);
 Entity addWallTile(vec2 gridCoord);
+Entity addTile(vec2 gridCoord, TEXTURE_ASSET_ID assetType);
+void removeTile(vec2 gridCoord);
+Entity addWall(vec2 gridCoord);
 
 vec2 positionToGridCell(vec2 position);
 vec2 gridCellToPosition(vec2 gridCell);

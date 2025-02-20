@@ -332,15 +332,26 @@ void tileMap() {
 
 			// if gridcoord is past the map bounds, plant a wall tile
 			if (x < map.left || x >= map.right || y < map.top || y >= map.bottom) {
-				addWallTile(gridCoord);
+				addWall(gridCoord);
 			} else if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE) {
-				addTile(gridCoord);
+				addParalaxTile(gridCoord);
 			}
 		}
 	}
 }
 
-Entity addTile(vec2 gridCoord) {
+Entity addParalaxTile(vec2 gridCoord)
+{
+	return addTile(gridCoord, TEXTURE_ASSET_ID::PARALAX_TILE);
+}
+
+Entity addWall(vec2 gridCoord)
+{
+	return addTile(gridCoord, TEXTURE_ASSET_ID::WALL_TILE);
+}
+
+Entity addTile(vec2 gridCoord, TEXTURE_ASSET_ID assetType) 
+{
 	for (Entity& entity : registry.tiles.entities) {
 		Tile& tile = registry.tiles.get(entity);
 		if (tile.grid_x == gridCoord.x && tile.grid_y == gridCoord.y) {
@@ -356,60 +367,20 @@ Entity addTile(vec2 gridCoord) {
 	Motion& motion = registry.motions.emplace(newTile);
 	motion.position = gridCellToPosition(gridCoord);
 	motion.angle = 0.f;
-	motion.velocity = {0, 0};
-	motion.scale = {GRID_CELL_WIDTH_PX, GRID_CELL_HEIGHT_PX};
+	motion.velocity = { 0, 0 };
+	motion.scale = { GRID_CELL_WIDTH_PX, GRID_CELL_HEIGHT_PX };
 
 	registry.renderRequests.insert(
 		newTile,
 		{
-			TEXTURE_ASSET_ID::PARALAX_TILE,
+			assetType,
 			EFFECT_ASSET_ID::TILE,
 			GEOMETRY_BUFFER_ID::SPRITE
-	});	
+		});
 
 	// Add spritesheet component to tile
 	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(newTile);
 	spriteSheet.total_frames = 3;
-	spriteSheet.current_frame = 0;
-
-	// Add sprite size component to tile
-	SpriteSize& sprite = registry.spritesSizes.emplace(newTile);
-	sprite.width = GRID_CELL_WIDTH_PX;
-	sprite.height = GRID_CELL_HEIGHT_PX;
-
-	return newTile;
-}
-
-Entity addWallTile(vec2 gridCoord) {
-	for (Entity& entity : registry.tiles.entities) {
-		Tile& tile = registry.tiles.get(entity);
-		if (tile.grid_x == gridCoord.x && tile.grid_y == gridCoord.y) {
-			return entity;
-		}
-	}
-
-	Entity newTile = Entity();
-	Tile& new_tile = registry.tiles.emplace(newTile);
-	new_tile.grid_x = gridCoord.x;
-	new_tile.grid_y = gridCoord.y;
-
-	Motion& motion = registry.motions.emplace(newTile);
-	motion.position = gridCellToPosition(gridCoord);
-	motion.angle = 0.f;
-	motion.velocity = {0, 0};
-	motion.scale = {GRID_CELL_WIDTH_PX, GRID_CELL_HEIGHT_PX};
-
-	registry.renderRequests.insert(
-		newTile,
-		{
-			TEXTURE_ASSET_ID::WALL_TILE,
-			EFFECT_ASSET_ID::TILE,
-			GEOMETRY_BUFFER_ID::SPRITE
-	});	
-
-	// Add spritesheet component to tile
-	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(newTile);
-	spriteSheet.total_frames = 1;
 	spriteSheet.current_frame = 0;
 
 	// Add sprite size component to tile

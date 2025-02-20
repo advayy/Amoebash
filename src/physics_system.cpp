@@ -28,8 +28,8 @@ void PhysicsSystem::step(float elapsed_ms)
 	// based on how much time has passed, this is to (partially) avoid
 	// having entities move at different speed based on the machine.
 
-	// MOVE ENTITIES	
-
+	// MOVE ENTITIES
+	Entity& player_entity = registry.players.entities[0];
 
 	auto& motion_registry = registry.motions;
 	for(uint i = 0; i< motion_registry.size(); i++)
@@ -54,8 +54,6 @@ void PhysicsSystem::step(float elapsed_ms)
 	// Handle player dashing
 	for (uint i = 0; i < registry.velocities.size(); i++)
 	{
-    	Entity player_entity = registry.players.entities[0];
-
     	Player& player = registry.players.get(player_entity);
 		Velocity& dash = registry.velocities.get(player_entity);
     	Motion& motion = registry.motions.get(player_entity);
@@ -75,7 +73,8 @@ void PhysicsSystem::step(float elapsed_ms)
         	// Compute new velocity for dash
 			dash.speed += PLAYER_DASH_DECELERATION * elapsed_ms;
         	float angle_radians = (dash.angle - 90) * (M_PI / 180.0f);
-
+			std::cout << dash.angle << std::endl;
+			std::cout << angle_radians << std::endl;
         	// Apply velocity decay
     	    motion.velocity.x = dash.speed * cosf(angle_radians);
 			motion.velocity.y = dash.speed * sinf(angle_radians);
@@ -83,25 +82,40 @@ void PhysicsSystem::step(float elapsed_ms)
 	}
 
 	// update player grid position
-	Player& player = registry.players.get(registry.players.entities[0]);
-	player.grid_position = positionToGridCell(registry.motions.get(registry.players.entities[0]).position);
+	Player& player = registry.players.get(player_entity);
+	player.grid_position = positionToGridCell(registry.motions.get(player_entity).position);
 
-
-	// Handle collisions
-    ComponentContainer<Motion> &motion_container = registry.motions;
-	for(uint i = 0; i < motion_container.components.size(); i++)
+	// Handle enemy-projectile or enemy-player collisions
+	Motion& player_motion = registry.motions.get(player_entity);
+	for (auto& proj_entity : registry.projectiles.entities)
 	{
-		Motion& motion_i = motion_container.components[i];
-		Entity entity_i = motion_container.entities[i];
-		
-		for(uint j = i+1; j < motion_container.components.size(); j++)
+		Motion& proj_motion = registry.motions.get(proj_entity);
+
+		for (auto& e_entity : registry.enemies.entities)
 		{
-			Motion& motion_j = motion_container.components[j];
-			if (collides(motion_i, motion_j))
+			Motion& e_motion = registry.motions.get(e_entity);
+			if (collides(proj_motion, e_motion))
 			{
-				Entity entity_j = motion_container.entities[j];
-				registry.collisions.emplace_with_duplicates(entity_i, entity_j);
+				registry.collisions.emplace_with_duplicates(proj_entity, e_entity);
 			}
+			else if (collides(player_motion, e_motion))
+			{
+				registry.collisions.emplace_with_duplicates(player_entity, e_entity);
+			}
+		}
+	}
+
+	// Handle player-wall collisions
+	
+	for (auto& entity : registry.walls.entities)
+	{
+		Motion& motion = registry.motions.get(entity);
+
+		if (collides(player_motion, motion))
+		{
+			Velocity& player_velocity = registry.velocities.get(player_entity);
+			player_velocity.angle *= -1;
+			break;
 		}
 	}
 }

@@ -344,62 +344,38 @@ void WorldSystem::restart_game() {
 	}
 }
 
-// Compute collisions between entities
-void WorldSystem::handle_collisions() {
-
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A1: Loop over all collisions detected by the physics system
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	ComponentContainer<Collision>& collision_container = registry.collisions;
-	for (uint i = 0; i < collision_container.components.size(); i++) {
+// Compute collisions between entities. Collisions are always in this order: (Player | Projectiles, Enemy | Wall)
+void WorldSystem::handle_collisions() 
+{
+	for (auto& entity : registry.collisions.entities) {
 		
-		Collision& collision = collision_container.components[i];
-		Entity& entity1 = collision_container.entities[i];
+		Collision& collision = registry.collisions.get(entity);
 		Entity& entity2 = collision.other;
 
-		// if 1 is a projectile and 2 is an invader or if 1 is an invader and 2 is a projectile
-		if ((registry.projectiles.has(entity1) && registry.enemies.has(entity2)) || (registry.projectiles.has(entity2) && registry.enemies.has(entity1))) {
-			
-			// Set invader and projectile
-			Entity projectile_entity = registry.projectiles.has(entity1) ? entity1 : entity2;
-			Entity enemy_entity = registry.enemies.has(entity1) ? entity1 : entity2;
+		if (registry.enemies.has(entity2))
+		{
+			if (registry.projectiles.has(entity))
+			{
+				Projectile& projectile = registry.projectiles.get(entity);
+				Enemy& enemy = registry.enemies.get(entity2);
 
-			Enemy& enemy = registry.enemies.get(registry.enemies.has(entity1) ? entity1 : entity2);
-			Projectile& projectile = registry.projectiles.get(registry.projectiles.has(entity1) ? entity1 : entity2);
-			
-			// Invader takes damage
-			enemy.health -= projectile.damage;
+				// Invader takes damage
+				enemy.health -= projectile.damage;
 
-			// remove projectile
-			registry.remove_all_components_of(projectile_entity);
+				// remove projectile
+				registry.remove_all_components_of(entity);
 
-			// if invader health is below 0, remove invader and increase points
-			if(enemy.health <= 0){
-				registry.remove_all_components_of(enemy_entity);
-				points += 1;
- 				Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS 
+				// if invader health is below 0, remove invader and increase points
+				if (enemy.health <= 0) {
+					registry.remove_all_components_of(entity2);
+					points += 1;
+					Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS 
+				}
 			}
-		}
-
-		if ((registry.players.has(entity1) && registry.enemies.has(entity2)) || (registry.players.has(entity2) && registry.enemies.has(entity1))) {
-			
-			// Set invader and projectile
-			Entity player_entity = registry.players.has(entity1) ? entity1 : entity2;
-			Entity enemy_entity = registry.enemies.has(entity1) ? entity1 : entity2;
-
-			// We dont do this anymore FLAG
-			// registry.remove_all_components_of(enemy_entity);
-			// registry.remove_all_components_of(player_entity);
-			Mix_PlayChannel(-1, dash_sound_2, 0);
-
-
-			// Trigger vignette shader
-			// ensure it stays dark for a second before returning to normal
-			// registry.vignetteTimers.insert(Entity(), { 1000.f });
-
-			// ScreenState &screen = registry.screenStates.components[1];
-			// screen.darken_screen_factor = 1;
-			// registry.deathTimers.insert(tower_entity, { 1000.f });
+			else if (registry.players.has(entity))
+			{
+				Mix_PlayChannel(-1, dash_sound_2, 0);
+			}
 		}
 	}
 	// Remove all collisions from this simulation step
