@@ -2,6 +2,7 @@
 #include "tinyECS/registry.hpp"
 #include <iostream>
 #include <random>
+#include <chrono>
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // !!! TODO A1: implement grid lines as gridLines with renderRequests and colors
@@ -220,12 +221,18 @@ Entity createLine(vec2 position, vec2 scale)
 void InitiatePlayerDash() {
 	Entity& player_entity = registry.players.entities[0];
 	Player& player = registry.players.get(player_entity);
+	Dash& dash = registry.dashes.get(player_entity);
 	Motion& player_motion = registry.motions.get(player_entity);
 	
 	registry.velocities.remove(player_entity);
+
+	int64_t curr_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	float speed_factor = (float)std::max(PLAYER_MIN_DASH_PRESS_MS, std::min(PLAYER_MAX_DASH_PRESS_MS, curr_time - dash.dash_start_ms)) / (float)PLAYER_DASH_PRESS_MS;
+	std::cout << speed_factor << std::endl;
+	registry.dashes.remove(player_entity);
 	
 	Velocity& velocity = registry.velocities.emplace(player_entity);
-	velocity.speed = PLAYER_MAX_DASH_SPEED;
+	velocity.speed = PLAYER_DASH_SPEED * speed_factor;
 	velocity.angle = player_motion.angle;
 	player.dash_cooldown_ms = PLAYER_DASH_COOLDOWN_MS;
 
@@ -234,8 +241,9 @@ void InitiatePlayerDash() {
 }
 
 bool canDash() {
-	Player& player = registry.players.get(registry.players.entities[0]);
-	return player.dash_cooldown_ms <= 0;
+	Entity& player_entity = registry.players.entities[0];
+	Player& player = registry.players.get(player_entity);
+	return player.dash_cooldown_ms <= 0 && registry.dashes.has(player_entity);
 }
 
 Entity createMap(RenderSystem* renderer, vec2 size) {
@@ -820,7 +828,7 @@ Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID
 	motion.position = position;
 	motion.scale = scale;
 
-	screenButton& button = registry.buttons.emplace(buttonEntity);
+	ScreenButton& button = registry.buttons.emplace(buttonEntity);
 	button.w = scale[0];
 	button.h = scale[1];
 	button.center = position + vec2{WINDOW_WIDTH_PX / 2.f, WINDOW_HEIGHT_PX /2.f};

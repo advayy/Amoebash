@@ -699,7 +699,7 @@ void RenderSystem::drawScreenAndButtons(
 
 	if (buttonTypes.size() != 0) {
 		for (uint i = 0; i < registry.buttons.components.size(); i++) {
-			const screenButton& buttonComp = registry.buttons.components[i];
+			const ScreenButton& buttonComp = registry.buttons.components[i];
 
 			for (auto bt : buttonTypes)
 			{

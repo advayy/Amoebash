@@ -79,7 +79,8 @@ private:
 	void on_mouse_button_pressed(int button, int action, int mods);
 
 	// to check if button was clicked
-	bool buttonClick(screenButton& button);
+	ButtonType getClickedButton();
+	bool isButtonClicked(ScreenButton& button);
 
 	// restart level
 	void restart_game();

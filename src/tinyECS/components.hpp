@@ -12,9 +12,15 @@ struct Player
 	vec2 grid_position = { 0, 0 };
 };
 
-struct Velocity {
+struct Velocity 
+{
 	float speed = 0.0f;
 	float angle = 0.0f;
+};
+
+struct Dash 
+{
+	int64_t dash_start_ms = 0.0f;
 };
 
 struct SpriteSize {
@@ -148,11 +154,12 @@ struct Mesh
 enum ButtonType {
 	STARTBUTTON = 0,
 	SHOPBUTTON = STARTBUTTON + 1,
-	INFOBUTTON = SHOPBUTTON + 1
+	INFOBUTTON = SHOPBUTTON + 1,
+	NONE = INFOBUTTON + 1
 };
 
 // Coordinates and bounding box of start button on start screen
-struct screenButton
+struct ScreenButton
 {
 	float w;
 	float h;
@@ -172,7 +179,7 @@ enum ScreenType {
 
 struct GameScreen {
 	ScreenType type;
-	std::vector<screenButton> screenButtons;
+	std::vector<ScreenButton> screenButtons;
 };
 
 struct Pause {

@@ -16,6 +16,7 @@ public:
 	ComponentContainer<Motion> motions;
 	ComponentContainer<Collision> collisions;
 	ComponentContainer<Player> players;
+	ComponentContainer<Dash> dashes;
 	ComponentContainer<Mesh*> meshPtrs;
 	ComponentContainer<RenderRequest> renderRequests;
 	ComponentContainer<ScreenState> screenStates;
@@ -39,7 +40,7 @@ public:
 	ComponentContainer<SpriteSheetImage> spriteSheetImages;
 
 	// mercury
-	ComponentContainer<screenButton> buttons;
+	ComponentContainer<ScreenButton> buttons;
 	ComponentContainer<GameScreen> gameScreens;
 	ComponentContainer<Pause> pauses;
 	ComponentContainer<Over> overs;
@@ -55,6 +56,7 @@ public:
 		registry_list.push_back(&motions);
 		registry_list.push_back(&collisions);
 		registry_list.push_back(&players);
+		registry_list.push_back(&dashes);
 		registry_list.push_back(&meshPtrs);
 		registry_list.push_back(&renderRequests);
 		registry_list.push_back(&screenStates);

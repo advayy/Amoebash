@@ -62,8 +62,6 @@ void PhysicsSystem::step(float elapsed_ms)
 
     	player.dash_cooldown_ms -= elapsed_ms;
 
-		std::cout << "SPEED: " << dash.speed << " ANGLE: " << dash.angle << std::endl;
-
     	if (dash.speed <= 0)
   		{
    	    	registry.velocities.remove(player_entity);

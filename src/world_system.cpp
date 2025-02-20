@@ -6,6 +6,7 @@
 #include <cassert>
 #include <sstream>
 #include <iostream>
+#include <chrono>
 // include lerp
 #include <glm/gtx/compatibility.hpp>
 
@@ -492,77 +493,57 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// TODO A1: Handle mouse clicking for invader and tower placement.
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+	if (gameOver) return;
 	// on button press
-	if (action == GLFW_RELEASE && !gameOver) {
-
-		vec2 tile = positionToGridCell(vec2(game_mouse_pos_x, game_mouse_pos_y));
-				
-		if(button == GLFW_MOUSE_BUTTON_LEFT && canDash() && current_state == GameState::GAME_PLAY){
-			InitiatePlayerDash();
-			Mix_PlayChannel(-1, dash_sound_1, 0);
+	if (action == GLFW_PRESS)
+	{
+		if (current_state == GameState::GAME_PLAY && getClickedButton() == ButtonType::NONE)
+		{
+			registry.dashes.insert(registry.players.entities[0], { std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() });
 		}
+	}
+	else if (action == GLFW_RELEASE) 
+	{
+		vec2 tile = positionToGridCell(vec2(game_mouse_pos_x, game_mouse_pos_y));
 
+		if (current_state == GameState::GAME_PLAY)
+		{
+			if (button == GLFW_MOUSE_BUTTON_LEFT) 
+			{
+				ButtonType clickedButton = getClickedButton();
 
-		if(button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::START_SCREEN) {
-			
-			screenButton* startButton = nullptr; 
-
-			for (auto& button : registry.buttons.components) {
-				if (button.type == ButtonType::STARTBUTTON) {
-					startButton = &button;  
-					break;
+				if (clickedButton == ButtonType::SHOPBUTTON)
+				{
+					previous_state = current_state;
+					current_state = GameState::SHOP;
 				}
-			} 
-
-			if (!startButton) {
-				return;
-			} 
-
-			// Find shop button
-			screenButton* shopButton = nullptr; 
-			for (auto& button : registry.buttons.components) {
-				if (button.type == ButtonType::SHOPBUTTON) {
-					shopButton = &button; 
-					break;  
+				else if (clickedButton == ButtonType::INFOBUTTON) 
+				{
+					previous_state = current_state;
+					current_state = GameState::INFO;
 				}
-			}
-
-			if (!shopButton) {
-				return;
-			} 
-
-			screenButton* nucleusButton = nullptr; 
-			for (auto& button : registry.buttons.components) {
-				if (button.type == ButtonType::INFOBUTTON) {
-					nucleusButton = &button; 
-					break;  
+				else if (canDash())
+				{
+					InitiatePlayerDash();
+					Mix_PlayChannel(-1, dash_sound_1, 0);
 				}
 			}
+		} 
+		else if (current_state == GameState::START_SCREEN && button == GLFW_MOUSE_BUTTON_LEFT)
+		{
+			ButtonType clickedButton = getClickedButton();
 
-			if (!nucleusButton) {
-				return;
-			} 
-
-
-			bool on_button_shop = buttonClick(*shopButton);
-			bool on_button_nucleus = buttonClick(*nucleusButton);
-			bool on_button = buttonClick(*startButton);
-			
-
-
-
-
-
-			if (on_button_shop) {
+			if (clickedButton == ButtonType::SHOPBUTTON) {
 				previous_state = current_state;
 				current_state = GameState::SHOP;
 
-			} else if (on_button_nucleus) {
+			}
+			else if (clickedButton == ButtonType::INFOBUTTON) {
 				previous_state = current_state;
 				current_state = GameState::INFO;
 
-			} else if (on_button) {
+			}
+			else if (clickedButton == ButtonType::STARTBUTTON) {
 				previous_state = current_state;
 				current_state = GameState::GAMEPLAY_CUTSCENE;
 				// need to add render request for cutscene animations
@@ -570,94 +551,26 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 				createGameplayCutScene();
 			}
 		}
-
-		// gameplay -> shop
-		else if(button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::GAME_PLAY) {
-			
-			// Find shop button
-			screenButton* shopButton = nullptr; 
-			for (auto& button : registry.buttons.components) {
-				if (button.type == ButtonType::SHOPBUTTON) {
-					shopButton = &button; 
-					break;  
-				}
-			}
-
-			if (!shopButton) {
-				return;
-			} 
-
-			screenButton* nucleusButton = nullptr; 
-			for (auto& button : registry.buttons.components) {
-				if (button.type == ButtonType::INFOBUTTON) {
-					nucleusButton = &button; 
-					break;  
-				}
-			}
-
-			if (!nucleusButton) {
-				return;
-			} 
-
-
-			bool on_button_shop = buttonClick(*shopButton);
-			bool on_button_nucleus = buttonClick(*nucleusButton);
-			
-
-			if (on_button_shop) {
-				previous_state = current_state;
-				current_state = GameState::SHOP;
-			} else if (on_button_nucleus) {
-				previous_state = current_state;
-				current_state = GameState::INFO;
-			}
-		}
-
-		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::SHOP) {
-			// Find shop button
-			screenButton* shopButton = nullptr; 
-			for (auto& button : registry.buttons.components) {
-				if (button.type == ButtonType::SHOPBUTTON) {
-					shopButton = &button; 
-					break;  
-				}
-			}
-
-			if (!shopButton) {
-				return;
-			} 
-
-			bool on_button_shop = buttonClick(*shopButton);
-			if (on_button_shop) {
-				GameState temp = current_state;
-				current_state = previous_state;
-				previous_state = temp;
-			}
-
-		} 
-		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::INFO) {
-			screenButton* nucleusButton = nullptr; 
-			for (auto& button : registry.buttons.components) {
-				if (button.type == ButtonType::INFOBUTTON) {
-					nucleusButton = &button; 
-					break;  
-				}
-			}
-
-			if (!nucleusButton) {
-				return;
-			} 
-
-			bool on_button_shop = buttonClick(*nucleusButton);
-			if (on_button_shop) {
+		else if (current_state == GameState::SHOP && button == GLFW_MOUSE_BUTTON_LEFT)
+		{
+			if (getClickedButton() == ButtonType::SHOPBUTTON)
+			{
 				GameState temp = current_state;
 				current_state = previous_state;
 				previous_state = temp;
 			}
 		}
-
+		else if (current_state == GameState::INFO && button == GLFW_MOUSE_BUTTON_LEFT)
+		{
+			if (getClickedButton() == ButtonType::INFOBUTTON)
+			{
+				GameState temp = current_state;
+				current_state = previous_state;
+				previous_state = temp;
+			}
+		}
 		// gameover state -> start screen state
-		else if(button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::GAME_OVER) {
+		else if(current_state == GameState::GAME_OVER && button == GLFW_MOUSE_BUTTON_LEFT) {
 			previous_state = current_state;
 			current_state = GameState::START_SCREEN;
 
@@ -667,7 +580,19 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 	}
 }
 
-bool WorldSystem::buttonClick(screenButton& button) {
+ButtonType WorldSystem::getClickedButton()
+{
+	for (auto& button : registry.buttons.components) {
+		if (isButtonClicked(button)) {
+			return button.type;
+		}
+	}
+
+	return ButtonType::NONE;
+}
+
+
+bool WorldSystem::isButtonClicked(ScreenButton& button) {
 	float button_x = button.center[0];
 	float button_y = button.center[1];
 
@@ -675,12 +600,6 @@ bool WorldSystem::buttonClick(screenButton& button) {
 	float y_distance = std::abs(button_y - device_mouse_pos_y);
 
 	bool res = (x_distance < button.w / 2.f) && (y_distance < button.h / 2.f);
-
-
-	// std::cout << device_mouse_pos_x << " " << device_mouse_pos_y << std::endl;
-	// std::cout << game_mouse_pos_x << " " << game_mouse_pos_y << std::endl;
-	// std::cout << button_x << " " << button_y << std::endl;
-	// std::cout << "button: " << res << std::endl;
 
 	return res;
 }
