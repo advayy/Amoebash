@@ -96,7 +96,7 @@ Entity createPlayer(RenderSystem* renderer, vec2 position)
 
 	// Initialize the motion
 	auto& motion = registry.motions.emplace(entity);
-	motion.angle = 0.0f;	// A1-TD: CK: rotate to the left 180 degrees to fix orientation
+	motion.angle = 45.0f;	// A1-TD: CK: rotate to the left 180 degrees to fix orientation
 	motion.velocity = { 0.0f, 0.0f };
 	motion.position = position;
 
@@ -126,7 +126,7 @@ Entity createPlayer(RenderSystem* renderer, vec2 position)
 
 	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
 	sprite.width = 32;
-	sprite.height = 32; 
+	sprite.height = 32;
 
 	return entity;
 }
@@ -228,7 +228,6 @@ void InitiatePlayerDash() {
 
 	int64_t curr_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	float speed_factor = (float)std::max(PLAYER_MIN_DASH_PRESS_MS, std::min(PLAYER_MAX_DASH_PRESS_MS, curr_time - dash.dash_start_ms)) / (float)PLAYER_DASH_PRESS_MS;
-	std::cout << speed_factor << std::endl;
 	registry.dashes.remove(player_entity);
 	
 	Velocity& velocity = registry.velocities.emplace(player_entity);
@@ -664,7 +663,6 @@ Entity createNose() {
     std::uniform_real_distribution<float> uniform_dist(0.0f, 1.0f);
 
 	int random_value = static_cast<int>(uniform_dist(rng) * spriteSheet.total_frames);
-	std::cout << random_value << std::endl;
 	spriteSheet.current_frame = random_value;
 
 	// not used at the moment
@@ -704,7 +702,6 @@ motion.scale = vec2({ 67.f* 5* WORK_SCALE_FACTOR, 41.f * 5 * WORK_SCALE_FACTOR }
     std::uniform_real_distribution<float> uniform_dist(0.0f, 1.0f);
 
 	int random_value = static_cast<int>(uniform_dist(rng) * spriteSheet.total_frames);
-	std::cout << random_value << std::endl;
 	spriteSheet.current_frame = random_value;
 
 	// not used at the moment

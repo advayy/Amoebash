@@ -16,6 +16,7 @@ struct Velocity
 {
 	float speed = 0.0f;
 	float angle = 0.0f;
+	bool reflect = false;
 };
 
 struct Dash 

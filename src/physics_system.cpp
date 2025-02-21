@@ -22,6 +22,46 @@ bool collides(const Motion& motion1, const Motion& motion2)
 	return false;
 }
 
+std::array<vec2, 4> getRectVertices(const Motion& rectangle)
+{
+	vec2 position = rectangle.position;
+	float angle = rectangle.angle;
+
+	float width = PLAYER_BB_WIDTH;
+	float height = PLAYER_BB_HEIGHT;
+
+	float half_width_rotated_x = (width / 2) * cosf((angle - 90) * (M_PI / 180.0f));
+	float half_width_rotated_y = (width / 2) * sinf((angle - 90) * (M_PI / 180.0f));
+	vec2 half_width_rotated = vec2(half_width_rotated_x, half_width_rotated_y);
+
+	float half_height_rotated_x = (height / 2) * cosf((angle) * (M_PI / 180.0f));
+	float half_height_rotated_y = (height / 2) * cosf((angle) * (M_PI / 180.0f));
+	vec2 half_height_rotated = vec2(half_height_rotated_x, half_height_rotated_y);
+
+	vec2 corner_1 = position + half_width_rotated - half_height_rotated;
+	vec2 corner_2 = position + half_width_rotated + half_height_rotated;
+	vec2 corner_3 = position - half_width_rotated + half_height_rotated;
+	vec2 corner_4 = position - half_width_rotated - half_height_rotated;
+
+	return { corner_1, corner_2, corner_3, corner_4 };
+}
+
+std::array<vec2, 4> getRectEdges(const std::array<vec2, 4> vertices)
+{
+	return
+	{
+		vertices[1] - vertices[0],
+		vertices[2] - vertices[1],
+		vertices[3] - vertices[2],
+		vertices[0] - vertices[3],
+	};
+}
+
+bool rect_collisions(const Motion& rect1, const Motion& rect2)
+{
+
+}
+
 void PhysicsSystem::step(float elapsed_ms)
 {
 	// Move each entity that has motion (invaders, projectiles, and even towers [they have 0 for velocity])
@@ -72,9 +112,11 @@ void PhysicsSystem::step(float elapsed_ms)
     	{
         	// Compute new velocity for dash
 			dash.speed += PLAYER_DASH_DECELERATION * elapsed_ms;
-        	float angle_radians = (dash.angle - 90) * (M_PI / 180.0f);
-			std::cout << dash.angle << std::endl;
-			std::cout << angle_radians << std::endl;
+        	float angle_radians = (dash.angle - 90) * (M_PI / 180.0f) * (dash.reflect ? -1 : 1);
+			if (dash.reflect)
+			{
+				std::cout << "SPEED: " << dash.speed << std::endl;
+			}
         	// Apply velocity decay
     	    motion.velocity.x = dash.speed * cosf(angle_radians);
 			motion.velocity.y = dash.speed * sinf(angle_radians);
@@ -106,7 +148,6 @@ void PhysicsSystem::step(float elapsed_ms)
 	}
 
 	// Handle player-wall collisions
-	
 	for (auto& entity : registry.walls.entities)
 	{
 		Motion& motion = registry.motions.get(entity);
@@ -114,7 +155,8 @@ void PhysicsSystem::step(float elapsed_ms)
 		if (collides(player_motion, motion))
 		{
 			Velocity& player_velocity = registry.velocities.get(player_entity);
-			player_velocity.angle *= -1;
+			std::cout << "PLAYER WALL COLLIDES" << std::endl;
+			player_velocity.reflect = true;
 			break;
 		}
 	}

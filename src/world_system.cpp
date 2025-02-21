@@ -144,7 +144,7 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	// Set all states to default
     restart_game();
 	// set initial game state
-	current_state = GameState::INITIAL_CUTSCENE;
+	current_state = GameState::GAME_PLAY;
 }
 
 void WorldSystem::updateCamera(float elapsed_ms) {
@@ -237,7 +237,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 	// Point the player to the mouse
 	Motion& player_motion = registry.motions.get(registry.players.entities[0]);
-	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x)  * 180.0f / M_PI + 90.0f;
+	//player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x)  * 180.0f / M_PI + 90.0f;
 
 
 	// spawn new invaders
