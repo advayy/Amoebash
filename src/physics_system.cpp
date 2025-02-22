@@ -1,7 +1,10 @@
 // internal
 #include "physics_system.hpp"
 #include "world_init.hpp"
+#include "animation_system.hpp"
 #include <iostream>
+
+#include <glm/gtx/normalize_dot.hpp>
 
 // Returns the local bounding coordinates scaled by the current size of the entity
 vec2 get_bounding_box(const Motion& motion)
@@ -19,7 +22,7 @@ bool collides(const Motion& motion1, const Motion& motion2)
 	vec2 bb1 = get_bounding_box(motion1);
 	vec2 bb2 = get_bounding_box(motion2);
 
-	return false;
+	return glm::distance(motion1.position, motion2.position) < (bb1.x + bb2.x) / 2;
 }
 
 void PhysicsSystem::step(float elapsed_ms)
@@ -27,29 +30,97 @@ void PhysicsSystem::step(float elapsed_ms)
 	// Move each entity that has motion (invaders, projectiles, and even towers [they have 0 for velocity])
 	// based on how much time has passed, this is to (partially) avoid
 	// having entities move at different speed based on the machine.
+	
+	float step_seconds = elapsed_ms / 1000.f;
+	// precompute boundaries for player motion
+	float leftBound = MAP_LEFT * GRID_CELL_WIDTH_PX;
+	float rightBound = MAP_RIGHT * GRID_CELL_WIDTH_PX - 1;
+	float topBound = MAP_TOP * GRID_CELL_HEIGHT_PX;
+	float bottomBound = MAP_BOTTOM * GRID_CELL_HEIGHT_PX - 1;
 
-	// MOVE ENTITIES	
-
+	// cache player's motion if players exist
+	Motion* playerMotion = nullptr;
+	if (!registry.players.entities.empty()) {
+			playerMotion = &registry.motions.get(registry.players.entities[0]);
+	}
 
 	auto& motion_registry = registry.motions;
-	for(uint i = 0; i< motion_registry.size(); i++)
-	{
-		Entity entity = motion_registry.entities[i];
-		Motion& motion = motion_registry.components[i];
-		float step_seconds = elapsed_ms / 1000.f;
-		motion.position += motion.velocity * step_seconds;
-		// dont let player move out of bounds, knockback when they do that (reducing velocity)
-		if (registry.players.has(entity)) {
-			Player& player = registry.players.get(entity);
-			if (motion.position.x >= MAP_RIGHT*GRID_CELL_WIDTH_PX || motion.position.x <= MAP_LEFT*GRID_CELL_WIDTH_PX || motion.position.y <= MAP_TOP*GRID_CELL_HEIGHT_PX || motion.position.y >= MAP_BOTTOM*GRID_CELL_HEIGHT_PX) {
-				motion.velocity *= -0.5f;
-				// clamp position
-				motion.position.x = std::clamp(motion.position.x, MAP_LEFT*GRID_CELL_WIDTH_PX, (MAP_RIGHT)*GRID_CELL_WIDTH_PX - 1);
-				motion.position.y = std::clamp(motion.position.y, MAP_TOP*GRID_CELL_HEIGHT_PX, (MAP_BOTTOM)*GRID_CELL_HEIGHT_PX - 1);
-			}
-		}
+	for (uint i = 0; i < motion_registry.size(); i++) {
+			Entity entity = motion_registry.entities[i];
+			Motion& motion = motion_registry.components[i];
 
-	}
+			motion.position += motion.velocity * step_seconds;
+
+			if (registry.players.has(entity)) {
+					// player update: use cached boundaries
+					if (motion.position.x >= rightBound + 1 || motion.position.x <= leftBound ||
+							motion.position.y <= topBound || motion.position.y >= bottomBound + 1) {
+							motion.velocity *= -0.5f;
+							motion.position.x = glm::clamp(motion.position.x, leftBound, rightBound);
+							motion.position.y = glm::clamp(motion.position.y, topBound, bottomBound);
+					}
+			}
+
+			// enemy update – use cached playerMotion
+			if (playerMotion) {
+					// iterate over all enemies
+					for (uint j = 0; j < registry.enemies.entities.size(); j++) {
+							Entity enemyEntity = registry.enemies.entities[j];
+							Motion& enemyMotion = registry.motions.get(enemyEntity);
+							EnemyBehavior& enemyBehavior = registry.enemyBehaviors.get(enemyEntity);
+							Animation& enemyAnimation = registry.animations.get(enemyEntity);
+
+							vec2 diff = playerMotion->position - enemyMotion.position;
+							float distance = glm::length(diff);
+							bool playerDetected = (distance < enemyBehavior.detectionRadius);
+							vec2 toPlayer = diff;
+		
+						switch (enemyBehavior.state) {
+								case EnemyState::CHASING: {
+										if (distance > 0.001f) {
+												vec2 direction = glm::normalize(toPlayer);
+												enemyMotion.velocity = direction * ENEMY_SPEED;
+										}
+										break;
+								}
+								case EnemyState::PATROLLING: {
+										// set patrolling velocity based on current patrol direction.
+										enemyMotion.velocity = enemyBehavior.patrolDirection * enemyBehavior.patrolSpeed;
+										
+										// define patrol boundaries based on stored origin and range.
+										float leftBoundary = enemyBehavior.patrolOrigin.x - enemyBehavior.patrolRange;
+										float rightBoundary = enemyBehavior.patrolOrigin.x + enemyBehavior.patrolRange;
+										
+										// if enemy goes past boundaries, reverse its patrol direction and clamp position.
+										if (enemyMotion.position.x < leftBoundary || enemyMotion.position.x > rightBoundary) {
+												enemyBehavior.patrolDirection.x = -enemyBehavior.patrolDirection.x;
+												enemyMotion.position.x = glm::clamp(enemyMotion.position.x, leftBoundary, rightBoundary);
+										}
+										
+										// sse circular detection to transition to dash state.
+										if (playerDetected) {
+												changeAnimationFrames(enemyEntity, 7, 12);
+												enemyBehavior.state = EnemyState::DASHING;
+										}
+										break;
+								}
+								case EnemyState::DASHING: {
+										if (distance > 0.001f && playerDetected) {
+												// dash toward the player
+												vec2 direction = glm::normalize(toPlayer);
+												enemyMotion.velocity = direction * ENEMY_SPEED;
+										} else {
+												changeAnimationFrames(enemyEntity, 0, 6);
+												enemyBehavior.patrolOrigin = enemyMotion.position;
+												enemyBehavior.state = EnemyState::PATROLLING;
+
+										}
+										break;
+								}
+						}
+				}
+		}}
+	
 
 
 	// Handle player dashing

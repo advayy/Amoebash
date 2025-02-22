@@ -82,6 +82,7 @@ const float PLAYER_BB_HEIGHT = (float)PLAYER_SIZE;
 // invaders are 32x32 px, but cells are 60x60
 const float ENEMY_BB_WIDTH = (float)ENEMY_SIZE;
 const float ENEMY_BB_HEIGHT = (float)ENEMY_SIZE;
+const float ENEMY_SPEED = 300; // reasonalby between 200-400
 
 // LARGE ENEMY
 const float LARGE_ENEMY_BB_WIDTH = (float)LARGE_ENEMY_SIZE;
@@ -100,7 +101,8 @@ const float PLAYER_DASH_DAMAGE = 20;
 
 // ENEMY STATS
 const float ENEMY_HEALTH = 50;
-const float ENEMY_SPAWN_RATE_MS = 2 * 1000;
+const float ENEMY_SPAWN_RATE_MS = 1 * 1000;
+const float MAX_ENEMIES_COUNT = 15;
 
 // OTHER CONSTANTS
 const float PROJECTILE_DAMAGE = 10;

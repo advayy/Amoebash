@@ -238,6 +238,29 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	Motion& player_motion = registry.motions.get(registry.players.entities[0]);
 	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x)  * 180.0f / M_PI + 90.0f;
 
+
+	// spawn new invaders
+	next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
+	if (next_enemy_spawn < 0.f && !gameOver) {
+		if (registry.enemies.entities.size() < MAX_ENEMIES_COUNT) {
+			// reset timer
+			next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
+
+			// randomize position
+			int map_w = MAP_RIGHT - MAP_LEFT;
+			int map_h = MAP_BOTTOM - MAP_TOP;
+			int randomXCell = MAP_LEFT + (int)(uniform_dist(rng) * map_w);
+			int randomYCell = MAP_TOP + (int)(uniform_dist(rng) * map_h);
+			vec2 enemyPosition = gridCellToPosition({(float)randomXCell, (float)randomYCell});
+			
+			createEnemy(renderer, enemyPosition);
+
+			// Optional debug output for spawning enemies
+			// std::cout << "TOTAL ENEMIES: " << registry.enemies.entities.size() << std::endl;
+		}
+	}
+
+
 	tileMap();
 
 	return true;
@@ -320,6 +343,7 @@ void WorldSystem::handle_collisions() {
 		Entity& entity1 = collision_container.entities[i];
 		Entity& entity2 = collision.other;
 
+		// should be deprecated no?
 		// if 1 is a projectile and 2 is an invader or if 1 is an invader and 2 is a projectile
 		if ((registry.projectiles.has(entity1) && registry.enemies.has(entity2)) || (registry.projectiles.has(entity2) && registry.enemies.has(entity1))) {
 			
@@ -344,16 +368,51 @@ void WorldSystem::handle_collisions() {
 			}
 		}
 
-		if ((registry.players.has(entity1) && registry.enemies.has(entity2)) || (registry.players.has(entity2) && registry.enemies.has(entity1))) {
+		// player-enemy collision
+		if ((registry.players.has(entity1) && registry.enemies.has(entity2)) ||
+			(registry.players.has(entity2) && registry.enemies.has(entity1))) {
 			
-			// Set invader and projectile
 			Entity player_entity = registry.players.has(entity1) ? entity1 : entity2;
 			Entity enemy_entity = registry.enemies.has(entity1) ? entity1 : entity2;
+
+
+
+			if (isDashing()) {
+				// remove invader
+				registry.remove_all_components_of(enemy_entity);
+				Mix_PlayChannel(-1, dash_sound_2, 0);
+			} else {
+				// womp womp	game over or vignetted??
+				uint current_time = SDL_GetTicks();
+			
+				// then apply damage.
+				if (!registry.damageCooldowns.has(player_entity)) {
+					//  add the component and apply damage
+					registry.damageCooldowns.insert(player_entity, { current_time });
+				
+					Player& player = registry.players.get(player_entity);
+					player.health -= 1;
+					Mix_PlayChannel(-1, dash_sound_2, 0);
+				} else {
+					// retrieve the cooldown component
+					DamageCooldown& dc = registry.damageCooldowns.get(player_entity);
+					if (current_time - dc.last_damage_time >= 500) {
+						dc.last_damage_time = current_time;
+						Player& player = registry.players.get(player_entity);
+						player.health -= 1;
+						Mix_PlayChannel(-1, dash_sound_2, 0);
+					}
+				}
+				// registry.remove_all_components_of(player_entity);
+				// registry.vignetteTimers.insert(Entity(), { 1000.f });
+
+				// Mix_PlayChannel(-1, dash_sound_2, 0);
+			}
 
 			// We dont do this anymore FLAG
 			// registry.remove_all_components_of(enemy_entity);
 			// registry.remove_all_components_of(player_entity);
-			Mix_PlayChannel(-1, dash_sound_2, 0);
+			// Mix_PlayChannel(-1, dash_sound_2, 0);
 
 
 			// Trigger vignette shader

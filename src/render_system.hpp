@@ -29,7 +29,7 @@ class RenderSystem {
 
 	// Make sure these paths remain in sync with the associated enumerators (see TEXTURE_ASSET_ID).
 	const std::array<std::string, texture_count> texture_paths = {
-		textures_path("enemies/enemy.png"),
+		textures_path("enemies/spike.png"),
 		textures_path("amoeba/player_dash.png"),
 		textures_path("projectiles/gold_bubble.png"),
 		textures_path("tiles/test_tile.png"),

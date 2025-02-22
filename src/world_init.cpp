@@ -22,7 +22,7 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 	// TODO A1: initialize the position, scale, and physics components
 	auto& motion = registry.motions.emplace(entity);
 	motion.angle = 0.f;
-	motion.velocity = { 50, 0 }; // FLAG
+	motion.velocity = { 0, 0 }; // FLAG
 	motion.position = position;
 
 	// resize, set scale to negative if you want to make it face the opposite way
@@ -41,14 +41,29 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 	Animation& a = registry.animations.emplace(entity);
 	a.start_frame = 0;
 	a.end_frame = 6;
+	a.time_per_frame = 100.0f;
 	a.loop = ANIM_LOOP_TYPES::PING_PONG;
 
 	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
-	spriteSheet.total_frames = 6;
+	spriteSheet.total_frames = 13;
+	spriteSheet.current_frame = 0;
 
 	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
 	sprite.width = 32;
 	sprite.height = 32;
+
+	EnemyBehavior& behavior = registry.enemyBehaviors.emplace(entity);
+	behavior.patrolOrigin = position;
+
+		// randomly set the enemy behaviour (to patrol or not)
+		if (rand() % 2 == 0 || true)
+		{
+			behavior.state = EnemyState::PATROLLING;
+		} else {
+			behavior.state = EnemyState::CHASING;
+		}
+	
+
 
 	return entity;
 }
