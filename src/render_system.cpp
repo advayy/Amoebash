@@ -8,105 +8,9 @@
 #include "tinyECS/registry.hpp"
 #include "world_system.hpp"
 
-void RenderSystem::drawGridLine(Entity entity,
-								const mat3& projection) {
-
-	GridLine& gridLine = registry.gridLines.get(entity);
-
-	// Transformation code, see Rendering and Transformation in the template
-	// specification for more info Incrementally updates transformation matrix,
-	// thus ORDER IS IMPORTANT
-	Transform transform;
-	transform.translate(gridLine.start_pos);
-	transform.scale(gridLine.end_pos);
-
-	assert(registry.renderRequests.has(entity));
-	const RenderRequest& render_request = registry.renderRequests.get(entity);
-
-	const GLuint used_effect_enum = (GLuint)render_request.used_effect;
-	assert(used_effect_enum != (GLuint)EFFECT_ASSET_ID::EFFECT_COUNT);
-	const GLuint program = (GLuint)effects[used_effect_enum];
-
-	// setting shaders
-	glUseProgram(program);
-	gl_has_errors();
-
-	assert(render_request.used_geometry != GEOMETRY_BUFFER_ID::GEOMETRY_COUNT);
-	const GLuint vbo = vertex_buffers[(GLuint)render_request.used_geometry];
-	const GLuint ibo = index_buffers[(GLuint)render_request.used_geometry];
-
-	// Setting vertex and index buffers
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	gl_has_errors();
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	gl_has_errors();
-
-	if (render_request.used_effect == EFFECT_ASSET_ID::LINE)
-	{
-		GLint in_position_loc = glGetAttribLocation(program, "in_position");
-		gl_has_errors();
-
-		GLint in_color_loc    = glGetAttribLocation(program, "in_color");
-		gl_has_errors();
-
-		glEnableVertexAttribArray(in_position_loc);
-		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
-			sizeof(ColoredVertex), (void*)0);
-		gl_has_errors();
-
-		glEnableVertexAttribArray(in_color_loc);
-		glVertexAttribPointer(in_color_loc, 3, GL_FLOAT, GL_FALSE,
-			sizeof(ColoredVertex), (void*)sizeof(vec3));
-		gl_has_errors();
-	}
-	else
-	{
-		assert(false && "Type of render request not supported");
-	}
-
-	// Getting uniform locations for glUniform* calls
-	GLint color_uloc = glGetUniformLocation(program, "fcolor");
-	const vec3 color = registry.colors.has(entity) ? registry.colors.get(entity) : vec3(1);
-	// CK: std::cout << "line color: " << color.r << ", " << color.g << ", " << color.b << std::endl;
-	glUniform3fv(color_uloc, 1, (float*)&color);
-	gl_has_errors();
-
-	// Get number of indices from index buffer, which has elements uint16_t
-	GLint size = 0;
-	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
-	gl_has_errors();
-
-	GLsizei num_indices = size / sizeof(uint16_t);
-
-	GLint currProgram;
-	glGetIntegerv(GL_CURRENT_PROGRAM, &currProgram);
-	// Setting uniform values to the currently bound program
-	GLuint transform_loc = glGetUniformLocation(currProgram, "transform");
-	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float*)&transform.mat);
-	gl_has_errors();
-
-	GLuint projection_loc = glGetUniformLocation(currProgram, "projection");
-	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float*)&projection);
-	gl_has_errors();
-
-	// Drawing of num_indices/3 triangles specified in the index buffer
-	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
-	gl_has_errors();
-}
-
 void RenderSystem::drawTexturedMesh(Entity entity,
 									const mat3 &projection)
 {
-	Motion &motion = registry.motions.get(entity);
-
-	// Transformation code, see Rendering and Transformation in the template
-	// specification for more info Incrementally updates transformation matrix,
-	// thus ORDER IS IMPORTANT
-	Transform transform;
-	transform.translate(motion.position);
-	transform.scale(motion.scale);
-	transform.rotate(radians(motion.angle));
 
 	assert(registry.renderRequests.has(entity));
 	const RenderRequest &render_request = registry.renderRequests.get(entity);
@@ -115,82 +19,16 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 	assert(used_effect_enum != (GLuint)EFFECT_ASSET_ID::EFFECT_COUNT);
 	const GLuint program = (GLuint)effects[used_effect_enum];
 
-	// Setting shaders
-	glUseProgram(program);
-	gl_has_errors();
+	assert((render_request.used_effect == EFFECT_ASSET_ID::TEXTURED || 
+		render_request.used_effect == EFFECT_ASSET_ID::SPRITE_SHEET || 
+		render_request.used_effect == EFFECT_ASSET_ID::MINI_MAP ||
+		render_request.used_effect == EFFECT_ASSET_ID::TILE) &&
+		"Type of render request not supported");
 
-	assert(render_request.used_geometry != GEOMETRY_BUFFER_ID::GEOMETRY_COUNT);
-	const GLuint vbo = vertex_buffers[(GLuint)render_request.used_geometry];
-	const GLuint ibo = index_buffers[(GLuint)render_request.used_geometry];
-
-	// Setting vertex and index buffers
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	gl_has_errors();
-
-	// texture-mapped entities - use data location as in the vertex buffer
-	if (render_request.used_effect == EFFECT_ASSET_ID::TEXTURED)
+	setUpDefaultProgram(entity, render_request, program);
+	
+	if (render_request.used_effect == EFFECT_ASSET_ID::MINI_MAP)
 	{
-		GLint in_position_loc = glGetAttribLocation(program, "in_position");
-		GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
-		gl_has_errors();
-		assert(in_texcoord_loc >= 0);
-
-		glEnableVertexAttribArray(in_position_loc);
-		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
-							  sizeof(TexturedVertex), (void *)0);
-		gl_has_errors();
-
-		glEnableVertexAttribArray(in_texcoord_loc);
-		glVertexAttribPointer(
-			in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
-			(void *)sizeof(
-				vec3)); // note the stride to skip the preceeding vertex position
-
-		// Enabling and binding texture to slot 0
-		glActiveTexture(GL_TEXTURE0);
-		gl_has_errors();
-
-
-		assert(registry.renderRequests.has(entity));
-		GLuint texture_id =
-			texture_gl_handles[(GLuint)registry.renderRequests.get(entity).used_texture];
-
-		glBindTexture(GL_TEXTURE_2D, texture_id);
-		gl_has_errors();
-
-
-	}
-	// .obj entities
-	else if (render_request.used_effect == EFFECT_ASSET_ID::LINE)
-	{
-		GLint in_position_loc = glGetAttribLocation(program, "in_position");
-		GLint in_color_loc = glGetAttribLocation(program, "in_color");
-		gl_has_errors();
-
-		glEnableVertexAttribArray(in_position_loc);
-		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
-							  sizeof(ColoredVertex), (void *)0);
-		gl_has_errors();
-
-		glEnableVertexAttribArray(in_color_loc);
-		glVertexAttribPointer(in_color_loc, 3, GL_FLOAT, GL_FALSE,
-							  sizeof(ColoredVertex), (void *)sizeof(vec3));
-		gl_has_errors();
-	} else if (render_request.used_effect == EFFECT_ASSET_ID::MINI_MAP) {
-		GLint in_position_loc = glGetAttribLocation(program, "in_position");
-		GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
-		gl_has_errors();
-		assert(in_texcoord_loc >= 0);
-
-		glEnableVertexAttribArray(in_position_loc);
-		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)0);
-		gl_has_errors();
-
-		glEnableVertexAttribArray(in_texcoord_loc);
-		glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)sizeof(vec3));
-		gl_has_errors();
-
 		GLint map_width_uloc = glGetUniformLocation(program, "map_width");
 		GLint map_height_uloc = glGetUniformLocation(program, "map_height");
 		GLint player_grid_position_uloc = glGetUniformLocation(program, "player_grid_position");
@@ -199,12 +37,9 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		glUniform1i(map_height_uloc, MAP_HEIGHT);
 
 		// get player position
-		Player &player = registry.players.get(registry.players.entities[0]);
+		Player& player = registry.players.get(registry.players.entities[0]);
 
 		glUniform2fv(player_grid_position_uloc, 1, (float*)&player.grid_position);
-	} else
-	{
-		assert(false && "Type of render request not supported");
 	}
 
 	// Getting uniform locations for glUniform* calls
@@ -213,6 +48,19 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 	glUniform3fv(color_uloc, 1, (float *)&color);
 	gl_has_errors();
 
+	if (render_request.used_effect == EFFECT_ASSET_ID::SPRITE_SHEET || render_request.used_effect == EFFECT_ASSET_ID::TILE)
+	{
+		setUpSpriteSheetTexture(entity, program);
+	}
+
+	if (render_request.used_effect == EFFECT_ASSET_ID::TILE)
+	{
+		// also take vec2 camera position
+		Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
+		vec2 cameraPos = camera.position;
+		GLint camera_position_uloc = glGetUniformLocation(program, "camera_position");
+		glUniform2fv(camera_position_uloc, 1, (float*)&cameraPos);
+	}
 
 	// Get number of indices from index buffer, which has elements uint16_t
 	GLint size = 0;
@@ -220,15 +68,27 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 	gl_has_errors();
 
 	GLsizei num_indices = size / sizeof(uint16_t);
-	// GLsizei num_triangles = num_indices / 3;
 
 	GLint currProgram;
 	glGetIntegerv(GL_CURRENT_PROGRAM, &currProgram);
-	// Setting uniform values to the currently bound program
-	GLuint transform_loc = glGetUniformLocation(currProgram, "transform");
-	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float *)&transform.mat);
-	gl_has_errors();
 
+	if (registry.motions.has(entity))
+	{
+		Motion& motion = registry.motions.get(entity);
+
+		// Transformation code, see Rendering and Transformation in the template
+		// specification for more info Incrementally updates transformation matrix,
+		// thus ORDER IS IMPORTANT
+		Transform transform;
+		transform.translate(motion.position);
+		transform.scale(motion.scale);
+		transform.rotate(radians(motion.angle));
+
+		// Setting uniform values to the currently bound program
+		GLuint transform_loc = glGetUniformLocation(currProgram, "transform");
+		glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float*)&transform.mat);
+		gl_has_errors();
+	}
 
 	GLuint projection_loc = glGetUniformLocation(currProgram, "projection");
 	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
@@ -240,21 +100,27 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 	gl_has_errors();
 }
 
-void RenderSystem::drawSpriteSheetTexturedMesh(Entity entity, const mat3 &projection) {
-	
-	Motion &motion = registry.motions.get(entity);
-	Transform transform;
-	transform.translate(motion.position);
-	transform.scale(motion.scale);
-	transform.rotate(radians(motion.angle));
+void RenderSystem::setUpSpriteSheetTexture(Entity& entity, const GLuint program)
+{
+	// SpriteSheet UNIFORMS see :
+		// 	int total_frames from SpriteSheetImage
+		// 	int current_frame from SpriteSheetImage
+		// 	int sprite size from sprite
+	GLint total_frames_uloc = glGetUniformLocation(program, "total_frames");
+	GLint current_frame_uloc = glGetUniformLocation(program, "current_frame");
+	GLint sprite_width_uloc = glGetUniformLocation(program, "sprite_width");
+	GLint sprite_height_uloc = glGetUniformLocation(program, "sprite_height");
 
-	assert(registry.renderRequests.has(entity));
-	const RenderRequest &render_request = registry.renderRequests.get(entity);
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.get(entity);
+	glUniform1i(total_frames_uloc, spriteSheet.total_frames);
+	glUniform1i(current_frame_uloc, spriteSheet.current_frame);
+	SpriteSize& sprite = registry.spritesSizes.get(entity);
+	glUniform1i(sprite_width_uloc, sprite.width);
+	glUniform1i(sprite_height_uloc, sprite.height);
+}
 
-	const GLuint used_effect_enum = (GLuint)render_request.used_effect;
-	assert(used_effect_enum != (GLuint)EFFECT_ASSET_ID::EFFECT_COUNT);
-	const GLuint program = (GLuint)effects[used_effect_enum];
-
+void RenderSystem::setUpDefaultProgram(Entity& entity, const RenderRequest& render_request, const GLuint program)
+{
 	// Setting shaders
 	glUseProgram(program);
 	gl_has_errors();
@@ -268,80 +134,32 @@ void RenderSystem::drawSpriteSheetTexturedMesh(Entity entity, const mat3 &projec
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	gl_has_errors();
 
-	// texture-mapped entities - use data location as in the vertex buffer
-	if (render_request.used_effect == EFFECT_ASSET_ID::SPRITE_SHEET)
-	{
-		GLint in_position_loc = glGetAttribLocation(program, "in_position");
-		GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
-		gl_has_errors();
-		assert(in_texcoord_loc >= 0);
+	GLint in_position_loc = glGetAttribLocation(program, "in_position");
+	GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+	gl_has_errors();
+	assert(in_texcoord_loc >= 0);
 
-		glEnableVertexAttribArray(in_position_loc);
-		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)0);
-		gl_has_errors();
+	glEnableVertexAttribArray(in_position_loc);
+	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
+		sizeof(TexturedVertex), (void*)0);
+	gl_has_errors();
 
-		glEnableVertexAttribArray(in_texcoord_loc);
-		glVertexAttribPointer(
-			in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
-			(void *)sizeof(
-				vec3)); // note the stride to skip the preceeding vertex position
+	glEnableVertexAttribArray(in_texcoord_loc);
+	glVertexAttribPointer(
+		in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
+		(void*)sizeof(
+			vec3)); // note the stride to skip the preceeding vertex position
 
-		// Enabling and binding texture to slot 0
-		glActiveTexture(GL_TEXTURE0);
-		gl_has_errors();
-
-		assert(registry.renderRequests.has(entity));
-		GLuint texture_id =
-			texture_gl_handles[(GLuint)registry.renderRequests.get(entity).used_texture];
-
-		glBindTexture(GL_TEXTURE_2D, texture_id);
-		gl_has_errors();
-	}
-
-	// Getting uniform locations for glUniform* calls
-	GLint color_uloc = glGetUniformLocation(program, "fcolor");
-	const vec3 color = registry.colors.has(entity) ? registry.colors.get(entity) : vec3(1);
-	glUniform3fv(color_uloc, 1, (float *)&color);
+	// Enabling and binding texture to slot 0
+	glActiveTexture(GL_TEXTURE0);
 	gl_has_errors();
 
 
-	// ANIMATION UNIFORMS see : 	// add the "vignette" effect        line
-	// 	int total_frames from animation
-	// 	int current_frame from animation
-	// 	int sprite size from sprite
-	GLint total_frames_uloc = glGetUniformLocation(program, "total_frames");
-	GLint current_frame_uloc = glGetUniformLocation(program, "current_frame");
-	GLint sprite_width_uloc = glGetUniformLocation(program, "sprite_width");
-	GLint sprite_height_uloc = glGetUniformLocation(program, "sprite_height");
+	assert(registry.renderRequests.has(entity));
+	GLuint texture_id =
+		texture_gl_handles[(GLuint)registry.renderRequests.get(entity).used_texture];
 
-	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.get(entity);
-	glUniform1i(total_frames_uloc, spriteSheet.total_frames);
-	glUniform1i(current_frame_uloc, spriteSheet.current_frame);
-	SpriteSize &sprite = registry.spritesSizes.get(entity);
-	glUniform1i(sprite_width_uloc, sprite.width);
-	glUniform1i(sprite_height_uloc, sprite.height);
-
-	// Get number of indices from index buffer, which has elements uint16_t
-	GLint size = 0;
-	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
-	gl_has_errors();
-
-	GLsizei num_indices = size / sizeof(uint16_t);
-	// GLsizei num_triangles = num_indices / 3;
-
-	GLint currProgram;
-	glGetIntegerv(GL_CURRENT_PROGRAM, &currProgram);
-	// Setting uniform values to the currently bound program
-	GLuint transform_loc = glGetUniformLocation(currProgram, "transform");
-	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float *)&transform.mat);
-	gl_has_errors();
-
-	GLuint projection_loc = glGetUniformLocation(currProgram, "projection");
-	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
-	gl_has_errors();
-
-	// Drawing of num_indices/3 triangles specified in the index buffer
-	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
+	glBindTexture(GL_TEXTURE_2D, texture_id);
 	gl_has_errors();
 }
 
@@ -417,119 +235,6 @@ void RenderSystem::drawToScreen()
 }
 
 
-void RenderSystem::drawTiles(Entity entity, const mat3 &projection) {
-	
-
-	// WE Might not have a motion component
-
-	Motion &motion = registry.motions.get(entity);
-	Transform transform;
-	transform.translate(motion.position);
-	transform.scale(motion.scale);
-	transform.rotate(radians(motion.angle));
-
-
-	assert(registry.renderRequests.has(entity));
-	const RenderRequest &render_request = registry.renderRequests.get(entity);
-
-	const GLuint used_effect_enum = (GLuint)render_request.used_effect;
-	assert(used_effect_enum != (GLuint)EFFECT_ASSET_ID::EFFECT_COUNT);
-	const GLuint program = (GLuint)effects[used_effect_enum];
-
-	// Setting shaders
-	glUseProgram(program);
-	gl_has_errors();
-
-	assert(render_request.used_geometry != GEOMETRY_BUFFER_ID::GEOMETRY_COUNT);
-	const GLuint vbo = vertex_buffers[(GLuint)render_request.used_geometry];
-	const GLuint ibo = index_buffers[(GLuint)render_request.used_geometry];
-
-	// Setting vertex and index buffers
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	gl_has_errors();
-
-	// texture-mapped entities - use data location as in the vertex buffer
-	if (render_request.used_effect == EFFECT_ASSET_ID::TILE)
-	{
-		GLint in_position_loc = glGetAttribLocation(program, "in_position");
-		GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
-		gl_has_errors();
-		assert(in_texcoord_loc >= 0);
-
-		glEnableVertexAttribArray(in_position_loc);
-		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)0);
-		gl_has_errors();
-
-		glEnableVertexAttribArray(in_texcoord_loc);
-		glVertexAttribPointer(
-			in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
-			(void *)sizeof(
-				vec3)); // note the stride to skip the preceeding vertex position
-
-		// Enabling and binding texture to slot 0
-		glActiveTexture(GL_TEXTURE0);
-		gl_has_errors();
-		
-		assert(registry.renderRequests.has(entity));
-		GLuint texture_id =
-			texture_gl_handles[(GLuint)registry.renderRequests.get(entity).used_texture];
-		
-		glBindTexture(GL_TEXTURE_2D, texture_id);
-		gl_has_errors();
-	}
-
-	// Getting uniform locations for glUniform* calls
-	GLint color_uloc = glGetUniformLocation(program, "fcolor");
-	const vec3 color = registry.colors.has(entity) ? registry.colors.get(entity) : vec3(1);
-	glUniform3fv(color_uloc, 1, (float *)&color);
-	gl_has_errors();
-
-	GLint total_frames_uloc = glGetUniformLocation(program, "total_frames");
-	GLint current_frame_uloc = glGetUniformLocation(program, "current_frame");
-	GLint sprite_width_uloc = glGetUniformLocation(program, "sprite_width");
-	GLint sprite_height_uloc = glGetUniformLocation(program, "sprite_height");
-
-	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.get(entity);
-	glUniform1i(total_frames_uloc, spriteSheet.total_frames);
-	glUniform1i(current_frame_uloc, spriteSheet.current_frame);
-	SpriteSize &sprite = registry.spritesSizes.get(entity);
-	glUniform1i(sprite_width_uloc, sprite.width);
-	glUniform1i(sprite_height_uloc, sprite.height);
-
-	// also take vec2 camera position
-	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
-	vec2 cameraPos = camera.position;
-	GLint camera_position_uloc = glGetUniformLocation(program, "camera_position");
-	glUniform2fv(camera_position_uloc, 1, (float *)&cameraPos);
-
-
-	// Get number of indices from index buffer, which has elements uint16_t
-	GLint size = 0;
-	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
-	gl_has_errors();
-
-	GLsizei num_indices = size / sizeof(uint16_t);
-	// GLsizei num_triangles = num_indices / 3;
-
-	GLint currProgram;
-	glGetIntegerv(GL_CURRENT_PROGRAM, &currProgram);
-	// Setting uniform values to the currently bound program
-	GLuint transform_loc = glGetUniformLocation(currProgram, "transform");
-	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float *)&transform.mat);
-	gl_has_errors();
-
-	GLuint projection_loc = glGetUniformLocation(currProgram, "projection");
-	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
-	gl_has_errors();
-
-	// Drawing of num_indices/3 triangles specified in the index buffer
-	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
-	gl_has_errors();
-}
-
-
-
 // Render our game world
 // http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-14-render-to-texture/
 void RenderSystem::draw()
@@ -563,26 +268,14 @@ void RenderSystem::draw()
 	// Draw all tiles first
 	for (Entity entity : registry.tiles.entities)
 	{
-		drawTiles(entity, projection_2D);
+		drawTexturedMesh(entity, projection_2D);
 	}
-	
 
-
-	// draw all entities with a render request to the frame buffer
 	for (Entity entity : registry.renderRequests.entities)
 	{
-		// filter to entities that have a motion component
-		if (registry.motions.has(entity) && !registry.spriteSheetImages.has(entity) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity)) { // Moving entity withot animation
-			// Note, its not very efficient to access elements indirectly via the entity
-			// albeit iterating through all Sprites in sequence. A good point to optimize // FLAG
+		if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity))
+		{
 			drawTexturedMesh(entity, projection_2D);
-		}
-		if (registry.spriteSheetImages.has(entity) && !registry.tiles.has(entity)) {
-			drawSpriteSheetTexturedMesh(entity, projection_2D);
-		}
-		// draw grid lines separately, as they do not have motion but need to be rendered
-		else if (registry.gridLines.has(entity)) {
-			drawGridLine(entity, projection_2D);
 		}
 	}
 	
@@ -741,7 +434,7 @@ void RenderSystem::drawCutScreneAnimation() {
     mat3 projection_matrix = createProjectionMatrix();
 
 	for (auto& entity : registry.cutscenes.entities) {
-		drawSpriteSheetTexturedMesh(entity, projection_matrix);
+		drawTexturedMesh(entity, projection_matrix);
 	}
     
     drawToScreen();

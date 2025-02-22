@@ -277,19 +277,46 @@ struct RenderRequest {
 	GEOMETRY_BUFFER_ID used_geometry = GEOMETRY_BUFFER_ID::GEOMETRY_COUNT;
 };
 
+enum class ANIM_LOOP_TYPES 
+{
+	NO_LOOP = 0,
+	LOOP = NO_LOOP + 1,
+	PING_PONG = LOOP + 1
+};
 
+struct SpriteSheetImage 
+{
+	int total_frames = 0;
+	int current_frame = 0;
+};
 
 // Animation frame
 struct Animation
 {
-	int start_frame = 0;
-	int end_frame = 3;
-	float timer_ms = 300.0f;
-	float default_frame_timer = 300.0f;
+	int start_frame =				0;
+	int end_frame =					0;
+	float time_since_last_frame =	0.0f;
+	float time_per_frame =			0.0f;
+	ANIM_LOOP_TYPES loop =			ANIM_LOOP_TYPES::NO_LOOP;
+	bool forwards =					true;
 };
 
-struct SpriteSheetImage {
-	int total_frames = 3;
-	int current_frame = 0;
+enum class PLAYER_FRAMES 
+{
+	FRAME_0 = 0,
+	FRAME_1 = FRAME_0 + 1,
+	FRAME_2 = FRAME_1 + 1,
+	FRAME_3 = FRAME_2 + 1,
+	FRAME_4 = FRAME_3 + 1,
+	FRAME_5 = FRAME_4 + 1,
+	FRAME_6 = FRAME_5 + 1,
+	FRAME_7 = FRAME_6 + 1,
+	FRAME_8 = FRAME_7 + 1,
+	FRAME_COUNT = FRAME_8 + 1
 };
 
+const int player_idle_start = (int)PLAYER_FRAMES::FRAME_0;
+const int player_idle_end = (int)PLAYER_FRAMES::FRAME_3;
+const int player_dash_start = (int)PLAYER_FRAMES::FRAME_4;
+const int player_dash_end = (int)PLAYER_FRAMES::FRAME_7;
+const int total_player_frames = (int)PLAYER_FRAMES::FRAME_COUNT;

@@ -41,6 +41,8 @@ const float WORK_SCALE_FACTOR = 2;
 const float WINDOW_WIDTH_PX = 640 * WORK_SCALE_FACTOR;
 const float WINDOW_HEIGHT_PX = 360 * WORK_SCALE_FACTOR;
 
+const float MS_PER_S = 1000.f;
+
 // TILE DIMENSIONS/ GRID DIMENSIONS
 const float TILE_SIZE = 128 * WORK_SCALE_FACTOR;
 
@@ -56,7 +58,7 @@ const float WINDOW_GRID_HEIGHT = WINDOW_HEIGHT_PX / TILE_SIZE;
 // MAP stuff
 const float CHUNK_DISTANCE = 5.0;
 const float MAP_WIDTH = 20;
-const float MAP_HEIGHT = 20;
+const float MAP_HEIGHT = 5;
 const vec2 WORLD_ORIGIN = {0, 0};
 
 // Set map left right based on width and origin
@@ -116,10 +118,10 @@ const float LOGO_WIDTH_PX = 383 * WORK_SCALE_FACTOR;
 const float LOGO_HEIGHT_PX = 122 * WORK_SCALE_FACTOR;
 
 // CUTSCENES
-const float INTRO_CUTSCENE_DURATION_MS = 3000.f; // for animation after clicking start
-const float BOOT_CUTSCENE_DURATION_MS = 3000.f; // for logo movement at boot
-const float GAMEPLAY_CUTSCENE_DURATION_MS = 3000.f;
-const float STATE_TIMER_DEFAULT = 3000.f;
+const float INTRO_CUTSCENE_DURATION_MS = 3 * MS_PER_S; // for animation after clicking start
+const float BOOT_CUTSCENE_DURATION_MS = 3 * MS_PER_S; // for logo movement at boot
+const float GAMEPLAY_CUTSCENE_DURATION_MS = 3 * MS_PER_S;
+const float STATE_TIMER_DEFAULT = 3 * MS_PER_S;
 
 // button positions, scales
 const vec2 START_BUTTON_COORDINATES = { 0.f, WINDOW_HEIGHT_PX / 4.5f };

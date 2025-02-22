@@ -105,11 +105,12 @@ public:
 
 private:
 	// Internal drawing functions for each entity type
-	void drawGridLine(Entity entity, const mat3& projection);
 	void drawTexturedMesh(Entity entity, const mat3& projection);
-	void drawSpriteSheetTexturedMesh(Entity entity, const mat3 &projection);
-	void drawTiles(Entity entity, const mat3 &projection);
+	void drawSpriteSheetTexturedMesh(Entity entity, const mat3& projection);
 	void drawToScreen();
+
+	void setUpDefaultProgram(Entity& entity, const RenderRequest& render_request, const GLuint program);
+	void setUpSpriteSheetTexture(Entity& entity, const GLuint program);
 
 	void drawScreenAndButtons(ScreenType screenType, const std::vector<ButtonType>& buttonTypes);
 
