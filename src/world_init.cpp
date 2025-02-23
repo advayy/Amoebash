@@ -78,15 +78,13 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 	EnemyBehavior& behavior = registry.enemyBehaviors.emplace(entity);
 	behavior.patrolOrigin = position;
 
-		// randomly set the enemy behaviour (to patrol or not)
-		if (rand() % 2 == 0 || true)
-		{
-			behavior.state = EnemyState::PATROLLING;
-		} else {
-			behavior.state = EnemyState::CHASING;
-		}
-	
-
+	// randomly set the enemy behaviour (to patrol or not)
+	if (rand() % 2 == 0 || true)
+	{
+		behavior.state = EnemyState::PATROLLING;
+	} else {
+		behavior.state = EnemyState::PATROLLING;
+	}
 
 	return entity;
 }
@@ -209,10 +207,17 @@ void initiatePlayerDash() {
 	toggleDashAnimation(player_entity, true);
 }
 
-bool canDash() {
+bool canDash() 
+{
 	Entity& player_entity = registry.players.entities[0];
 	Player& player = registry.players.get(player_entity);
 	return player.dash_cooldown_ms <= 0 && registry.dashes.has(player_entity);
+}
+
+bool isDashing()
+{
+	Entity& player_entity = registry.players.entities[0];
+	return registry.velocities.has(player_entity);
 }
 
 Entity createMap(RenderSystem* renderer, vec2 size) {
@@ -264,51 +269,6 @@ Entity createMiniMap(RenderSystem* renderer, vec2 size) {
 	return entity;
 }
 
-void tileMap() {
-	// Chunk size is a GRID_CELL_WIDTH_PX and GRID_CELL_HEIGHT_PX
-	// ADD TILES TO ALL POSITIONS within CHUNK_DISTANCE of the player
-	// REMOVE TILES THAT ARE OUTSIDE OF CHUNK_DISTANCE of the player
-
-	vec2 camera_pos = registry.cameras.get(registry.cameras.entities[0]).grid_position;
-
-	float cameraGrid_x = camera_pos.x;
-	float cameraGrid_y = camera_pos.y;
-
-	Map& map = registry.maps.get(registry.maps.entities[0]);
-
-	// remove all tiles that arent in the chunk distance
-	for (Entity& entity : registry.tiles.entities) {
-
-		Tile& tile = registry.tiles.get(entity);
-		vec2 tilePos = {tile.grid_x, tile.grid_y};
-		vec2 cameraGrid = {cameraGrid_x, cameraGrid_y};
-		if (abs(glm::distance(cameraGrid, tilePos)) > CHUNK_DISTANCE) {
-			removeTile({tile.grid_x, tile.grid_y});
-		}
-	}
-
-
-	//setting map bounds
-
-	int left = (cameraGrid_x - (WINDOW_GRID_WIDTH/2) - CHUNK_DISTANCE/2); //max((cameraGrid_x - (WINDOW_GRID_WIDTH/2 + CHUNK_DISTANCE/2)), (float) map.left);
-	int right =  (cameraGrid_x + (WINDOW_GRID_WIDTH/2 )+ CHUNK_DISTANCE/2); // min((cameraGrid_x + (WINDOW_GRID_WIDTH/2 +CHUNK_DISTANCE/2)), (float) map.right);
-	int top = (cameraGrid_y - (WINDOW_GRID_HEIGHT/2 )- CHUNK_DISTANCE/2) ; //max((cameraGrid_y - (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.top);
-	int bottom = (cameraGrid_y + (WINDOW_GRID_HEIGHT/2) + CHUNK_DISTANCE/2); //min((cameraGrid_y + (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.bottom);
-
-	for(int x = left; x < right; x += 1) {
-		for(int y = top; y < bottom; y += 1) {
-			vec2 gridCoord = {x, y};
-
-			// if gridcoord is past the map bounds, plant a wall tile
-			if (x < map.left || x >= map.right || y < map.top || y >= map.bottom) {
-				addWallTile(gridCoord);
-			} else if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE) {
-				addParalaxTile(gridCoord);
-			}
-		}
-	}
-}
-
 Entity addParalaxTile(vec2 gridCoord)
 {
 	return addTile(gridCoord, false);
@@ -316,31 +276,18 @@ Entity addParalaxTile(vec2 gridCoord)
 
 Entity addWallTile(vec2 gridCoord)
 {
-	return addTile(gridCoord, true);
+	auto& tile = addTile(gridCoord, true);
+	registry.walls.emplace(tile);
+	return tile;
 }
 
-Entity addTile(vec2 gridCoord, bool wall) 
+Entity addTile(vec2 gridCoord, bool wall)
 {
-	for (Entity& entity : registry.tiles.entities) {
-		Tile& tile = registry.tiles.get(entity);
-		if (tile.grid_x == gridCoord.x && tile.grid_y == gridCoord.y) {
-			return entity;
-		}
-	}
-
 	Entity newTile = Entity();
-	if (wall)
-	{
-		Wall& new_wall = registry.walls.emplace(newTile);
-		new_wall.grid_x = gridCoord.x;
-		new_wall.grid_y = gridCoord.y;
-	}
-	else
-	{
-		Tile& new_tile = registry.tiles.emplace(newTile);
-		new_tile.grid_x = gridCoord.x;
-		new_tile.grid_y = gridCoord.y;
-	}
+
+	Tile& new_tile = registry.tiles.emplace(newTile);
+	new_tile.grid_x = gridCoord.x;
+	new_tile.grid_y = gridCoord.y;
 
 	Motion& motion = registry.motions.emplace(newTile);
 	motion.position = gridCellToPosition(gridCoord);

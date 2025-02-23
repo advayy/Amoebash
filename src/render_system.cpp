@@ -266,7 +266,7 @@ void RenderSystem::draw()
 	mat3 projection_2D = createProjectionMatrix();
 
 	// Draw all tiles first
-	for (Entity entity : registry.tiles.entities)
+	for (auto& entity : registry.tiles.entities)
 	{
 		drawTexturedMesh(entity, projection_2D);
 	}

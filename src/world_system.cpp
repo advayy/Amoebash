@@ -220,6 +220,61 @@ void WorldSystem::updateMouseCoords() {
     game_mouse_pos_y = device_mouse_pos_y + camera.position.y - WINDOW_HEIGHT_PX * 0.5f;
 }
 
+void WorldSystem::tileMap() {
+	// Chunk size is a GRID_CELL_WIDTH_PX and GRID_CELL_HEIGHT_PX
+	// ADD TILES TO ALL POSITIONS within CHUNK_DISTANCE of the player
+	// REMOVE TILES THAT ARE OUTSIDE OF CHUNK_DISTANCE of the player
+
+	vec2 camera_pos = registry.cameras.get(registry.cameras.entities[0]).grid_position;
+
+	float cameraGrid_x = camera_pos.x;
+	float cameraGrid_y = camera_pos.y;
+
+	Map& map = registry.maps.get(registry.maps.entities[0]);
+	
+	//setting map bounds
+	int left = (cameraGrid_x - (WINDOW_GRID_WIDTH / 2) - CHUNK_DISTANCE / 2); //max((cameraGrid_x - (WINDOW_GRID_WIDTH/2 + CHUNK_DISTANCE/2)), (float) map.left);
+	int right = (cameraGrid_x + (WINDOW_GRID_WIDTH / 2) + CHUNK_DISTANCE / 2); // min((cameraGrid_x + (WINDOW_GRID_WIDTH/2 +CHUNK_DISTANCE/2)), (float) map.right);
+	int top = (cameraGrid_y - (WINDOW_GRID_HEIGHT / 2) - CHUNK_DISTANCE / 2); //max((cameraGrid_y - (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.top);
+	int bottom = (cameraGrid_y + (WINDOW_GRID_HEIGHT / 2) + CHUNK_DISTANCE / 2); //min((cameraGrid_y + (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.bottom);
+
+	std::map<int, std::map<int, int>> currentTiles;
+
+	for (Entity& entity : registry.tiles.entities)
+	{
+		Tile& tile = registry.tiles.get(entity);
+		vec2 tilePos = { tile.grid_x, tile.grid_y };
+		// remove all tiles that arent in the chunk distance
+		if (abs(glm::distance(camera_pos, tilePos)) > CHUNK_DISTANCE) 
+		{
+			registry.tiles.remove(entity);
+		}
+		else
+		{
+			// mark this tile as already drawn, so we don't create it again
+			currentTiles[tile.grid_x][tile.grid_y] = 1;
+		}
+	}
+
+	
+	for (int x = left; x < right; x += 1) {
+		for (int y = top; y < bottom; y += 1) {
+			vec2 gridCoord = { x, y };
+
+			// check for already existing tiles, don't need to draw these again
+			if (currentTiles.find(x) != currentTiles.end() && currentTiles[x].find(y) != currentTiles[x].end()) continue;
+
+			// if gridcoord is past the map bounds, plant a wall tile
+			if (x < map.left || x >= map.right || y < map.top || y >= map.bottom) {
+				addWallTile(gridCoord);
+			}
+			else if (glm::distance(gridCoord, { cameraGrid_x, cameraGrid_y }) <= CHUNK_DISTANCE) {
+				addParalaxTile(gridCoord);
+			}
+		}
+	}
+}
+
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
@@ -260,7 +315,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			// std::cout << "TOTAL ENEMIES: " << registry.enemies.entities.size() << std::endl;
 		}
 	}
-
 
 	tileMap();
 
@@ -339,22 +393,12 @@ void WorldSystem::handle_collisions()
 		Collision& collision = registry.collisions.get(entity);
 		Entity& entity2 = collision.other;
 
-<<<<<<< HEAD
 		if (registry.enemies.has(entity2))
 		{
 			if (registry.projectiles.has(entity))
 			{
 				Projectile& projectile = registry.projectiles.get(entity);
 				Enemy& enemy = registry.enemies.get(entity2);
-=======
-		// should be deprecated no?
-		// if 1 is a projectile and 2 is an invader or if 1 is an invader and 2 is a projectile
-		if ((registry.projectiles.has(entity1) && registry.enemies.has(entity2)) || (registry.projectiles.has(entity2) && registry.enemies.has(entity1))) {
-			
-			// Set invader and projectile
-			Entity projectile_entity = registry.projectiles.has(entity1) ? entity1 : entity2;
-			Entity enemy_entity = registry.enemies.has(entity1) ? entity1 : entity2;
->>>>>>> 5aaf19db2ac138cdae8a7df10138962e4fa38858
 
 				// Invader takes damage
 				enemy.health -= projectile.damage;
@@ -371,67 +415,38 @@ void WorldSystem::handle_collisions()
 			}
 			else if (registry.players.has(entity))
 			{
-				Mix_PlayChannel(-1, dash_sound_2, 0);
-			}
-<<<<<<< HEAD
-=======
-		}
-
-		// player-enemy collision
-		if ((registry.players.has(entity1) && registry.enemies.has(entity2)) ||
-			(registry.players.has(entity2) && registry.enemies.has(entity1))) {
-			
-			Entity player_entity = registry.players.has(entity1) ? entity1 : entity2;
-			Entity enemy_entity = registry.enemies.has(entity1) ? entity1 : entity2;
-
-
-
-			if (isDashing()) {
-				// remove invader
-				registry.remove_all_components_of(enemy_entity);
-				Mix_PlayChannel(-1, dash_sound_2, 0);
-			} else {
-				// womp womp	game over or vignetted??
-				uint current_time = SDL_GetTicks();
-			
-				// then apply damage.
-				if (!registry.damageCooldowns.has(player_entity)) {
-					//  add the component and apply damage
-					registry.damageCooldowns.insert(player_entity, { current_time });
-				
-					Player& player = registry.players.get(player_entity);
-					player.health -= 1;
+				if (isDashing())
+				{
+					// remove invader
+					registry.remove_all_components_of(entity2);
 					Mix_PlayChannel(-1, dash_sound_2, 0);
-				} else {
-					// retrieve the cooldown component
-					DamageCooldown& dc = registry.damageCooldowns.get(player_entity);
-					if (current_time - dc.last_damage_time >= 500) {
-						dc.last_damage_time = current_time;
-						Player& player = registry.players.get(player_entity);
-						player.health -= 1;
+				}
+				else
+				{
+					// womp womp	game over or vignetted??
+					uint current_time = SDL_GetTicks();
+
+					// then apply damage.
+					if (!registry.damageCooldowns.has(entity)) 
+					{
+						//  add the component and apply damage
+						registry.damageCooldowns.insert(entity, { current_time });
+
+						Player& player = registry.players.get(entity);
+						player.health -= ENEMY_DAMAGE;
 						Mix_PlayChannel(-1, dash_sound_2, 0);
 					}
+					else 
+					{
+						// retrieve the cooldown component
+						DamageCooldown& dc = registry.damageCooldowns.get(entity);
+						if (current_time - dc.last_damage_time >= 500) 
+						{
+							registry.damageCooldowns.remove(entity);
+						}
+					}
 				}
-				// registry.remove_all_components_of(player_entity);
-				// registry.vignetteTimers.insert(Entity(), { 1000.f });
-
-				// Mix_PlayChannel(-1, dash_sound_2, 0);
 			}
-
-			// We dont do this anymore FLAG
-			// registry.remove_all_components_of(enemy_entity);
-			// registry.remove_all_components_of(player_entity);
-			// Mix_PlayChannel(-1, dash_sound_2, 0);
-
-
-			// Trigger vignette shader
-			// ensure it stays dark for a second before returning to normal
-			// registry.vignetteTimers.insert(Entity(), { 1000.f });
-
-			// ScreenState &screen = registry.screenStates.components[1];
-			// screen.darken_screen_factor = 1;
-			// registry.deathTimers.insert(tower_entity, { 1000.f });
->>>>>>> 5aaf19db2ac138cdae8a7df10138962e4fa38858
 		}
 	}
 	// Remove all collisions from this simulation step
@@ -529,9 +544,14 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 	// on button press
 	if (action == GLFW_PRESS)
 	{
-		if (current_state == GameState::GAME_PLAY && getClickedButton() == ButtonType::NONE)
+		// if player isn't dashing, start a dash
+		if (current_state == GameState::GAME_PLAY && getClickedButton() == ButtonType::NONE && !isDashing())
 		{
-			registry.dashes.insert(registry.players.entities[0], { std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() });
+			Entity& player_entity = registry.players.entities[0];
+			if (!registry.dashes.has(player_entity))
+			{
+				registry.dashes.insert(player_entity, { std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() });
+			}
 		}
 	}
 	else if (action == GLFW_RELEASE) 

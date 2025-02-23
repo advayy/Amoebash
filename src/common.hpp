@@ -82,7 +82,11 @@ const float PLAYER_BB_HEIGHT = (float)PLAYER_SIZE;
 // invaders are 32x32 px, but cells are 60x60
 const float ENEMY_BB_WIDTH = (float)ENEMY_SIZE;
 const float ENEMY_BB_HEIGHT = (float)ENEMY_SIZE;
-const float ENEMY_SPEED = 300; // reasonalby between 200-400
+const float ENEMY_PATROL_SPEED_PER_MS = 150.f / MS_PER_S;
+const float ENEMY_PATROL_RANGE = 100.0f;
+const float ENEMY_SPEED_PER_MS = 300.0f / MS_PER_S; // reasonalby between 200-400
+const float ENEMY_DAMAGE = 1;
+const float ENEMY_DETECTION_RADIUS = 300.0f;
 
 // LARGE ENEMY
 const float LARGE_ENEMY_BB_WIDTH = (float)LARGE_ENEMY_SIZE;
@@ -94,7 +98,6 @@ const float BUFF_HUD_SIZE = 16 * WORK_SCALE_FACTOR; // DONT USE YET!!
 
 // AMOEBA STATS
 const float PLAYER_HEALTH = 100;
-const float PLAYER_MASS = 10;
 
 // AMOEBA DASH STATS
 const float PLAYER_MAX_DASH_RANGE = 200;

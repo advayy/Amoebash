@@ -6,6 +6,7 @@
 // stlib
 #include <vector>
 #include <random>
+#include <map>
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
@@ -100,6 +101,8 @@ private:
     void updateCamera(float elapsed_ms);
     void updateMouseCoords();
 	void updateHuds();
+
+	void tileMap();
 
 	// OpenGL window handle
 	GLFWwindow* window;
