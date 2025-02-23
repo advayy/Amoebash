@@ -71,7 +71,7 @@ Entity createPlayer(RenderSystem* renderer, vec2 position)
 {
 	auto entity = Entity();
 
-	// new tower
+	// new player
 	auto& p = registry.players.emplace(entity);
 	
 	// Store a reference to the potentially re-used mesh object (the value is stored in the resource cache)
@@ -254,7 +254,7 @@ Entity addParalaxTile(vec2 gridCoord)
 
 Entity addWallTile(vec2 gridCoord)
 {
-	auto& tile = addTile(gridCoord, true);
+	auto tile = addTile(gridCoord, true);
 	registry.walls.emplace(tile);
 	return tile;
 }
