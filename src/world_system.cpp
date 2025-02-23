@@ -144,7 +144,7 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	// Set all states to default
     restart_game();
 	// set initial game state
-	current_state = GameState::GAME_PLAY;
+	current_state = GameState::START_SCREEN_ANIMATION;
 }
 
 void WorldSystem::updateCamera(float elapsed_ms) {
