@@ -320,3 +320,22 @@ const int player_idle_end = (int)PLAYER_FRAMES::FRAME_3;
 const int player_dash_start = (int)PLAYER_FRAMES::FRAME_4;
 const int player_dash_end = (int)PLAYER_FRAMES::FRAME_7;
 const int total_player_frames = (int)PLAYER_FRAMES::FRAME_COUNT;
+struct DamageCooldown {
+	uint last_damage_time;
+};
+
+enum class EnemyState {
+	CHASING = 0,
+	PATROLLING = CHASING + 1,
+	DASHING = PATROLLING + 1
+};
+
+struct EnemyBehavior {
+	EnemyState state = EnemyState::PATROLLING;
+	// float dashCooldown = 0.7f;       // cooldown before enemy can dash again
+	vec2 patrolDirection = {1, 0};  // initial patrol direction
+	float patrolSpeed = 150.0f;     // patrol speed 
+	float detectionRadius = 300.0f; // radius in which enemy detects player
+	vec2 patrolOrigin = {0, 0};     // origin of patrol
+	float patrolRange = 100.0f;     // range of patrol
+};

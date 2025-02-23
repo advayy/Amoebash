@@ -49,6 +49,14 @@ public:
 	ComponentContainer<GameplayCutScene> cutscenes;
 	ComponentContainer<MiniMap> miniMaps;
 
+	// debaounce for damage cooldwn
+	ComponentContainer<DamageCooldown> damageCooldowns;
+
+	// enemy state and behavior
+	ComponentContainer<EnemyBehavior> enemyBehaviors;
+	ComponentContainer<EnemyState> enemyStates;
+
+
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
 	{
@@ -84,6 +92,9 @@ public:
 		registry_list.push_back(&starts);
 		registry_list.push_back(&cutscenes);
 		registry_list.push_back(&miniMaps);
+		registry_list.push_back(&damageCooldowns);
+		registry_list.push_back(&enemyBehaviors);
+		registry_list.push_back(&enemyStates);
 
 	}
 

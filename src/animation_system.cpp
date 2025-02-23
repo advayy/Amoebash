@@ -66,3 +66,11 @@ void AnimationSystem::step(float elapsed_ms)
 		}
 	}
 }
+
+
+void changeAnimationFrames(Entity entity, int start_frame, int end_frame)
+{
+	Animation& animation = registry.animations.get(entity);
+	animation.start_frame = start_frame;
+	animation.end_frame = end_frame;
+}

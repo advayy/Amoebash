@@ -33,16 +33,28 @@ class WorldSystem
 public:
 	WorldSystem();
 
-	// creates main window
+	/*
+		 Creates the main window
+
+		 return: the created window
+	*/
 	GLFWwindow* create_window();
 
-	// starts and loads music and sound effects
+	/*
+		 Starts and loads music and sound effects
+
+		 return: True if all sounds loaded successfully
+	*/
 	bool start_and_load_sounds();
 
-	// call to close the window
+	/*
+		Helper to close the window
+	*/
 	void close_window();
 
-	// starts the game
+	/*
+		Sets the current renderer and sets the game to the start position
+	*/
 	void init(RenderSystem* renderer);
 
 	// releases all associated resources

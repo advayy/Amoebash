@@ -13,3 +13,6 @@ public:
 
 	AnimationSystem() {}
 };
+
+// animation utils
+void changeAnimationFrames(Entity entity, int start_frame, int end_frame);
