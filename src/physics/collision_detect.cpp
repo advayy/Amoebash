@@ -215,7 +215,7 @@ bool CollisionDetector::checkAndHandleWallCollision(Motion& player_motion, Veloc
 
 void CollisionDetector::addWallToCache(Entity& wall, const Motion& wall_motion)
 {
-	auto& vertices = getRectVertices(wall_motion);
+	auto vertices = getRectVertices(wall_motion);
 	wall_cache.insert({ wall.id(), std::make_pair(vertices, getEdges(vertices))});
 }
 
