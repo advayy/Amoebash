@@ -41,12 +41,20 @@ void AISystem::step(float elapsed_ms)
 				// if enemy goes past boundaries, reverse its patrol direction and clamp position.
 				if (enemyMotion.position.x < leftBoundary || enemyMotion.position.x > rightBoundary) 
 				{
-					enemyBehavior.patrolDirection.x = -enemyBehavior.patrolDirection.x;
-					enemyMotion.position.x = glm::clamp(enemyMotion.position.x, leftBoundary, rightBoundary);
+					enemyBehavior.patrolForwards = !enemyBehavior.patrolForwards;
+					enemyBehavior.patrolTime = 0.0f;
 				}
 
-				// set patrolling velocity based on current patrol direction.
-				enemyMotion.velocity = enemyBehavior.patrolDirection * enemyBehavior.patrolSpeed;
+				enemyBehavior.patrolTime += elapsed_ms;
+				
+				if (enemyBehavior.patrolForwards)
+				{
+					enemyMotion.position.x = lerp(leftBoundary, rightBoundary, enemyBehavior.patrolTime / ENEMY_PATROL_TIME_MS);
+				}
+				else
+				{
+					enemyMotion.position.x = lerp(rightBoundary, leftBoundary, enemyBehavior.patrolTime / ENEMY_PATROL_TIME_MS);
+				}
 
 				// sse circular detection to transition to dash state.
 				if (playerDetected) 
@@ -69,6 +77,8 @@ void AISystem::step(float elapsed_ms)
 					changeAnimationFrames(enemyEntity, 0, 6);
 					enemyBehavior.patrolOrigin = enemyMotion.position;
 					enemyBehavior.state = EnemyState::PATROLLING;
+					enemyBehavior.patrolTime = 0.0f;
+					enemyMotion.velocity = { 0, 0 };
 				}
 				break;
 			}

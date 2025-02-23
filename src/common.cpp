@@ -56,3 +56,8 @@ bool gl_has_errors()
 
 	return true;
 }
+
+float lerp(float start, float end, float progress)
+{
+	return start * (1 - progress) + end * progress;
+}

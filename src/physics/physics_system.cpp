@@ -68,6 +68,7 @@ void PhysicsSystem::step(float elapsed_ms)
 		}
 		else
 		{
+			dash.duration += elapsed_ms;
 			// Compute new velocity for dash
 			dash.speed += PLAYER_DASH_DECELERATION * elapsed_ms;
 			float angle_radians = (dash.angle - 90) * (M_PI / 180.0f);

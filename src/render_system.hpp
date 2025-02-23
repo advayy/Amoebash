@@ -33,7 +33,7 @@ class RenderSystem {
 		textures_path("amoeba/player_dash.png"),
 		textures_path("projectiles/gold_bubble.png"),
 		textures_path("tiles/test_tile.png"),
-		textures_path("tiles/paralax_tile_1_128x.png"),
+		textures_path("tiles/parallax_tile_1_128x.png"),
 		textures_path("ui_art/amoebash_logo.png"),
 		textures_path("ui_art/gameOver.png"),
 		textures_path("ui_art/start.png"),

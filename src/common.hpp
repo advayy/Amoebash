@@ -84,7 +84,8 @@ const float ENEMY_BB_WIDTH = (float)ENEMY_SIZE;
 const float ENEMY_BB_HEIGHT = (float)ENEMY_SIZE;
 const float ENEMY_PATROL_SPEED_PER_MS = 150.f / MS_PER_S;
 const float ENEMY_PATROL_RANGE = 100.0f;
-const float ENEMY_SPEED_PER_MS = 300.0f / MS_PER_S; // reasonalby between 200-400
+const float ENEMY_SPEED_PER_MS = 200.0f / MS_PER_S; // reasonalby between 200-400
+const float ENEMY_PATROL_TIME_MS = 2 * ENEMY_PATROL_RANGE / ENEMY_SPEED_PER_MS;
 const float ENEMY_DAMAGE = 1;
 const float ENEMY_DETECTION_RADIUS = 300.0f;
 
@@ -152,3 +153,5 @@ struct Transform {
 };
 
 bool gl_has_errors();
+
+float lerp(float start, float end, float progress);

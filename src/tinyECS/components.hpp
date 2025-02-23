@@ -16,6 +16,7 @@ struct Velocity
 {
 	float speed = 0.0f;
 	float angle = 0.0f;
+	float duration = 0.0f;
 };
 
 struct Dash 
@@ -332,9 +333,10 @@ enum class EnemyState {
 struct EnemyBehavior {
 	EnemyState state = EnemyState::PATROLLING;
 	// float dashCooldown = 0.7f;       // cooldown before enemy can dash again
-	vec2 patrolDirection = {1, 0};  // initial patrol direction
+	bool patrolForwards = true;  // initial patrol direction
 	float patrolSpeed = ENEMY_PATROL_SPEED_PER_MS;     // patrol speed 
 	float detectionRadius = ENEMY_DETECTION_RADIUS; // radius in which enemy detects player
 	vec2 patrolOrigin = {0, 0};     // origin of patrol
 	float patrolRange = ENEMY_PATROL_RANGE;     // range of patrol
+	float patrolTime = ENEMY_PATROL_TIME_MS / 2;
 };
