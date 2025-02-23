@@ -25,12 +25,13 @@ void PhysicsSystem::step(float elapsed_ms)
 	Player& player = registry.players.get(player_entity);
 	player.grid_position = positionToGridCell(registry.motions.get(player_entity).position);
 
-	//// Handle enemy-projectile or enemy-player collisions
+	// Handle enemy-projectile or enemy-player collisions
 	for (auto& proj_entity : registry.projectiles.entities)
 	{
 		Motion& proj_motion = registry.motions.get(proj_entity);
 		for (auto& e_entity : registry.enemies.entities)
 		{
+			// ensure the projectile or player is the "first" entity
 			Motion& e_motion = registry.motions.get(e_entity);
 			if (detector.hasCollided(proj_motion, e_motion))
 			{

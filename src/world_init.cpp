@@ -4,28 +4,6 @@
 #include <random>
 #include <chrono>
 
-
-std::vector<vec2> getRectVertices2(const Motion rectangle)
-{
-	vec2 position = rectangle.position;
-	float angle = rectangle.angle;
-
-	float half_width = rectangle.scale.x / 2;
-	float half_height = rectangle.scale.y / 2;
-
-	vec2 direction_vector = { cosf((angle - 90) * (M_PI / 180.0f)), sinf((angle - 90) * (M_PI / 180.0f)) };
-	vec2 perpendicular_vector = { -direction_vector.y, direction_vector.x };
-	vec2 half_width_rotated = direction_vector * half_width;
-	vec2 half_height_rotated = perpendicular_vector * half_height;
-
-	return {
-		position - half_height_rotated + half_width_rotated,
-		position + half_height_rotated + half_width_rotated,
-		position + half_height_rotated - half_width_rotated,
-		position - half_height_rotated - half_width_rotated
-	};
-}
-
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // !!! TODO A1: implement grid lines as gridLines with renderRequests and colors
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -83,7 +61,7 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 	{
 		behavior.state = EnemyState::PATROLLING;
 	} else {
-		behavior.state = EnemyState::PATROLLING;
+		behavior.state = EnemyState::CHASING;
 	}
 
 	return entity;
