@@ -140,12 +140,16 @@ bool CollisionDetector::checkAndHandleWallCollision(Motion& player_motion, Veloc
 
 	if (collision)
 	{
+		// collision detected. we now have to deal with moving the player out of the wall
 		vec2 player_center = player_motion.position;
 
 		vec2 closest_intersection_edge;
 		vec2 closest_intersection_edge_vertex;
 		float closest_intersection_dist = std::numeric_limits<float>::max();
 
+		// find which of the 4 wall edges the player collided with
+		// find the intersection of the vector from player center (in the direction of player movement) to every edge
+		// use the closest intersection
 		for (int i = 0; i < wall_vertices.size(); i++)
 		{
 			vec2 edge_start = wall_vertices[i];
@@ -168,29 +172,37 @@ bool CollisionDetector::checkAndHandleWallCollision(Motion& player_motion, Veloc
 		float player_width = player_motion.scale.x;
 		float player_height = player_motion.scale.y;
 
+		// if its a vertical edge
 		if (closest_intersection_edge.x == 0)
 		{
+			// determine if the player was moving to the right or left when colliding
 			float dist = (abs(cosf(angle_rad)) * (player_height / 2)) + (abs(sinf(angle_rad)) * (player_width / 2));
 			if (isRightQuadrant(player_dash.angle))
 			{
+				// moving to the right, so we have to reduce player x coord
 				player_motion.position.x = std::min(player_motion.position.x, closest_intersection_edge_vertex.x - dist - 10);
 			}
 			else
 			{
+				// moving to the left, so we have to increase player x coord
 				player_motion.position.x = std::max(player_motion.position.x, closest_intersection_edge_vertex.x + dist + 10);
 			}
 			player_dash.speed = abs(player_dash.speed * sinf((player_dash.angle - 90) * (M_PI / 180.0f)));
 			player_dash.angle = isTopQuadrant(player_dash.angle) ? 0 : 180;
 		}
+		// if its a horizontal edge
 		else
 		{
+			// determine if the player was moving up or down when colliding
 			float dist = abs(cosf(angle_rad)) * (player_width / 2) + abs(sinf(angle_rad)) * (player_height / 2);
 			if (isTopQuadrant(player_dash.angle))
 			{
+				// moving up, so we have to increase player y coord
 				player_motion.position.y = std::max(player_motion.position.y, closest_intersection_edge_vertex.y + dist + 10);
 			}
 			else
 			{
+				// moving to down, so we have to reduce player y coord
 				player_motion.position.y = std::min(player_motion.position.y, closest_intersection_edge_vertex.y - dist - 10);
 			}
 			player_dash.speed = abs(player_dash.speed * cosf((player_dash.angle - 90) * (M_PI / 180.0f)));
