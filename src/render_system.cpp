@@ -273,7 +273,7 @@ void RenderSystem::draw()
 
 	for (Entity entity : registry.renderRequests.entities)
 	{
-		if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity))
+		if ((registry.motions.has(entity) || registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity))
 		{
 			drawTexturedMesh(entity, projection_2D);
 		}
@@ -358,28 +358,32 @@ void RenderSystem::drawGameOverScreen() {
 
 }
 
-void RenderSystem::drawScreenAndButtons(
-    ScreenType screenType,
-    const std::vector<ButtonType>& buttonTypes) {
-
-    int w, h;
-    glfwGetFramebufferSize(window, &w, &h);
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
-    gl_has_errors();
-
-    glViewport(0, 0, w, h);
-    glDepthRange(0.00001, 10);
-
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClearDepth(10.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_DEPTH_TEST);
-
+void RenderSystem::setUpScreen()
+{
+	int w, h;
+	glfwGetFramebufferSize(window, &w, &h);
+	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
 	gl_has_errors();
 
+	glViewport(0, 0, w, h);
+	glDepthRange(0.00001, 10);
+
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearDepth(10.f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_DEPTH_TEST);
+
+	gl_has_errors();
+}
+
+void RenderSystem::drawScreenAndButtons(
+    ScreenType screenType,
+    const std::vector<ButtonType>& buttonTypes) 
+{
+	setUpScreen();
     mat3 projection_matrix = createProjectionMatrix();
 
     for (uint i = 0; i < registry.gameScreens.size(); i++) {
@@ -411,26 +415,9 @@ void RenderSystem::drawScreenAndButtons(
     gl_has_errors();
 }
 
-void RenderSystem::drawCutScreneAnimation() {
-
-    int w, h;
-    glfwGetFramebufferSize(window, &w, &h);
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
-    gl_has_errors();
-
-    glViewport(0, 0, w, h);
-    glDepthRange(0.00001, 10);
-
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClearDepth(10.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_DEPTH_TEST);
-
-	gl_has_errors();
-
+void RenderSystem::drawCutScreneAnimation() 
+{
+	setUpScreen();
     mat3 projection_matrix = createProjectionMatrix();
 
 	for (auto& entity : registry.cutscenes.entities) {

@@ -311,8 +311,8 @@ void WorldSystem::restart_game() {
 // Compute collisions between entities. Collisions are always in this order: (Player | Projectiles, Enemy | Wall)
 void WorldSystem::handle_collisions() 
 {
-	for (auto& entity : registry.collisions.entities) {
-		
+	for (auto& entity : registry.collisions.entities)
+	{	
 		Collision& collision = registry.collisions.get(entity);
 		Entity& entity2 = collision.other;
 

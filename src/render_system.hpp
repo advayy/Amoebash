@@ -106,7 +106,7 @@ public:
 private:
 	// Internal drawing functions for each entity type
 	void drawTexturedMesh(Entity entity, const mat3& projection);
-	void drawSpriteSheetTexturedMesh(Entity entity, const mat3& projection);
+	void setUpScreen();
 	void drawToScreen();
 
 	void setUpDefaultProgram(Entity& entity, const RenderRequest& render_request, const GLuint program);
