@@ -415,8 +415,8 @@ Entity createCamera() {
 }
 
 
-// Below are the components of the start Screen
 
+// function to create startscreen
 Entity createStartScreen(vec2 position) {
 	Entity startScreenEntity = Entity();
 
