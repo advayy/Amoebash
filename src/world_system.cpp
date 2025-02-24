@@ -189,6 +189,7 @@ void WorldSystem::updateCamera(float elapsed_ms) {
 
         // Calculate interpolated camera position
         vec2 targetPosition = player_motion.position; // Target is the player's position
+		// M1 interpolation implementation
         camera.position = lerp(camera.position, targetPosition, interpolationFactor * deltaTime);
 
         // Optional: Clamp camera speed
@@ -224,6 +225,7 @@ void WorldSystem::updateMouseCoords() {
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
+	// M1 Feature - Camera controls
     updateCamera(elapsed_ms_since_last_update);
     updateMouseCoords();
 	updateHuds();
