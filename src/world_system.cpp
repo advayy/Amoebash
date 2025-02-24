@@ -185,6 +185,8 @@ void WorldSystem::updateCamera(float elapsed_ms) {
         // Convert elapsed_ms to seconds for smoother interpolation
         float deltaTime = elapsed_ms / 1000.0f;
 
+		// [M1 Requirement] [3] Key-Frame / State Interpolation
+
         // Calculate interpolated camera position
         vec2 targetPosition = player_motion.position; // Target is the player's position
         camera.position = lerp(camera.position, targetPosition, interpolationFactor * deltaTime);
@@ -234,8 +236,10 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	while (registry.debugComponents.entities.size() > 0)
 	    registry.remove_all_components_of(registry.debugComponents.entities.back());
 
-	// Point the player to the mouse
+
+	// [M1 Requirement] [2] : Basic 2D Transformations
 	Motion& player_motion = registry.motions.get(registry.players.entities[0]);
+	// Update angle based on position of mouse so that player points to mouse cursor
 	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x)  * 180.0f / M_PI + 90.0f;
 
 

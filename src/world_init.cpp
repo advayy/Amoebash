@@ -38,12 +38,14 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 		}
 	);
 
+	// Set animation for enemy
 	Animation& a = registry.animations.emplace(entity);
 	a.start_frame = 0;
 	a.end_frame = 6;
 	a.time_per_frame = 100.0f;
 	a.loop = ANIM_LOOP_TYPES::PING_PONG;
 
+	// Add spritesheet and settings  
 	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
 	spriteSheet.total_frames = 13;
 	spriteSheet.current_frame = 0;
@@ -52,18 +54,17 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 	sprite.width = 32;
 	sprite.height = 32;
 
+	// Set Enemy Behavior
 	EnemyBehavior& behavior = registry.enemyBehaviors.emplace(entity);
 	behavior.patrolOrigin = position;
 
-		// randomly set the enemy behaviour (to patrol or not)
-		if (rand() % 2 == 0 || true)
-		{
-			behavior.state = EnemyState::PATROLLING;
-		} else {
-			behavior.state = EnemyState::CHASING;
-		}
-	
-
+	// randomly set the enemy behaviour (to patrol or not)
+	if (rand() % 2 == 0 || true)
+	{
+		behavior.state = EnemyState::PATROLLING;
+	} else {
+		behavior.state = EnemyState::CHASING;
+	}
 
 	return entity;
 }
@@ -99,6 +100,7 @@ Entity createPlayer(RenderSystem* renderer, vec2 position)
 		}
 	);
 
+	// Set Player spritesheet and animations
 	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
 	spriteSheet.total_frames = total_player_frames;
 

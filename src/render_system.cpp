@@ -265,12 +265,15 @@ void RenderSystem::draw()
 
 	mat3 projection_2D = createProjectionMatrix();
 
+	// [M1 Requirement] [1] Textured Geometry
+
 	// Draw all tiles first
 	for (Entity entity : registry.tiles.entities)
 	{
 		drawTexturedMesh(entity, projection_2D);
 	}
 
+	// Draw players / enemies
 	for (Entity entity : registry.renderRequests.entities)
 	{
 		if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity))
@@ -279,9 +282,10 @@ void RenderSystem::draw()
 		}
 	}
 	
-	// draw the mini map
+	// Draw the mini map
 	drawTexturedMesh(registry.miniMaps.entities[0], projection_2D);
 	
+	// Draw pause button if exists
 	if (registry.pauses.size() != 0) {
 		auto& pause = registry.pauses.entities[0];
 		drawTexturedMesh(pause, projection_2D);

@@ -44,15 +44,18 @@ void PhysicsSystem::step(float elapsed_ms)
 			playerMotion = &registry.motions.get(registry.players.entities[0]);
 	}
 
+	// [M1 Requirement] [2] : Basic 2D Transformations.
 	auto& motion_registry = registry.motions;
 	for (uint i = 0; i < motion_registry.size(); i++) {
 			Entity entity = motion_registry.entities[i];
 			Motion& motion = motion_registry.components[i];
 
+			// Adjust position based on velocity and elapsed time
 			motion.position += motion.velocity * step_seconds;
 
 			if (registry.players.has(entity)) {
 					// player update: use cached boundaries
+					// Prevent player from moving above boundaries
 					if (motion.position.x >= rightBound + 1 || motion.position.x <= leftBound ||
 							motion.position.y <= topBound || motion.position.y >= bottomBound + 1) {
 							motion.velocity *= -0.5f;
@@ -136,6 +139,7 @@ void PhysicsSystem::step(float elapsed_ms)
     	dash.timer_ms -= elapsed_ms;
     	player.dash_cooldown_ms -= elapsed_ms;
 
+		// No longer dashing
     	if (dash.timer_ms <= 0)
   		{
    	    	registry.dashes.remove(dash_entity);
