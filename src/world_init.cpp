@@ -54,10 +54,12 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 	sprite.width = 32;
 	sprite.height = 32;
 
+	// [M1 Requirement] [5] Random / Coded Action
 	// Set Enemy Behavior
 	EnemyBehavior& behavior = registry.enemyBehaviors.emplace(entity);
 	behavior.patrolOrigin = position;
 
+	// [M1 Requirement] [5] Random / Coded Action
 	// randomly set the enemy behaviour (to patrol or not)
 	if (rand() % 2 == 0 || true)
 	{
@@ -200,6 +202,7 @@ bool isDashing() {
 	return registry.dashes.size() > 0;
 }
 
+// [M1 Requirement] [6] Well-defined Game-space Boundaries
 Entity createMap(RenderSystem* renderer, vec2 size) {
 	auto entity = Entity();
 
@@ -208,6 +211,7 @@ Entity createMap(RenderSystem* renderer, vec2 size) {
 	
 	// MAP doesnt need to be even as we ceil and floor
 
+	// Set Map boundaries
 	Map& map = registry.maps.emplace(entity);
 	map.width = size.x;
 	map.height = size.y;
@@ -283,7 +287,8 @@ void tileMap() {
 	for(int x = left; x < right; x += 1) {
 		for(int y = top; y < bottom; y += 1) {
 			vec2 gridCoord = {x, y};
-
+			
+			// [M1 Requirement] [6] Well-defined Game-space Boundaries
 			// if gridcoord is past the map bounds, plant a wall tile
 			if (x < map.left || x >= map.right || y < map.top || y >= map.bottom) {
 				addWallTile(gridCoord);
@@ -420,8 +425,10 @@ Entity createCamera() {
 
 // function to create startscreen
 Entity createStartScreen(vec2 position) {
+	// Create Entity
 	Entity startScreenEntity = Entity();
 
+	//  Add render request
 	registry.renderRequests.insert(
 		startScreenEntity,
 		{
@@ -431,6 +438,7 @@ Entity createStartScreen(vec2 position) {
 		}
 	);
 
+	// Add components
 	Start& start = registry.starts.emplace(startScreenEntity);
 
 	GameScreen& screen = registry.gameScreens.emplace(startScreenEntity);
@@ -444,20 +452,21 @@ Entity createStartScreen(vec2 position) {
 
 	motion.velocity = {WINDOW_WIDTH_PX / 2.f / BOOT_CUTSCENE_DURATION_MS * 1000.f, 0.f};
 
+	// Create associated interactable UI elements
 	Entity startButtonEntity = createStartButton();
     Entity shopButtonEntity  = createShopButton();
     Entity infoButtonEntity  = createInfoButton();
 
 	start.buttons = std::vector{startButtonEntity, shopButtonEntity, infoButtonEntity};
 
-
-
 	return startScreenEntity;
 }
 
 Entity createShopScreen() {
+	// Create entity
 	Entity shopScreenEntity = Entity();
 
+	// Add render request
 	registry.renderRequests.insert(
 			shopScreenEntity,
 			{
@@ -467,6 +476,7 @@ Entity createShopScreen() {
 			}
 	);
 
+	// Add components
 	GameScreen& screen = registry.gameScreens.emplace(shopScreenEntity);
 	screen.type = ScreenType::SHOP;
 
@@ -481,8 +491,10 @@ Entity createShopScreen() {
 }
 
 Entity createInfoScreen() {
+	// Create Entity
 	Entity infoScreenEntity = Entity();
 
+	//	Add render request
 	registry.renderRequests.insert(
 			infoScreenEntity,
 			{
@@ -492,6 +504,7 @@ Entity createInfoScreen() {
 			}
 	);
 
+	// Add components
 	GameScreen& screen = registry.gameScreens.emplace(infoScreenEntity);
 	screen.type = ScreenType::INFO;
 
@@ -506,8 +519,10 @@ Entity createInfoScreen() {
 }
 
 Entity createGameOverScreen() {
+	// Create Entity
 	Entity gameOverScreenEntity = Entity();
 
+	// Add render request
 	registry.renderRequests.insert(
 		gameOverScreenEntity,
 		{
@@ -517,6 +532,7 @@ Entity createGameOverScreen() {
 		}
 	);
 
+	// Add components
 	Over& over = registry.overs.emplace(gameOverScreenEntity);
 
 	GameScreen& screen = registry.gameScreens.emplace(gameOverScreenEntity);
@@ -533,8 +549,10 @@ Entity createGameOverScreen() {
 }
 
 Entity createPauseScreen() {
+	// Add entity
 	Entity pauseScreenEntity = Entity();
 
+	// Add render request
 	registry.renderRequests.insert(
 			pauseScreenEntity,
 			{
@@ -544,6 +562,7 @@ Entity createPauseScreen() {
 			}
 		);
 
+	// Add components
 	Pause& pause = registry.pauses.emplace(pauseScreenEntity);
 
 	GameScreen& screen = registry.gameScreens.emplace(pauseScreenEntity);
@@ -561,11 +580,13 @@ Entity createPauseScreen() {
 }
 
 void createGameplayCutScene() {
+	// Add entities to be renedered
 	Entity backGround = createCutSceneBackGround();
 	Entity nose = createNose();
 	Entity noseAcceent = createNoseAccent();
 	Entity nucleus = createEnteringNucleus();
 
+	// Emplace render requests in the order desired
 	registry.cutscenes.emplace(backGround);
 	registry.cutscenes.emplace(nose);
 	registry.cutscenes.emplace(noseAcceent);
@@ -573,14 +594,17 @@ void createGameplayCutScene() {
 }
 
 void removeCutScene() {
+	// Remove all associated components for entities related to cutscenes 
 	for (auto& e : registry.cutscenes.entities) {
 		registry.remove_all_components_of(e);
 	}
 }
 
 Entity createCutSceneBackGround() {
+	// Create Entity
 	Entity backGroundEntity = Entity();
 
+	// Add Components
 	Motion& motion = registry.motions.emplace(backGroundEntity);
 	motion.angle = 0.0f;
 	motion.velocity = {0.0f, 0.0f};
@@ -614,8 +638,10 @@ Entity createCutSceneBackGround() {
 }
 
 Entity createNose() {
+	// Create Entity
 	Entity noseEntity = Entity();
 
+	// Add components
 	Motion& motion = registry.motions.emplace(noseEntity);
 	motion.angle = 0.0f;
 	motion.velocity = {0.0f, 0.0f};
@@ -638,12 +664,13 @@ Entity createNose() {
 	
 	spriteSheet.total_frames = 7;
 
+	// [M1 Requirement] [5] Random / Coded Action
+	// randomize texture
 	std::random_device rd; 
 	std::default_random_engine rng(rd());
     std::uniform_real_distribution<float> uniform_dist(0.0f, 1.0f);
 
 	int random_value = static_cast<int>(uniform_dist(rng) * spriteSheet.total_frames);
-	std::cout << random_value << std::endl;
 	spriteSheet.current_frame = random_value;
 
 	// not used at the moment
@@ -655,8 +682,10 @@ Entity createNose() {
 }
 
 Entity createNoseAccent() {
+	// Create Entity
 	Entity accentEntity = Entity();
 
+	// Add Components
 	Motion& motion = registry.motions.emplace(accentEntity);
 	motion.angle = 0.0f;
 	motion.velocity = {0.0f, 0.0f};
@@ -678,12 +707,12 @@ Entity createNoseAccent() {
 	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(accentEntity);
 	spriteSheet.total_frames = 5;
 
+	// [M1 Requirement] [5] Random / Coded Action
 	std::random_device rd; 
 	std::default_random_engine rng(rd());
     std::uniform_real_distribution<float> uniform_dist(0.0f, 1.0f);
 
 	int random_value = static_cast<int>(uniform_dist(rng) * spriteSheet.total_frames);
-	std::cout << random_value << std::endl;
 	spriteSheet.current_frame = random_value;
 
 	// not used at the moment
@@ -695,9 +724,10 @@ Entity createNoseAccent() {
 }
 
 Entity createEnteringNucleus() {
+	// Create Entity
 	Entity nucleusEntity = Entity();
 
-
+	// Add components
 	Motion& motion = registry.motions.emplace(nucleusEntity);
 	motion.angle = 0.0f;
 	motion.velocity = {0.0f, 0.0f};
@@ -734,6 +764,7 @@ Entity createEnteringNucleus() {
 void removePauseScreen() {
 	if (registry.pauses.size() == 0) return;
 
+	// remove pause screen from ECS
 	Entity pause = registry.pauses.entities[0];
 	registry.remove_all_components_of(pause);
 }
@@ -741,6 +772,7 @@ void removePauseScreen() {
 void removeGameOverScreen() {
 	if (registry.overs.size() == 0) return;
 
+	// remove gameover screen from ECS
 	Entity over = registry.overs.entities[0];
 	registry.remove_all_components_of(over);
 }
@@ -748,6 +780,7 @@ void removeGameOverScreen() {
 void removeStartScreen() {
 	if (registry.starts.size() == 0) return;
 
+	// remove start screen and associate UI elements from ECS
 	Entity start_entity = registry.starts.entities[0];
 	Start& start = registry.starts.components[0];
 	std::vector<Entity> buttons_to_remove = start.buttons;
@@ -760,8 +793,10 @@ void removeStartScreen() {
 }
 
 Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID texture) {
+	// Create Entity
 	Entity buttonEntity = Entity();
 
+	// Add components
 	registry.renderRequests.insert(
 			buttonEntity,
 			{
@@ -784,6 +819,8 @@ Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID
 
 	return buttonEntity;
 }
+
+// Button creating functions for start screen UI components
 
 Entity createStartButton() {
 	vec2 position = START_BUTTON_COORDINATES;

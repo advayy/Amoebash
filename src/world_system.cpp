@@ -342,6 +342,8 @@ void WorldSystem::handle_collisions() {
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// TODO A1: Loop over all collisions detected by the physics system
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+	// [M1 Requirement] [7] Simple Collision Detection & Resolution
 	ComponentContainer<Collision>& collision_container = registry.collisions;
 	for (uint i = 0; i < collision_container.components.size(); i++) {
 		
@@ -439,6 +441,7 @@ bool WorldSystem::is_over() const {
 	return bool(glfwWindowShouldClose(window));
 }
 
+// [M1 Requirement] [4] Keyboard / Mouse Control
 // on key callback
 void WorldSystem::on_key(int key, int, int action, int mod) {
 
@@ -465,14 +468,17 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 
 	// Pausing Game
 	if (action == GLFW_RELEASE && key == GLFW_KEY_SPACE) {
+		// only during gameplay
 		if (current_state == GameState::GAME_PLAY) {
+			// change state
 			current_state = GameState::PAUSE;
 
-			// renderer.
+			// render pause screen
 			createPauseScreen();
 
 		} else if (current_state == GameState::PAUSE) {
 			current_state = GameState::GAME_PLAY;
+			// remove pause screen at un-pause
 			removePauseScreen();
 		}
 	}
@@ -489,21 +495,25 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 		}
 	}
 
-	// using O key for gameover, for now
+	// using O key for gameover, debugging purposes
 	if (key == GLFW_KEY_O) {
 		if (action == GLFW_RELEASE) {
+			// only during gameplay
 			if (current_state == GameState::GAME_PLAY) {
 				previous_state = GameState::GAME_PLAY;
 				current_state = GameState::GAME_OVER;
+				// render gameover screen
 				createGameOverScreen();
 			}
 		}
 	}
 
-	// Q for going to start screen
+	// Q for going to quitting game
 	if (key == GLFW_KEY_Q) {
 		if (action == GLFW_RELEASE) {
+			// restart
 			restart_game();
+			// render start screen
 			current_state = GameState::START_SCREEN;
 		}
 	}
@@ -516,6 +526,7 @@ void WorldSystem::on_mouse_move(vec2 mouse_position) {
 	device_mouse_pos_y = mouse_position.y;
 }
 
+// [M1 Requirement] [4] Keyboard / Mouse Control
 void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -528,14 +539,17 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 		vec2 tile = positionToGridCell(vec2(game_mouse_pos_x, game_mouse_pos_y));
 
 				
+		// Dash on left-click
 		if(button == GLFW_MOUSE_BUTTON_LEFT && canDash() && current_state == GameState::GAME_PLAY)
 		{
 			initiatePlayerDash();
 			Mix_PlayChannel(-1, dash_sound_1, 0);
 		}
+		// UI interactions on start screen
 		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::START_SCREEN) 
 		{
 			
+			// Find start button
 			screenButton* startButton = nullptr; 
 
 			for (auto& button : registry.buttons.components) {
@@ -562,6 +576,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 				return;
 			} 
 
+			// Find Info button
 			screenButton* nucleusButton = nullptr; 
 			for (auto& button : registry.buttons.components) {
 				if (button.type == ButtonType::INFOBUTTON) {
@@ -574,37 +589,37 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 				return;
 			} 
 
-
+			// Check if buttons have been clicked
 			bool on_button_shop = buttonClick(*shopButton);
 			bool on_button_nucleus = buttonClick(*nucleusButton);
 			bool on_button = buttonClick(*startButton);
 			
-
-
-
-
-
+			// Move to shop screen and change state
 			if (on_button_shop) {
 				previous_state = current_state;
 				current_state = GameState::SHOP;
 
+			// Move to info screen and change state
 			} else if (on_button_nucleus) {
 				previous_state = current_state;
 				current_state = GameState::INFO;
 
+			// Move to game intro animation state
 			} else if (on_button) {
 				previous_state = current_state;
 				current_state = GameState::GAMEPLAY_CUTSCENE;
-				// need to add render request for cutscene animations
+				
+				// remove start screen elements
 				removeStartScreen();
+
+				// create intro animation
 				createGameplayCutScene();
 			}
 		}
 
-		// gameplay -> shop
+		// UI Interaction for debuggin purposes
 		else if(button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::GAME_PLAY) {
 			
-			// Find shop button
 			screenButton* shopButton = nullptr; 
 			for (auto& button : registry.buttons.components) {
 				if (button.type == ButtonType::SHOPBUTTON) {
@@ -658,6 +673,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 			} 
 
 			bool on_button_shop = buttonClick(*shopButton);
+			// Resume to previous screen for exitting shop menu
 			if (on_button_shop) {
 				GameState temp = current_state;
 				current_state = previous_state;
@@ -665,7 +681,9 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 			}
 
 		} 
+
 		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::INFO) {
+			// Find Info button
 			screenButton* nucleusButton = nullptr; 
 			for (auto& button : registry.buttons.components) {
 				if (button.type == ButtonType::INFOBUTTON) {
@@ -678,7 +696,9 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 				return;
 			} 
 
+
 			bool on_button_shop = buttonClick(*nucleusButton);
+			// Resume to previous screen for exitting info menu
 			if (on_button_shop) {
 				GameState temp = current_state;
 				current_state = previous_state;
@@ -691,6 +711,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 			previous_state = current_state;
 			current_state = GameState::START_SCREEN;
 
+			// Remove UI elements for Gameover Screen
 			removeGameOverScreen();
 			restart_game();
 		}
@@ -704,6 +725,7 @@ bool WorldSystem::buttonClick(screenButton& button) {
 	float x_distance = std::abs(button_x - device_mouse_pos_x);
 	float y_distance = std::abs(button_y - device_mouse_pos_y);
 
+	// Check if click happened around bounded box of button
 	bool res = (x_distance < button.w / 2.f) && (y_distance < button.h / 2.f);
 
 

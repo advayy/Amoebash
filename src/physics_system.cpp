@@ -18,6 +18,8 @@ vec2 get_bounding_box(const Motion& motion)
 // This is a SUPER APPROXIMATE check that puts a circle around the bounding boxes and sees
 // if the center point of either object is inside the other's bounding-box-circle. You can
 // surely implement a more accurate detection
+
+// [M1 Requirement] [7] Simple Collision Detection & Resolution
 bool collides(const Motion& motion1, const Motion& motion2)
 {
 	// object 1, set left right
@@ -52,12 +54,13 @@ void PhysicsSystem::step(float elapsed_ms)
 		Entity entity = motion_registry.entities[i];
 		Motion& motion = motion_registry.components[i];
 
-			// Adjust position based on velocity and elapsed time
+		// Adjust position based on velocity and elapsed time
 		motion.position += motion.velocity * step_seconds;
 
 		if (registry.players.has(entity)) {
 			// player update: use cached boundaries
-					// Prevent player from moving above boundaries
+			// [M1 Requirement] [6] Well-defined Game-space Boundaries
+			// Prevent player from moving above boundaries
 			if (motion.position.x >= rightBound + 1 || motion.position.x <= leftBound ||
 				motion.position.y <= topBound || motion.position.y >= bottomBound + 1) {
 				motion.velocity *= -0.5f;
