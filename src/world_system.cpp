@@ -316,7 +316,7 @@ void WorldSystem::restart_game() {
     createCamera();
 
 	// screens
-	if (previous_state == GameState::GAME_OVER) {
+	if (previous_state == GameState::GAME_OVER || current_state == GameState::START_SCREEN) {
 		createStartScreen(WORLD_ORIGIN);
 	} else {
 		createStartScreen();
@@ -499,8 +499,9 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	// Q for going to start screen
 	if (key == GLFW_KEY_Q) {
 		if (action == GLFW_RELEASE) {
-			restart_game();
+			previous_state = current_state;
 			current_state = GameState::START_SCREEN;
+			restart_game();
 		}
 	}
 }
