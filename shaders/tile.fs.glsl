@@ -26,6 +26,8 @@ vec2 get_offset_texcoord(vec2 texcoord, int frame) {
 	return vec2(frame_offset + texcoord.x * sprite_width, texcoord.y);
 }
 
+// M1 feature - Parallax scrolling backgrounds
+
 vec2 apply_paralax(vec2 texcoord, int frame, vec2 camera_position) {
 
     float frameIndex = frame;
