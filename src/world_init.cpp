@@ -15,6 +15,8 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 	Enemy& enemy = registry.enemies.emplace(entity);
 	enemy.health = ENEMY_HEALTH;
 
+	EnemyType& type = registry.enemyTypes.emplace(entity);
+
 	// store a reference to the potentially re-used mesh object
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
 	registry.meshPtrs.emplace(entity, &mesh);
@@ -29,28 +31,58 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 	// motion.scale = vec2({ -INVADER_BB_WIDTH, INVADER_BB_WIDTH });
 	motion.scale = vec2({ ENEMY_BB_WIDTH, ENEMY_BB_HEIGHT });
 
-	registry.renderRequests.insert(
-		entity,
-		{
-			TEXTURE_ASSET_ID::ENEMY,
-			EFFECT_ASSET_ID::SPRITE_SHEET,
-			GEOMETRY_BUFFER_ID::SPRITE
-		}
-	);
+	if ((rand() % 2) == 0) {
+		type.type = EnemyTypes::SPIKE;
 
-	Animation& a = registry.animations.emplace(entity);
-	a.start_frame = 0;
-	a.end_frame = 6;
-	a.time_per_frame = 100.0f;
-	a.loop = ANIM_LOOP_TYPES::PING_PONG;
+		registry.renderRequests.insert(
+			entity,
+			{
+				TEXTURE_ASSET_ID::ENEMY,
+				EFFECT_ASSET_ID::SPRITE_SHEET,
+				GEOMETRY_BUFFER_ID::SPRITE
+			}
+		);
+	
+		Animation& a = registry.animations.emplace(entity);
+		a.start_frame = 0;
+		a.end_frame = 6;
+		a.time_per_frame = 100.0f;
+		a.loop = ANIM_LOOP_TYPES::PING_PONG;
+	
+		SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+		spriteSheet.total_frames = 13;
+		spriteSheet.current_frame = 0;
+	
+		SpriteSize& sprite = registry.spritesSizes.emplace(entity);
+		sprite.width = 32;
+		sprite.height = 32;
+	} else {
+		type.type = EnemyTypes::RED_BLOOD_CELL;
 
-	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
-	spriteSheet.total_frames = 13;
-	spriteSheet.current_frame = 0;
+		registry.renderRequests.insert(
+			entity,
+			{
+				TEXTURE_ASSET_ID::RBC,
+				EFFECT_ASSET_ID::SPRITE_SHEET,
+				GEOMETRY_BUFFER_ID::SPRITE
+			}
+		);
 
-	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
-	sprite.width = 32;
-	sprite.height = 32;
+		Animation& a = registry.animations.emplace(entity);
+		a.start_frame = 0;
+		a.end_frame = 13;
+		a.time_per_frame = 100.0f;
+		a.loop = ANIM_LOOP_TYPES::LOOP;
+
+		SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+		spriteSheet.total_frames = 14;
+		spriteSheet.current_frame = 0;
+
+		SpriteSize& sprite = registry.spritesSizes.emplace(entity);
+		sprite.width = 32;
+		sprite.height = 32;
+	}
+
 
 	EnemyBehavior& behavior = registry.enemyBehaviors.emplace(entity);
 	behavior.patrolOrigin = position;

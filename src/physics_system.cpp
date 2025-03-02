@@ -75,6 +75,8 @@ void PhysicsSystem::step(float elapsed_ms)
 			EnemyBehavior& enemyBehavior = registry.enemyBehaviors.get(enemyEntity);
 			Animation& enemyAnimation = registry.animations.get(enemyEntity);
 
+			EnemyType& type = registry.enemyTypes.get(enemyEntity);
+
 			vec2 diff = playerMotion->position - enemyMotion.position;
 			float distance = glm::length(diff);
 			bool playerDetected = (distance < enemyBehavior.detectionRadius);
@@ -114,8 +116,14 @@ void PhysicsSystem::step(float elapsed_ms)
 
 				// sse circular detection to transition to dash state.
 				if (playerDetected) {
-					changeAnimationFrames(enemyEntity, 7, 12);
-					enemyBehavior.state = EnemyState::DASHING;
+					if (type.type == EnemyTypes::SPIKE) {
+						changeAnimationFrames(enemyEntity, 7, 12);
+						enemyBehavior.state = EnemyState::DASHING;
+					} else if (type.type == EnemyTypes::RED_BLOOD_CELL) {
+						enemyBehavior.state = EnemyState::RUNAWAY;
+						std::cout << "changing state to runaway" << std::endl;
+					}
+					
 				}
 				break;
 			}
@@ -127,6 +135,23 @@ void PhysicsSystem::step(float elapsed_ms)
 				}
 				else {
 					changeAnimationFrames(enemyEntity, 0, 6);
+					enemyBehavior.patrolOrigin = enemyMotion.position;
+					enemyBehavior.state = EnemyState::PATROLLING;
+					enemyBehavior.patrolTime = 0.0f;
+					enemyMotion.velocity = { 0, 0 };
+				}
+				break;
+			}
+
+			case EnemyState::RUNAWAY: {
+				std::cout << distance << std::endl; 
+				std::cout << enemyBehavior.detectionRadius << std::endl;
+				if (distance > 0.001f && playerDetected) {
+					// run away from character
+					vec2 direction = glm::normalize(toPlayer);
+					enemyMotion.velocity = -direction * ENEMY_SPEED;
+					std::cout << "I AM RUNNING AWAY FROM YOU" << std::endl;
+				} else {
 					enemyBehavior.patrolOrigin = enemyMotion.position;
 					enemyBehavior.state = EnemyState::PATROLLING;
 					enemyBehavior.patrolTime = 0.0f;

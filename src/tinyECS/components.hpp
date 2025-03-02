@@ -236,7 +236,8 @@ enum class TEXTURE_ASSET_ID {
 	CUTSCENEBACKGROUND = NOSE + 1,
 	NOSEACCENT = CUTSCENEBACKGROUND + 1,
 	ENTERINGNUCLEUS = NOSEACCENT + 1,
-	TEXTURE_COUNT = ENTERINGNUCLEUS + 1, 
+	RBC = ENTERINGNUCLEUS + 1,
+	TEXTURE_COUNT = RBC + 1, 
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -312,6 +313,7 @@ const int player_idle_end = (int)PLAYER_FRAMES::FRAME_3;
 const int player_dash_start = (int)PLAYER_FRAMES::FRAME_4;
 const int player_dash_end = (int)PLAYER_FRAMES::FRAME_7;
 const int total_player_frames = (int)PLAYER_FRAMES::FRAME_COUNT;
+
 struct DamageCooldown {
 	uint last_damage_time;
 };
@@ -319,7 +321,8 @@ struct DamageCooldown {
 enum class EnemyState {
 	CHASING = 0,
 	PATROLLING = CHASING + 1,
-	DASHING = PATROLLING + 1
+	DASHING = PATROLLING + 1,
+	RUNAWAY = DASHING + 1
 };
 
 struct EnemyBehavior {
@@ -332,3 +335,21 @@ struct EnemyBehavior {
 	float patrolRange = ENEMY_PATROL_RANGE;     // range of patrol
 	float patrolTime = ENEMY_PATROL_TIME_MS / 2;
 };
+
+enum class EnemyTypes {
+	SPIKE,
+	RED_BLOOD_CELL
+};
+
+struct EnemyType {
+	EnemyTypes type;
+};
+
+
+struct EnemyConfig {
+    TEXTURE_ASSET_ID texture;
+    int totalFrames;
+    int spriteWidth;
+    int spriteHeight;
+};
+

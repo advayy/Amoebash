@@ -48,7 +48,8 @@ class RenderSystem {
 		textures_path("transition_animations/noses_spritesheet.png"),
 		textures_path("transition_animations/into_game_transition_sheet.png"),
 		textures_path("transition_animations/nose_accent_spritesheet.png"),
-		textures_path("transition_animations/nucleus_entering_nose_sheet.png")
+		textures_path("transition_animations/nucleus_entering_nose_sheet.png"),
+		textures_path("enemies/RBC_spritesheet.png")
 	};
 
 	std::array<GLuint, effect_count> effects;
@@ -66,6 +67,9 @@ class RenderSystem {
 	std::array<GLuint, geometry_count> vertex_buffers;
 	std::array<GLuint, geometry_count> index_buffers;
 	std::array<Mesh, geometry_count> meshes;
+
+
+
 
 public:
 	// Initialize the window

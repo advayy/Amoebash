@@ -53,6 +53,7 @@ public:
 	// enemy state and behavior
 	ComponentContainer<EnemyBehavior> enemyBehaviors;
 	ComponentContainer<EnemyState> enemyStates;
+	ComponentContainer<EnemyType> enemyTypes;
 
 
 	// constructor that adds all containers for looping over them
@@ -91,6 +92,7 @@ public:
 		registry_list.push_back(&damageCooldowns);
 		registry_list.push_back(&enemyBehaviors);
 		registry_list.push_back(&enemyStates);
+		registry_list.push_back(&enemyTypes);
 
 	}
 
