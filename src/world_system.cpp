@@ -244,7 +244,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	// spawn new invaders
 	next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
 	if (next_enemy_spawn < 0.f && !gameOver) {
-		if (registry.enemies.entities.size() < MAX_ENEMIES_COUNT) {
+		if (registry.enemies.entities.size() < MAX_ENEMIES_COUNT) 
+		{
 			// reset timer
 			next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
 
@@ -255,7 +256,28 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			int randomYCell = MAP_TOP + (int)(uniform_dist(rng) * map_h);
 			vec2 enemyPosition = gridCellToPosition({(float)randomXCell, (float)randomYCell});
 			
-			createEnemy(renderer, enemyPosition);
+			// randomly either spawn a bacteriophage or a spike enemy
+			/*if (rand() % 2 == 0)
+			{
+				createSpikeEnemy(renderer, enemyPosition);
+			}*/
+			if (registry.bacteriophageAIs.entities.size() < MAX_BACTERIOPHAGE_COUNT) {
+				while (glm::distance(player_motion.position, enemyPosition) < ENEMY_DETECTION_RADIUS)
+				{
+					randomXCell = MAP_LEFT + (int)(uniform_dist(rng) * map_w);
+					randomYCell = MAP_TOP + (int)(uniform_dist(rng) * map_h);
+					enemyPosition = gridCellToPosition({ (float)randomXCell, (float)randomYCell });
+				}
+
+				int index = (int)(uniform_dist(rng) * MAX_BACTERIOPHAGE_COUNT);
+				while (bacteriophage_idx.find(index) != bacteriophage_idx.end())
+				{
+					index = (int)(uniform_dist(rng) * MAX_BACTERIOPHAGE_COUNT);
+				}
+				bacteriophage_idx[index] = 1;
+
+				createBacteriophage(renderer, enemyPosition, index);
+			}
 
 			// Optional debug output for spawning enemies
 			// std::cout << "TOTAL ENEMIES: " << registry.enemies.entities.size() << std::endl;
@@ -381,6 +403,10 @@ void WorldSystem::handle_collisions() {
 
 			if (isDashing()) {
 				// remove invader
+				if (registry.bacteriophageAIs.has(enemy_entity))
+				{
+					bacteriophage_idx.erase(registry.bacteriophageAIs.get(enemy_entity).placement_index);
+				}
 				registry.remove_all_components_of(enemy_entity);
 				Mix_PlayChannel(-1, dash_sound_2, 0);
 			} else {

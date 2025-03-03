@@ -83,10 +83,10 @@ const float PLAYER_BB_HEIGHT = (float)PLAYER_SIZE;
 const float ENEMY_BB_WIDTH = (float)ENEMY_SIZE;
 const float ENEMY_BB_HEIGHT = (float)ENEMY_SIZE;
 const float ENEMY_SPEED = 300; // reasonalby between 200-400
-const float ENEMY_PATROL_SPEED_PER_MS = 150.f / MS_PER_S;
-const float ENEMY_PATROL_RANGE = 100.0f;
+const float SPIKE_ENEMY_PATROL_SPEED_PER_MS = 150.f / MS_PER_S;
+const float SPIKE_ENEMY_PATROL_RANGE = 100.0f;
 const float ENEMY_SPEED_PER_MS = ENEMY_SPEED / MS_PER_S; // reasonalby between 200-400
-const float ENEMY_PATROL_TIME_MS = 2 * ENEMY_PATROL_RANGE / ENEMY_PATROL_SPEED_PER_MS;
+const float ENEMY_PATROL_TIME_MS = 2 * SPIKE_ENEMY_PATROL_RANGE / SPIKE_ENEMY_PATROL_SPEED_PER_MS;
 const float ENEMY_DAMAGE = 1;
 const float ENEMY_DETECTION_RADIUS = 300.0f;
 
@@ -107,8 +107,9 @@ const float PLAYER_DASH_DAMAGE = 20;
 
 // ENEMY STATS
 const float ENEMY_HEALTH = 50;
-const float ENEMY_SPAWN_RATE_MS = 1 * 1000;
-const float MAX_ENEMIES_COUNT = 15;
+const float ENEMY_SPAWN_RATE_MS = 0.1 * 1000;
+const float MAX_BACTERIOPHAGE_COUNT = 10;
+const float MAX_ENEMIES_COUNT = MAX_BACTERIOPHAGE_COUNT + 20;
 
 // OTHER CONSTANTS
 const float PROJECTILE_DAMAGE = 10;

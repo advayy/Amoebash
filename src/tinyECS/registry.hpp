@@ -50,9 +50,9 @@ public:
 	// debaounce for damage cooldwn
 	ComponentContainer<DamageCooldown> damageCooldowns;
 
-	// enemy state and behavior
-	ComponentContainer<EnemyBehavior> enemyBehaviors;
-	ComponentContainer<EnemyState> enemyStates;
+	// enemy behaviors
+	ComponentContainer<SpikeEnemyAI> spikeEnemyAIs;
+	ComponentContainer<BacteriophageAI> bacteriophageAIs;
 
 
 	// constructor that adds all containers for looping over them
@@ -89,8 +89,8 @@ public:
 		registry_list.push_back(&cutscenes);
 		registry_list.push_back(&miniMaps);
 		registry_list.push_back(&damageCooldowns);
-		registry_list.push_back(&enemyBehaviors);
-		registry_list.push_back(&enemyStates);
+		registry_list.push_back(&spikeEnemyAIs);
+		registry_list.push_back(&bacteriophageAIs);
 
 	}
 

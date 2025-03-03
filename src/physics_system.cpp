@@ -5,8 +5,6 @@
 #include <iostream>
 
 #include <glm/gtx/normalize_dot.hpp>
-// include lerp
-#include <glm/gtx/compatibility.hpp>
 
 // Returns the local bounding coordinates scaled by the current size of the entity
 vec2 get_bounding_box(const Motion& motion)
@@ -40,12 +38,6 @@ void PhysicsSystem::step(float elapsed_ms)
 	float topBound = MAP_TOP * GRID_CELL_HEIGHT_PX;
 	float bottomBound = MAP_BOTTOM * GRID_CELL_HEIGHT_PX - 1;
 
-	// cache player's motion if players exist
-	Motion* playerMotion = nullptr;
-	if (!registry.players.entities.empty()) {
-		playerMotion = &registry.motions.get(registry.players.entities[0]);
-	}
-
 	auto& motion_registry = registry.motions;
 	for (uint i = 0; i < motion_registry.size(); i++) {
 		Entity entity = motion_registry.entities[i];
@@ -62,83 +54,7 @@ void PhysicsSystem::step(float elapsed_ms)
 				motion.position.y = glm::clamp(motion.position.y, topBound, bottomBound);
 			}
 		}
-
-
 	}
-
-	// enemy update – use cached playerMotion
-	if (playerMotion) {
-		// iterate over all enemies
-		for (uint j = 0; j < registry.enemies.entities.size(); j++) {
-			Entity enemyEntity = registry.enemies.entities[j];
-			Motion& enemyMotion = registry.motions.get(enemyEntity);
-			EnemyBehavior& enemyBehavior = registry.enemyBehaviors.get(enemyEntity);
-			Animation& enemyAnimation = registry.animations.get(enemyEntity);
-
-			vec2 diff = playerMotion->position - enemyMotion.position;
-			float distance = glm::length(diff);
-			bool playerDetected = (distance < enemyBehavior.detectionRadius);
-			vec2 toPlayer = diff;
-
-			switch (enemyBehavior.state) {
-			case EnemyState::CHASING: {
-				if (distance > 0.001f) {
-					vec2 direction = glm::normalize(toPlayer);
-					enemyMotion.velocity = direction * ENEMY_SPEED;
-				}
-				break;
-			}
-			case EnemyState::PATROLLING: {
-				// define patrol boundaries based on stored origin and range.
-				float leftBoundary = enemyBehavior.patrolOrigin.x - enemyBehavior.patrolRange;
-				float rightBoundary = enemyBehavior.patrolOrigin.x + enemyBehavior.patrolRange;
-
-				// if enemy goes past boundaries, reverse its patrol direction.
-				if (enemyMotion.position.x < leftBoundary || enemyMotion.position.x > rightBoundary)
-				{
-					enemyBehavior.patrolForwards = !enemyBehavior.patrolForwards;
-					enemyBehavior.patrolTime = 0.0f;
-				}
-
-				enemyBehavior.patrolTime += elapsed_ms;
-
-				// M1 interpolation implementation
-				if (enemyBehavior.patrolForwards)
-				{
-					enemyMotion.position.x = lerp(leftBoundary, rightBoundary, enemyBehavior.patrolTime / ENEMY_PATROL_TIME_MS);
-				}
-				else
-				{
-					enemyMotion.position.x = lerp(rightBoundary, leftBoundary, enemyBehavior.patrolTime / ENEMY_PATROL_TIME_MS);
-				}
-
-				// sse circular detection to transition to dash state.
-				if (playerDetected) {
-					changeAnimationFrames(enemyEntity, 7, 12);
-					enemyBehavior.state = EnemyState::DASHING;
-				}
-				break;
-			}
-			case EnemyState::DASHING: {
-				if (distance > 0.001f && playerDetected) {
-					// dash toward the player
-					vec2 direction = glm::normalize(toPlayer);
-					enemyMotion.velocity = direction * ENEMY_SPEED;
-				}
-				else {
-					changeAnimationFrames(enemyEntity, 0, 6);
-					enemyBehavior.patrolOrigin = enemyMotion.position;
-					enemyBehavior.state = EnemyState::PATROLLING;
-					enemyBehavior.patrolTime = 0.0f;
-					enemyMotion.velocity = { 0, 0 };
-				}
-				break;
-			}
-			}
-		}
-	}
-
-
 
 	// Handle player dashing
 	for (uint i = 0; i < registry.dashes.size(); i++)

@@ -5,6 +5,8 @@
 #include "render_system.hpp"
 
 Entity createEnemy(RenderSystem* renderer, vec2 position);
+Entity createSpikeEnemy(RenderSystem* renderer, vec2 position);
+Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_index);
 Entity createPlayer(RenderSystem* renderer, vec2 position);
 void createButtons();
 

@@ -316,19 +316,36 @@ struct DamageCooldown {
 	uint last_damage_time;
 };
 
-enum class EnemyState {
+enum class SpikeEnemyState 
+{
 	CHASING = 0,
 	PATROLLING = CHASING + 1,
 	DASHING = PATROLLING + 1
 };
 
-struct EnemyBehavior {
-	EnemyState state = EnemyState::PATROLLING;
+struct SpikeEnemyAI 
+{
+	SpikeEnemyState state = SpikeEnemyState::PATROLLING;
 	// float dashCooldown = 0.7f;       // cooldown before enemy can dash again
 	bool patrolForwards = true;  // initial patrol direction
-	float patrolSpeed = ENEMY_PATROL_SPEED_PER_MS;     // patrol speed 
+	float patrolSpeed = SPIKE_ENEMY_PATROL_SPEED_PER_MS;     // patrol speed 
 	float detectionRadius = ENEMY_DETECTION_RADIUS; // radius in which enemy detects player
 	vec2 patrolOrigin = { 0, 0 };     // origin of patrol
-	float patrolRange = ENEMY_PATROL_RANGE;     // range of patrol
+	float patrolRange = SPIKE_ENEMY_PATROL_RANGE;     // range of patrol
 	float patrolTime = ENEMY_PATROL_TIME_MS / 2;
+};
+
+enum class BacteriophageState
+{
+	MOVE_TO = 0,
+	MOVE_AWAY = MOVE_TO + 1,
+	STAY = MOVE_AWAY + 1
+};
+
+struct BacteriophageAI
+{
+	BacteriophageState state;
+	float speed = ENEMY_SPEED;
+	float time_since_shoot_ms = 0.0f;
+	int placement_index = 0;
 };

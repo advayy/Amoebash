@@ -29,6 +29,24 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 	// motion.scale = vec2({ -INVADER_BB_WIDTH, INVADER_BB_WIDTH });
 	motion.scale = vec2({ ENEMY_BB_WIDTH, ENEMY_BB_HEIGHT });
 
+	return entity;
+}
+
+Entity createSpikeEnemy(RenderSystem* renderer, vec2 position)
+{
+	Entity& entity = createEnemy(renderer, position);
+	SpikeEnemyAI& enemy_ai = registry.spikeEnemyAIs.emplace(entity);
+	enemy_ai.patrolOrigin = position;
+
+	// randomly set the enemy behaviour (to patrol or not)
+	if (rand() % 2 == 0 || true)
+	{
+		enemy_ai.state = SpikeEnemyState::PATROLLING;
+	}
+	else {
+		enemy_ai.state = SpikeEnemyState::CHASING;
+	}
+
 	registry.renderRequests.insert(
 		entity,
 		{
@@ -52,18 +70,37 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 	sprite.width = 32;
 	sprite.height = 32;
 
-	EnemyBehavior& behavior = registry.enemyBehaviors.emplace(entity);
-	behavior.patrolOrigin = position;
+	return entity;
+}
 
-		// randomly set the enemy behaviour (to patrol or not)
-		if (rand() % 2 == 0 || true)
+Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_index)
+{
+	Entity& entity = createEnemy(renderer, position);
+	BacteriophageAI& enemy_ai = registry.bacteriophageAIs.emplace(entity);
+	enemy_ai.placement_index = placement_index;
+
+	registry.renderRequests.insert(
+		entity,
 		{
-			behavior.state = EnemyState::PATROLLING;
-		} else {
-			behavior.state = EnemyState::CHASING;
+			TEXTURE_ASSET_ID::ENEMY,
+			EFFECT_ASSET_ID::SPRITE_SHEET,
+			GEOMETRY_BUFFER_ID::SPRITE
 		}
-	
+	);
 
+	Animation& a = registry.animations.emplace(entity);
+	a.start_frame = 0;
+	a.end_frame = 6;
+	a.time_per_frame = 100.0f;
+	a.loop = ANIM_LOOP_TYPES::PING_PONG;
+
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 13;
+	spriteSheet.current_frame = 0;
+
+	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
+	sprite.width = 32;
+	sprite.height = 32;
 
 	return entity;
 }
