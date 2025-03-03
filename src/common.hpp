@@ -102,7 +102,7 @@ const float BUFF_HUD_SIZE = 16 * WORK_SCALE_FACTOR; // DONT USE YET!!
 const float PLAYER_HEALTH = 100;
 const float PLAYER_SPEED = 500;
 const float PLAYER_DASH_RANGE = 200;
-const float PLAYER_DASH_COOLDOWN_MS = 250;
+const float PLAYER_DASH_COOLDOWN_MS = 100;
 const float PLAYER_DASH_DAMAGE = 20;
 
 // ENEMY STATS

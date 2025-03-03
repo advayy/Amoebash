@@ -237,39 +237,6 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size) {
 	return entity;
 }
 
-std::vector<std::vector<tileType>> generateEmptyMap(int width, int height) {
-	std::vector<std::vector<tileType>> map;
-	map.resize(width);
-	for (int i = 0; i < width; i++) {
-		map[i].resize(height);
-		for (int j = 0; j < height; j++) {
-
-			// randomly generate walls
-			if (rand() % 100 < 20) {
-				map[i][j] = tileType::WALL;
-			}
-			else {map[i][j] = tileType::EMPTY;}
-		}
-	}
-	return map;
-}
-
-Entity createProceduralMap(RenderSystem* renderer, vec2 size) {
-	auto entity = Entity();
-
-	ProceduralMap& map = registry.proceduralMaps.emplace(entity);
-	map.map = generateEmptyMap(size.x, size.y);
-
-	map.width = size.x;
-	map.height = size.y;
-	map.top = floor(WORLD_ORIGIN.y - size.y / 2);
-	map.left = floor(WORLD_ORIGIN.x - size.x / 2);
-	map.bottom = ceil(WORLD_ORIGIN.y + size.y / 2);
-	map.right = ceil(WORLD_ORIGIN.x + size.x / 2);
-
-	return entity;
-}
-
 Entity createMap(RenderSystem *renderer, vec2 size)
 {
 	auto entity = Entity();
@@ -410,7 +377,7 @@ void tileProceduralMap() {
 			} else if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE) {
 				
 				// print here
-				std::cout << "x: " << x << " y: " << y << std::endl;
+				// std::cout << "x: " << x << " y: " << y << std::endl;
 				if (map.map[x][y] == tileType::EMPTY) { // if its being tiled what tile to put
 					addTile(gridCoord);
 				} else {
