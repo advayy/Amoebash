@@ -10,33 +10,39 @@ struct Player
 	int speed = PLAYER_SPEED;
 	int dash_cooldown_ms = 0;
 	int dash_damage = PLAYER_DASH_DAMAGE;
-	vec2 grid_position = { 0, 0 };
+	int dash_count = DASH_RECHARGE_COUNT;
+	int dash_recharge_timer_ms = 0;
+	vec2 grid_position = {0, 0};
 };
 
-struct Dashing {
+struct Dashing
+{
 	float timer_ms = 700.0f;
-	float angle    = 0.0;
+	float angle = 0.0;
 	float speed_factor = 1.0;
 };
 
-struct SpriteSize {
+struct SpriteSize
+{
 	int width = 32;
 	int height = 32;
 };
 
-struct Tile {
+struct Tile
+{
 	int grid_x = 0;
 	int grid_y = 0;
 };
 
-struct Map {
+struct Map
+{
 	// 2D array of numbers representing the map
 	int width = 20; // This is in chunks of grid cells
 	int height = 20;
-	int top=0;
-	int left=0;
-	int bottom=0;
-	int right=0;
+	int top = 0;
+	int left = 0;
+	int bottom = 0;
+	int right = 0;
 };
 
 enum class tileType {
@@ -59,39 +65,42 @@ struct ProceduralMap {
 struct MiniMap {
 };
 
-struct Camera {
-    vec2 position = { 0, 0 };
+struct Camera
+{
+	vec2 position = {0, 0};
 	bool initialized = false;
-	vec2 grid_position = { 0, 0 };
+	vec2 grid_position = {0, 0};
 };
 
 // Invader
-struct Enemy {
+struct Enemy
+{
 	int health;
 };
 
 // Projectile
-struct Projectile {
+struct Projectile
+{
 	int damage;
 };
 
 // used for Entities that cause damage
 struct Deadly
 {
-
 };
 
 // COMPONENTS FOR BUFFS?
-struct Buff {
+struct Buff
+{
 };
 
-
 // All data relevant to the shape and motion of entities
-struct Motion {
-	vec2  position = { 0, 0 };
-	float angle    = 0;
-	vec2  velocity = { 0, 0 };
-	vec2  scale    = { 10, 10 };
+struct Motion
+{
+	vec2 position = {0, 0};
+	float angle = 0;
+	vec2 velocity = {0, 0};
+	vec2 scale = {10, 10};
 };
 
 // Stucture to store collision information
@@ -99,11 +108,12 @@ struct Collision
 {
 	// Note, the first object is stored in the ECS container.entities
 	Entity other; // the second object involved in the collision
-	Collision(Entity& other) { this->other = other; };
+	Collision(Entity &other) { this->other = other; };
 };
 
 // Data structure for toggling debug mode
-struct Debug {
+struct Debug
+{
 	bool in_debug_mode = 0;
 	bool in_freeze_mode = 0;
 };
@@ -123,9 +133,10 @@ struct DebugComponent
 };
 
 // used to hold grid line start and end positions
-struct GridLine {
-	vec2 start_pos = {  0,  0 };
-	vec2 end_pos   = { 10, 10 };	// default to diagonal line
+struct GridLine
+{
+	vec2 start_pos = {0, 0};
+	vec2 end_pos = {10, 10}; // default to diagonal line
 };
 
 // A timer that will be associated to dying chicken
@@ -157,14 +168,15 @@ struct TexturedVertex
 // Mesh datastructure for storing vertex and index buffers
 struct Mesh
 {
-	static bool loadFromOBJFile(std::string obj_path, std::vector<ColoredVertex>& out_vertices, std::vector<uint16_t>& out_vertex_indices, vec2& out_size);
-	vec2 original_size = {1,1};
+	static bool loadFromOBJFile(std::string obj_path, std::vector<ColoredVertex> &out_vertices, std::vector<uint16_t> &out_vertex_indices, vec2 &out_size);
+	vec2 original_size = {1, 1};
 	std::vector<ColoredVertex> vertices;
 	std::vector<uint16_t> vertex_indices;
 };
 
 // Button Types
-enum ButtonType {
+enum ButtonType
+{
 	STARTBUTTON = 0,
 	SHOPBUTTON = STARTBUTTON + 1,
 	INFOBUTTON = SHOPBUTTON + 1
@@ -179,7 +191,8 @@ struct screenButton
 	ButtonType type;
 };
 
-enum ScreenType {
+enum ScreenType
+{
 	START = 0,
 	GAMEPLAY = START + 1,
 	INFO = GAMEPLAY + 1,
@@ -189,17 +202,45 @@ enum ScreenType {
 	PAUSE = GAMEOVER + 1
 };
 
-struct GameScreen {
+struct GameScreen
+{
 	ScreenType type;
 	std::vector<screenButton> screenButtons;
 };
 
-struct Pause {
-
+struct Pause
+{
 };
 
-struct Over {
+struct Over
+{
+};
 
+struct Start
+{
+	std::vector<Entity> buttons;
+};
+
+struct GameplayCutScene
+{
+};
+
+// UI Elements
+struct UIElement // default / static ui
+{
+	vec2 position;
+	vec2 scale;
+};
+
+struct HealthBar
+{
+	vec2 position;
+	vec2 scale;
+	int health;
+};
+
+struct DashRecharge
+{
 };
 
 /**
@@ -226,7 +267,8 @@ struct Over {
  * enums there are, and as a default value to represent uninitialized fields.
  */
 
-enum class TEXTURE_ASSET_ID {
+enum class TEXTURE_ASSET_ID
+{
 	ENEMY = 0,
 	PLAYER = ENEMY + 1,
 	PROJECTILE = PLAYER + 1,
@@ -241,12 +283,22 @@ enum class TEXTURE_ASSET_ID {
 	SHOPSCREEN = NUCLEUS + 1,
 	INFOSCREEN = SHOPSCREEN + 1,
 	WALL_TILE = INFOSCREEN + 1,
-	TEXTURE_COUNT = WALL_TILE + 1
+	NOSE = WALL_TILE + 1,
+	CUTSCENEBACKGROUND = NOSE + 1,
+	NOSEACCENT = CUTSCENEBACKGROUND + 1,
+	ENTERINGNUCLEUS = NOSEACCENT + 1,
+	NUCLEUS_UI = ENTERINGNUCLEUS + 1,
+	HEALTH_BAR_UI = NUCLEUS_UI + 1,
+	DASH_UI = HEALTH_BAR_UI + 1,
+	GERMONEY_UI = DASH_UI + 1,
+	WEAPON_PILL_UI = GERMONEY_UI + 1,
+	TEXTURE_COUNT = WEAPON_PILL_UI + 1,
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
 
-enum class EFFECT_ASSET_ID {
+enum class EFFECT_ASSET_ID
+{
 	COLOURED = 0,
 	LINE = COLOURED + 1,
 	TEXTURED = LINE + 1,
@@ -254,11 +306,16 @@ enum class EFFECT_ASSET_ID {
 	SPRITE_SHEET = VIGNETTE + 1,
 	TILE = SPRITE_SHEET + 1,
 	MINI_MAP = TILE + 1,
-	EFFECT_COUNT = MINI_MAP + 1
+	UI = MINI_MAP + 1,
+	HEALTH_BAR = UI + 1,
+	DASH_UI = HEALTH_BAR + 1,
+	EFFECT_COUNT = DASH_UI + 1,
+
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 
-enum class GEOMETRY_BUFFER_ID {
+enum class GEOMETRY_BUFFER_ID
+{
 	SPRITE = 0,
 	LINE = SPRITE + 1,
 	DEBUG_LINE = LINE + 1,
@@ -268,25 +325,76 @@ enum class GEOMETRY_BUFFER_ID {
 
 const int geometry_count = (int)GEOMETRY_BUFFER_ID::GEOMETRY_COUNT;
 
-struct RenderRequest {
-	TEXTURE_ASSET_ID   used_texture  = TEXTURE_ASSET_ID::TEXTURE_COUNT;
-	EFFECT_ASSET_ID    used_effect   = EFFECT_ASSET_ID::EFFECT_COUNT;
+struct RenderRequest
+{
+	TEXTURE_ASSET_ID used_texture = TEXTURE_ASSET_ID::TEXTURE_COUNT;
+	EFFECT_ASSET_ID used_effect = EFFECT_ASSET_ID::EFFECT_COUNT;
 	GEOMETRY_BUFFER_ID used_geometry = GEOMETRY_BUFFER_ID::GEOMETRY_COUNT;
 };
 
+enum class ANIM_LOOP_TYPES
+{
+	NO_LOOP = 0,
+	LOOP = NO_LOOP + 1,
+	PING_PONG = LOOP + 1
+};
 
+struct SpriteSheetImage
+{
+	int total_frames = 0;
+	int current_frame = 0;
+};
 
 // Animation frame
 struct Animation
 {
 	int start_frame = 0;
-	int end_frame = 3;
-	float timer_ms = 300.0f;
-	float default_frame_timer = 300.0f;
+	int end_frame = 0;
+	float time_since_last_frame = 0.0f;
+	float time_per_frame = 0.0f;
+	ANIM_LOOP_TYPES loop = ANIM_LOOP_TYPES::NO_LOOP;
+	bool forwards = true;
 };
 
-struct SpriteSheetImage {
-	int total_frames = 3;
-	int current_frame = 0;
+enum class PLAYER_FRAMES
+{
+	FRAME_0 = 0,
+	FRAME_1 = FRAME_0 + 1,
+	FRAME_2 = FRAME_1 + 1,
+	FRAME_3 = FRAME_2 + 1,
+	FRAME_4 = FRAME_3 + 1,
+	FRAME_5 = FRAME_4 + 1,
+	FRAME_6 = FRAME_5 + 1,
+	FRAME_7 = FRAME_6 + 1,
+	FRAME_8 = FRAME_7 + 1,
+	FRAME_COUNT = FRAME_8 + 1
 };
 
+const int player_idle_start = (int)PLAYER_FRAMES::FRAME_0;
+const int player_idle_end = (int)PLAYER_FRAMES::FRAME_3;
+const int player_dash_start = (int)PLAYER_FRAMES::FRAME_4;
+const int player_dash_end = (int)PLAYER_FRAMES::FRAME_7;
+const int total_player_frames = (int)PLAYER_FRAMES::FRAME_COUNT;
+struct DamageCooldown
+{
+	uint last_damage_time;
+};
+
+enum class EnemyState
+{
+	CHASING = 0,
+	PATROLLING = CHASING + 1,
+	DASHING = PATROLLING + 1
+};
+
+struct EnemyBehavior
+{
+	EnemyState state = EnemyState::PATROLLING;
+	// float dashCooldown = 0.7f;       // cooldown before enemy can dash again
+	bool patrolForwards = true;						// initial patrol direction
+	float patrolSpeed = ENEMY_PATROL_SPEED_PER_MS;	// patrol speed
+	float detectionRadius = ENEMY_DETECTION_RADIUS; // radius in which enemy detects player
+	vec2 patrolOrigin = {0, 0};						// origin of patrol
+	float patrolRange = ENEMY_PATROL_RANGE;			// range of patrol
+	float patrolTime = ENEMY_PATROL_TIME_MS / 2;
+};

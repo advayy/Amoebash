@@ -14,7 +14,7 @@
 #include "render_system.hpp"
 
 enum class GameState {
-	INITIAL_CUTSCENE,
+	START_SCREEN_ANIMATION,
     START_SCREEN,
     GAME_PLAY,
     GAME_OVER,
@@ -57,8 +57,11 @@ public:
 	// should the game be over ?
 	bool is_over() const;
 
-	GameState current_state = GameState::INITIAL_CUTSCENE;
-	GameState previous_state = GameState::INITIAL_CUTSCENE;
+	GameState current_state = GameState::START_SCREEN_ANIMATION;
+	GameState previous_state = GameState::START_SCREEN_ANIMATION;
+
+	float stateTimer = BOOT_CUTSCENE_DURATION_MS;
+
 
 private:	
 
@@ -109,4 +112,5 @@ private:
 	// C++ random number generator
 	std::default_random_engine rng;
 	std::uniform_real_distribution<float> uniform_dist; // number between 0..1
+
 };
