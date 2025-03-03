@@ -63,7 +63,19 @@ void PhysicsSystem::step(float elapsed_ms)
 				motion.position.y = glm::clamp(motion.position.y, topBound, bottomBound);
 			}
 		}
-
+		
+		if (registry.enemies.has(entity)) {
+			EnemyType& type = registry.enemyTypes.get(entity);
+			if (type.type == EnemyTypes::RED_BLOOD_CELL) {
+				if (motion.position.x >= rightBound + 1 || motion.position.x <= leftBound ||
+					motion.position.y <= topBound || motion.position.y >= bottomBound + 1) {
+					motion.velocity *= -1;
+					motion.angle -= 180;
+					motion.position.x = glm::clamp(motion.position.x, leftBound, rightBound);
+					motion.position.y = glm::clamp(motion.position.y, topBound, bottomBound);
+				}
+			}
+		}
 
 	}
 
@@ -117,14 +129,8 @@ void PhysicsSystem::step(float elapsed_ms)
 
 				// sse circular detection to transition to dash state.
 				if (playerDetected) {
-					if (type.type == EnemyTypes::SPIKE) {
-						changeAnimationFrames(enemyEntity, 7, 12);
-						enemyBehavior.state = EnemyState::DASHING;
-					} else if (type.type == EnemyTypes::RED_BLOOD_CELL) {
-						enemyBehavior.state = EnemyState::RUNAWAY;
-						std::cout << "changing state to runaway" << std::endl;
-					}
-					
+					changeAnimationFrames(enemyEntity, 7, 12);
+					enemyBehavior.state = EnemyState::DASHING;
 				}
 				break;
 			}
@@ -156,9 +162,15 @@ void PhysicsSystem::step(float elapsed_ms)
 					enemyBehavior.patrolTime = 0.f;
 					
 
-					enemyMotion.velocity.x = ENEMY_SPEED * cos(enemyMotion.angle);
-    				enemyMotion.velocity.y = ENEMY_SPEED * sin(enemyMotion.angle);
+					enemyMotion.velocity.x = ENEMY_SPEED * cos(enemyMotion.angle) / 4;
+    				enemyMotion.velocity.y = ENEMY_SPEED * sin(enemyMotion.angle) / 4;
 				}
+
+				
+				if (playerDetected) {
+					enemyBehavior.state = EnemyState::RUNAWAY;
+				}
+
 				break;
 			}
 
@@ -168,6 +180,12 @@ void PhysicsSystem::step(float elapsed_ms)
 				if (distance > 0.001f && playerDetected) {
 					// run away from character
 					vec2 direction = glm::normalize(toPlayer);
+					float new_angle = atan2(direction.y, direction.x);
+					new_angle *= (360.f / (2 * M_PI)) + 90.f;
+					if (new_angle < 0) {
+						new_angle += 360;
+					}
+					enemyMotion.angle = new_angle;
 					enemyMotion.velocity = -direction * ENEMY_SPEED;
 					std::cout << "I AM RUNNING AWAY FROM YOU" << std::endl;
 				} else {

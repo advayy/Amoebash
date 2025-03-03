@@ -88,7 +88,7 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 
 		behavior.state = EnemyState::FLOATING;
 
-		motion.velocity = { 0.0f, -ENEMY_SPEED };
+		motion.velocity = { 0.0f, -ENEMY_SPEED / 4};
 	}
 
 
