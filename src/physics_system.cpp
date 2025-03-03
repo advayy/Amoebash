@@ -3,6 +3,7 @@
 #include "world_init.hpp"
 #include "animation_system.hpp"
 #include <iostream>
+#include <random>
 
 #include <glm/gtx/normalize_dot.hpp>
 // include lerp
@@ -137,8 +138,26 @@ void PhysicsSystem::step(float elapsed_ms)
 					changeAnimationFrames(enemyEntity, 0, 6);
 					enemyBehavior.patrolOrigin = enemyMotion.position;
 					enemyBehavior.state = EnemyState::PATROLLING;
-					enemyBehavior.patrolTime = 0.0f;
+					enemyBehavior.patrolTime = ENEMY_PATROL_TIME_MS / 2;
 					enemyMotion.velocity = { 0, 0 };
+				}
+				break;
+			}
+
+			// Just for RBC's
+			case EnemyState::FLOATING: {
+				enemyBehavior.patrolTime += elapsed_ms;
+				if (enemyBehavior.patrolTime >= 3000.f) {
+					std::random_device rd; 
+					std::default_random_engine rng(rd());
+					std::uniform_real_distribution<float> uniform_dist(0.0f, 360 * 1.0f);
+					enemyMotion.angle = uniform_dist(rng);
+					std::cout << enemyMotion.angle << std::endl;
+					enemyBehavior.patrolTime = 0.f;
+					
+
+					enemyMotion.velocity.x = ENEMY_SPEED * cos(enemyMotion.angle);
+    				enemyMotion.velocity.y = ENEMY_SPEED * sin(enemyMotion.angle);
 				}
 				break;
 			}
@@ -153,9 +172,8 @@ void PhysicsSystem::step(float elapsed_ms)
 					std::cout << "I AM RUNNING AWAY FROM YOU" << std::endl;
 				} else {
 					enemyBehavior.patrolOrigin = enemyMotion.position;
-					enemyBehavior.state = EnemyState::PATROLLING;
-					enemyBehavior.patrolTime = 0.0f;
-					enemyMotion.velocity = { 0, 0 };
+					enemyBehavior.state = EnemyState::FLOATING;
+					enemyBehavior.patrolTime = ENEMY_PATROL_TIME_MS / 2;
 				}
 				break;
 			}

@@ -26,7 +26,9 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 	motion.angle = 0.f;
 	motion.velocity = { 0, 0 }; // FLAG
 	motion.position = position;
-
+	
+	EnemyBehavior& behavior = registry.enemyBehaviors.emplace(entity);
+	behavior.patrolOrigin = position;
 	// resize, set scale to negative if you want to make it face the opposite way
 	// motion.scale = vec2({ -INVADER_BB_WIDTH, INVADER_BB_WIDTH });
 	motion.scale = vec2({ ENEMY_BB_WIDTH, ENEMY_BB_HEIGHT });
@@ -48,14 +50,16 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 		a.end_frame = 6;
 		a.time_per_frame = 100.0f;
 		a.loop = ANIM_LOOP_TYPES::PING_PONG;
-	
+		
 		SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
 		spriteSheet.total_frames = 13;
 		spriteSheet.current_frame = 0;
-	
+		
 		SpriteSize& sprite = registry.spritesSizes.emplace(entity);
 		sprite.width = 32;
 		sprite.height = 32;
+		
+		behavior.state = EnemyState::PATROLLING;
 	} else {
 		type.type = EnemyTypes::RED_BLOOD_CELL;
 
@@ -81,20 +85,12 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 		SpriteSize& sprite = registry.spritesSizes.emplace(entity);
 		sprite.width = 32;
 		sprite.height = 32;
+
+		behavior.state = EnemyState::FLOATING;
+
+		motion.velocity = { 0.0f, -ENEMY_SPEED };
 	}
 
-
-	EnemyBehavior& behavior = registry.enemyBehaviors.emplace(entity);
-	behavior.patrolOrigin = position;
-
-		// randomly set the enemy behaviour (to patrol or not)
-		if (rand() % 2 == 0 || true)
-		{
-			behavior.state = EnemyState::PATROLLING;
-		} else {
-			behavior.state = EnemyState::CHASING;
-		}
-	
 
 
 	return entity;

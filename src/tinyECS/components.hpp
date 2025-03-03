@@ -322,7 +322,8 @@ enum class EnemyState {
 	CHASING = 0,
 	PATROLLING = CHASING + 1,
 	DASHING = PATROLLING + 1,
-	RUNAWAY = DASHING + 1
+	RUNAWAY = DASHING + 1,
+	FLOATING = RUNAWAY + 1
 };
 
 struct EnemyBehavior {
