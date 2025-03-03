@@ -113,6 +113,11 @@ public:
 
 	mat3 createProjectionMatrix();
 
+	// FPS counter related methods
+	void updateFPS(float elapsed_ms);
+	void toggleFPSDisplay();
+	void drawFPS();
+
 	Entity get_screen_state_entity()
 	{
 		return screen_state_entity;
@@ -122,6 +127,7 @@ public:
 	void drawUIElements();
 	void drawHealthBar(Entity entity, const mat3 &projection);
 	void drawDashRecharge(const mat3 &projection);
+
 
 private:
 	// Internal drawing functions for each entity type
@@ -143,6 +149,12 @@ private:
 	GLuint off_screen_render_buffer_depth;
 
 	Entity screen_state_entity;
+
+	// FPS counter variables
+	float frame_time_sum = 0.0f;
+	int frame_count = 0;
+	float current_fps = 0.0f;
+	bool show_fps = true;   // Start with FPS display enabled
 };
 
 bool loadEffectFromFile(

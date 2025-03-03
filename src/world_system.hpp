@@ -87,7 +87,7 @@ private:
     void updateCamera(float elapsed_ms);
     void updateMouseCoords();
 	void updateHuds();
-
+	
 	// OpenGL window handle
 	GLFWwindow* window;
 
@@ -98,16 +98,20 @@ private:
 	unsigned int points;
 
 	// Game state
-	RenderSystem* renderer;
+RenderSystem* renderer;
 	float current_speed;
 
 	// grid
 	std::vector<Entity> grid_lines;
-
+	
 	// music references
 	Mix_Music* background_music;
 	Mix_Chunk* dash_sound_1;
 	Mix_Chunk* dash_sound_2;
+
+	// debugging (fps etc..)
+	void toggleFPSDisplay();
+	bool debug = false;
 
 	// C++ random number generator
 	std::default_random_engine rng;

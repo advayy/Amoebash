@@ -1,4 +1,3 @@
-
 #include <SDL.h>
 #include <glm/trigonometric.hpp>
 #include <iostream>
@@ -7,6 +6,44 @@
 #include "render_system.hpp"
 #include "tinyECS/registry.hpp"
 #include "world_system.hpp"
+#include <sstream>
+
+void RenderSystem::updateFPS(float elapsed_ms) {
+    // skip all calculations if FPS display is not enabled
+    if (!show_fps) return;
+    
+    // update frame time sum and count
+    frame_time_sum += elapsed_ms;
+    frame_count++;
+    
+    // update FPS calculation every second (1000ms)
+    if (frame_time_sum >= 1000.0f) {
+        current_fps = static_cast<float>(frame_count) / (frame_time_sum / 1000.0f);
+        frame_time_sum = 0.0f;
+        frame_count = 0;
+        
+        // update window title with FPS
+        std::stringstream title;
+        title << "Amoebash (Debug: ON, FPS: " << std::fixed << std::setprecision(1) << current_fps << ")";
+        glfwSetWindowTitle(window, title.str().c_str());
+    }
+}
+
+void RenderSystem::toggleFPSDisplay() {
+    show_fps = !show_fps;
+    
+    // reset window title when FPS display is turned off
+    if (!show_fps) {
+        glfwSetWindowTitle(window, "Amoebash");
+    }
+}
+
+void RenderSystem::drawFPS() {
+    if (!show_fps) return;
+    
+    // keeping this code in case we want to render the FPS on the screen instead
+    // of in the window title in the future.
+}
 
 void RenderSystem::drawTexturedMesh(Entity entity,
 									const mat3 &projection)
@@ -48,7 +85,7 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 	// Getting uniform locations for glUniform* calls
 	GLint color_uloc = glGetUniformLocation(program, "fcolor");
 	const vec3 color = registry.colors.has(entity) ? registry.colors.get(entity) : vec3(1);
-	glUniform3fv(color_uloc, 1, (float *)&color);
+			glUniform3fv(color_uloc, 1, (float *)&color);
 	gl_has_errors();
 
 	if (render_request.used_effect == EFFECT_ASSET_ID::SPRITE_SHEET || render_request.used_effect == EFFECT_ASSET_ID::TILE)
@@ -63,6 +100,7 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		vec2 cameraPos = camera.position;
 		GLint camera_position_uloc = glGetUniformLocation(program, "camera_position");
 		glUniform2fv(camera_position_uloc, 1, (float *)&cameraPos);
+
 	}
 
 	// Get number of indices from index buffer, which has elements uint16_t
@@ -99,7 +137,7 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 
 	// Drawing of num_indices/3 triangles specified in the index buffer
 	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
-	gl_has_errors();
+gl_has_errors();
 }
 
 void RenderSystem::setUpSpriteSheetTexture(Entity &entity, const GLuint program)

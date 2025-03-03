@@ -1,4 +1,3 @@
-
 #define GL3W_IMPLEMENTATION
 #include <gl3w.h>
 
@@ -50,6 +49,7 @@ int main()
 
 	// variable timestep loop
 	auto t = Clock::now();
+
 	float &stateTimer = world_system.stateTimer;
 
 	while (!world_system.is_over())
@@ -63,6 +63,10 @@ int main()
 		float elapsed_ms =
 			(float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
 		t = now;
+
+		// Update FPS counter
+		renderer_system.updateFPS(elapsed_ms);
+
 		switch (current_state)
 		{
 

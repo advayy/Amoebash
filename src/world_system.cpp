@@ -38,6 +38,11 @@ WorldSystem::~WorldSystem()
 	glfwDestroyWindow(window);
 }
 
+// toggle FPS display on/off
+void WorldSystem::toggleFPSDisplay() {
+    renderer->toggleFPSDisplay();
+}
+
 // Debugging
 namespace
 {
@@ -304,10 +309,10 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	updateMouseCoords();
 	updateHuds();
 
-	// Updating window title with points
-	std::stringstream title_ss;
-	title_ss << "Points: " << points;
-	glfwSetWindowTitle(window, title_ss.str().c_str());
+	// Updating window title with points - disabled for now
+	// std::stringstream title_ss;
+	// title_ss << "Points: " << points;
+	// glfwSetWindowTitle(window, title_ss.str().c_str());
 
 	while (registry.debugComponents.entities.size() > 0)
 		registry.remove_all_components_of(registry.debugComponents.entities.back());
@@ -592,6 +597,11 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 	if (action == GLFW_RELEASE && key == GLFW_KEY_ESCAPE)
 	{
 		close_window();
+	}
+
+	// toggle FPS display with F key
+	if (action == GLFW_RELEASE && key == GLFW_KEY_F) {
+		toggleFPSDisplay();
 	}
 
 	// Resetting game
