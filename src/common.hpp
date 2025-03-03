@@ -12,10 +12,10 @@
 #include <GLFW/glfw3.h>
 
 // The glm library provides vector and matrix operations as in GLSL
-#include <glm/vec2.hpp>				// vec2
-#include <glm/ext/vector_int2.hpp>  // ivec2
-#include <glm/vec3.hpp>             // vec3
-#include <glm/mat3x3.hpp>           // mat3
+#include <glm/vec2.hpp>			   // vec2
+#include <glm/ext/vector_int2.hpp> // ivec2
+#include <glm/vec3.hpp>			   // vec3
+#include <glm/mat3x3.hpp>		   // mat3
 using namespace glm;
 
 #include "tinyECS/tiny_ecs.hpp"
@@ -25,10 +25,10 @@ using namespace glm;
 // Get defintion of PROJECT_SOURCE_DIR from:
 #include "../ext/project_path.hpp"
 inline std::string data_path() { return std::string(PROJECT_SOURCE_DIR) + "data"; };
-inline std::string shader_path(const std::string& name) {return std::string(PROJECT_SOURCE_DIR) + "/shaders/" + name;};
-inline std::string textures_path(const std::string& name) {return data_path() + "/textures/" + std::string(name);};
-inline std::string audio_path(const std::string& name) {return data_path() + "/audio/" + std::string(name);};
-inline std::string mesh_path(const std::string& name) {return data_path() + "/meshes/" + std::string(name);};
+inline std::string shader_path(const std::string &name) { return std::string(PROJECT_SOURCE_DIR) + "/shaders/" + name; };
+inline std::string textures_path(const std::string &name) { return data_path() + "/textures/" + std::string(name); };
+inline std::string audio_path(const std::string &name) { return data_path() + "/audio/" + std::string(name); };
+inline std::string mesh_path(const std::string &name) { return data_path() + "/meshes/" + std::string(name); };
 
 //
 // game constants
@@ -121,16 +121,56 @@ const float LOGO_HEIGHT_PX = 122 * WORK_SCALE_FACTOR;
 
 // CUTSCENES
 const float INTRO_CUTSCENE_DURATION_MS = 3 * MS_PER_S; // for animation after clicking start
-const float BOOT_CUTSCENE_DURATION_MS = 3 * MS_PER_S; // for logo movement at boot
+const float BOOT_CUTSCENE_DURATION_MS = 3 * MS_PER_S;  // for logo movement at boot
 const float GAMEPLAY_CUTSCENE_DURATION_MS = 3 * MS_PER_S;
 const float STATE_TIMER_DEFAULT = 3 * MS_PER_S;
 
 // button positions, scales
-const vec2 START_BUTTON_COORDINATES = { 0.f, WINDOW_HEIGHT_PX / 4.5f };
-const vec2 START_BUTTON_SCALE = { WINDOW_WIDTH_PX / 7.f, WINDOW_HEIGHT_PX / 7.f };
+const vec2 START_BUTTON_COORDINATES = {0.f, WINDOW_HEIGHT_PX / 4.5f};
+const vec2 START_BUTTON_SCALE = {WINDOW_WIDTH_PX / 7.f, WINDOW_HEIGHT_PX / 7.f};
 
-const vec2 SHOP_INFO_BUTTON_SCALE = { WINDOW_WIDTH_PX / 20.f, WINDOW_HEIGHT_PX / 20.f * 1.78f };
+const vec2 SHOP_INFO_BUTTON_SCALE = {WINDOW_WIDTH_PX / 20.f, WINDOW_HEIGHT_PX / 20.f * 1.78f};
 
+// UI
+const float UI_SCALE = 1.5;
+const float UI_MARGIN_X = 36;
+const float UI_MARGIN_Y = 36;
+const float UI_SPACING = 24;
+
+// nuclues
+const float NUCLEUS_UI_WIDTH = 62 * UI_SCALE;
+const float NUCLEUS_UI_HEIGHT = 68 * UI_SCALE;
+const vec2 NUCLEUS_UI_POS = {-WINDOW_WIDTH_PX / 2 + UI_MARGIN_X + NUCLEUS_UI_WIDTH / 2,
+							 WINDOW_HEIGHT_PX / 2 - UI_MARGIN_Y - NUCLEUS_UI_HEIGHT / 2};
+
+// health bar
+const float HEALTH_BAR_WIDTH = 107 * UI_SCALE;
+const float HEALTH_BAR_HEIGHT = 15 * UI_SCALE;
+const vec2 HEALTH_BAR_POS = {
+	-WINDOW_WIDTH_PX / 2 + UI_MARGIN_X + NUCLEUS_UI_WIDTH + UI_SPACING + HEALTH_BAR_WIDTH / 2,
+	WINDOW_HEIGHT_PX / 2 - UI_MARGIN_Y - NUCLEUS_UI_HEIGHT / 2 - UI_SPACING - HEALTH_BAR_HEIGHT / 2};
+
+// dash recharge
+const float DASH_WIDTH = 18 * UI_SCALE;
+const float DASH_HEIGHT = 21.6 * UI_SCALE;
+const int DASH_RECHARGE_COUNT = 3;
+// const float DASH_RECHARGE_SPACING = (HEALTH_BAR_WIDTH - DASH_WIDTH) / (DASH_RECHARGE_COUNT - 1);
+const float DASH_RECHARGE_SPACING = DASH_WIDTH + 8;
+const int DASH_RECHARGE_DELAY_MS = 500;
+const vec2 DASH_RECHARGE_START_POS = {
+	-WINDOW_WIDTH_PX / 2 + UI_MARGIN_X + NUCLEUS_UI_WIDTH + UI_SPACING + DASH_WIDTH / 2,
+	WINDOW_HEIGHT_PX / 2 - UI_MARGIN_Y - NUCLEUS_UI_HEIGHT / 2}; // pos.y aligns w/ nuclues
+
+// germoney
+const float GERMONEY_UI_WIDTH = 48 * UI_SCALE;
+const float GERMONEY_UI_HEIGHT = 22 * UI_SCALE;
+const vec2 GERMONEY_UI_POS = {-WINDOW_WIDTH_PX / 2 + UI_MARGIN_X + NUCLEUS_UI_WIDTH + UI_SPACING + GERMONEY_UI_WIDTH / 2,
+							  WINDOW_HEIGHT_PX / 2 - UI_MARGIN_Y - NUCLEUS_UI_HEIGHT / 2 + UI_SPACING + GERMONEY_UI_HEIGHT / 2};
+// weapon pill
+const float WEAPON_PILL_UI_WIDTH = 118 * UI_SCALE;
+const float WEAPON_PILL_UI_HEIGHT = 58 * UI_SCALE;
+const vec2 WEAPON_PILL_UI_POS = {WINDOW_WIDTH_PX / 2 - UI_MARGIN_X - WEAPON_PILL_UI_WIDTH / 2,
+								 WINDOW_HEIGHT_PX / 2 - UI_MARGIN_Y - NUCLEUS_UI_HEIGHT / 2}; // pos.y aligns w/ nuclues
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846f
@@ -139,8 +179,9 @@ const vec2 SHOP_INFO_BUTTON_SCALE = { WINDOW_WIDTH_PX / 20.f, WINDOW_HEIGHT_PX /
 // The 'Transform' component handles transformations passed to the Vertex shader
 // (similar to the gl Immediate mode equivalent, e.g., glTranslate()...)
 // We recommend making all components non-copyable by derving from ComponentNonCopyable
-struct Transform {
-	mat3 mat = { { 1.f, 0.f, 0.f }, { 0.f, 1.f, 0.f}, { 0.f, 0.f, 1.f} }; // start with the identity
+struct Transform
+{
+	mat3 mat = {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}}; // start with the identity
 	void scale(vec2 scale);
 	void rotate(float radians);
 	void translate(vec2 offset);

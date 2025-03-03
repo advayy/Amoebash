@@ -4,8 +4,8 @@
 #include "tinyECS/tiny_ecs.hpp"
 #include "render_system.hpp"
 
-Entity createEnemy(RenderSystem* renderer, vec2 position);
-Entity createPlayer(RenderSystem* renderer, vec2 position);
+Entity createEnemy(RenderSystem *renderer, vec2 position);
+Entity createPlayer(RenderSystem *renderer, vec2 position);
 void createButtons();
 
 // projectile
@@ -23,8 +23,8 @@ bool isDashing();
 
 Entity createCamera();
 
-Entity createMap(RenderSystem* renderer, vec2 size);
-Entity createMiniMap(RenderSystem* renderer, vec2 size);
+Entity createMap(RenderSystem *renderer, vec2 size);
+Entity createMiniMap(RenderSystem *renderer, vec2 size);
 
 void tileMap();
 Entity addTile(vec2 gridCoord);
@@ -55,3 +55,7 @@ Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID
 Entity createStartButton();
 Entity createShopButton();
 Entity createInfoButton();
+
+Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, EFFECT_ASSET_ID effect_id);
+Entity createHealthBar();
+void createDashRecharge();
