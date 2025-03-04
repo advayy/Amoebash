@@ -276,7 +276,8 @@ enum class TEXTURE_ASSET_ID
 	DASH_UI = HEALTH_BAR_UI + 1,
 	GERMONEY_UI = DASH_UI + 1,
 	WEAPON_PILL_UI = GERMONEY_UI + 1,
-	TEXTURE_COUNT = WEAPON_PILL_UI + 1,
+	PARTICLE = WEAPON_PILL_UI + 1,
+	TEXTURE_COUNT = PARTICLE + 1,
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -381,4 +382,27 @@ struct EnemyBehavior
 	vec2 patrolOrigin = {0, 0};						// origin of patrol
 	float patrolRange = ENEMY_PATROL_RANGE;			// range of patrol
 	float patrolTime = ENEMY_PATROL_TIME_MS / 2;
+};
+
+// Particle type enum for different particle behaviors
+enum class PARTICLE_TYPE {
+    DEATH_PARTICLE = 0,
+    // add more particle types here
+    PARTICLE_TYPE_COUNT
+};
+
+enum class PARTICLE_STATE {
+    BURST = 0,  
+    FOLLOW = 1, 
+    FADE = 2,   
+}
+
+// Particle component for particle system
+struct Particle {
+    PARTICLE_TYPE type;
+    PARTICLE_STATE state = PARTICLE_STATE::BURST;
+    float lifetime_ms = 2000.0f;
+    float max_lifetime_ms = 2000.0f;
+    float state_timer_ms = 0.0f;
+    float speed_factor = 100.0f;
 };

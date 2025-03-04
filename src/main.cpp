@@ -11,6 +11,7 @@
 #include "render_system.hpp"
 #include "world_system.hpp"
 #include "animation_system.hpp"
+#include "particle_system.hpp"
 #include "world_init.hpp"
 
 using Clock = std::chrono::high_resolution_clock;

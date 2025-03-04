@@ -2,16 +2,19 @@
 
 // internal
 #include "common.hpp"
+#include "render_system.hpp"
+#include "particle_system.hpp"
 
 // stlib
 #include <vector>
 #include <random>
+#include <memory>
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include <SDL_mixer.h>
 
-#include "render_system.hpp"
+class ParticleSystem;
 
 enum class GameState {
 	START_SCREEN_ANIMATION,
@@ -23,7 +26,6 @@ enum class GameState {
 	INFO,
 	GAMEPLAY_CUTSCENE
 };
-
 
 
 // Container for all our entities and game logic.
@@ -98,7 +100,8 @@ private:
 	unsigned int points;
 
 	// Game state
-RenderSystem* renderer;
+    RenderSystem* renderer;
+	ParticleSystem particle_system;
 	float current_speed;
 
 	// grid

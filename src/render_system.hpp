@@ -54,7 +54,9 @@ class RenderSystem
 		textures_path("ui_art/HUD_health_bar.png"),
 		textures_path("ui_art/HUD_dash_component_clear.png"),
 		textures_path("ui_art/HUD_germoney_hud.png"),
-		textures_path("ui_art/HUD_weapons_pill.png")};
+		textures_path("ui_art/HUD_weapons_pill.png"),
+		textures_path("effects/particle.png")
+	};
 
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.

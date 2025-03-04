@@ -385,6 +385,10 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 		}
 	}
 
+	// step the particle system only when its needed
+	// for optimaztion, we could only step the particles that are on screen
+	particle_system.step(elapsed_ms_since_last_update);
+
 	return true;
 }
 
@@ -512,9 +516,17 @@ void WorldSystem::handle_collisions()
 			// if invader health is below 0, remove invader and increase points
 			if (enemy.health <= 0)
 			{
+				// Get the enemy position before removing it
+				Motion& enemyMotion = registry.motions.get(enemy_entity);
+				vec2 enemyPosition = enemyMotion.position;
+				
+				// Remove the enemy entity
 				registry.remove_all_components_of(enemy_entity);
 				points += 1;
-				Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS
+				Mix_PlayChannel(-1, dash_sound_2, 0);
+				
+				// Create death particles at the enemy's position
+				particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemyPosition, 15);
 			}
 		}
 
@@ -528,9 +540,16 @@ void WorldSystem::handle_collisions()
 
 			if (isDashing())
 			{
+					// Get the enemy position before removing it
+				Motion& enemyMotion = registry.motions.get(enemy_entity);
+				vec2 enemyPosition = enemyMotion.position;
+				
 				// remove invader
 				registry.remove_all_components_of(enemy_entity);
 				Mix_PlayChannel(-1, dash_sound_2, 0);
+				
+				// Create death particles at the enemy's position
+				particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemyPosition, 15);
 			}
 			else
 			{
