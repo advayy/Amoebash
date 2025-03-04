@@ -394,8 +394,8 @@ enum class PARTICLE_TYPE {
 enum class PARTICLE_STATE {
     BURST = 0,  
     FOLLOW = 1, 
-    FADE = 2,   
-}
+    FADE = 2
+};
 
 // Particle component for particle system
 struct Particle {
