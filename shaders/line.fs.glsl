@@ -1,15 +1,15 @@
 #version 330
 
 // From Vertex Shader
-in vec3 vcolor;
+in vec4 vcolor;
 
 // Application data
-uniform vec3 fcolor;
+uniform vec4 fcolor;
 
 // Output color
 layout(location = 0) out vec4 color;
 
 void main()
 {
-	color = vec4(fcolor * vcolor, 1.0);
+	color = fcolor * vcolor;
 }

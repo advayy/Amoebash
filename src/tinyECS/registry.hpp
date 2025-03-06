@@ -21,7 +21,7 @@ public:
 	ComponentContainer<ScreenState> screenStates;
 	ComponentContainer<Deadly> deadlys;
 	ComponentContainer<DebugComponent> debugComponents;
-	ComponentContainer<vec3> colors;
+	ComponentContainer<vec4> colors;
 	// IMPORTANT: Add any new CC's below to the registry_list
 	ComponentContainer<GridLine> gridLines;
 	ComponentContainer<Enemy> enemies;

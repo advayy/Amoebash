@@ -1,10 +1,10 @@
 #version 330
 
 // Input attributes
-in vec3 in_color;
+in vec4 in_color;
 in vec3 in_position;
 
-out vec3 vcolor;
+out vec4 vcolor;
 
 // Application data
 uniform mat3 transform;

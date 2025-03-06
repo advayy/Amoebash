@@ -74,7 +74,7 @@ void ParticleSystem::step(float elapsed_ms)
                             motion.velocity += direction * speed_factor * (elapsed_ms / 1000.f);
                             
                             // cap velocity
-                            float max_speed = 400.0f;
+                            float max_speed = 600.0f;
                             float current_speed = glm::length(motion.velocity);
                             if (current_speed > max_speed)
                             {
@@ -87,8 +87,8 @@ void ParticleSystem::step(float elapsed_ms)
                     float life_ratio = particle.lifetime_ms / particle.max_lifetime_ms;
                     if (registry.colors.has(entity))
                     {
-                        vec3& color = registry.colors.get(entity);
-                        color = color * life_ratio * 2.0f;
+                        vec4& color = registry.colors.get(entity);
+                        color.a *= life_ratio * 2.0f;
                     }
                 }
                 break;
@@ -129,30 +129,28 @@ Entity ParticleSystem::createDeathParticle(vec2 position)
     
     // random burst direction in a circle
     float angle = uniform_dist(rng) * 2.0f * M_PI;
-    float speed = 100.0f + uniform_dist(rng) * 150.0f;
+    float speed = 350.0f + uniform_dist(rng) * 150.0f;
     motion.velocity = {cos(angle) * speed, sin(angle) * speed};
     
     // random size variation
-    float size_factor = 5.0f + uniform_dist(rng) * 10.0f;
+    float size_factor = 5.0f + uniform_dist(rng) * 5.0f;
     motion.scale = {size_factor, size_factor};
-    
-    // random color (temporary)
-    // float r = 0.5f + uniform_dist(rng) * 0.2f;
-    // float g = 0.7f + uniform_dist(rng) * 0.3f;
-    // float b = 0.2f + uniform_dist(rng) * 0.2f;    
+     
+    // add color component
     float r = 1.0f;
     float g = 1.0f;
     float b = 1.0f;
-    registry.colors.emplace(entity, vec3(r, g, b));
+    float a = 1.0f;
+    registry.colors.emplace(entity, vec4(r, g, b, a));
     
-    // add  componentss
+    // ad  componentss
     Particle& particle = registry.particles.emplace(entity);
     particle.type = PARTICLE_TYPE::DEATH_PARTICLE;
     particle.lifetime_ms = 1000.0f + uniform_dist(rng) * 500.0f;
     particle.max_lifetime_ms = particle.lifetime_ms;
     particle.state = PARTICLE_STATE::BURST;
     particle.state_timer_ms = 300.0f + uniform_dist(rng) * 200.0f; // time before following player
-    particle.speed_factor = 50.0f + uniform_dist(rng) * 50.0f;
+    particle.speed_factor = 400.0f + uniform_dist(rng) * 200.0f;
     
     registry.renderRequests.insert(
         entity,

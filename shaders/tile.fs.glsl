@@ -6,7 +6,7 @@ in vec3 position;
 
 // Application data
 uniform sampler2D sampler0;
-uniform vec3 fcolor;
+uniform vec4 fcolor;
 
 // Output color
 layout(location = 0) out  vec4 color;
@@ -27,9 +27,7 @@ vec2 get_offset_texcoord(vec2 texcoord, int frame) {
 }
 
 // M1 feature - Parallax scrolling backgrounds
-
 vec2 apply_paralax(vec2 texcoord, int frame, vec2 camera_position) {
-
     float frameIndex = frame;
     float parallaxFactor = float(frame)/float(total_frames - 1);
 
@@ -53,20 +51,19 @@ void main()
 		return;
 	}
 
-	vec4 fcolor = vec4(0.0, 0.0, 0.0, 0.0);
+	vec4 result_color = vec4(0.0, 0.0, 0.0, 0.0);
 
 	for (int i = current_frame; i < total_frames; i++) {
-
 		vec2 texcoord = get_offset_texcoord(texcoord, i);
 		texcoord = apply_paralax(texcoord, i, camera_position);
 
 		vec4 layer_color = texture(sampler0, texcoord);
 
 		if(i == 0) {
-			fcolor = layer_color;
+			result_color = layer_color;
 		} else if (layer_color.a > 0.0) {
-			fcolor = layer_color;
+			result_color = layer_color;
 		}
 	}	
-	color = fcolor;
+	color = result_color;
 }
