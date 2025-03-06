@@ -401,8 +401,8 @@ enum class PARTICLE_STATE {
 struct Particle {
     PARTICLE_TYPE type;
     PARTICLE_STATE state = PARTICLE_STATE::BURST;
-    float lifetime_ms = 2000.0f;
-    float max_lifetime_ms = 2000.0f;
+    float lifetime_ms = 1000.0f;
+    float max_lifetime_ms = 1000.0f;
     float state_timer_ms = 0.0f;
     float speed_factor = 100.0f;
 };
