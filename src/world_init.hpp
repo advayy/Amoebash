@@ -12,6 +12,7 @@ void createButtons();
 
 // projectile
 Entity createProjectile(vec2 pos, vec2 size, vec2 velocity);
+Entity createBacteriophageProjectile(Entity& bacteriophage);
 
 // debugging red lines
 Entity createLine(vec2 position, vec2 size);

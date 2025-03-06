@@ -56,6 +56,7 @@ struct Enemy {
 // Projectile
 struct Projectile {
 	int damage;
+	float ms_until_despawn = PROJECTILE_TTL_MS;
 };
 
 // used for Entities that cause damage

@@ -202,6 +202,15 @@ Entity createProjectile(vec2 pos, vec2 size, vec2 velocity)
 	return entity;
 }
 
+Entity createBacteriophageProjectile(Entity& bacteriophage)
+{
+	Motion motion = registry.motions.get(bacteriophage);
+	vec2 direction = vec2(cosf((motion.angle - 90) * (M_PI / 180)), sinf((motion.angle - 90) * (M_PI / 180)));
+	vec2 projectile_pos = motion.position + (motion.scale * direction);
+	vec2 projectile_velocity = direction * PROJECTILE_SPEED;
+	return createProjectile(projectile_pos, { PROJECTILE_BB_WIDTH, PROJECTILE_BB_HEIGHT }, projectile_velocity);
+}
+
 void initiatePlayerDash() {
 	Entity& player_e = registry.players.entities[0];
 	Player& player = registry.players.get(player_e);

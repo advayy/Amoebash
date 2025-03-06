@@ -14,8 +14,8 @@
 // create the world
 WorldSystem::WorldSystem() :
 	points(0),
-	next_enemy_spawn(0),
-	enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS)
+	next_enemy_spawn_ms(0),
+	next_projectile_ms(0)
 {
 	// seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
@@ -242,12 +242,13 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 
 	// spawn new invaders
-	next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
-	if (next_enemy_spawn < 0.f && !gameOver) {
+	next_enemy_spawn_ms -= elapsed_ms_since_last_update * current_speed;
+	if (next_enemy_spawn_ms < 0.f && !gameOver) 
+	{
 		if (registry.enemies.entities.size() < MAX_ENEMIES_COUNT) 
 		{
 			// reset timer
-			next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
+			next_enemy_spawn_ms = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
 
 			// randomize position
 			int map_w = MAP_RIGHT - MAP_LEFT;
@@ -261,7 +262,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			{
 				createSpikeEnemy(renderer, enemyPosition);
 			}*/
-			if (registry.bacteriophageAIs.entities.size() < MAX_BACTERIOPHAGE_COUNT) {
+			if (registry.bacteriophageAIs.entities.size() < MAX_BACTERIOPHAGE_COUNT) 
+			{
 				while (glm::distance(player_motion.position, enemyPosition) < ENEMY_DETECTION_RADIUS)
 				{
 					randomXCell = MAP_LEFT + (int)(uniform_dist(rng) * map_w);
@@ -284,7 +286,26 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		}
 	}
 
+	// despawn any old projectiles
+	for (auto& projectile_e : registry.projectiles.entities)
+	{
+		Projectile& projectile = registry.projectiles.get(projectile_e);
+		projectile.ms_until_despawn -= elapsed_ms_since_last_update * current_speed;
 
+		if (projectile.ms_until_despawn < 0.0f)
+		{
+			registry.remove_all_components_of(projectile_e);
+		}
+	}
+
+	// spawn new projectiles
+	next_enemy_spawn_ms -= elapsed_ms_since_last_update * current_speed;
+	if (next_enemy_spawn_ms < 0.f && !gameOver)
+	{
+		next_projectile_ms = (PROJECTILE_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (PROJECTILE_SPAWN_RATE_MS / 2);
+		int shooting_enemy = (int)(uniform_dist(rng) * registry.bacteriophageAIs.entities.size());
+		createBacteriophageProjectile(registry.bacteriophageAIs.entities[shooting_enemy]);
+	}
 	tileMap();
 
 	return true;
@@ -302,8 +323,10 @@ void WorldSystem::restart_game() {
 	current_speed = 1.f;
 
 	points = 0;
-	next_enemy_spawn = 0;
-	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
+	next_enemy_spawn_ms = 0;
+	next_projectile_ms = 0;
+
+	bacteriophage_idx.clear();
 
 	//FLAG
 	gameOver = false;
@@ -369,28 +392,28 @@ void WorldSystem::handle_collisions() {
 
 		// should be deprecated no?
 		// if 1 is a projectile and 2 is an invader or if 1 is an invader and 2 is a projectile
-		if ((registry.projectiles.has(entity1) && registry.enemies.has(entity2)) || (registry.projectiles.has(entity2) && registry.enemies.has(entity1))) {
-			
-			// Set invader and projectile
-			Entity projectile_entity = registry.projectiles.has(entity1) ? entity1 : entity2;
-			Entity enemy_entity = registry.enemies.has(entity1) ? entity1 : entity2;
+		//if ((registry.projectiles.has(entity1) && registry.enemies.has(entity2)) || (registry.projectiles.has(entity2) && registry.enemies.has(entity1))) {
+		//	
+		//	// Set invader and projectile
+		//	Entity projectile_entity = registry.projectiles.has(entity1) ? entity1 : entity2;
+		//	Entity enemy_entity = registry.enemies.has(entity1) ? entity1 : entity2;
 
-			Enemy& enemy = registry.enemies.get(registry.enemies.has(entity1) ? entity1 : entity2);
-			Projectile& projectile = registry.projectiles.get(registry.projectiles.has(entity1) ? entity1 : entity2);
-			
-			// Invader takes damage
-			enemy.health -= projectile.damage;
+		//	Enemy& enemy = registry.enemies.get(registry.enemies.has(entity1) ? entity1 : entity2);
+		//	Projectile& projectile = registry.projectiles.get(registry.projectiles.has(entity1) ? entity1 : entity2);
+		//	
+		//	// Invader takes damage
+		//	enemy.health -= projectile.damage;
 
-			// remove projectile
-			registry.remove_all_components_of(projectile_entity);
+		//	// remove projectile
+		//	registry.remove_all_components_of(projectile_entity);
 
-			// if invader health is below 0, remove invader and increase points
-			if(enemy.health <= 0){
-				registry.remove_all_components_of(enemy_entity);
-				points += 1;
- 				Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS 
-			}
-		}
+		//	// if invader health is below 0, remove invader and increase points
+		//	if(enemy.health <= 0){
+		//		registry.remove_all_components_of(enemy_entity);
+		//		points += 1;
+ 	//			Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS 
+		//	}
+		//}
 
 		// player-enemy collision
 		if ((registry.players.has(entity1) && registry.enemies.has(entity2)) ||

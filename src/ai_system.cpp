@@ -111,6 +111,6 @@ void AISystem::step(float elapsed_ms)
 			enemyMotion.velocity = { 0, 0 };
 		}
 
-		enemyMotion.angle = tanf(directionToPlayer.y / directionToPlayer.x);
+		enemyMotion.angle = atan2(directionToPlayer.y, directionToPlayer.x) * (180.0f / M_PI) + 90;
 	}
 }
