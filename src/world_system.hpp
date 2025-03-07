@@ -87,6 +87,8 @@ private:
     void updateCamera(float elapsed_ms);
     void updateMouseCoords();
 	void updateHuds();
+
+	void handlePlayerMovement(float elapsed_ms_since_last_update);
 	
 	// OpenGL window handle
 	GLFWwindow* window;

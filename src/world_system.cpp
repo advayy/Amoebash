@@ -163,66 +163,27 @@ void WorldSystem::init(RenderSystem *renderer_arg)
 	current_state = GameState::START_SCREEN_ANIMATION;
 }
 
+
 void WorldSystem::updateCamera(float elapsed_ms)
 {
-	// Get camera entity
-	Entity cameraEntity = registry.cameras.entities[0];
-	Camera &camera = registry.cameras.get(cameraEntity);
+    Entity cameraEntity = registry.cameras.entities[0];
+    Camera &camera = registry.cameras.get(cameraEntity);
+    Motion &player_motion = registry.motions.get(registry.players.entities[0]);
+    vec2 mouse_world_position = {game_mouse_pos_x, game_mouse_pos_y};
 
-	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
-
-	// Initialize camera position if not already initialized
 	if (!camera.initialized)
 	{
-		camera.position = player_motion.position; // Snap to player
-		camera.initialized = true;				  // Mark as initialized
-		return;									  // Skip interpolation for this frame
-	}
+		camera.position = player_motion.position; // Snap to initial position
+		camera.initialized = true;
+		return;
+	}	
 
-	// Define deadzone size (75% of the screen width and height)
-	float deadzoneWidth = WINDOW_WIDTH_PX * DEADZONE_FACTOR.x;
-	float deadzoneHeight = WINDOW_HEIGHT_PX * DEADZONE_FACTOR.y;
-
-	// Calculate deadzone boundaries relative to the camera's position
-	float deadzoneLeft = camera.position.x - deadzoneWidth / 2 - 10.0f; // Buffer of 10 pixels
-	float deadzoneRight = camera.position.x + deadzoneWidth / 2 + 10.0f;
-	float deadzoneTop = camera.position.y - deadzoneHeight / 2 - 10.0f;
-	float deadzoneBottom = camera.position.y + deadzoneHeight / 2 + 10.0f;
-
-	// Check if the player is outside the deadzone
-	bool playerOutsideDeadzone =
-		player_motion.position.x < deadzoneLeft ||
-		player_motion.position.x > deadzoneRight ||
-		player_motion.position.y < deadzoneTop ||
-		player_motion.position.y > deadzoneBottom;
-
-	// Only move the camera if the player is outside the deadzone
-	if (playerOutsideDeadzone)
-	{
-		// Define interpolation factor (0 = no movement, 1 = instant snap)
-		float interpolationFactor = 0.1f; // Lower value for smoother movement
-
-		// Convert elapsed_ms to seconds for smoother interpolation
-		float deltaTime = elapsed_ms / 1000.0f;
-
-		// Calculate interpolated camera position
-		vec2 targetPosition = player_motion.position; // Target is the player's position
-													  // M1 interpolation implementation
-		camera.position = lerp(camera.position, targetPosition, interpolationFactor * deltaTime);
-
-		// Optional: Clamp camera speed
-		vec2 cameraMovement = targetPosition - camera.position;
-		float maxSpeed = 500.0f * deltaTime; // Adjust max speed as needed
-		if (length(cameraMovement) > maxSpeed)
-		{
-			cameraMovement = normalize(cameraMovement) * maxSpeed;
-		}
-		camera.position += cameraMovement;
-	}
-
-	// Update camera grid position
+	float interpolationFactor = 0.05f;
+    camera.position = lerp(camera.position, player_motion.position, interpolationFactor);
 	camera.grid_position = positionToGridCell(camera.position);
 }
+
+
 
 void WorldSystem::updateHuds()
 {
@@ -345,6 +306,31 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	}
 
 	tileMap();
+	handlePlayerMovement(elapsed_ms_since_last_update);
+
+	return true;
+}
+
+
+// Handle player movement
+void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
+	// if the player is not dashing, then have its velocity be base speed * by direction to mouse, if the mouse is outside deadzone
+
+	if(registry.dashes.size() == 0) {
+		Player &player = registry.players.get(registry.players.entities[0]);
+		Motion &player_motion = registry.motions.get(registry.players.entities[0]);
+
+		vec2 direction = vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position;
+		direction = normalize(direction);
+
+		// If the mouse is outside the deadzone, move the player
+		if(length(vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position) > MOUSE_TRACKING_DEADZONE) {
+			player_motion.velocity = direction * PLAYER_SPEED;
+		} else {
+			player_motion.velocity = {0, 0};
+		}
+	}
+
 
 	Player &player = registry.players.get(registry.players.entities[0]);
 	if (player.dash_cooldown_ms > 0)
@@ -375,7 +361,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 				{
 					Motion &dotMotion = registry.motions.get(rechargeDot);
 
-					// ✅ Smoothly grow the dot instead of instantly appearing
+					// Smoothly grow the dot instead of instantly appearing
 					float growthFactor = 1.0f - (float)player.dash_recharge_timer_ms / DASH_RECHARGE_DELAY_MS;
 					dotMotion.scale = {DASH_WIDTH * growthFactor, DASH_HEIGHT * growthFactor};
 				}
@@ -384,8 +370,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 			player.dash_count++;
 		}
 	}
-
-	return true;
 }
 
 // Reset the world state to its initial state

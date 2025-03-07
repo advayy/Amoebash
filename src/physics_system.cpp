@@ -166,8 +166,8 @@ void PhysicsSystem::step(float elapsed_ms)
 			// Compute base velocity for dash
 			float angle_radians = (dash.angle - 90) * (M_PI / 180.0f);
 			vec2 base_velocity = {
-				PLAYER_SPEED * cosf(angle_radians),
-				PLAYER_SPEED * sinf(angle_radians)
+				PLAYER_DASH_SPEED * cosf(angle_radians),
+				PLAYER_DASH_SPEED * sinf(angle_radians)
 			};
 
 			// Apply velocity decay

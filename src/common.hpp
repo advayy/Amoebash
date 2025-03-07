@@ -68,7 +68,10 @@ const float MAP_TOP = WORLD_ORIGIN.y - MAP_HEIGHT / 2;
 const float MAP_BOTTOM = WORLD_ORIGIN.y + MAP_HEIGHT / 2;
 const bool DEBUG_GRID = false;
 
+// CAMERA
 const vec2 DEADZONE_FACTOR = {0.50f, 0.50f};
+const float CAMERA_TRACKING_DEADZONE = 100.0 * WORK_SCALE_FACTOR;
+const float MOUSE_TRACKING_DEADZONE = 100.0 * WORK_SCALE_FACTOR;
 
 // These are hard coded to the dimensions of the entity's texture
 const float PLAYER_SIZE = 32 * WORK_SCALE_FACTOR;
@@ -100,7 +103,8 @@ const float BUFF_HUD_SIZE = 16 * WORK_SCALE_FACTOR; // DONT USE YET!!
 
 // AMOEBA STATS
 const float PLAYER_HEALTH = 100;
-const float PLAYER_SPEED = 500;
+const float PLAYER_SPEED = 200;
+const float PLAYER_DASH_SPEED = 500;
 const float PLAYER_DASH_RANGE = 200;
 const float PLAYER_DASH_COOLDOWN_MS = 250;
 const float PLAYER_DASH_DAMAGE = 20;
