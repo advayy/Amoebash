@@ -54,7 +54,8 @@ class RenderSystem
 		textures_path("ui_art/HUD_health_bar.png"),
 		textures_path("ui_art/HUD_dash_component_clear.png"),
 		textures_path("ui_art/HUD_germoney_hud.png"),
-		textures_path("ui_art/HUD_weapons_pill.png")};
+		textures_path("ui_art/HUD_weapons_pill.png"),
+		textures_path("buffs/buffs_sheet.png")};
 
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.
@@ -86,6 +87,11 @@ public:
 	void initializeGlEffects();
 
 	void initializeGlMeshes();
+
+	GLuint getEffect(EFFECT_ASSET_ID id)
+	{
+		return effects[(int)id];
+	}
 
 	Mesh &getMesh(GEOMETRY_BUFFER_ID id)
 	{
@@ -127,7 +133,7 @@ public:
 	void drawUIElements();
 	void drawHealthBar(Entity entity, const mat3 &projection);
 	void drawDashRecharge(const mat3 &projection);
-
+	void drawBuffUI();
 
 private:
 	// Internal drawing functions for each entity type
@@ -154,7 +160,7 @@ private:
 	float frame_time_sum = 0.0f;
 	int frame_count = 0;
 	float current_fps = 0.0f;
-	bool show_fps = true;   // Start with FPS display enabled
+	bool show_fps = true; // Start with FPS display enabled
 };
 
 bool loadEffectFromFile(

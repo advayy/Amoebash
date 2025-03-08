@@ -6,12 +6,26 @@
 
 struct Player
 {
-	int health = PLAYER_HEALTH;
+	int current_health = PLAYER_DEFAULT_HEALTH;
+	int max_health = PLAYER_DEFAULT_HEALTH;
+
 	int speed = PLAYER_SPEED;
-	int dash_cooldown_ms = 0;
 	int dash_damage = PLAYER_DASH_DAMAGE;
+	float healing_rate = PLAYER_BASE_HEALING_RATE;
+	float healing_timer_ms = PLAYER_DEFAULT_HEALING_TIMER_MS;
+	
+	// Active cooldown timer and the default cooldown time
 	int dash_count = DASH_RECHARGE_COUNT;
-	int dash_recharge_timer_ms = 0;
+	int max_dash_count = DASH_RECHARGE_COUNT;
+	
+	int dash_cooldown_timer_ms = 0;
+	int dash_cooldown_ms = PLAYER_DASH_COOLDOWN_MS;
+	float dash_speed = PLAYER_DASH_SPEED;
+	float dash_range = PLAYER_DASH_RANGE;
+
+	// Detection range for enemies
+	float detection_range = 1.0f;
+
 	vec2 grid_position = {0, 0};
 };
 
@@ -73,9 +87,11 @@ struct Deadly
 {
 };
 
-// COMPONENTS FOR BUFFS?
+// Buff
 struct Buff
 {
+	int type = 0; // Type of buff (0-19, corresponding to the sprite sheet)
+	bool collected = false;
 };
 
 // All data relevant to the shape and motion of entities
@@ -227,6 +243,11 @@ struct DashRecharge
 {
 };
 
+struct BuffUI
+{
+	int buffType;
+};
+
 /**
  * The following enumerators represent global identifiers refering to graphic
  * assets. For example TEXTURE_ASSET_ID are the identifiers of each texture
@@ -276,7 +297,8 @@ enum class TEXTURE_ASSET_ID
 	DASH_UI = HEALTH_BAR_UI + 1,
 	GERMONEY_UI = DASH_UI + 1,
 	WEAPON_PILL_UI = GERMONEY_UI + 1,
-	TEXTURE_COUNT = WEAPON_PILL_UI + 1,
+	BUFFS_SHEET = WEAPON_PILL_UI + 1,
+	TEXTURE_COUNT = BUFFS_SHEET + 1,
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;

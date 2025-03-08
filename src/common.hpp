@@ -5,6 +5,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <cmath>
 
 // glfw (OpenGL)
 #define NOMINMAX
@@ -90,7 +91,11 @@ const float ENEMY_PATROL_SPEED_PER_MS = 150.f / MS_PER_S;
 const float ENEMY_PATROL_RANGE = 100.0f;
 const float ENEMY_SPEED_PER_MS = ENEMY_SPEED / MS_PER_S; // reasonalby between 200-400
 const float ENEMY_PATROL_TIME_MS = 2 * ENEMY_PATROL_RANGE / ENEMY_PATROL_SPEED_PER_MS;
-const float ENEMY_DAMAGE = 1;
+const float ENEMY_DAMAGE = 10;
+// ENEMY STATS
+const float ENEMY_HEALTH = 50;
+const float ENEMY_SPAWN_RATE_MS = 1 * 1000;
+const float MAX_ENEMIES_COUNT = 15;
 const float ENEMY_DETECTION_RADIUS = 300.0f;
 
 // LARGE ENEMY
@@ -102,17 +107,17 @@ const float BUFF_MAP_SIZE = 20 * WORK_SCALE_FACTOR;
 const float BUFF_HUD_SIZE = 16 * WORK_SCALE_FACTOR; // DONT USE YET!!
 
 // AMOEBA STATS
-const float PLAYER_HEALTH = 100;
+const float PLAYER_DEFAULT_HEALTH = 100;
 const float PLAYER_SPEED = 200;
 const float PLAYER_DASH_SPEED = 500;
 const float PLAYER_DASH_RANGE = 200;
-const float PLAYER_DASH_COOLDOWN_MS = 250;
+const float PLAYER_DASH_COOLDOWN_MS = 1000;
 const float PLAYER_DASH_DAMAGE = 20;
+const float DASH_RECHARGE_COUNT = 3;
+const float DASH_RECHARGE_DELAY_MS = 1000;
+const float PLAYER_BASE_HEALING_RATE = 0.0f;
+const float PLAYER_DEFAULT_HEALING_TIMER_MS = 1000;
 
-// ENEMY STATS
-const float ENEMY_HEALTH = 50;
-const float ENEMY_SPAWN_RATE_MS = 1 * 1000;
-const float MAX_ENEMIES_COUNT = 15;
 
 // OTHER CONSTANTS
 const float PROJECTILE_DAMAGE = 10;
@@ -136,10 +141,10 @@ const vec2 START_BUTTON_SCALE = {WINDOW_WIDTH_PX / 7.f, WINDOW_HEIGHT_PX / 7.f};
 const vec2 SHOP_INFO_BUTTON_SCALE = {WINDOW_WIDTH_PX / 20.f, WINDOW_HEIGHT_PX / 20.f * 1.78f};
 
 // UI
-const float UI_SCALE = 1.5;
-const float UI_MARGIN_X = 36;
-const float UI_MARGIN_Y = 36;
-const float UI_SPACING = 24;
+const float UI_SCALE = 1;
+const float UI_MARGIN_X = 32;
+const float UI_MARGIN_Y = 32;
+const float UI_SPACING = 16;
 
 // nuclues
 const float NUCLEUS_UI_WIDTH = 62 * UI_SCALE;
@@ -157,10 +162,9 @@ const vec2 HEALTH_BAR_POS = {
 // dash recharge
 const float DASH_WIDTH = 18 * UI_SCALE;
 const float DASH_HEIGHT = 21.6 * UI_SCALE;
-const int DASH_RECHARGE_COUNT = 3;
+
 // const float DASH_RECHARGE_SPACING = (HEALTH_BAR_WIDTH - DASH_WIDTH) / (DASH_RECHARGE_COUNT - 1);
 const float DASH_RECHARGE_SPACING = DASH_WIDTH + 8;
-const int DASH_RECHARGE_DELAY_MS = 500;
 const vec2 DASH_RECHARGE_START_POS = {
 	-WINDOW_WIDTH_PX / 2 + UI_MARGIN_X + NUCLEUS_UI_WIDTH + UI_SPACING + DASH_WIDTH / 2,
 	WINDOW_HEIGHT_PX / 2 - UI_MARGIN_Y - NUCLEUS_UI_HEIGHT / 2}; // pos.y aligns w/ nuclues
@@ -175,6 +179,21 @@ const float WEAPON_PILL_UI_WIDTH = 118 * UI_SCALE;
 const float WEAPON_PILL_UI_HEIGHT = 58 * UI_SCALE;
 const vec2 WEAPON_PILL_UI_POS = {WINDOW_WIDTH_PX / 2 - UI_MARGIN_X - WEAPON_PILL_UI_WIDTH / 2,
 								 WINDOW_HEIGHT_PX / 2 - UI_MARGIN_Y - NUCLEUS_UI_HEIGHT / 2}; // pos.y aligns w/ nuclues
+
+// 
+const int NUMBER_OF_BUFFS = 5;
+const float BUFF_WIDTH = 20.0f * WORK_SCALE_FACTOR;
+const float BUFF_HEIGHT = 20.0f * WORK_SCALE_FACTOR;
+const float BUFF_UI_WIDTH = 20.0f * UI_SCALE;
+const float BUFF_UI_HEIGHT = 20.0f * UI_SCALE;
+const float BUFF_SPACING = 12 + BUFF_UI_WIDTH;
+const int BUFF_NUM = (static_cast<int>(std::floor(
+						  (WINDOW_WIDTH_PX - UI_MARGIN_X * 2 - NUCLEUS_UI_WIDTH - HEALTH_BAR_WIDTH - WEAPON_PILL_UI_WIDTH - UI_SPACING) / BUFF_SPACING)) /
+					  2) *
+					 2;
+const vec2 BUFF_START_POS = {
+	-(BUFF_NUM / 2) / 2 * BUFF_SPACING,
+	WINDOW_HEIGHT_PX / 2 - UI_MARGIN_Y - NUCLEUS_UI_HEIGHT / 2 + UI_SPACING + GERMONEY_UI_HEIGHT / 2};
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846f

@@ -1,6 +1,7 @@
 // Header
 #include "world_system.hpp"
 #include "world_init.hpp"
+#include "common.hpp"
 
 // stlib
 #include <cassert>
@@ -39,8 +40,9 @@ WorldSystem::~WorldSystem()
 }
 
 // toggle FPS display on/off
-void WorldSystem::toggleFPSDisplay() {
-    renderer->toggleFPSDisplay();
+void WorldSystem::toggleFPSDisplay()
+{
+	renderer->toggleFPSDisplay();
 }
 
 // Debugging
@@ -210,25 +212,11 @@ void WorldSystem::updateHuds()
 
 	if (!registry.healthBars.entities.empty())
 	{
-		Entity healthBarEntity = registry.healthBars.entities[0];
-		HealthBar &healthBar = registry.healthBars.get(healthBarEntity);
-		Motion &healthBarMotion = registry.motions.get(healthBarEntity);
-
-		Player &player = registry.players.get(registry.players.entities[0]);
-		healthBar.health = player.health;
-
-		float healthPercentage = (float)player.health / 100;
-		float newWidth = HEALTH_BAR_WIDTH * healthPercentage;
-
+		HealthBar &healthBar = registry.healthBars.get(registry.healthBars.entities[0]);
+		Motion &healthBarMotion = registry.motions.get(registry.healthBars.entities[0]);
 		healthBarMotion.position = {camera.position.x + HEALTH_BAR_POS.x,
 									camera.position.y + HEALTH_BAR_POS.y};
 
-		if (player.health <= 0 && current_state != GameState::GAME_OVER)
-		{
-			previous_state = current_state;
-			current_state = GameState::GAME_OVER;
-			createGameOverScreen();
-		}
 	}
 
 	if (registry.dashRecharges.size() > 0)
@@ -307,17 +295,46 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
 	tileMap();
 	handlePlayerMovement(elapsed_ms_since_last_update);
+	handlePlayerHealth(elapsed_ms_since_last_update);
 
 	return true;
+}
+
+// Handle player health
+void WorldSystem::handlePlayerHealth(float elapsed_ms)
+{
+	Player &player = registry.players.get(registry.players.entities[0]);
+	HealthBar &healthBar = registry.healthBars.get(registry.healthBars.entities[0]);
+
+	// handle regeneration
+	// heal every second
+	player.healing_timer_ms -= elapsed_ms;
+	if (player.healing_timer_ms <= 0 && player.current_health < player.max_health)
+	{
+		player.healing_timer_ms = PLAYER_DEFAULT_HEALING_TIMER_MS;
+		player.current_health += player.max_health * player.healing_rate;
+		if (player.current_health > player.max_health)
+		{
+			player.current_health = player.max_health;
+		}
+	}
+
+	if (player.current_health <= 0 && current_state != GameState::GAME_OVER)
+	{
+		previous_state = current_state;
+		current_state = GameState::GAME_OVER;
+		createGameOverScreen();
+	}
 }
 
 
 // Handle player movement
 void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 	// if the player is not dashing, then have its velocity be base speed * by direction to mouse, if the mouse is outside deadzone
+	
+	Player &player = registry.players.get(registry.players.entities[0]);
 
 	if(registry.dashes.size() == 0) {
-		Player &player = registry.players.get(registry.players.entities[0]);
 		Motion &player_motion = registry.motions.get(registry.players.entities[0]);
 
 		vec2 direction = vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position;
@@ -325,49 +342,9 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 
 		// If the mouse is outside the deadzone, move the player
 		if(length(vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position) > MOUSE_TRACKING_DEADZONE) {
-			player_motion.velocity = direction * PLAYER_SPEED;
+			player_motion.velocity = {direction.x * player.speed, direction.y * player.speed};
 		} else {
 			player_motion.velocity = {0, 0};
-		}
-	}
-
-
-	Player &player = registry.players.get(registry.players.entities[0]);
-	if (player.dash_cooldown_ms > 0)
-	{
-		player.dash_cooldown_ms -= elapsed_ms_since_last_update;
-		if (player.dash_cooldown_ms <= 0)
-		{
-			player.dash_cooldown_ms = 0;
-			player.dash_recharge_timer_ms = DASH_RECHARGE_DELAY_MS;
-		}
-	}
-
-	if (player.dash_cooldown_ms == 0 && player.dash_count < DASH_RECHARGE_COUNT)
-	{
-		if (player.dash_recharge_timer_ms > 0)
-		{
-			player.dash_recharge_timer_ms -= elapsed_ms_since_last_update;
-		}
-
-		if (player.dash_recharge_timer_ms <= 0 && player.dash_count < DASH_RECHARGE_COUNT)
-		{
-			player.dash_recharge_timer_ms = DASH_RECHARGE_DELAY_MS;
-
-			if (player.dash_count >= 0 && player.dash_count < registry.dashRecharges.size())
-			{
-				Entity rechargeDot = registry.dashRecharges.entities[player.dash_count];
-				if (registry.motions.has(rechargeDot))
-				{
-					Motion &dotMotion = registry.motions.get(rechargeDot);
-
-					// Smoothly grow the dot instead of instantly appearing
-					float growthFactor = 1.0f - (float)player.dash_recharge_timer_ms / DASH_RECHARGE_DELAY_MS;
-					dotMotion.scale = {DASH_WIDTH * growthFactor, DASH_HEIGHT * growthFactor};
-				}
-			}
-
-			player.dash_count++;
 		}
 	}
 }
@@ -493,13 +470,27 @@ void WorldSystem::handle_collisions()
 			// remove projectile
 			registry.remove_all_components_of(projectile_entity);
 
-			// if invader health is below 0, remove invader and increase points
+			// if invader health is below 0
+			// remove invader and increase points
+			// buff created
 			if (enemy.health <= 0)
 			{
+				vec2 enemy_position = registry.motions.get(enemy_entity).position;
 				registry.remove_all_components_of(enemy_entity);
 				points += 1;
 				Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS
+
+				createBuff(vec2(enemy_position.x + 60, enemy_position.y + 60));
 			}
+		}
+
+		if (registry.players.has(entity1) && registry.buffs.has(entity2))
+		{
+			collectBuff(entity1, entity2);
+		}
+		else if (registry.players.has(entity2) && registry.buffs.has(entity1))
+		{
+			collectBuff(entity2, entity1);
 		}
 
 		// player-enemy collision
@@ -509,12 +500,29 @@ void WorldSystem::handle_collisions()
 
 			Entity player_entity = registry.players.has(entity1) ? entity1 : entity2;
 			Entity enemy_entity = registry.enemies.has(entity1) ? entity1 : entity2;
+			Enemy &enemy = registry.enemies.get(enemy_entity);
 
+			/*
 			if (isDashing())
 			{
 				// remove invader
 				registry.remove_all_components_of(enemy_entity);
 				Mix_PlayChannel(-1, dash_sound_2, 0);
+			}
+			*/
+			// Kill enemy when dashing?
+			if (isDashing())
+			{
+				enemy.health -= PLAYER_DASH_DAMAGE;
+
+				if (enemy.health <= 0)
+				{
+					vec2 enemy_position = registry.motions.get(enemy_entity).position;
+					points += 1;
+					registry.remove_all_components_of(enemy_entity);
+					
+					createBuff(vec2(enemy_position.x + 60, enemy_position.y + 60));
+				}
 			}
 			else
 			{
@@ -528,7 +536,7 @@ void WorldSystem::handle_collisions()
 					registry.damageCooldowns.insert(player_entity, {current_time});
 
 					Player &player = registry.players.get(player_entity);
-					player.health -= 1;
+					player.current_health -= 1; // FLAG this is not the right kind of damage...
 					Mix_PlayChannel(-1, dash_sound_2, 0);
 				}
 				else
@@ -539,28 +547,11 @@ void WorldSystem::handle_collisions()
 					{
 						dc.last_damage_time = current_time;
 						Player &player = registry.players.get(player_entity);
-						player.health -= 1;
+						player.current_health -= 1;
 						Mix_PlayChannel(-1, dash_sound_2, 0);
 					}
 				}
-				// registry.remove_all_components_of(player_entity);
-				// registry.vignetteTimers.insert(Entity(), { 1000.f });
-
-				// Mix_PlayChannel(-1, dash_sound_2, 0);
 			}
-
-			// We dont do this anymore FLAG
-			// registry.remove_all_components_of(enemy_entity);
-			// registry.remove_all_components_of(player_entity);
-			// Mix_PlayChannel(-1, dash_sound_2, 0);
-
-			// Trigger vignette shader
-			// ensure it stays dark for a second before returning to normal
-			// registry.vignetteTimers.insert(Entity(), { 1000.f });
-
-			// ScreenState &screen = registry.screenStates.components[1];
-			// screen.darken_screen_factor = 1;
-			// registry.deathTimers.insert(tower_entity, { 1000.f });
 		}
 	}
 	// Remove all collisions from this simulation step
@@ -584,7 +575,8 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 	}
 
 	// toggle FPS display with F key
-	if (action == GLFW_RELEASE && key == GLFW_KEY_F) {
+	if (action == GLFW_RELEASE && key == GLFW_KEY_F)
+	{
 		toggleFPSDisplay();
 	}
 
@@ -893,4 +885,52 @@ bool WorldSystem::buttonClick(screenButton &button)
 	// std::cout << "button: " << res << std::endl;
 
 	return res;
+}
+
+void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
+{
+
+	Player &player = registry.players.get(player_entity);
+	if (!registry.buffs.has(buff_entity))
+	{
+		return;
+	}
+
+	Buff &buff = registry.buffs.get(buff_entity);
+	buff.collected = true;
+
+	registry.remove_all_components_of(buff_entity);
+
+	switch (buff.type)
+	{
+	case 0: // Tail
+		player.speed *= 1.05f;
+		std::cout << "Collected Tail: Player Speed increased by 5%" << std::endl;
+		break;
+
+	case 1: // Mitochondria
+		player.dash_cooldown_ms *= 0.95f;
+		std::cout << "Collected Mitochondria: Dash cooldown decreased by 5%" << std::endl;
+		break;
+
+	case 2: // Hemoglobin
+		player.detection_range *= 0.95f;
+		std::cout << "Collected Hemoglobin: Enemies Detection range decreased by 5%" << std::endl;
+		break;
+
+	case 3: // Golgi Apparatus Buff (need to be implemented)
+		
+		std::cout << "Collected Golgi Body: need to be implemented" << std::endl;
+		break;
+
+	case 4: // Chloroplast
+		player.healing_rate += 0.05;
+	std::cout << "Collected Chloroplast: Healing increased by 5% " << std::endl;
+		break;
+	default:
+		std::cerr << "Unknown buff type: " << buff.type << std::endl;
+		break;
+	}
+
+	renderCollectedBuff(renderer, buff.type);
 }

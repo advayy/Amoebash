@@ -165,7 +165,6 @@ void initiatePlayerDash()
 
 	if (isDashing())
 	{
-		// remove all other dashes - dash cancel...
 		for (Entity &entity : registry.dashes.entities)
 		{
 			registry.remove_all_components_of(entity);
@@ -174,20 +173,10 @@ void initiatePlayerDash()
 
 	player.dash_count--;
 
-	if (player.dash_count >= 0 && player.dash_count < registry.dashes.size())
-	{
-		Entity lastDot = registry.dashes.entities[player.dash_count];
-		if (registry.motions.has(lastDot))
-		{
-			Motion &dotMotion = registry.motions.get(lastDot);
-			dotMotion.scale = {0, 0};
-		}
-	}
-
 	Dashing &d = registry.dashes.emplace(Entity());
 	d.angle = player_motion.angle;
 	d.timer_ms = DASH_DURATION_MS;
-	player.dash_cooldown_ms = PLAYER_DASH_COOLDOWN_MS;
+	player.dash_cooldown_timer_ms = player.dash_cooldown_ms;
 
 	// Change animation frames
 	toggleDashAnimation(player_e, true);
@@ -196,7 +185,7 @@ void initiatePlayerDash()
 bool canDash()
 {
 	Player &player = registry.players.get(registry.players.entities[0]);
-	return player.dash_cooldown_ms <= 0 && player.dash_count > 0;
+	return player.dash_count > 0; // PLAYER HAS 1 DASH SAVED ATLEAST
 }
 
 bool isDashing()
@@ -851,7 +840,7 @@ Entity createHealthBar()
 	HealthBar &healthBar = registry.healthBars.emplace(entity);
 	healthBar.position = motion.position;
 	healthBar.scale = motion.scale;
-	healthBar.health = PLAYER_HEALTH;
+	healthBar.health = registry.players.get(registry.players.entities[0]).current_health;
 
 	registry.renderRequests.insert(
 		entity,
@@ -864,8 +853,6 @@ Entity createHealthBar()
 
 void createDashRecharge()
 {
-	// std::cout << "Creating Dash Recharge UI" << std::endl;
-
 	for (int i = 0; i < DASH_RECHARGE_COUNT; i++)
 	{
 		Entity dot = Entity();
@@ -881,5 +868,86 @@ void createDashRecharge()
 			 GEOMETRY_BUFFER_ID::SPRITE});
 
 		registry.dashRecharges.emplace(dot);
+	}
+}
+
+Entity createBuff(vec2 position)
+{
+	Entity entity = Entity();
+	Motion &motion = registry.motions.emplace(entity);
+	motion.position = position;
+	motion.scale = {BUFF_WIDTH, BUFF_HEIGHT};
+
+	// Assign buff a random throwing direction
+	float angle = (rand() % 360) * (M_PI / 180.0f);
+	float speed = 100.0f + (rand() % 50);
+	motion.velocity = {cos(angle) * speed, sin(angle) * speed};
+
+	Buff &buff = registry.buffs.emplace(entity);
+
+	// Currently only the first 5 buffs are active
+	buff.type = rand() % NUMBER_OF_BUFFS;
+
+	registry.renderRequests.insert(
+		entity,
+		{TEXTURE_ASSET_ID::BUFFS_SHEET,
+		 EFFECT_ASSET_ID::SPRITE_SHEET,
+		 GEOMETRY_BUFFER_ID::SPRITE});
+
+	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 20;	 
+	spriteSheet.current_frame = buff.type;
+
+	SpriteSize &sprite = registry.spritesSizes.emplace(entity);
+	sprite.width = 20;
+	sprite.height = 20;
+
+	return entity;
+}
+
+Entity createBuffUI(vec2 position, int buffType)
+{
+	Entity buffUI = Entity();
+
+	BuffUI &buff = registry.buffUIs.emplace(buffUI);
+	buff.buffType = buffType;
+
+	Motion &motion = registry.motions.emplace(buffUI);
+	motion.position = position;
+	motion.scale = {BUFF_UI_WIDTH, BUFF_UI_HEIGHT};
+
+	registry.renderRequests.insert(buffUI,
+								   {TEXTURE_ASSET_ID::BUFFS_SHEET,
+									EFFECT_ASSET_ID::SPRITE_SHEET,
+									GEOMETRY_BUFFER_ID::SPRITE});
+
+	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(buffUI);
+	spriteSheet.total_frames = 20;	 
+	spriteSheet.current_frame = buff.buffType;
+								
+	SpriteSize &sprite = registry.spritesSizes.emplace(buffUI);
+	sprite.width = BUFF_UI_WIDTH;
+	sprite.height = BUFF_UI_HEIGHT;
+	
+	registry.uiElements.emplace(buffUI, UIElement{motion.position, motion.scale});
+	
+	return buffUI;
+}
+
+void renderCollectedBuff(RenderSystem *renderer, int buffType)
+{
+	int numCollectedBuffs = registry.buffUIs.size();
+	int buffsPerRow = BUFF_NUM / 2;
+	vec2 position;
+	if (numCollectedBuffs < buffsPerRow)
+	{
+		position = {BUFF_START_POS.x + numCollectedBuffs * BUFF_SPACING, BUFF_START_POS.y};
+		Entity buffUI = createBuffUI(position, buffType);
+	}
+	else if (numCollectedBuffs >= buffsPerRow && numCollectedBuffs < BUFF_NUM)
+	{
+		position = {BUFF_START_POS.x + (numCollectedBuffs - buffsPerRow) * BUFF_SPACING,
+					BUFF_START_POS.y - BUFF_SPACING};
+		Entity buffUI = createBuffUI(position, buffType);
 	}
 }

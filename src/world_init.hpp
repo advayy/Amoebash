@@ -59,3 +59,6 @@ Entity createInfoButton();
 Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, EFFECT_ASSET_ID effect_id);
 Entity createHealthBar();
 void createDashRecharge();
+Entity createBuff(vec2 position);
+Entity createBuffUI(vec2 position, int buffType);
+void renderCollectedBuff(RenderSystem *renderer, int buffType);

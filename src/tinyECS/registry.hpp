@@ -58,7 +58,7 @@ public:
 	ComponentContainer<UIElement> uiElements;
 	ComponentContainer<HealthBar> healthBars;
 	ComponentContainer<DashRecharge> dashRecharges;
-
+	ComponentContainer<BuffUI> buffUIs;
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
 	{
@@ -98,6 +98,7 @@ public:
 		registry_list.push_back(&uiElements);
 		registry_list.push_back(&healthBars);
 		registry_list.push_back(&dashRecharges);
+		registry_list.push_back(&buffUIs);
 	}
 
 	void clear_all_components()
