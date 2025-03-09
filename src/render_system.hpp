@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "common.hpp"
+#include "particle_system.hpp"
 #include "tinyECS/components.hpp"
 #include "tinyECS/tiny_ecs.hpp"
 
@@ -70,7 +71,9 @@ class RenderSystem
 		shader_path("minimap"),
 		shader_path("ui"),
 		shader_path("health_bar"),
-		shader_path("dash_ui")};
+		shader_path("dash_ui"),
+		shader_path("particle_instanced")  
+	};
 
 	std::array<GLuint, geometry_count> vertex_buffers;
 	std::array<GLuint, geometry_count> index_buffers;
@@ -136,6 +139,7 @@ private:
 	void drawTexturedMesh(Entity entity, const mat3 &projection);
 	void drawSpriteSheetTexturedMesh(Entity entity, const mat3 &projection);
 	void drawToScreen();
+	void drawInstanced(GLuint vao, GLuint program, size_t instanceCount, const mat3 &projection); // New method
 
 	void setUpDefaultProgram(Entity &entity, const RenderRequest &render_request, const GLuint program);
 	void setUpSpriteSheetTexture(Entity &entity, const GLuint program);
@@ -157,6 +161,8 @@ private:
 	int frame_count = 0;
 	float current_fps = 0.0f;
 	bool show_fps = true;   // Start with FPS display enabled
+
+	ParticleSystem* particleSystem;
 };
 
 bool loadEffectFromFile(

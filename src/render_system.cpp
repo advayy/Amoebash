@@ -276,77 +276,89 @@ void RenderSystem::drawToScreen()
 // http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-14-render-to-texture/
 void RenderSystem::draw()
 {
-	// Getting size of window
-	int w, h;
-	glfwGetFramebufferSize(window, &w, &h); // Note, this will be 2x the resolution given to glfwCreateWindow on retina displays
+    // Getting size of window
+    int w, h;
+    glfwGetFramebufferSize(window, &w, &h);
 
-	// First render to the custom framebuffer
-	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
-	gl_has_errors();
+    // First render to the custom framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+    gl_has_errors();
 
-	// clear backbuffer
-	glViewport(0, 0, w, h);
-	glDepthRange(0.00001, 10);
+    // clear backbuffer
+    glViewport(0, 0, w, h);
+    glDepthRange(0.00001, 10);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearDepth(10.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
+    gl_has_errors();
 
-	// white background
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    mat3 projection_2D = createProjectionMatrix();
 
-	glClearDepth(10.f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisable(GL_DEPTH_TEST); // native OpenGL does not work with a depth buffer
-							  // and alpha blending, one would have to sort
-							  // sprites back to front
-	gl_has_errors();
+    // Draw all tiles first
+    for (Entity entity : registry.tiles.entities) {
+        drawTexturedMesh(entity, projection_2D);
+    }
 
-	mat3 projection_2D = createProjectionMatrix();
+    // draw regular entities
+    for (Entity entity : registry.renderRequests.entities) {
+        if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && 
+            !registry.tiles.has(entity) && 
+            !registry.gameScreens.has(entity) && 
+            !registry.miniMaps.has(entity)) {
+                
+            // skip particles since they'll be drawn using instancing
+            if (!registry.particles.has(entity)) {
+                drawTexturedMesh(entity, projection_2D);
+            }
+        }
+    }
 
-	// Draw all tiles first
-	for (Entity entity : registry.tiles.entities)
-	{
-		drawTexturedMesh(entity, projection_2D);
-	}
+    // draw particles using instancing
+    if (registry.particles.size() > 0 && registry.particles.components.size() > 0) {
+        // fget the particle shader program
+        GLuint particleProgram = effects[(GLuint)EFFECT_ASSET_ID::PARTICLE_INSTANCED];
+        
+        // only draw if we have valid particles
+        Entity firstParticle = registry.particles.entities[0];
+        if (registry.renderRequests.has(firstParticle)) {
+            // use the VAO from particle system
+            GLuint vao = particleSystem->getVAO();
+            drawInstanced(vao, particleProgram, registry.particles.size(), projection_2D);
+        }
+    }
 
-	for (Entity entity : registry.renderRequests.entities)
-	{
-		if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity))
-		{
-			drawTexturedMesh(entity, projection_2D);
-		}
-	}
+    // draw the mini map
+    for (Entity entity : registry.miniMaps.entities) {
+        drawTexturedMesh(entity, projection_2D);
+    }
 
-	// draw the mini map
-	drawTexturedMesh(registry.miniMaps.entities[0], projection_2D);
+    // Draw UI elements
+    for (Entity entity : registry.uiElements.entities) {
+        drawTexturedMesh(entity, projection_2D);
+    }
 
-	// draw static ui elemments
-	for (Entity entity : registry.uiElements.entities)
-	{
-		drawTexturedMesh(entity, projection_2D);
-	}
+    // draw the health bar
+    for (Entity entity : registry.healthBars.entities) {
+        drawHealthBar(entity, projection_2D);
+    }
 
-	// draw the health bar
-	for (Entity entity : registry.healthBars.entities)
-	{
-		drawHealthBar(entity, projection_2D);
-	}
+    // draw dash charges
+    drawDashRecharge(projection_2D);
 
-	// draw dash charges
-	drawDashRecharge(projection_2D);
+    if (registry.pauses.size() != 0) {
+        auto &pause = registry.pauses.entities[0];
+        drawTexturedMesh(pause, projection_2D);
+    }
 
-	if (registry.pauses.size() != 0)
-	{
-		auto &pause = registry.pauses.entities[0];
-		drawTexturedMesh(pause, projection_2D);
-	}
+    // draw framebuffer to screen with effects
+    drawToScreen();
 
-	// draw framebuffer to screen
-	// adding "vignette" effect when applied
-	drawToScreen();
-
-	// flicker-free display with a double buffer
-	glfwSwapBuffers(window);
-	gl_has_errors();
+    // flicker-free display with a double buffer
+    glfwSwapBuffers(window);
+    gl_has_errors();
 }
 
 mat3 RenderSystem::createProjectionMatrix()
@@ -690,4 +702,37 @@ void RenderSystem::drawDashRecharge(const mat3 &projection)
 		glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
 		gl_has_errors();
 	}
+}
+
+void RenderSystem::drawInstanced(GLuint vao, GLuint program, size_t instanceCount, const mat3 &projection) {
+    // use instanced shader program
+    glUseProgram(program);
+    gl_has_errors();
+
+    // bind VAO
+    glBindVertexArray(vao);
+    gl_has_errors();
+
+    // bbind texture
+    glActiveTexture(GL_TEXTURE0);
+    GLuint texture_id = texture_gl_handles[(GLuint)TEXTURE_ASSET_ID::PARTICLE];
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    
+    // set texture uniform
+    GLint tex_loc = glGetUniformLocation(program, "sampler0");
+    glUniform1i(tex_loc, 0);  // GL_TEXTURE0
+    gl_has_errors();
+
+    // set projection matrix uniform
+    GLint projection_loc = glGetUniformLocation(program, "projection");
+    glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
+    gl_has_errors();
+
+    // draw instanced particles
+    glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, instanceCount);  // 4 vertices for quad
+    gl_has_errors();
+    
+    // unbind VAO
+    glBindVertexArray(0);
+    gl_has_errors();
 }

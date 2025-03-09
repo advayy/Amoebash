@@ -13,6 +13,8 @@
 bool RenderSystem::init(GLFWwindow *window_arg)
 {
 	this->window = window_arg;
+	 // create particle system (supposedly)
+	particleSystem = new ParticleSystem(); 
 
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1); // vsync
@@ -231,6 +233,9 @@ void RenderSystem::initializeGlGeometryBuffers()
 
 RenderSystem::~RenderSystem()
 {
+	// delete particle system
+	delete particleSystem;
+	
 	// Don't need to free gl resources since they last for as long as the program,
 	// but it's polite to clean after yourself.
 	glDeleteBuffers((GLsizei)vertex_buffers.size(), vertex_buffers.data());
