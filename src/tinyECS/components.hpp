@@ -277,7 +277,8 @@ enum class TEXTURE_ASSET_ID
 	GERMONEY_UI = DASH_UI + 1,
 	WEAPON_PILL_UI = GERMONEY_UI + 1,
 	PARTICLE = WEAPON_PILL_UI + 1,
-	TEXTURE_COUNT = PARTICLE + 1,
+	RIPPLE_PARTICLE = PARTICLE + 1,
+	TEXTURE_COUNT = RIPPLE_PARTICLE + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -387,14 +388,15 @@ struct EnemyBehavior
 // Particle type enum for different particle behaviors
 enum class PARTICLE_TYPE {
     DEATH_PARTICLE = 0,
-    // add more particle types here
+    DASH_RIPPLE = 1,
     PARTICLE_TYPE_COUNT
 };
 
 enum class PARTICLE_STATE {
     BURST = 0,  
     FOLLOW = 1, 
-    FADE = 2
+    FADE = 2,
+    EXPAND = 3
 };
 
 // Particle component for particle system

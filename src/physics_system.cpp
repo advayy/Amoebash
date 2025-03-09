@@ -4,6 +4,8 @@
 #include "animation_system.hpp"
 #include <iostream>
 
+#include "particle_system.hpp"
+
 #include <glm/gtx/normalize_dot.hpp>
 // include lerp
 #include <glm/gtx/compatibility.hpp>
@@ -176,6 +178,16 @@ void PhysicsSystem::step(float elapsed_ms)
 
 			// Gradually reduce speed factor
 			dash.speed_factor *= VELOCITY_DECAY_RATE;
+
+			// add particle effect 
+			float margin = 20.0f; // abehind player
+			vec2 offset = { -cosf(angle_radians) * margin, -sinf(angle_radians) * margin };
+			Motion &player_motion = registry.motions.get(player_entity);
+
+			vec2 spawn_position = player_motion.position + offset;
+			
+			extern ParticleSystem particle_system;
+			particle_system.createParticles(PARTICLE_TYPE::DASH_RIPPLE, spawn_position, 1);
 		}
 	}
 

@@ -23,6 +23,9 @@ public:
 private:
     // helper function to create a death particle
     Entity createDeathParticle(vec2 position);
+    
+    // helper function to create a dash ripple particle
+    Entity createDashRippleParticle(vec2 position);
 
     // track spawned particles by type (for potential optimizations???)
     std::unordered_map<PARTICLE_TYPE, std::vector<Entity>> particlesByType;

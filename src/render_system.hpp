@@ -55,7 +55,8 @@ class RenderSystem
 		textures_path("ui_art/HUD_dash_component_clear.png"),
 		textures_path("ui_art/HUD_germoney_hud.png"),
 		textures_path("ui_art/HUD_weapons_pill.png"),
-		textures_path("effects/particle.png")
+		textures_path("effects/germoney.png"),
+		textures_path("effects/ripple.png")
 	};
 
 	std::array<GLuint, effect_count> effects;

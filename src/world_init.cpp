@@ -188,7 +188,7 @@ void initiatePlayerDash()
 	d.angle = player_motion.angle;
 	d.timer_ms = DASH_DURATION_MS;
 	player.dash_cooldown_ms = PLAYER_DASH_COOLDOWN_MS;
-
+	
 	// Change animation frames
 	toggleDashAnimation(player_e, true);
 }

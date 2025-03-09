@@ -93,6 +93,27 @@ void ParticleSystem::step(float elapsed_ms)
                 }
                 break;
             }
+            case PARTICLE_TYPE::DASH_RIPPLE:
+            {
+                Motion& motion = registry.motions.get(entity);
+                
+                // Dash ripple uses EXPAND state to grow outward
+                if (particle.state == PARTICLE_STATE::EXPAND)
+                {
+                    // Expand the ripple
+                    float growth_rate = 70.0f;
+                    motion.scale += vec2(growth_rate, growth_rate) * (elapsed_ms / 1000.f);
+                    
+                    // Fade out based on lifetime
+                    float life_ratio = particle.lifetime_ms / particle.max_lifetime_ms;
+                    if (registry.colors.has(entity))
+                    {
+                        vec4& color = registry.colors.get(entity);
+                        color.a = life_ratio;
+                    }
+                }
+                break;
+            }
             /// add more type particles heree
             default:
                 break;
@@ -108,6 +129,13 @@ void ParticleSystem::createParticles(PARTICLE_TYPE type, vec2 position, int coun
             for (int i = 0; i < count; i++)
             {
                 Entity particle = createDeathParticle(position);
+                particlesByType[type].push_back(particle);
+            }
+            break;
+        case PARTICLE_TYPE::DASH_RIPPLE:
+            for (int i = 0; i < count; i++)
+            {
+                Entity particle = createDashRippleParticle(position);
                 particlesByType[type].push_back(particle);
             }
             break;
@@ -155,6 +183,44 @@ Entity ParticleSystem::createDeathParticle(vec2 position)
     registry.renderRequests.insert(
         entity,
         {TEXTURE_ASSET_ID::PARTICLE,
+         EFFECT_ASSET_ID::TEXTURED,  
+         GEOMETRY_BUFFER_ID::SPRITE});
+    
+    return entity;
+}
+
+Entity ParticleSystem::createDashRippleParticle(vec2 position)
+{
+    Entity entity = Entity();
+    
+    // create motion component
+    Motion& motion = registry.motions.emplace(entity);
+    motion.position = position;
+    motion.angle = 0.0f;
+    motion.velocity = {0.0f, 0.0f}; // Stationary ripple
+    
+    // Initial size
+    float size_factor = 5.0f; // Initial ripple size
+    motion.scale = {size_factor, size_factor};
+    
+    // Add color component - bluish color with transparency
+    float r = 0.2f;
+    float g = 0.6f;
+    float b = 1.0f;
+    float a = 0.2f; 
+    registry.colors.emplace(entity, vec4(r, g, b, a));
+    
+    // Add particle component
+    Particle& particle = registry.particles.emplace(entity);
+    particle.type = PARTICLE_TYPE::DASH_RIPPLE;
+    particle.lifetime_ms = 500.0f; // Short lifetime for quick effect
+    particle.max_lifetime_ms = particle.lifetime_ms;
+    particle.state = PARTICLE_STATE::EXPAND; // Use expand state
+    
+    // Add render request
+    registry.renderRequests.insert(
+        entity,
+        {TEXTURE_ASSET_ID::RIPPLE_PARTICLE,
          EFFECT_ASSET_ID::TEXTURED,  
          GEOMETRY_BUFFER_ID::SPRITE});
     
