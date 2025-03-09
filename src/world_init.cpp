@@ -2,6 +2,8 @@
 #include "tinyECS/registry.hpp"
 #include <iostream>
 #include <random>
+#include <ctime>
+#include <queue>
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // !!! TODO A1: implement grid lines as gridLines with renderRequests and colors
@@ -165,7 +167,6 @@ void initiatePlayerDash()
 
 	if (isDashing())
 	{
-		// remove all other dashes - dash cancel...
 		for (Entity &entity : registry.dashes.entities)
 		{
 			registry.remove_all_components_of(entity);
@@ -174,21 +175,10 @@ void initiatePlayerDash()
 
 	player.dash_count--;
 
-	if (player.dash_count >= 0 && player.dash_count < registry.dashes.size())
-	{
-		Entity lastDot = registry.dashes.entities[player.dash_count];
-		if (registry.motions.has(lastDot))
-		{
-			Motion &dotMotion = registry.motions.get(lastDot);
-			dotMotion.scale = {0, 0};
-		}
-	}
-
 	Dashing &d = registry.dashes.emplace(Entity());
 	d.angle = player_motion.angle;
 	d.timer_ms = DASH_DURATION_MS;
-	player.dash_cooldown_ms = PLAYER_DASH_COOLDOWN_MS;
-	
+	player.dash_cooldown_timer_ms = player.dash_cooldown_ms;
 	// Change animation frames
 	toggleDashAnimation(player_e, true);
 }
@@ -196,7 +186,7 @@ void initiatePlayerDash()
 bool canDash()
 {
 	Player &player = registry.players.get(registry.players.entities[0]);
-	return player.dash_cooldown_ms <= 0 && player.dash_count > 0;
+	return player.dash_count > 0; // PLAYER HAS 1 DASH SAVED ATLEAST
 }
 
 bool isDashing()
@@ -204,27 +194,133 @@ bool isDashing()
 	return registry.dashes.size() > 0;
 }
 
-Entity createMap(RenderSystem *renderer, vec2 size)
-{
-	auto entity = Entity();
+// Entity createTutorialMap(RenderSystem* renderer, vec2 size) {
+// 	for (Entity& entity : registry.proceduralMaps.entities) {
+//         registry.remove_all_components_of(entity);
+//     }
+//     for (Entity& entity : registry.portals.entities) {
+//         registry.remove_all_components_of(entity);
+//     }
 
-	// Map
-	// Note Size is in BLOCKS.... a block is a grid Square
+// 	auto entity = Entity();
+// }
 
-	// MAP doesnt need to be even as we ceil and floor
+Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, std::pair<int, int>& playerPosition) {
+    for (Entity& entity : registry.proceduralMaps.entities) {
+        registry.remove_all_components_of(entity);
+    }
+    for (Entity& entity : registry.portals.entities) {
+        registry.remove_all_components_of(entity);
+    }
+	
+	std::cout << "Hello Creating Procedural Map" << std::endl;
+	std::cout << "Procedural Map, tutorial status: " << tutorial_on << std::endl;
 
-	Map &map = registry.maps.emplace(entity);
+    auto entity = Entity();
+	ProceduralMap& map = registry.proceduralMaps.emplace(entity);
+
+
+    // initalize map dimensions
 	map.width = size.x;
 	map.height = size.y;
 	map.top = floor(WORLD_ORIGIN.y - size.y / 2);
 	map.left = floor(WORLD_ORIGIN.x - size.x / 2);
 	map.bottom = ceil(WORLD_ORIGIN.y + size.y / 2);
 	map.right = ceil(WORLD_ORIGIN.x + size.x / 2);
+	map.map.resize(map.height, std::vector<tileType>(map.width, tileType::EMPTY));
 
-	// Store a reference to the potentially re-used mesh object (the value is stored in the resource cache)
-	Mesh &mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
-	registry.meshPtrs.emplace(entity, &mesh);
+	if (tutorial_on) {
+		int hall_x = map.height / 2;
+
+		for (int y = 0; y < map.height; y++) {
+			map.map[y][hall_x] = tileType::EMPTY;
+		}
+
+		for (int x = 0; x < map.width; x++) {
+			if (x < hall_x - 1 || x > hall_x) {
+				for (int y = 0; y < map.height; y++) {
+					map.map[y][x] = tileType::WALL;
+				}
+			}
+		}
+
+		map.map[map.height-1][hall_x] = tileType::PORTAL;
+
+		std::cout << "Created InfoBoxes" << std::endl;
+
+	} else {
+		std::cout << "Should randomize map" << std::endl;
+		std::srand(static_cast<unsigned>(std::time(0)));
+	
+		// Initialize map to random walls / floors
+		const int wallProbability = 40;
+		for (int y = 0; y < map.height; ++y) {
+			for (int x = 0; x < map.width; ++x) {
+				map.map[y][x] = (std::rand() % 100 < wallProbability) ? tileType::WALL : tileType::EMPTY;
+			}
+		}
+		
+		// Call cellular automata algorithm
+		map.map = applyCellularAutomataRules(map.map);
+
+        // assign player to random empty tile
+        std::pair<int, int> playerTile = getRandomEmptyTile(map.map);
+        playerPosition.first = playerTile.first;
+        playerPosition.second = playerTile.second;
+	
+		// assign portal to random empty tile
+		std::pair<int, int> portalTile = getRandomEmptyTile(map.map);
+
+        while (!isPathAvailable(map.map, playerTile, portalTile)) {
+            std::cout << "PATH DOES NOT EXIST, TRYING AGAIN." << std::endl;
+            portalTile = getRandomEmptyTile(map.map);
+        }
+        std::cout << "PATH EXISTS!" << std::endl;
+        
+        map.map[portalTile.second][portalTile.first] = tileType::PORTAL;
+	}
+
 	return entity;
+}
+
+void createInfoBoxes() {
+
+	TEXTURE_ASSET_ID baseTexture = TEXTURE_ASSET_ID::MOUSE_CONTROL_INFO;
+
+	for (int i = 0; i < 6; i ++) {
+		auto entity1 = Entity();
+	
+		// Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+		// Player &player = registry.players.get(registry.players.entities[0]);
+		int x = (3  *  i)  + 1;
+		int y = (i % 2 == 0) ? 8 : 11;
+		vec2 infoPosition = gridCellToPosition({x, y});
+	
+		Motion& motion1 = registry.motions.emplace(entity1);
+		motion1.position = infoPosition;
+
+		motion1.scale = {128.f * WORK_SCALE_FACTOR * 3, 128.f * WORK_SCALE_FACTOR};
+	
+		InfoBox& info1 = registry.infoBoxes.emplace(entity1);
+	
+		registry.renderRequests.insert(
+			entity1,
+			{
+				baseTexture,
+				EFFECT_ASSET_ID::TEXTURED,
+				GEOMETRY_BUFFER_ID::SPRITE
+			}
+		);
+
+		baseTexture = static_cast<TEXTURE_ASSET_ID>(static_cast<int>(baseTexture) + 1);
+	}
+}
+
+void removeInfoBoxes() {
+	for (auto e : registry.infoBoxes.entities) {
+		registry.remove_all_components_of(e);
+	}
+	return;
 }
 
 Entity createMiniMap(RenderSystem *renderer, vec2 size)
@@ -252,18 +348,13 @@ Entity createMiniMap(RenderSystem *renderer, vec2 size)
 	return entity;
 }
 
-void tileMap()
-{
-	// Chunk size is a GRID_CELL_WIDTH_PX and GRID_CELL_HEIGHT_PX
-	// ADD TILES TO ALL POSITIONS within CHUNK_DISTANCE of the player
-	// REMOVE TILES THAT ARE OUTSIDE OF CHUNK_DISTANCE of the player
-
+void tileProceduralMap() {
 	vec2 camera_pos = registry.cameras.get(registry.cameras.entities[0]).grid_position;
 
 	float cameraGrid_x = camera_pos.x;
 	float cameraGrid_y = camera_pos.y;
 
-	Map &map = registry.maps.get(registry.maps.entities[0]);
+	ProceduralMap& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]);
 
 	// remove all tiles that arent in the chunk distance
 	for (Entity &entity : registry.tiles.entities)
@@ -291,14 +382,20 @@ void tileMap()
 		{
 			vec2 gridCoord = {x, y};
 
-			// if gridcoord is past the map bounds, plant a wall tile
-			if (x < map.left || x >= map.right || y < map.top || y >= map.bottom)
-			{
+			if (x < map.left || x >= map.right || y < map.top || y >= map.bottom) {
 				addWallTile(gridCoord);
-			}
-			else if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE)
-			{
-				addTile(gridCoord);
+			} else if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE) {
+				
+				// print here
+				// std::cout << "x: " << x << " y: " << y << std::endl;
+				if (map.map[x][y] == tileType::EMPTY) { // if its being tiled what tile to put
+					addTile(gridCoord);
+                } else if (map.map[x][y] == tileType::PORTAL) {
+                    addTile(gridCoord);
+                    addPortalTile(gridCoord);
+                } else {
+					addWallTile(gridCoord);
+				}
 			}
 		}
 	}
@@ -382,6 +479,50 @@ Entity addWallTile(vec2 gridCoord)
 	sprite.height = GRID_CELL_HEIGHT_PX;
 
 	return newTile;
+}
+
+Entity addPortalTile(vec2 gridCoord) {
+    for (Entity &entity : registry.portals.entities)
+    {
+        Portal &tile = registry.portals.get(entity);
+        if (tile.grid_x == gridCoord.x && tile.grid_y == gridCoord.y)
+        {
+            return entity;
+        }
+    }
+
+    Entity newTile = Entity();
+    Portal &portal = registry.portals.emplace(newTile);
+    portal.grid_x = gridCoord.x;
+    portal.grid_y = gridCoord.y;
+
+    Motion &motion = registry.motions.emplace(newTile);
+    motion.position = gridCellToPosition(gridCoord);
+    motion.angle = 0.f;
+    motion.velocity = {0, 0};
+    motion.scale = {GRID_CELL_WIDTH_PX, GRID_CELL_HEIGHT_PX};
+
+    registry.renderRequests.insert(
+        newTile,
+        {TEXTURE_ASSET_ID::PORTAL,
+         EFFECT_ASSET_ID::SPRITE_SHEET,
+         GEOMETRY_BUFFER_ID::SPRITE}
+    );
+
+    SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(newTile);
+    spriteSheet.total_frames = total_portal_frames;
+
+    Animation &a = registry.animations.emplace(newTile);
+    a.time_per_frame = MS_PER_S / total_portal_frames;
+    a.loop = ANIM_LOOP_TYPES::LOOP;
+    a.start_frame = 0;
+    a.end_frame = total_portal_frames;
+
+    SpriteSize &sprite = registry.spritesSizes.emplace(newTile);
+    sprite.width = GRID_CELL_WIDTH_PX;
+    sprite.height = GRID_CELL_HEIGHT_PX;
+
+    return newTile;
 }
 
 void removeTile(vec2 gridCoord)
@@ -643,7 +784,6 @@ Entity createNose()
 	std::uniform_real_distribution<float> uniform_dist(0.0f, 1.0f);
 
 	int random_value = static_cast<int>(uniform_dist(rng) * spriteSheet.total_frames);
-	std::cout << random_value << std::endl;
 	spriteSheet.current_frame = random_value;
 
 	// not used at the moment
@@ -821,6 +961,111 @@ Entity createInfoButton()
 						TEXTURE_ASSET_ID::NUCLEUS);
 }
 
+
+// Cellular Automata map generation functions
+
+int countAdjacentWalls(const std::vector<std::vector<tileType>>& grid, int x, int y) {
+    int height = grid.size();
+    int width = grid[0].size();
+
+    int count = 0;
+    for (int dy = -1; dy <= 1; ++dy) {
+        for (int dx = -1; dx <= 1; ++dx) {
+            // Skip center cell
+            if (dx == 0 && dy == 0) continue;
+            int nx = x + dx;
+            int ny = y + dy;
+            
+            // Out of bounds
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+                count++;
+            } else {
+                if (grid[ny][nx] == tileType::WALL) {
+                    count++;
+                }
+            }
+        }
+    }
+    return count;
+}
+
+std::vector<std::vector<tileType>> applyCellularAutomataRules(const std::vector<std::vector<tileType>>& grid) {
+    int height = grid.size();
+    int width = grid[0].size();
+
+    std::vector<std::vector<tileType>> newGrid(height, std::vector<tileType>(width, tileType::EMPTY));
+    
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            int wallCount = countAdjacentWalls(grid, x, y);
+            if (grid[y][x] == tileType::WALL) {
+                // For wall, flip to floor if fewer than 4 neighboring walls
+                newGrid[y][x] = (wallCount < 4) ? tileType::EMPTY : tileType::WALL;
+            } else {
+                // For a floor, flip to wall if 5 or more neighboring walls
+                newGrid[y][x] = (wallCount >= 5) ? tileType::WALL : tileType::EMPTY;
+            }
+        }
+    }
+    return newGrid;
+}
+
+std::pair<int, int> getRandomEmptyTile(const std::vector<std::vector<tileType>>& grid) {
+    std::vector<std::pair<int, int>> emptyTiles;
+
+    int height = grid.size();
+    int width = grid[0].size();
+
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            if (grid[y][x] == tileType::EMPTY) {
+                emptyTiles.emplace_back(x, y);
+            }
+        }
+    }
+
+    int randomIndex = std::rand() % emptyTiles.size();
+    return emptyTiles[randomIndex];
+}
+
+bool isPathAvailable(const std::vector<std::vector<tileType>>& grid, std::pair<int,int> start, std::pair<int,int> end) {
+    if (start.first < 0 || start.second < 0 || end.first < 0 || end.second < 0) return false;
+    if (start.second >= (int)grid.size() || end.second >= (int)grid.size()) return false;
+    if (start.first >= (int)grid[0].size() || end.first >= (int)grid[0].size()) return false;
+
+    if (grid[start.second][start.first] != tileType::EMPTY ||
+        grid[end.second][end.first] != tileType::EMPTY)
+        return false;
+
+    std::vector<std::vector<bool>> visited(grid.size(), std::vector<bool>(grid[0].size(), false));
+    std::queue<std::pair<int,int>> bfsQueue;
+    bfsQueue.push(start);
+    visited[start.second][start.first] = true;
+
+    std::vector<std::pair<int,int>> directions = {{0,1},{0,-1},{1,0},{-1,0}};
+    while (!bfsQueue.empty()) {
+        auto [cx, cy] = bfsQueue.front();
+        bfsQueue.pop();
+
+        if (cx == end.first && cy == end.second) return true;
+
+        for (auto [dx, dy] : directions) {
+            int nx = cx + dx;
+            int ny = cy + dy;
+
+            if (nx >= 0 && ny >= 0 && ny < (int)grid.size() && nx < (int)grid[0].size()) {
+                if (!visited[ny][nx] && grid[ny][nx] == tileType::EMPTY) {
+                    visited[ny][nx] = true;
+                    bfsQueue.push({nx, ny});
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+
 Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, EFFECT_ASSET_ID effect_id)
 {
 	Entity entity = Entity();
@@ -851,7 +1096,7 @@ Entity createHealthBar()
 	HealthBar &healthBar = registry.healthBars.emplace(entity);
 	healthBar.position = motion.position;
 	healthBar.scale = motion.scale;
-	healthBar.health = PLAYER_HEALTH;
+	healthBar.health = registry.players.get(registry.players.entities[0]).current_health;
 
 	registry.renderRequests.insert(
 		entity,
@@ -864,8 +1109,6 @@ Entity createHealthBar()
 
 void createDashRecharge()
 {
-	// std::cout << "Creating Dash Recharge UI" << std::endl;
-
 	for (int i = 0; i < DASH_RECHARGE_COUNT; i++)
 	{
 		Entity dot = Entity();
@@ -881,5 +1124,86 @@ void createDashRecharge()
 			 GEOMETRY_BUFFER_ID::SPRITE});
 
 		registry.dashRecharges.emplace(dot);
+	}
+}
+
+Entity createBuff(vec2 position)
+{
+	Entity entity = Entity();
+	Motion &motion = registry.motions.emplace(entity);
+	motion.position = position;
+	motion.scale = {BUFF_WIDTH, BUFF_HEIGHT};
+
+	// Assign buff a random throwing direction
+	float angle = (rand() % 360) * (M_PI / 180.0f);
+	float speed = 100.0f + (rand() % 50);
+	motion.velocity = {cos(angle) * speed, sin(angle) * speed};
+
+	Buff &buff = registry.buffs.emplace(entity);
+
+	// Currently only the first 5 buffs are active
+	buff.type = rand() % NUMBER_OF_BUFFS;
+
+	registry.renderRequests.insert(
+		entity,
+		{TEXTURE_ASSET_ID::BUFFS_SHEET,
+		 EFFECT_ASSET_ID::SPRITE_SHEET,
+		 GEOMETRY_BUFFER_ID::SPRITE});
+
+	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 20;	 
+	spriteSheet.current_frame = buff.type;
+
+	SpriteSize &sprite = registry.spritesSizes.emplace(entity);
+	sprite.width = 20;
+	sprite.height = 20;
+
+	return entity;
+}
+
+Entity createBuffUI(vec2 position, int buffType)
+{
+	Entity buffUI = Entity();
+
+	BuffUI &buff = registry.buffUIs.emplace(buffUI);
+	buff.buffType = buffType;
+
+	Motion &motion = registry.motions.emplace(buffUI);
+	motion.position = position;
+	motion.scale = {BUFF_UI_WIDTH, BUFF_UI_HEIGHT};
+
+	registry.renderRequests.insert(buffUI,
+								   {TEXTURE_ASSET_ID::BUFFS_SHEET,
+									EFFECT_ASSET_ID::SPRITE_SHEET,
+									GEOMETRY_BUFFER_ID::SPRITE});
+
+	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(buffUI);
+	spriteSheet.total_frames = 20;	 
+	spriteSheet.current_frame = buff.buffType;
+								
+	SpriteSize &sprite = registry.spritesSizes.emplace(buffUI);
+	sprite.width = BUFF_UI_WIDTH;
+	sprite.height = BUFF_UI_HEIGHT;
+	
+	registry.uiElements.emplace(buffUI, UIElement{motion.position, motion.scale});
+	
+	return buffUI;
+}
+
+void renderCollectedBuff(RenderSystem *renderer, int buffType)
+{
+	int numCollectedBuffs = registry.buffUIs.size();
+	int buffsPerRow = BUFF_NUM / 2;
+	vec2 position;
+	if (numCollectedBuffs < buffsPerRow)
+	{
+		position = {BUFF_START_POS.x + numCollectedBuffs * BUFF_SPACING, BUFF_START_POS.y};
+		Entity buffUI = createBuffUI(position, buffType);
+	}
+	else if (numCollectedBuffs >= buffsPerRow && numCollectedBuffs < BUFF_NUM)
+	{
+		position = {BUFF_START_POS.x + (numCollectedBuffs - buffsPerRow) * BUFF_SPACING,
+					BUFF_START_POS.y - BUFF_SPACING};
+		Entity buffUI = createBuffUI(position, buffType);
 	}
 }

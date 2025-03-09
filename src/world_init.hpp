@@ -23,13 +23,15 @@ bool isDashing();
 
 Entity createCamera();
 
-Entity createMap(RenderSystem *renderer, vec2 size);
+Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, std::pair<int, int>& playerPosition);
+void tileProceduralMap();
+
 Entity createMiniMap(RenderSystem *renderer, vec2 size);
 
-void tileMap();
 Entity addTile(vec2 gridCoord);
 void removeTile(vec2 gridCoord);
 Entity addWallTile(vec2 gridCoord);
+Entity addPortalTile(vec2 gridCoord);
 
 vec2 positionToGridCell(vec2 position);
 vec2 gridCellToPosition(vec2 gridCell);
@@ -39,6 +41,7 @@ Entity createShopScreen();
 Entity createInfoScreen();
 Entity createGameOverScreen();
 Entity createPauseScreen();
+void createInfoBoxes();
 
 void createGameplayCutScene();
 Entity createNose();
@@ -50,12 +53,21 @@ void removePauseScreen();
 void removeGameOverScreen();
 void removeStartScreen();
 void removeCutScene();
+void removeInfoBoxes();
 
 Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID texture);
 Entity createStartButton();
 Entity createShopButton();
 Entity createInfoButton();
 
+int countAdjacentWalls(const std::vector<int>& grid, int x, int y);
+std::vector<std::vector<tileType>> applyCellularAutomataRules(const std::vector<std::vector<tileType>>& grid);
+std::pair<int, int> getRandomEmptyTile(const std::vector<std::vector<tileType>>& grid);
+bool isPathAvailable(const std::vector<std::vector<tileType>>& grid, std::pair<int,int> start, std::pair<int,int> end);
+
 Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, EFFECT_ASSET_ID effect_id);
 Entity createHealthBar();
 void createDashRecharge();
+Entity createBuff(vec2 position);
+Entity createBuffUI(vec2 position, int buffType);
+void renderCollectedBuff(RenderSystem *renderer, int buffType);

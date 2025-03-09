@@ -4,7 +4,9 @@ in vec2 texcoord;
 out vec4 color;
 
 uniform sampler2D health_texture;
-uniform float health;
+
+uniform float current_health;
+uniform float max_health;
 
 void main() {
     vec4 base_color = texture(health_texture, texcoord);
@@ -12,19 +14,21 @@ void main() {
     base_color.rgb = vec3(grayscale);
 
     color = base_color;
+    float health = current_health / float(max_health);
 
     if (grayscale > 0.90) {
+        
         vec4 bar_color;
-        if (health >= 50.0) {
+
+        if (health >= 0.5) {
             bar_color = vec4(0.0, 1.0, 0.0, 1.0); // Green
-        } else if (health >= 30.0) {
+        } else if (health >= 0.3) {
             bar_color = vec4(1.0, 1.0, 0.0, 1.0); // Yellow
         } else {
             bar_color = vec4(1.0, 0.0, 0.0, 1.0); // Red
         }
 
-        float ratio = health / 100.0;
-        if (texcoord.x < ratio) {
+        if (texcoord.x < health) {
             color = bar_color;
         } else {
             color = vec4(0.0, 0.0, 0.0, 1.0);

@@ -7,42 +7,50 @@
 #include "tinyECS/registry.hpp"
 #include "world_system.hpp"
 #include <sstream>
+#include <iomanip>
 
-void RenderSystem::updateFPS(float elapsed_ms) {
-    // skip all calculations if FPS display is not enabled
-    if (!show_fps) return;
-    
-    // update frame time sum and count
-    frame_time_sum += elapsed_ms;
-    frame_count++;
-    
-    // update FPS calculation every second (1000ms)
-    if (frame_time_sum >= 1000.0f) {
-        current_fps = static_cast<float>(frame_count) / (frame_time_sum / 1000.0f);
-        frame_time_sum = 0.0f;
-        frame_count = 0;
-        
-        // update window title with FPS
-        std::stringstream title;
-        title << "Amoebash (Debug: ON, FPS: " << std::fixed << std::setprecision(1) << current_fps << ")";
-        glfwSetWindowTitle(window, title.str().c_str());
-    }
+void RenderSystem::updateFPS(float elapsed_ms)
+{
+	// skip all calculations if FPS display is not enabled
+	if (!show_fps)
+		return;
+
+	// update frame time sum and count
+	frame_time_sum += elapsed_ms;
+	frame_count++;
+
+	// update FPS calculation every second (1000ms)
+	if (frame_time_sum >= 1000.0f)
+	{
+		current_fps = static_cast<float>(frame_count) / (frame_time_sum / 1000.0f);
+		frame_time_sum = 0.0f;
+		frame_count = 0;
+
+		// update window title with FPS
+		std::stringstream title;
+		title << "Amoebash (Debug: ON, FPS: " << std::fixed << std::setprecision(1) << current_fps << ")";
+		glfwSetWindowTitle(window, title.str().c_str());
+	}
 }
 
-void RenderSystem::toggleFPSDisplay() {
-    show_fps = !show_fps;
-    
-    // reset window title when FPS display is turned off
-    if (!show_fps) {
-        glfwSetWindowTitle(window, "Amoebash");
-    }
+void RenderSystem::toggleFPSDisplay()
+{
+	show_fps = !show_fps;
+
+	// reset window title when FPS display is turned off
+	if (!show_fps)
+	{
+		glfwSetWindowTitle(window, "Amoebash");
+	}
 }
 
-void RenderSystem::drawFPS() {
-    if (!show_fps) return;
-    
-    // keeping this code in case we want to render the FPS on the screen instead
-    // of in the window title in the future.
+void RenderSystem::drawFPS()
+{
+	if (!show_fps)
+		return;
+
+	// keeping this code in case we want to render the FPS on the screen instead
+	// of in the window title in the future.
 }
 
 void RenderSystem::drawTexturedMesh(Entity entity,
@@ -80,6 +88,23 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		Player &player = registry.players.get(registry.players.entities[0]);
 
 		glUniform2fv(player_grid_position_uloc, 1, (float *)&player.grid_position);
+
+
+
+		// map array logic
+		GLint map_array_uloc = glGetUniformLocation(program, "map_array");
+		std::vector<std::vector<tileType>> map_array = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map;
+		std::vector<int> flat_array;
+		flat_array.reserve(MAP_WIDTH * MAP_HEIGHT);
+
+		for (const auto& row : map_array) {
+			for (const auto& tile : row) {
+				flat_array.push_back(static_cast<int>(tile));
+			}
+		}
+	    glUniform1iv(map_array_uloc, MAP_WIDTH * MAP_HEIGHT, flat_array.data());
+
+		glUniform2fv(player_grid_position_uloc, 1, (float*)&player.grid_position);
 	}
 
 	// Getting uniform locations for glUniform* calls
@@ -100,7 +125,6 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		vec2 cameraPos = camera.position;
 		GLint camera_position_uloc = glGetUniformLocation(program, "camera_position");
 		glUniform2fv(camera_position_uloc, 1, (float *)&cameraPos);
-
 	}
 
 	// Get number of indices from index buffer, which has elements uint16_t
@@ -137,7 +161,7 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 
 	// Drawing of num_indices/3 triangles specified in the index buffer
 	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
-gl_has_errors();
+	gl_has_errors();
 }
 
 void RenderSystem::setUpSpriteSheetTexture(Entity &entity, const GLuint program)
@@ -308,9 +332,14 @@ void RenderSystem::draw()
 		drawTexturedMesh(entity, projection_2D);
 	}
 
+    // draw portal
+    for (Entity entity : registry.portals.entities) {
+        if (registry.renderRequests.has(entity)) drawTexturedMesh(entity, projection_2D);
+    }
+
 	for (Entity entity : registry.renderRequests.entities)
 	{
-		if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity))
+		if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity) && !registry.portals.has(entity))
 		{
 			drawTexturedMesh(entity, projection_2D);
 		}
@@ -406,6 +435,12 @@ void RenderSystem::drawGameOverScreen()
 	};
 
 	drawScreenAndButtons(ScreenType::GAMEOVER, buttons);
+}
+
+void RenderSystem::drawNextLevelScreen() {
+	std::vector<ButtonType> buttons = { };
+    
+	drawScreenAndButtons(ScreenType::NEXT_LEVEL, buttons);
 }
 
 void RenderSystem::drawScreenAndButtons(
@@ -603,9 +638,14 @@ void RenderSystem::drawHealthBar(Entity entity, const mat3 &projection)
 	glBindTexture(GL_TEXTURE_2D, texture_id);
 	gl_has_errors();
 
-	GLint health_loc = glGetUniformLocation(program, "health");
-	glUniform1f(health_loc, player.health);
+	GLint max_health_loc = glGetUniformLocation(program, "max_health");
+	glUniform1f(max_health_loc, player.max_health);
 	gl_has_errors();
+
+	GLint health_loc = glGetUniformLocation(program, "current_health");
+	glUniform1f(health_loc, player.current_health);
+	gl_has_errors();
+
 
 	GLint health_texture_loc = glGetUniformLocation(program, "health_texture");
 	glUniform1i(health_texture_loc, 0);
@@ -690,4 +730,20 @@ void RenderSystem::drawDashRecharge(const mat3 &projection)
 		glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
 		gl_has_errors();
 	}
+}
+
+void RenderSystem::drawBuffUI()
+{
+	if (registry.buffUIs.size() == 0)
+		return;
+
+	mat3 projection_2D = createProjectionMatrix();
+
+	for (Entity entity : registry.buffUIs.entities)
+	{
+		drawUI(entity, projection_2D);
+	}
+
+	drawToScreen();
+	glfwSwapBuffers(window);
 }
