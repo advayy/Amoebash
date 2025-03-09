@@ -213,7 +213,7 @@ Entity ParticleSystem::createDashRippleParticle(vec2 position)
     // Add particle component
     Particle& particle = registry.particles.emplace(entity);
     particle.type = PARTICLE_TYPE::DASH_RIPPLE;
-    particle.lifetime_ms = 500.0f; // Short lifetime for quick effect
+    particle.lifetime_ms = 400.0f; // Short lifetime for quick effect
     particle.max_lifetime_ms = particle.lifetime_ms;
     particle.state = PARTICLE_STATE::EXPAND; // Use expand state
     
