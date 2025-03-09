@@ -11,16 +11,16 @@
 #include <glm/gtx/compatibility.hpp>
 
 // Returns the local bounding coordinates scaled by the current size of the entity
-vec2 get_bounding_box(const Motion &motion)
+vec2 get_bounding_box(const Motion& motion)
 {
 	// abs is to avoid negative scale due to the facing direction.
-	return {abs(motion.scale.x), abs(motion.scale.y)};
+	return { abs(motion.scale.x), abs(motion.scale.y) };
 }
 
 // This is a SUPER APPROXIMATE check that puts a circle around the bounding boxes and sees
 // if the center point of either object is inside the other's bounding-box-circle. You can
 // surely implement a more accurate detection
-bool collides(const Motion &motion1, const Motion &motion2)
+bool collides(const Motion& motion1, const Motion& motion2)
 {
 	// object 1, set left right
 	vec2 bb1 = get_bounding_box(motion1);
@@ -43,73 +43,54 @@ void PhysicsSystem::step(float elapsed_ms)
 	float bottomBound = MAP_BOTTOM * GRID_CELL_HEIGHT_PX - 1;
 
 	// cache player's motion if players exist
-	Motion *playerMotion = nullptr;
-	if (!registry.players.entities.empty())
-	{
+	Motion* playerMotion = nullptr;
+	if (!registry.players.entities.empty()) {
 		playerMotion = &registry.motions.get(registry.players.entities[0]);
 	}
 
-	auto &motion_registry = registry.motions;
-	for (uint i = 0; i < motion_registry.size(); i++)
-	{
+	auto& motion_registry = registry.motions;
+	for (uint i = 0; i < motion_registry.size(); i++) {
 		Entity entity = motion_registry.entities[i];
-		Motion &motion = motion_registry.components[i];
+		Motion& motion = motion_registry.components[i];
 
 		motion.position += motion.velocity * step_seconds;
 
-		if (registry.players.has(entity))
-		{
+		if (registry.players.has(entity)) {
 			// player update: use cached boundaries
 			if (motion.position.x >= rightBound + 1 || motion.position.x <= leftBound ||
-				motion.position.y <= topBound || motion.position.y >= bottomBound + 1)
-			{
+				motion.position.y <= topBound || motion.position.y >= bottomBound + 1) {
 				motion.velocity *= -0.5f;
 				motion.position.x = glm::clamp(motion.position.x, leftBound, rightBound);
 				motion.position.y = glm::clamp(motion.position.y, topBound, bottomBound);
 			}
 		}
 
-		// buff drops and slides
-		if (registry.buffs.has(entity))
-		{
-			float friction = 0.95f;
-			motion.velocity *= friction;
-			if (glm::length(motion.velocity) < 5.0f)
-			{
-				motion.velocity = {0, 0};
-			}
-		}
+
 	}
 
 	// enemy update – use cached playerMotion
-	if (playerMotion)
-	{
+	if (playerMotion) {
 		// iterate over all enemies
-		for (uint j = 0; j < registry.enemies.entities.size(); j++)
-		{
+		for (uint j = 0; j < registry.enemies.entities.size(); j++) {
 			Entity enemyEntity = registry.enemies.entities[j];
-			Motion &enemyMotion = registry.motions.get(enemyEntity);
-			EnemyBehavior &enemyBehavior = registry.enemyBehaviors.get(enemyEntity);
-			Animation &enemyAnimation = registry.animations.get(enemyEntity);
+			Motion& enemyMotion = registry.motions.get(enemyEntity);
+			EnemyBehavior& enemyBehavior = registry.enemyBehaviors.get(enemyEntity);
+			Animation& enemyAnimation = registry.animations.get(enemyEntity);
 
 			vec2 diff = playerMotion->position - enemyMotion.position;
 			float distance = glm::length(diff);
-			bool playerDetected = (distance < (enemyBehavior.detectionRadius * registry.players.get(registry.players.entities[0]).detection_range)); // PLAYERS DETECTION RANGE BUFF?
+			bool playerDetected = (distance < enemyBehavior.detectionRadius);
 			vec2 toPlayer = diff;
 
-			switch (enemyBehavior.state)
-			{
-			case EnemyState::CHASING:
-			{
-				if (distance > 0.001f)
-				{
+			switch (enemyBehavior.state) {
+			case EnemyState::CHASING: {
+				if (distance > 0.001f) {
 					vec2 direction = glm::normalize(toPlayer);
-					enemyMotion.velocity = direction * ENEMY_SPEED; // FLAG REMOVE CONSTANT LATER FOR ENEMIES PARTICULAR SPEED.
+					enemyMotion.velocity = direction * ENEMY_SPEED;
 				}
 				break;
 			}
-			case EnemyState::PATROLLING:
-			{
+			case EnemyState::PATROLLING: {
 				// define patrol boundaries based on stored origin and range.
 				float leftBoundary = enemyBehavior.patrolOrigin.x - enemyBehavior.patrolRange;
 				float rightBoundary = enemyBehavior.patrolOrigin.x + enemyBehavior.patrolRange;
@@ -126,36 +107,32 @@ void PhysicsSystem::step(float elapsed_ms)
 				// M1 interpolation implementation
 				if (enemyBehavior.patrolForwards)
 				{
-					enemyMotion.position.x = lerp(leftBoundary, rightBoundary, enemyBehavior.patrolTime / ENEMY_PATROL_TIME_MS);  // FLAG REMOVE CONSTANT LATER FOR ENEMIES PARTICULAR SPEED.
+					enemyMotion.position.x = lerp(leftBoundary, rightBoundary, enemyBehavior.patrolTime / ENEMY_PATROL_TIME_MS);
 				}
 				else
 				{
-					enemyMotion.position.x = lerp(rightBoundary, leftBoundary, enemyBehavior.patrolTime / ENEMY_PATROL_TIME_MS);  // FLAG REMOVE CONSTANT LATER FOR ENEMIES PARTICULAR SPEED.
+					enemyMotion.position.x = lerp(rightBoundary, leftBoundary, enemyBehavior.patrolTime / ENEMY_PATROL_TIME_MS);
 				}
 
 				// sse circular detection to transition to dash state.
-				if (playerDetected)
-				{
+				if (playerDetected) {
 					changeAnimationFrames(enemyEntity, 7, 12);
 					enemyBehavior.state = EnemyState::DASHING;
 				}
 				break;
 			}
-			case EnemyState::DASHING:
-			{
-				if (distance > 0.001f && playerDetected)
-				{
+			case EnemyState::DASHING: {
+				if (distance > 0.001f && playerDetected) {
 					// dash toward the player
 					vec2 direction = glm::normalize(toPlayer);
 					enemyMotion.velocity = direction * ENEMY_SPEED;
 				}
-				else
-				{
+				else {
 					changeAnimationFrames(enemyEntity, 0, 6);
 					enemyBehavior.patrolOrigin = enemyMotion.position;
 					enemyBehavior.state = EnemyState::PATROLLING;
 					enemyBehavior.patrolTime = 0.0f;
-					enemyMotion.velocity = {0, 0};
+					enemyMotion.velocity = { 0, 0 };
 				}
 				break;
 			}
@@ -164,46 +141,35 @@ void PhysicsSystem::step(float elapsed_ms)
 	}
 
 
-	// PLAYER DASH ACTION COOLDOWN
-	Entity player_entity = registry.players.entities[0];
-	Player &player = registry.players.get(player_entity);
-	player.dash_cooldown_timer_ms -= elapsed_ms;
-	if(player.dash_cooldown_timer_ms <= 0)
-		{
-			if(player.dash_count < player.max_dash_count) {
-				player.dash_count++;
-				
-				if(player.dash_count == player.max_dash_count) {
-					player.dash_cooldown_timer_ms = 0;
-				} else {
-					player.dash_cooldown_timer_ms = player.dash_cooldown_ms;
-				}
-			}
-		}
-		
 
 	// Handle player dashing
-	for (uint i = 0; i < registry.dashes.size(); i++)// Is alwats a loop of 1 as we remove other dashes when we start a dash
+	for (uint i = 0; i < registry.dashes.size(); i++)
 	{
+		Entity player_entity = registry.players.entities[0];
 		Entity dash_entity = registry.dashes.entities[i];
 
-		Dashing &dash = registry.dashes.components[i];
-		Motion &motion = registry.motions.get(player_entity);
+		Player& player = registry.players.get(player_entity);
+		Dashing& dash = registry.dashes.components[i];
+		Motion& motion = registry.motions.get(player_entity);
 
 		dash.timer_ms -= elapsed_ms;
+		player.dash_cooldown_ms -= elapsed_ms;
 
-		if (dash.timer_ms <= 0) // NO LONGER DASHING
+		if (dash.timer_ms <= 0)
 		{
 			registry.dashes.remove(dash_entity);
-			motion.velocity = {0, 0};
+			motion.velocity = { 0, 0 };
+			player.dash_cooldown_ms = 0;
+
 			toggleDashAnimation(player_entity, false); // goes back to idle animation
 		}
-		else {
+		else
+		{
 			// Compute base velocity for dash
 			float angle_radians = (dash.angle - 90) * (M_PI / 180.0f);
 			vec2 base_velocity = {
-				player.dash_speed * cosf(angle_radians),
-				player.dash_speed * sinf(angle_radians)
+				PLAYER_SPEED * cosf(angle_radians),
+				PLAYER_SPEED * sinf(angle_radians)
 			};
 
 			// Apply velocity decay
@@ -226,21 +192,20 @@ void PhysicsSystem::step(float elapsed_ms)
 	}
 
 	// update player grid position
+	Player& player = registry.players.get(registry.players.entities[0]);
 	player.grid_position = positionToGridCell(registry.motions.get(registry.players.entities[0]).position);
 
+
 	// Handle collisions
-	ComponentContainer<Motion> &motion_container = registry.motions;
+	ComponentContainer<Motion>& motion_container = registry.motions;
 	for (uint i = 0; i < motion_container.components.size(); i++)
 	{
-		Motion &motion_i = motion_container.components[i];
+		Motion& motion_i = motion_container.components[i];
 		Entity entity_i = motion_container.entities[i];
-
-		if (registry.uiElements.has(entity_i))
-			continue;
 
 		for (uint j = i + 1; j < motion_container.components.size(); j++)
 		{
-			Motion &motion_j = motion_container.components[j];
+			Motion& motion_j = motion_container.components[j];
 			if (collides(motion_i, motion_j))
 			{
 				Entity entity_j = motion_container.entities[j];

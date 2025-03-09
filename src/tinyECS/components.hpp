@@ -4,30 +4,14 @@
 #include <unordered_map>
 #include "../ext/stb_image/stb_image.h"
 
-extern bool tutorial_mode;
-
 struct Player
 {
-	int current_health = PLAYER_DEFAULT_HEALTH;
-	int max_health = PLAYER_DEFAULT_HEALTH;
-
+	int health = PLAYER_HEALTH;
 	int speed = PLAYER_SPEED;
+	int dash_cooldown_ms = 0;
 	int dash_damage = PLAYER_DASH_DAMAGE;
-	float healing_rate = PLAYER_BASE_HEALING_RATE;
-	float healing_timer_ms = PLAYER_DEFAULT_HEALING_TIMER_MS;
-	
-	// Active cooldown timer and the default cooldown time
 	int dash_count = DASH_RECHARGE_COUNT;
-	int max_dash_count = DASH_RECHARGE_COUNT;
-	
-	int dash_cooldown_timer_ms = 0;
-	int dash_cooldown_ms = PLAYER_DASH_COOLDOWN_MS;
-	float dash_speed = PLAYER_DASH_SPEED;
-	float dash_range = PLAYER_DASH_RANGE;
-
-	// Detection range for enemies
-	float detection_range = 1.0f;
-
+	int dash_recharge_timer_ms = 0;
 	vec2 grid_position = {0, 0};
 };
 
@@ -61,30 +45,8 @@ struct Map
 	int right = 0;
 };
 
-enum class tileType {
-	EMPTY = 0,
-	WALL = 1,
-    PORTAL = 2
-};
-
-struct ProceduralMap {
-	// 2D array of numbers representing the map
-	std::vector<std::vector<tileType>> map;
-
-	int width = 20; // This is in chunks of grid cells
-	int height = 20;
-	int top=0;
-	int left=0;
-	int bottom=0;
-	int right=0;
-};
-
-struct Portal {
-    int grid_x = 0;
-    int grid_y = 0;
-};
-
-struct MiniMap {
+struct MiniMap
+{
 };
 
 struct Camera
@@ -111,11 +73,9 @@ struct Deadly
 {
 };
 
-// Buff
+// COMPONENTS FOR BUFFS?
 struct Buff
 {
-	int type = 0; // Type of buff (0-19, corresponding to the sprite sheet)
-	bool collected = false;
 };
 
 // All data relevant to the shape and motion of entities
@@ -223,8 +183,7 @@ enum ScreenType
 	SHOP = INFO + 1,
 	NUCLEUS = SHOP + 1,
 	GAMEOVER = NUCLEUS + 1,
-	PAUSE = GAMEOVER + 1,
-    NEXT_LEVEL = PAUSE + 1
+	PAUSE = GAMEOVER + 1
 };
 
 struct GameScreen
@@ -268,13 +227,6 @@ struct DashRecharge
 {
 };
 
-struct BuffUI
-{
-	int buffType;
-};
-struct InfoBox
-{
-};
 /**
  * The following enumerators represent global identifiers refering to graphic
  * assets. For example TEXTURE_ASSET_ID are the identifiers of each texture
@@ -324,15 +276,7 @@ enum class TEXTURE_ASSET_ID
 	DASH_UI = HEALTH_BAR_UI + 1,
 	GERMONEY_UI = DASH_UI + 1,
 	WEAPON_PILL_UI = GERMONEY_UI + 1,
-	BUFFS_SHEET = WEAPON_PILL_UI + 1,
-	PORTAL = BUFFS_SHEET + 1,
-	MOUSE_CONTROL_INFO = PORTAL + 1,
-	PAUSE_INFO = MOUSE_CONTROL_INFO + 1,
-	DASH_INFO = PAUSE_INFO + 1,
-	ENEMY_INFO = DASH_INFO + 1,
-	RESTART_INFO = ENEMY_INFO + 1,
-	LEAVE_TUTORIAL = RESTART_INFO + 1,
-  PARTICLE = LEAVE_TUTORIAL + 1,
+	PARTICLE = WEAPON_PILL_UI + 1,
 	RIPPLE_PARTICLE = PARTICLE + 1,
 	TEXTURE_COUNT = RIPPLE_PARTICLE + 1
 };
@@ -417,20 +361,6 @@ const int player_idle_end = (int)PLAYER_FRAMES::FRAME_3;
 const int player_dash_start = (int)PLAYER_FRAMES::FRAME_4;
 const int player_dash_end = (int)PLAYER_FRAMES::FRAME_7;
 const int total_player_frames = (int)PLAYER_FRAMES::FRAME_COUNT;
-
-enum class PORTAL_FRAMES {
-    FRAME_0 = 0,
-    FRAME_1 = FRAME_0 + 1,
-    FRAME_2 = FRAME_1 + 1,
-    FRAME_3 = FRAME_2 + 1,
-    FRAME_4 = FRAME_3 + 1,
-    FRAME_5 = FRAME_4 + 1,
-    FRAME_6 = FRAME_5 + 1,
-    FRAME_7 = FRAME_6 + 1,
-    FRAME_COUNT = FRAME_7 + 1
-};
-const int total_portal_frames = (int)PORTAL_FRAMES::FRAME_COUNT;
-
 struct DamageCooldown
 {
 	uint last_damage_time;

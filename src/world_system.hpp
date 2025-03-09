@@ -16,18 +16,17 @@
 
 class ParticleSystem;
 
-enum class GameState
-{
+enum class GameState {
 	START_SCREEN_ANIMATION,
-	START_SCREEN,
-	GAME_PLAY,
-	GAME_OVER,
+    START_SCREEN,
+    GAME_PLAY,
+    GAME_OVER,
 	PAUSE,
 	SHOP,
 	INFO,
-	GAMEPLAY_CUTSCENE,
-    NEXT_LEVEL
+	GAMEPLAY_CUTSCENE
 };
+
 
 // Container for all our entities and game logic.
 // Individual rendering / updates are deferred to the update() methods.
@@ -37,7 +36,7 @@ public:
 	WorldSystem();
 
 	// creates main window
-	GLFWwindow *create_window();
+	GLFWwindow* create_window();
 
 	// starts and loads music and sound effects
 	bool start_and_load_sounds();
@@ -46,7 +45,7 @@ public:
 	void close_window();
 
 	// starts the game
-	void init(RenderSystem *renderer);
+	void init(RenderSystem* renderer);
 
 	// releases all associated resources
 	~WorldSystem();
@@ -64,22 +63,17 @@ public:
 	GameState previous_state = GameState::START_SCREEN_ANIMATION;
 
 	float stateTimer = BOOT_CUTSCENE_DURATION_MS;
-	void collectBuff(Entity player_entity, Entity buff_entity);
-
-	void handlePlayerHealth(float elapsed_ms);
-	bool tutorial_mode = true;
 
 
+private:	
 
-
-private:
 	bool gameOver = false;
 
 	float device_mouse_pos_x = 0.0f;
 	float device_mouse_pos_y = 0.0f;
 
-	float game_mouse_pos_x = 0.0f;
-	float game_mouse_pos_y = 0.0f;
+    float game_mouse_pos_x = 0.0f;
+    float game_mouse_pos_y = 0.0f;
 
 	// input callback functions
 	void on_key(int key, int, int action, int mod);
@@ -87,44 +81,36 @@ private:
 	void on_mouse_button_pressed(int button, int action, int mods);
 
 	// to check if button was clicked
-	bool buttonClick(screenButton &button);
+	bool buttonClick(screenButton& button);
 
 	// restart level
 	void restart_game();
 
-	void updateCamera(float elapsed_ms);
-	void updateMouseCoords();
+    void updateCamera(float elapsed_ms);
+    void updateMouseCoords();
 	void updateHuds();
-
-	void handlePlayerMovement(float elapsed_ms_since_last_update);
 	
 	// OpenGL window handle
-	GLFWwindow *window;
+	GLFWwindow* window;
 
 	int next_enemy_spawn;
-	int enemy_spawn_rate_ms; // see default value in common.hpp
+	int enemy_spawn_rate_ms;	// see default value in common.hpp
 
+	// Idk if we have this
 	unsigned int points;
 
-	unsigned int level = 0;
-
-    // black screen for next level timer
-    float darken_screen_timer = -1.0f;
-
 	// Game state
-
-  RenderSystem* renderer;
+    RenderSystem* renderer;
 	ParticleSystem particle_system;
-  
 	float current_speed;
 
 	// grid
 	std::vector<Entity> grid_lines;
-
+	
 	// music references
-	Mix_Music *background_music;
-	Mix_Chunk *dash_sound_1;
-	Mix_Chunk *dash_sound_2;
+	Mix_Music* background_music;
+	Mix_Chunk* dash_sound_1;
+	Mix_Chunk* dash_sound_2;
 
 	// debugging (fps etc..)
 	void toggleFPSDisplay();
@@ -133,4 +119,5 @@ private:
 	// C++ random number generator
 	std::default_random_engine rng;
 	std::uniform_real_distribution<float> uniform_dist; // number between 0..1
+
 };

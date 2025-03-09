@@ -16,7 +16,6 @@ uniform int map_width;
 uniform int map_height;
 uniform vec2 player_grid_position;
 
-
 void main()
 {
 	texcoord = in_texcoord;

@@ -29,7 +29,7 @@ vec2 get_offset_texcoord(vec2 texcoord, int frame) {
 // M1 feature - Parallax scrolling backgrounds
 vec2 apply_paralax(vec2 texcoord, int frame, vec2 camera_position) {
     float frameIndex = frame;
-    float parallaxFactor = (float(frame))/float(total_frames - 1);
+    float parallaxFactor = float(frame)/float(total_frames - 1);
 
     vec2 adjustedTexCoord = texcoord + ((camera_position/3000) * parallaxFactor);
 
@@ -55,10 +55,7 @@ void main()
 
 	for (int i = current_frame; i < total_frames; i++) {
 		vec2 texcoord = get_offset_texcoord(texcoord, i);
-
-		if (!(i == total_frames - 1)) {
-			texcoord = apply_paralax(texcoord, i, camera_position);
-		}
+		texcoord = apply_paralax(texcoord, i, camera_position);
 
 		vec4 layer_color = texture(sampler0, texcoord);
 

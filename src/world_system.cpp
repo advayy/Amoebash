@@ -1,7 +1,6 @@
 // Header
 #include "world_system.hpp"
 #include "world_init.hpp"
-#include "common.hpp"
 
 // stlib
 #include <cassert>
@@ -12,10 +11,8 @@
 
 #include "physics_system.hpp"
 
-bool tutorial_mode = true;
-
 // create the world
-WorldSystem::WorldSystem() : level(0),
+WorldSystem::WorldSystem() : points(0),
 							 next_enemy_spawn(0),
 							 enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS)
 {
@@ -42,9 +39,8 @@ WorldSystem::~WorldSystem()
 }
 
 // toggle FPS display on/off
-void WorldSystem::toggleFPSDisplay()
-{
-	renderer->toggleFPSDisplay();
+void WorldSystem::toggleFPSDisplay() {
+    renderer->toggleFPSDisplay();
 }
 
 // Debugging
@@ -167,27 +163,66 @@ void WorldSystem::init(RenderSystem *renderer_arg)
 	current_state = GameState::START_SCREEN_ANIMATION;
 }
 
-
 void WorldSystem::updateCamera(float elapsed_ms)
 {
-    Entity cameraEntity = registry.cameras.entities[0];
-    Camera &camera = registry.cameras.get(cameraEntity);
-    Motion &player_motion = registry.motions.get(registry.players.entities[0]);
-    vec2 mouse_world_position = {game_mouse_pos_x, game_mouse_pos_y};
+	// Get camera entity
+	Entity cameraEntity = registry.cameras.entities[0];
+	Camera &camera = registry.cameras.get(cameraEntity);
 
+	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
+
+	// Initialize camera position if not already initialized
 	if (!camera.initialized)
 	{
-		camera.position = player_motion.position; // Snap to initial position
-		camera.initialized = true;
-		return;
-	}	
+		camera.position = player_motion.position; // Snap to player
+		camera.initialized = true;				  // Mark as initialized
+		return;									  // Skip interpolation for this frame
+	}
 
-	float interpolationFactor = 0.05f;
-    camera.position = lerp(camera.position, player_motion.position, interpolationFactor);
+	// Define deadzone size (75% of the screen width and height)
+	float deadzoneWidth = WINDOW_WIDTH_PX * DEADZONE_FACTOR.x;
+	float deadzoneHeight = WINDOW_HEIGHT_PX * DEADZONE_FACTOR.y;
+
+	// Calculate deadzone boundaries relative to the camera's position
+	float deadzoneLeft = camera.position.x - deadzoneWidth / 2 - 10.0f; // Buffer of 10 pixels
+	float deadzoneRight = camera.position.x + deadzoneWidth / 2 + 10.0f;
+	float deadzoneTop = camera.position.y - deadzoneHeight / 2 - 10.0f;
+	float deadzoneBottom = camera.position.y + deadzoneHeight / 2 + 10.0f;
+
+	// Check if the player is outside the deadzone
+	bool playerOutsideDeadzone =
+		player_motion.position.x < deadzoneLeft ||
+		player_motion.position.x > deadzoneRight ||
+		player_motion.position.y < deadzoneTop ||
+		player_motion.position.y > deadzoneBottom;
+
+	// Only move the camera if the player is outside the deadzone
+	if (playerOutsideDeadzone)
+	{
+		// Define interpolation factor (0 = no movement, 1 = instant snap)
+		float interpolationFactor = 0.1f; // Lower value for smoother movement
+
+		// Convert elapsed_ms to seconds for smoother interpolation
+		float deltaTime = elapsed_ms / 1000.0f;
+
+		// Calculate interpolated camera position
+		vec2 targetPosition = player_motion.position; // Target is the player's position
+													  // M1 interpolation implementation
+		camera.position = lerp(camera.position, targetPosition, interpolationFactor * deltaTime);
+
+		// Optional: Clamp camera speed
+		vec2 cameraMovement = targetPosition - camera.position;
+		float maxSpeed = 500.0f * deltaTime; // Adjust max speed as needed
+		if (length(cameraMovement) > maxSpeed)
+		{
+			cameraMovement = normalize(cameraMovement) * maxSpeed;
+		}
+		camera.position += cameraMovement;
+	}
+
+	// Update camera grid position
 	camera.grid_position = positionToGridCell(camera.position);
 }
-
-
 
 void WorldSystem::updateHuds()
 {
@@ -214,11 +249,25 @@ void WorldSystem::updateHuds()
 
 	if (!registry.healthBars.entities.empty())
 	{
-		HealthBar &healthBar = registry.healthBars.get(registry.healthBars.entities[0]);
-		Motion &healthBarMotion = registry.motions.get(registry.healthBars.entities[0]);
+		Entity healthBarEntity = registry.healthBars.entities[0];
+		HealthBar &healthBar = registry.healthBars.get(healthBarEntity);
+		Motion &healthBarMotion = registry.motions.get(healthBarEntity);
+
+		Player &player = registry.players.get(registry.players.entities[0]);
+		healthBar.health = player.health;
+
+		float healthPercentage = (float)player.health / 100;
+		float newWidth = HEALTH_BAR_WIDTH * healthPercentage;
+
 		healthBarMotion.position = {camera.position.x + HEALTH_BAR_POS.x,
 									camera.position.y + HEALTH_BAR_POS.y};
 
+		if (player.health <= 0 && current_state != GameState::GAME_OVER)
+		{
+			previous_state = current_state;
+			current_state = GameState::GAME_OVER;
+			createGameOverScreen();
+		}
 	}
 
 	if (registry.dashRecharges.size() > 0)
@@ -257,11 +306,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
 	// M1 Feature - Camera controls
 	updateCamera(elapsed_ms_since_last_update);
-
-	if (tutorial_mode && registry.infoBoxes.size() == 0) {
-		createInfoBoxes();
-	}
-
 	updateMouseCoords();
 	updateHuds();
 
@@ -277,123 +321,67 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
 	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x) * 180.0f / M_PI + 90.0f;
 
-
-	if (!tutorial_mode)
+	// spawn new invaders
+	next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
+	if (next_enemy_spawn < 0.f && !gameOver)
 	{
-		// spawn new invaders
-		next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
-		if (next_enemy_spawn < 0.f && !gameOver)
+		if (registry.enemies.entities.size() < MAX_ENEMIES_COUNT)
 		{
-			if (registry.enemies.entities.size() < MAX_ENEMIES_COUNT)
+			// reset timer
+			next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
+
+			// randomize position
+			int map_w = MAP_RIGHT - MAP_LEFT;
+			int map_h = MAP_BOTTOM - MAP_TOP;
+			int randomXCell = MAP_LEFT + (int)(uniform_dist(rng) * map_w);
+			int randomYCell = MAP_TOP + (int)(uniform_dist(rng) * map_h);
+			vec2 enemyPosition = gridCellToPosition({(float)randomXCell, (float)randomYCell});
+
+			createEnemy(renderer, enemyPosition);
+
+			// Optional debug output for spawning enemies
+			// std::cout << "TOTAL ENEMIES: " << registry.enemies.entities.size() << std::endl;
+		}
+	}
+
+	tileMap();
+
+	Player &player = registry.players.get(registry.players.entities[0]);
+	if (player.dash_cooldown_ms > 0)
+	{
+		player.dash_cooldown_ms -= elapsed_ms_since_last_update;
+		if (player.dash_cooldown_ms <= 0)
+		{
+			player.dash_cooldown_ms = 0;
+			player.dash_recharge_timer_ms = DASH_RECHARGE_DELAY_MS;
+		}
+	}
+
+	if (player.dash_cooldown_ms == 0 && player.dash_count < DASH_RECHARGE_COUNT)
+	{
+		if (player.dash_recharge_timer_ms > 0)
+		{
+			player.dash_recharge_timer_ms -= elapsed_ms_since_last_update;
+		}
+
+		if (player.dash_recharge_timer_ms <= 0 && player.dash_count < DASH_RECHARGE_COUNT)
+		{
+			player.dash_recharge_timer_ms = DASH_RECHARGE_DELAY_MS;
+
+			if (player.dash_count >= 0 && player.dash_count < registry.dashRecharges.size())
 			{
-				// reset timer
-				next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
-	
-				// randomize position
-				int map_w = MAP_RIGHT - MAP_LEFT;
-				int map_h = MAP_BOTTOM - MAP_TOP;
-				int randomXCell = MAP_LEFT + (int)(uniform_dist(rng) * map_w);
-				int randomYCell = MAP_TOP + (int)(uniform_dist(rng) * map_h);
-				vec2 enemyPosition = gridCellToPosition({(float)randomXCell, (float)randomYCell});
-	
-				createEnemy(renderer, enemyPosition);
-	
-				// Optional debug output for spawning enemies
-				// std::cout << "TOTAL ENEMIES: " << registry.enemies.entities.size() << std::endl;
+				Entity rechargeDot = registry.dashRecharges.entities[player.dash_count];
+				if (registry.motions.has(rechargeDot))
+				{
+					Motion &dotMotion = registry.motions.get(rechargeDot);
+
+					// ✅ Smoothly grow the dot instead of instantly appearing
+					float growthFactor = 1.0f - (float)player.dash_recharge_timer_ms / DASH_RECHARGE_DELAY_MS;
+					dotMotion.scale = {DASH_WIDTH * growthFactor, DASH_HEIGHT * growthFactor};
+				}
 			}
-		}
-	}
 
-    tileProceduralMap();
-
-    // check if player in portal tile
-    if (registry.portals.entities.size() > 0 && registry.motions.has(registry.portals.entities.back())) {
-        Motion &portal_motion = registry.motions.get(registry.portals.entities.back());
-        vec2 portal_position = portal_motion.position;
-
-        float distance = sqrt(pow(player_motion.position.x - portal_position.x, 2) + pow(player_motion.position.y - portal_position.y, 2));
-        float portal_radius = TILE_SIZE / 4.0f;
-
-        if (distance < portal_radius) {
-            // go to black screen
-            Entity screen_state_entity = renderer->get_screen_state_entity();
-            ScreenState &screen = registry.screenStates.get(screen_state_entity);
-            screen.darken_screen_factor = 1;
-            darken_screen_timer = 0.0f;
-
-            current_state = GameState::NEXT_LEVEL;
-			if (tutorial_mode) {
-				tutorial_mode = false;
-				removeInfoBoxes();
-			}
-            restart_game();
-            removeStartScreen(); // removing buttons that are added again
-
-        }
-    }
-
-    // Update the darken screen timer
-    if (darken_screen_timer >= 0.0f) {
-        darken_screen_timer += elapsed_ms_since_last_update;
-        if (darken_screen_timer >= 1000.0f) {
-            Entity screen_state_entity = renderer->get_screen_state_entity();
-            ScreenState &screen = registry.screenStates.get(screen_state_entity);
-            screen.darken_screen_factor = -1;
-            darken_screen_timer = -1.0f; // Stop the timer
-        }
-    }
-
-	handlePlayerMovement(elapsed_ms_since_last_update);
-	handlePlayerHealth(elapsed_ms_since_last_update);
-
-	return true;
-}
-
-// Handle player health
-void WorldSystem::handlePlayerHealth(float elapsed_ms)
-{
-	Player &player = registry.players.get(registry.players.entities[0]);
-	HealthBar &healthBar = registry.healthBars.get(registry.healthBars.entities[0]);
-
-	// handle regeneration
-	// heal every second
-	player.healing_timer_ms -= elapsed_ms;
-	if (player.healing_timer_ms <= 0 && player.current_health < player.max_health)
-	{
-		player.healing_timer_ms = PLAYER_DEFAULT_HEALING_TIMER_MS;
-		player.current_health += player.max_health * player.healing_rate;
-		if (player.current_health > player.max_health)
-		{
-			player.current_health = player.max_health;
-		}
-	}
-
-	if (player.current_health <= 0 && current_state != GameState::GAME_OVER)
-	{
-		previous_state = current_state;
-		current_state = GameState::GAME_OVER;
-		createGameOverScreen();
-	}
-}
-
-
-// Handle player movement
-void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
-	// if the player is not dashing, then have its velocity be base speed * by direction to mouse, if the mouse is outside deadzone
-	
-	Player &player = registry.players.get(registry.players.entities[0]);
-
-	if(registry.dashes.size() == 0) {
-		Motion &player_motion = registry.motions.get(registry.players.entities[0]);
-
-		vec2 direction = vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position;
-		direction = normalize(direction);
-
-		// If the mouse is outside the deadzone, move the player
-		if(length(vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position) > MOUSE_TRACKING_DEADZONE) {
-			player_motion.velocity = {direction.x * player.speed, direction.y * player.speed};
-		} else {
-			player_motion.velocity = {0, 0};
+			player.dash_count++;
 		}
 	}
 
@@ -402,7 +390,6 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 	particle_system.step(elapsed_ms_since_last_update);
 
 	return true;
-
 }
 
 // Reset the world state to its initial state
@@ -410,18 +397,17 @@ void WorldSystem::restart_game()
 {
 
 	std::cout << "Restarting..." << std::endl;
-    std::cout << "Level: " << level + 1 << std::endl;
-    
+
 	// Debugging for memory/component leaks
 	registry.list_all_components();
-    
+
 	// Reset the game speed
 	current_speed = 1.f;
-    
-	level += 1;
+
+	points = 0;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
-    
+
 	// FLAG
 	gameOver = false;
 
@@ -447,19 +433,9 @@ void WorldSystem::restart_game()
 
 	// debugging for memory/component leaks
 	registry.list_all_components();
-    
-	std::cout << "Creating Procedural Map, tutorial mode status :" << tutorial_mode << std::endl;
 
-    std::pair<int, int> playerPosition;
-	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
-
-	if (tutorial_mode) {
-		createPlayer(renderer, gridCellToPosition({0, 10}));
-		createEnemy(renderer, gridCellToPosition({12, 10}));
-	} else {
-		createPlayer(renderer, gridCellToPosition(vec2(playerPosition.second, playerPosition.first)));
-	}
-	
+	createPlayer(renderer, gridCellToPosition(WORLD_ORIGIN));
+	createMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
 	createMiniMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
 
 	createCamera();
@@ -537,9 +513,7 @@ void WorldSystem::handle_collisions()
 			// remove projectile
 			registry.remove_all_components_of(projectile_entity);
 
-			// if invader health is below 0
-			// remove invader and increase points
-			// buff created
+			// if invader health is below 0, remove invader and increase points
 			if (enemy.health <= 0)
 			{
 				// Get the enemy position before removing it
@@ -553,21 +527,7 @@ void WorldSystem::handle_collisions()
 				
 				// Create death particles at the enemy's position
 				particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemyPosition, 15);
-        
-				// level += 1;
-				Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS
-
-				createBuff(vec2(enemy_position.x + 60, enemy_position.y + 60));
 			}
-		}
-
-		if (registry.players.has(entity1) && registry.buffs.has(entity2))
-		{
-			collectBuff(entity1, entity2);
-		}
-		else if (registry.players.has(entity2) && registry.buffs.has(entity1))
-		{
-			collectBuff(entity2, entity1);
 		}
 
 		// player-enemy collision
@@ -577,9 +537,7 @@ void WorldSystem::handle_collisions()
 
 			Entity player_entity = registry.players.has(entity1) ? entity1 : entity2;
 			Entity enemy_entity = registry.enemies.has(entity1) ? entity1 : entity2;
-			Enemy &enemy = registry.enemies.get(enemy_entity);
 
-			/*
 			if (isDashing())
 			{
 					// Get the enemy position before removing it
@@ -593,21 +551,6 @@ void WorldSystem::handle_collisions()
 				// Create death particles at the enemy's position
 				particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemyPosition, 15);
 			}
-			*/
-			// Kill enemy when dashing?
-			if (isDashing())
-			{
-				enemy.health -= PLAYER_DASH_DAMAGE;
-
-				if (enemy.health <= 0)
-				{
-					vec2 enemy_position = registry.motions.get(enemy_entity).position;
-					points += 1;
-					registry.remove_all_components_of(enemy_entity);
-					
-					createBuff(vec2(enemy_position.x + 60, enemy_position.y + 60));
-				}
-			}
 			else
 			{
 				// womp womp	game over or vignetted??
@@ -620,7 +563,7 @@ void WorldSystem::handle_collisions()
 					registry.damageCooldowns.insert(player_entity, {current_time});
 
 					Player &player = registry.players.get(player_entity);
-					player.current_health -= 1; // FLAG this is not the right kind of damage...
+					player.health -= 1;
 					Mix_PlayChannel(-1, dash_sound_2, 0);
 				}
 				else
@@ -631,11 +574,28 @@ void WorldSystem::handle_collisions()
 					{
 						dc.last_damage_time = current_time;
 						Player &player = registry.players.get(player_entity);
-						player.current_health -= 1;
+						player.health -= 1;
 						Mix_PlayChannel(-1, dash_sound_2, 0);
 					}
 				}
+				// registry.remove_all_components_of(player_entity);
+				// registry.vignetteTimers.insert(Entity(), { 1000.f });
+
+				// Mix_PlayChannel(-1, dash_sound_2, 0);
 			}
+
+			// We dont do this anymore FLAG
+			// registry.remove_all_components_of(enemy_entity);
+			// registry.remove_all_components_of(player_entity);
+			// Mix_PlayChannel(-1, dash_sound_2, 0);
+
+			// Trigger vignette shader
+			// ensure it stays dark for a second before returning to normal
+			// registry.vignetteTimers.insert(Entity(), { 1000.f });
+
+			// ScreenState &screen = registry.screenStates.components[1];
+			// screen.darken_screen_factor = 1;
+			// registry.deathTimers.insert(tower_entity, { 1000.f });
 		}
 	}
 	// Remove all collisions from this simulation step
@@ -659,8 +619,7 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 	}
 
 	// toggle FPS display with F key
-	if (action == GLFW_RELEASE && key == GLFW_KEY_F)
-	{
+	if (action == GLFW_RELEASE && key == GLFW_KEY_F) {
 		toggleFPSDisplay();
 	}
 
@@ -679,7 +638,6 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 		Motion &startScreenMotion = registry.motions.get(startScreen);
 		startScreenMotion.velocity = {0.f, 0.f};
 		startScreenMotion.position = {0.f, 0.f};
-        level = 1;
 	}
 
 	// Pausing Game
@@ -970,52 +928,4 @@ bool WorldSystem::buttonClick(screenButton &button)
 	// std::cout << "button: " << res << std::endl;
 
 	return res;
-}
-
-void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
-{
-
-	Player &player = registry.players.get(player_entity);
-	if (!registry.buffs.has(buff_entity))
-	{
-		return;
-	}
-
-	Buff &buff = registry.buffs.get(buff_entity);
-	buff.collected = true;
-
-	registry.remove_all_components_of(buff_entity);
-
-	switch (buff.type)
-	{
-	case 0: // Tail
-		player.speed *= 1.05f;
-		std::cout << "Collected Tail: Player Speed increased by 5%" << std::endl;
-		break;
-
-	case 1: // Mitochondria
-		player.dash_cooldown_ms *= 0.95f;
-		std::cout << "Collected Mitochondria: Dash cooldown decreased by 5%" << std::endl;
-		break;
-
-	case 2: // Hemoglobin
-		player.detection_range *= 0.95f;
-		std::cout << "Collected Hemoglobin: Enemies Detection range decreased by 5%" << std::endl;
-		break;
-
-	case 3: // Golgi Apparatus Buff (need to be implemented)
-		
-		std::cout << "Collected Golgi Body: need to be implemented" << std::endl;
-		break;
-
-	case 4: // Chloroplast
-		player.healing_rate += 0.05;
-	std::cout << "Collected Chloroplast: Healing increased by 5% " << std::endl;
-		break;
-	default:
-		std::cerr << "Unknown buff type: " << buff.type << std::endl;
-		break;
-	}
-
-	renderCollectedBuff(renderer, buff.type);
 }

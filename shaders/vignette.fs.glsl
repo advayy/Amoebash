@@ -17,11 +17,7 @@ vec4 vignette(vec4 in_color)
 // darken the screen, i.e., fade to black
 vec4 fade_color(vec4 in_color) 
 {
-	// return in_color;
-    if (darken_screen_factor <= 0.0) {
-        return in_color;
-    }
-    return mix(in_color, vec4(0.0, 0.0, 0.0, 1.0), darken_screen_factor);
+	return in_color;
 }
 
 void main()
