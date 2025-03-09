@@ -119,17 +119,27 @@ int main()
 			renderer_system.drawCutScreneAnimation();
 			animation_system.step(elapsed_ms);
 
-			if (stateTimer <= 0.f)
-			{
-				stateTimer = BOOT_CUTSCENE_DURATION_MS;
+            if (stateTimer <= 0.f) {
+                stateTimer = BOOT_CUTSCENE_DURATION_MS;
 				removeCutScene();
-				previous_state = current_state;
-				current_state = GameState::GAME_PLAY;
-			}
-			break;
+                previous_state = current_state;
+                current_state = GameState::GAME_PLAY;
+            }
+            break;
 
-		default:
-			break;
+        case GameState::NEXT_LEVEL:
+            stateTimer -= elapsed_ms * 5;
+            renderer_system.drawNextLevelScreen();
+
+            if (stateTimer <= 0.f) {
+                stateTimer = BOOT_CUTSCENE_DURATION_MS;
+                previous_state = current_state;
+                current_state = GameState::GAME_PLAY;
+            }
+            break;
+
+        default:
+            break;
 		}
 	}
 

@@ -22,7 +22,8 @@ enum class GameState
 	PAUSE,
 	SHOP,
 	INFO,
-	GAMEPLAY_CUTSCENE
+	GAMEPLAY_CUTSCENE,
+    NEXT_LEVEL
 };
 
 // Container for all our entities and game logic.
@@ -63,6 +64,10 @@ public:
 	void collectBuff(Entity player_entity, Entity buff_entity);
 
 	void handlePlayerHealth(float elapsed_ms);
+	bool tutorial_mode = true;
+
+
+
 
 private:
 	bool gameOver = false;
@@ -96,8 +101,12 @@ private:
 	int next_enemy_spawn;
 	int enemy_spawn_rate_ms; // see default value in common.hpp
 
-	// Idk if we have this
 	unsigned int points;
+
+	unsigned int level = 0;
+
+    // black screen for next level timer
+    float darken_screen_timer = -1.0f;
 
 	// Game state
 	RenderSystem *renderer;

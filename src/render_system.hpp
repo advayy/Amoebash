@@ -55,7 +55,14 @@ class RenderSystem
 		textures_path("ui_art/HUD_dash_component_clear.png"),
 		textures_path("ui_art/HUD_germoney_hud.png"),
 		textures_path("ui_art/HUD_weapons_pill.png"),
-		textures_path("buffs/buffs_sheet.png")};
+		textures_path("buffs/buffs_sheet.png"),
+        textures_path("tiles/whirlpool_portal.png"),
+		textures_path("tutorial/mouse_control.png"),
+		textures_path("tutorial/pause_info.png"),
+		textures_path("tutorial/dash_info.png"),
+		textures_path("tutorial/enemy_info.png"),
+		textures_path("tutorial/restart_info.png"),
+		textures_path("tutorial/leave.png")};
 
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.
@@ -116,6 +123,7 @@ public:
 	void drawShopScreen();
 	void drawInfoScreen();
 	void drawCutScreneAnimation();
+    void drawNextLevelScreen();
 
 	mat3 createProjectionMatrix();
 

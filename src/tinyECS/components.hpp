@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include "../ext/stb_image/stb_image.h"
 
+extern bool tutorial_mode;
+
 struct Player
 {
 	int current_health = PLAYER_DEFAULT_HEALTH;
@@ -59,8 +61,30 @@ struct Map
 	int right = 0;
 };
 
-struct MiniMap
-{
+enum class tileType {
+	EMPTY = 0,
+	WALL = 1,
+    PORTAL = 2
+};
+
+struct ProceduralMap {
+	// 2D array of numbers representing the map
+	std::vector<std::vector<tileType>> map;
+
+	int width = 20; // This is in chunks of grid cells
+	int height = 20;
+	int top=0;
+	int left=0;
+	int bottom=0;
+	int right=0;
+};
+
+struct Portal {
+    int grid_x = 0;
+    int grid_y = 0;
+};
+
+struct MiniMap {
 };
 
 struct Camera
@@ -199,7 +223,8 @@ enum ScreenType
 	SHOP = INFO + 1,
 	NUCLEUS = SHOP + 1,
 	GAMEOVER = NUCLEUS + 1,
-	PAUSE = GAMEOVER + 1
+	PAUSE = GAMEOVER + 1,
+    NEXT_LEVEL = PAUSE + 1
 };
 
 struct GameScreen
@@ -247,7 +272,9 @@ struct BuffUI
 {
 	int buffType;
 };
-
+struct InfoBox
+{
+};
 /**
  * The following enumerators represent global identifiers refering to graphic
  * assets. For example TEXTURE_ASSET_ID are the identifiers of each texture
@@ -298,7 +325,14 @@ enum class TEXTURE_ASSET_ID
 	GERMONEY_UI = DASH_UI + 1,
 	WEAPON_PILL_UI = GERMONEY_UI + 1,
 	BUFFS_SHEET = WEAPON_PILL_UI + 1,
-	TEXTURE_COUNT = BUFFS_SHEET + 1,
+	PORTAL = BUFFS_SHEET + 1,
+	MOUSE_CONTROL_INFO = PORTAL + 1,
+	PAUSE_INFO = MOUSE_CONTROL_INFO + 1,
+	DASH_INFO = PAUSE_INFO + 1,
+	ENEMY_INFO = DASH_INFO + 1,
+	RESTART_INFO = ENEMY_INFO + 1,
+	LEAVE_TUTORIAL = RESTART_INFO + 1,
+	TEXTURE_COUNT = LEAVE_TUTORIAL + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -381,6 +415,20 @@ const int player_idle_end = (int)PLAYER_FRAMES::FRAME_3;
 const int player_dash_start = (int)PLAYER_FRAMES::FRAME_4;
 const int player_dash_end = (int)PLAYER_FRAMES::FRAME_7;
 const int total_player_frames = (int)PLAYER_FRAMES::FRAME_COUNT;
+
+enum class PORTAL_FRAMES {
+    FRAME_0 = 0,
+    FRAME_1 = FRAME_0 + 1,
+    FRAME_2 = FRAME_1 + 1,
+    FRAME_3 = FRAME_2 + 1,
+    FRAME_4 = FRAME_3 + 1,
+    FRAME_5 = FRAME_4 + 1,
+    FRAME_6 = FRAME_5 + 1,
+    FRAME_7 = FRAME_6 + 1,
+    FRAME_COUNT = FRAME_7 + 1
+};
+const int total_portal_frames = (int)PORTAL_FRAMES::FRAME_COUNT;
+
 struct DamageCooldown
 {
 	uint last_damage_time;

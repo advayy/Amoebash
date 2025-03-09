@@ -88,6 +88,23 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		Player &player = registry.players.get(registry.players.entities[0]);
 
 		glUniform2fv(player_grid_position_uloc, 1, (float *)&player.grid_position);
+
+
+
+		// map array logic
+		GLint map_array_uloc = glGetUniformLocation(program, "map_array");
+		std::vector<std::vector<tileType>> map_array = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map;
+		std::vector<int> flat_array;
+		flat_array.reserve(MAP_WIDTH * MAP_HEIGHT);
+
+		for (const auto& row : map_array) {
+			for (const auto& tile : row) {
+				flat_array.push_back(static_cast<int>(tile));
+			}
+		}
+	    glUniform1iv(map_array_uloc, MAP_WIDTH * MAP_HEIGHT, flat_array.data());
+
+		glUniform2fv(player_grid_position_uloc, 1, (float*)&player.grid_position);
 	}
 
 	// Getting uniform locations for glUniform* calls
@@ -315,9 +332,14 @@ void RenderSystem::draw()
 		drawTexturedMesh(entity, projection_2D);
 	}
 
+    // draw portal
+    for (Entity entity : registry.portals.entities) {
+        if (registry.renderRequests.has(entity)) drawTexturedMesh(entity, projection_2D);
+    }
+
 	for (Entity entity : registry.renderRequests.entities)
 	{
-		if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity))
+		if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity) && !registry.portals.has(entity))
 		{
 			drawTexturedMesh(entity, projection_2D);
 		}
@@ -413,6 +435,12 @@ void RenderSystem::drawGameOverScreen()
 	};
 
 	drawScreenAndButtons(ScreenType::GAMEOVER, buttons);
+}
+
+void RenderSystem::drawNextLevelScreen() {
+	std::vector<ButtonType> buttons = { };
+    
+	drawScreenAndButtons(ScreenType::NEXT_LEVEL, buttons);
 }
 
 void RenderSystem::drawScreenAndButtons(

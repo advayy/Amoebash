@@ -12,8 +12,10 @@
 
 #include "physics_system.hpp"
 
+bool tutorial_mode = true;
+
 // create the world
-WorldSystem::WorldSystem() : points(0),
+WorldSystem::WorldSystem() : level(0),
 							 next_enemy_spawn(0),
 							 enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS)
 {
@@ -255,6 +257,11 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
 	// M1 Feature - Camera controls
 	updateCamera(elapsed_ms_since_last_update);
+
+	if (tutorial_mode && registry.infoBoxes.size() == 0) {
+		createInfoBoxes();
+	}
+
 	updateMouseCoords();
 	updateHuds();
 
@@ -270,30 +277,72 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
 	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x) * 180.0f / M_PI + 90.0f;
 
-	// spawn new invaders
-	next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
-	if (next_enemy_spawn < 0.f && !gameOver)
+
+	if (!tutorial_mode)
 	{
-		if (registry.enemies.entities.size() < MAX_ENEMIES_COUNT)
+		// spawn new invaders
+		next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
+		if (next_enemy_spawn < 0.f && !gameOver)
 		{
-			// reset timer
-			next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
-
-			// randomize position
-			int map_w = MAP_RIGHT - MAP_LEFT;
-			int map_h = MAP_BOTTOM - MAP_TOP;
-			int randomXCell = MAP_LEFT + (int)(uniform_dist(rng) * map_w);
-			int randomYCell = MAP_TOP + (int)(uniform_dist(rng) * map_h);
-			vec2 enemyPosition = gridCellToPosition({(float)randomXCell, (float)randomYCell});
-
-			createEnemy(renderer, enemyPosition);
-
-			// Optional debug output for spawning enemies
-			// std::cout << "TOTAL ENEMIES: " << registry.enemies.entities.size() << std::endl;
+			if (registry.enemies.entities.size() < MAX_ENEMIES_COUNT)
+			{
+				// reset timer
+				next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
+	
+				// randomize position
+				int map_w = MAP_RIGHT - MAP_LEFT;
+				int map_h = MAP_BOTTOM - MAP_TOP;
+				int randomXCell = MAP_LEFT + (int)(uniform_dist(rng) * map_w);
+				int randomYCell = MAP_TOP + (int)(uniform_dist(rng) * map_h);
+				vec2 enemyPosition = gridCellToPosition({(float)randomXCell, (float)randomYCell});
+	
+				createEnemy(renderer, enemyPosition);
+	
+				// Optional debug output for spawning enemies
+				// std::cout << "TOTAL ENEMIES: " << registry.enemies.entities.size() << std::endl;
+			}
 		}
 	}
 
-	tileMap();
+    tileProceduralMap();
+
+    // check if player in portal tile
+    if (registry.portals.entities.size() > 0 && registry.motions.has(registry.portals.entities.back())) {
+        Motion &portal_motion = registry.motions.get(registry.portals.entities.back());
+        vec2 portal_position = portal_motion.position;
+
+        float distance = sqrt(pow(player_motion.position.x - portal_position.x, 2) + pow(player_motion.position.y - portal_position.y, 2));
+        float portal_radius = TILE_SIZE / 4.0f;
+
+        if (distance < portal_radius) {
+            // go to black screen
+            Entity screen_state_entity = renderer->get_screen_state_entity();
+            ScreenState &screen = registry.screenStates.get(screen_state_entity);
+            screen.darken_screen_factor = 1;
+            darken_screen_timer = 0.0f;
+
+            current_state = GameState::NEXT_LEVEL;
+			if (tutorial_mode) {
+				tutorial_mode = false;
+				removeInfoBoxes();
+			}
+            restart_game();
+            removeStartScreen(); // removing buttons that are added again
+
+        }
+    }
+
+    // Update the darken screen timer
+    if (darken_screen_timer >= 0.0f) {
+        darken_screen_timer += elapsed_ms_since_last_update;
+        if (darken_screen_timer >= 1000.0f) {
+            Entity screen_state_entity = renderer->get_screen_state_entity();
+            ScreenState &screen = registry.screenStates.get(screen_state_entity);
+            screen.darken_screen_factor = -1;
+            darken_screen_timer = -1.0f; // Stop the timer
+        }
+    }
+
 	handlePlayerMovement(elapsed_ms_since_last_update);
 	handlePlayerHealth(elapsed_ms_since_last_update);
 
@@ -354,17 +403,18 @@ void WorldSystem::restart_game()
 {
 
 	std::cout << "Restarting..." << std::endl;
-
+    std::cout << "Level: " << level + 1 << std::endl;
+    
 	// Debugging for memory/component leaks
 	registry.list_all_components();
-
+    
 	// Reset the game speed
 	current_speed = 1.f;
-
-	points = 0;
+    
+	level += 1;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
-
+    
 	// FLAG
 	gameOver = false;
 
@@ -390,9 +440,19 @@ void WorldSystem::restart_game()
 
 	// debugging for memory/component leaks
 	registry.list_all_components();
+    
+	std::cout << "Creating Procedural Map, tutorial mode status :" << tutorial_mode << std::endl;
 
-	createPlayer(renderer, gridCellToPosition(WORLD_ORIGIN));
-	createMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
+    std::pair<int, int> playerPosition;
+	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
+
+	if (tutorial_mode) {
+		createPlayer(renderer, gridCellToPosition({0, 10}));
+		createEnemy(renderer, gridCellToPosition({12, 10}));
+	} else {
+		createPlayer(renderer, gridCellToPosition(vec2(playerPosition.second, playerPosition.first)));
+	}
+	
 	createMiniMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
 
 	createCamera();
@@ -477,7 +537,7 @@ void WorldSystem::handle_collisions()
 			{
 				vec2 enemy_position = registry.motions.get(enemy_entity).position;
 				registry.remove_all_components_of(enemy_entity);
-				points += 1;
+				// level += 1;
 				Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS
 
 				createBuff(vec2(enemy_position.x + 60, enemy_position.y + 60));
@@ -595,6 +655,7 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 		Motion &startScreenMotion = registry.motions.get(startScreen);
 		startScreenMotion.velocity = {0.f, 0.f};
 		startScreenMotion.position = {0.f, 0.f};
+        level = 1;
 	}
 
 	// Pausing Game

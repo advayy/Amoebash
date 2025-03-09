@@ -26,6 +26,7 @@ public:
 	ComponentContainer<GridLine> gridLines;
 	ComponentContainer<Enemy> enemies;
 	ComponentContainer<Projectile> projectiles;
+    ComponentContainer<Portal> portals;
 
 	// mine
 	ComponentContainer<VignetteTimer> vignetteTimers;
@@ -46,6 +47,8 @@ public:
 	ComponentContainer<Start> starts;
 	ComponentContainer<GameplayCutScene> cutscenes;
 	ComponentContainer<MiniMap> miniMaps;
+	ComponentContainer<ProceduralMap> proceduralMaps;
+	ComponentContainer<InfoBox> infoBoxes;
 
 	// debaounce for damage cooldwn
 	ComponentContainer<DamageCooldown> damageCooldowns;
@@ -76,6 +79,7 @@ public:
 		registry_list.push_back(&gridLines);
 		registry_list.push_back(&enemies);
 		registry_list.push_back(&projectiles);
+        registry_list.push_back(&portals);
 		registry_list.push_back(&vignetteTimers);
 		registry_list.push_back(&animations);
 		registry_list.push_back(&buffs);
@@ -92,12 +96,14 @@ public:
 		registry_list.push_back(&starts);
 		registry_list.push_back(&cutscenes);
 		registry_list.push_back(&miniMaps);
+		registry_list.push_back(&proceduralMaps);
 		registry_list.push_back(&damageCooldowns);
 		registry_list.push_back(&enemyBehaviors);
 		registry_list.push_back(&enemyStates);
 		registry_list.push_back(&uiElements);
 		registry_list.push_back(&healthBars);
 		registry_list.push_back(&dashRecharges);
+		registry_list.push_back(&infoBoxes);
 		registry_list.push_back(&buffUIs);
 	}
 
