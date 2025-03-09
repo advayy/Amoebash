@@ -55,6 +55,49 @@ void PhysicsSystem::step(float elapsed_ms)
 
 		motion.position += motion.velocity * step_seconds;
 
+		if (registry.keys.has(entity)) {
+			float dampingFactor = 0.8f;
+			motion.velocity *= dampingFactor;
+			if (glm::length(motion.velocity) < 0.01f) {
+				motion.velocity = vec2(0.0f, 0.0f);
+			}
+			if (motion.position.x >= rightBound + 1 || motion.position.x <= leftBound ||
+				motion.position.y <= topBound || motion.position.y >= bottomBound + 1)  {
+					// temporary hexagon motion
+					
+					
+					
+					motion.position.x = glm::clamp(motion.position.x, leftBound, rightBound);
+					motion.position.y = glm::clamp(motion.position.y, topBound, bottomBound);
+					
+					if (motion.velocity != vec2(0.0f, 0.0f)) {
+						motion.velocity = -1.f * motion.velocity;
+					}
+				}
+		}
+
+		if (registry.keys.has(entity)) 
+		{
+			float dampingFactor = 0.8f;
+			motion.velocity *= dampingFactor;
+			if (glm::length(motion.velocity) < 0.01f) {
+				motion.velocity = vec2(0.0f, 0.0f);
+			}
+			if (motion.position.x >= rightBound + 1 || motion.position.x <= leftBound ||
+				motion.position.y <= topBound || motion.position.y >= bottomBound + 1)  {
+					// temporary hexagon motion
+					
+					
+					
+					motion.position.x = glm::clamp(motion.position.x, leftBound, rightBound);
+					motion.position.y = glm::clamp(motion.position.y, topBound, bottomBound);
+					
+					if (motion.velocity != vec2(0.0f, 0.0f)) {
+						motion.velocity = -1.f * motion.velocity;
+					}
+				}
+		}
+
 		if (registry.players.has(entity))
 		{
 			// player update: use cached boundaries

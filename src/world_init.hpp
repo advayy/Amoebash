@@ -6,6 +6,8 @@
 
 Entity createEnemy(RenderSystem *renderer, vec2 position);
 Entity createPlayer(RenderSystem *renderer, vec2 position);
+Entity createKey(RenderSystem *renderer, vec2 position);
+Entity createChest(RenderSystem *renderer, vec2 position);
 void createButtons();
 
 // projectile
@@ -20,6 +22,10 @@ void toggleDashAnimation(Entity entity, bool is_dashing);
 void initiatePlayerDash();
 bool canDash();
 bool isDashing();
+bool willMeshCollideSoon(const Entity& player, const Entity& hexagon, float predictionTime);
+bool pointInHexagon(const vec2& point, const std::vector<vec2> &polygon);
+std::vector<vec2> getWorldVertices(const std::vector<TexturedVertex>& vertices, const vec2 &position, const vec2 &scale);
+
 
 Entity createCamera();
 
@@ -36,7 +42,7 @@ Entity addPortalTile(vec2 gridCoord);
 vec2 positionToGridCell(vec2 position);
 vec2 gridCellToPosition(vec2 gridCell);
 
-Entity createStartScreen(vec2 position = {-WINDOW_WIDTH_PX / 2.f, 0.f});
+Entity createStartScreen(vec2 position = LOGO_POSITION_INITIAL);
 Entity createShopScreen();
 Entity createInfoScreen();
 Entity createGameOverScreen();
@@ -52,6 +58,8 @@ Entity createEnteringNucleus();
 void removePauseScreen();
 void removeGameOverScreen();
 void removeStartScreen();
+void removeShopScreen();
+void removeInfoScreen();
 void removeCutScene();
 void removeInfoBoxes();
 
@@ -59,6 +67,7 @@ Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID
 Entity createStartButton();
 Entity createShopButton();
 Entity createInfoButton();
+Entity createBackButton();
 
 int countAdjacentWalls(const std::vector<int>& grid, int x, int y);
 std::vector<std::vector<tileType>> applyCellularAutomataRules(const std::vector<std::vector<tileType>>& grid);

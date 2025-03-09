@@ -107,7 +107,6 @@ int main()
 			break;
 
 		case GameState::INFO:
-			// renderer_system.draw();
 			renderer_system.drawInfoScreen();
 			break;
 		case GameState::GAME_OVER:

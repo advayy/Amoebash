@@ -322,12 +322,11 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
             darken_screen_timer = 0.0f;
 
             current_state = GameState::NEXT_LEVEL;
-			if (tutorial_mode) {
-				tutorial_mode = false;
-				removeInfoBoxes();
-			}
-            restart_game();
-            removeStartScreen(); // removing buttons that are added again
+			
+			goToNextLevel();
+
+            // restart_game();
+            // removeStartScreen(); // removing buttons that are added again
 
         }
     }
@@ -398,6 +397,26 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 	}
 }
 
+void WorldSystem::goToNextLevel()
+{
+	current_speed = 1.f;
+	level += 1;
+	next_enemy_spawn = 0;
+	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
+
+	gameOver = false;
+
+	std::pair<int, int> playerPosition;
+	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
+
+	Player &player = registry.players.get(registry.players.entities[0]);
+	Motion &playerMotion = registry.motions.get(registry.players.entities[0]);
+	
+	playerMotion.position = gridCellToPosition(vec2(playerPosition.second, playerPosition.first));
+	return;
+}
+
+
 // Reset the world state to its initial state
 void WorldSystem::restart_game()
 {
@@ -449,6 +468,8 @@ void WorldSystem::restart_game()
 	if (tutorial_mode) {
 		createPlayer(renderer, gridCellToPosition({0, 10}));
 		createEnemy(renderer, gridCellToPosition({12, 10}));
+		createKey(renderer, gridCellToPosition({16, 10}));
+		createChest(renderer, gridCellToPosition({19, 10}));
 	} else {
 		createPlayer(renderer, gridCellToPosition(vec2(playerPosition.second, playerPosition.first)));
 	}
@@ -457,28 +478,11 @@ void WorldSystem::restart_game()
 
 	createCamera();
 
-	// screens
-	if (previous_state == GameState::GAME_OVER)
-	{
-		createStartScreen(WORLD_ORIGIN);
-	}
-	else
-	{
-		createStartScreen();
-	}
-	createShopScreen();
-	createInfoScreen();
 
-	// timer settings depending on previous state
-	if (current_state == GameState::START_SCREEN_ANIMATION)
-	{
-		stateTimer = BOOT_CUTSCENE_DURATION_MS;
-	}
-	else
-	{
-		stateTimer = INTRO_CUTSCENE_DURATION_MS;
-	}
+	createStartScreen();
 
+
+	stateTimer = BOOT_CUTSCENE_DURATION_MS;
 	(renderer);
 
 	createUIElement(NUCLEUS_UI_POS,
@@ -511,6 +515,59 @@ void WorldSystem::handle_collisions()
 		Collision &collision = collision_container.components[i];
 		Entity &entity1 = collision_container.entities[i];
 		Entity &entity2 = collision.other;
+		// if one is hexagon and one is player
+		if ((registry.players.has(entity1) && registry.keys.has(entity2)) || (registry.players.has(entity2) && registry.keys.has(entity1)))
+		{
+			// Set player and hexagon
+			Entity player_entity = registry.players.has(entity1) ? entity1 : entity2;
+			Entity key_entity = registry.keys.has(entity1) ? entity1 : entity2;
+
+			float predictionTime = 0.001f; // 100 ms = 0.1s
+
+			if (willMeshCollideSoon(player_entity, key_entity, predictionTime)) {
+				Motion& keyMotion = registry.motions.get(key_entity);
+				Motion& playerMotion = registry.motions.get(player_entity);
+
+				if (glm::length(playerMotion.velocity) > 0.0f) {
+					keyMotion.velocity = playerMotion.velocity * 3.0f;
+				} else {
+					keyMotion.velocity = vec2(0.0f, 0.0f);
+				}
+				std::cout << "Mesh collision imminent between player and hexagon" << std::endl;
+			} else {
+				std::cout << "No mesh collision predicted soon" << std::endl;
+			}
+
+		}
+
+		if ((registry.chests.has(entity1) && registry.keys.has(entity2)) || (registry.keys.has(entity1) && registry.chests.has(entity2)))
+		{
+			// Set player and hexagon
+			Entity key_entity = registry.keys.has(entity1) ? entity1 : entity2;
+			Entity chest_entity = registry.chests.has(entity1) ? entity1 : entity2;
+
+			Motion& keyMotion = registry.motions.get(key_entity);
+			Motion& chestMotion = registry.motions.get(chest_entity);
+
+			Mesh& chestMesh = *registry.meshPtrs.get(chest_entity);
+
+			std::vector<vec2> chestWorldVertices = getWorldVertices(chestMesh.textured_vertices, chestMotion.position, chestMotion.scale);
+
+			if (pointInHexagon(keyMotion.position, chestWorldVertices))
+			{
+				// remove chest
+				registry.remove_all_components_of(chest_entity);
+				registry.remove_all_components_of(key_entity);
+
+				if (tutorial_mode) {
+					current_state = GameState::NEXT_LEVEL;
+					tutorial_mode = false;
+					removeInfoBoxes();
+					restart_game();
+					removeStartScreen();
+				}
+			}
+		}
 
 		// should be deprecated no?
 		// if 1 is a projectile and 2 is an invader or if 1 is an invader and 2 is a projectile
@@ -650,12 +707,6 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 
 		previous_state = current_state;
 		current_state = GameState::START_SCREEN;
-
-		Entity startScreen = registry.starts.entities[0];
-		Motion &startScreenMotion = registry.motions.get(startScreen);
-		startScreenMotion.velocity = {0.f, 0.f};
-		startScreenMotion.position = {0.f, 0.f};
-        level = 1;
 	}
 
 	// Pausing Game
@@ -792,6 +843,9 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				return;
 			}
 
+			
+			
+
 			bool on_button_shop = buttonClick(*shopButton);
 			bool on_button_nucleus = buttonClick(*nucleusButton);
 			bool on_button = buttonClick(*startButton);
@@ -800,11 +854,15 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			{
 				previous_state = current_state;
 				current_state = GameState::SHOP;
+				removeStartScreen();
+				createShopScreen();
 			}
 			else if (on_button_nucleus)
 			{
 				previous_state = current_state;
 				current_state = GameState::INFO;
+				removeStartScreen();
+				createInfoScreen();
 			}
 			else if (on_button)
 			{
@@ -816,77 +874,29 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			}
 		}
 
-		// gameplay -> shop
-		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::GAME_PLAY)
-		{
-
-			// Find shop button
-			screenButton *shopButton = nullptr;
-			for (auto &button : registry.buttons.components)
-			{
-				if (button.type == ButtonType::SHOPBUTTON)
-				{
-					shopButton = &button;
-					break;
-				}
-			}
-
-			if (!shopButton)
-			{
-				return;
-			}
-
-			screenButton *nucleusButton = nullptr;
-			for (auto &button : registry.buttons.components)
-			{
-				if (button.type == ButtonType::INFOBUTTON)
-				{
-					nucleusButton = &button;
-					break;
-				}
-			}
-
-			if (!nucleusButton)
-			{
-				return;
-			}
-
-			bool on_button_shop = buttonClick(*shopButton);
-			bool on_button_nucleus = buttonClick(*nucleusButton);
-
-			if (on_button_shop)
-			{
-				previous_state = current_state;
-				current_state = GameState::SHOP;
-			}
-			else if (on_button_nucleus)
-			{
-				previous_state = current_state;
-				current_state = GameState::INFO;
-			}
-		}
-
 		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::SHOP)
 		{
-			// Find shop button
-			screenButton *shopButton = nullptr;
+			// Find back button
+			screenButton *backButton = nullptr;
 			for (auto &button : registry.buttons.components)
 			{
-				if (button.type == ButtonType::SHOPBUTTON)
+				if (button.type == ButtonType::BACKBUTTON)
 				{
-					shopButton = &button;
+					backButton = &button;
 					break;
 				}
 			}
 
-			if (!shopButton)
+			if (!backButton)
 			{
 				return;
 			}
 
-			bool on_button_shop = buttonClick(*shopButton);
-			if (on_button_shop)
+			bool on_button_back = buttonClick(*backButton);
+			if (on_button_back)
 			{
+				removeShopScreen();
+				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
 				current_state = previous_state;
 				previous_state = temp;
@@ -894,24 +904,27 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		}
 		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::INFO)
 		{
-			screenButton *nucleusButton = nullptr;
+			// Find back button
+			screenButton *backButton = nullptr;
 			for (auto &button : registry.buttons.components)
 			{
-				if (button.type == ButtonType::INFOBUTTON)
+				if (button.type == ButtonType::BACKBUTTON)
 				{
-					nucleusButton = &button;
+					backButton = &button;
 					break;
 				}
 			}
 
-			if (!nucleusButton)
+			if (!backButton)
 			{
 				return;
 			}
 
-			bool on_button_shop = buttonClick(*nucleusButton);
-			if (on_button_shop)
+			bool on_button_back = buttonClick(*backButton);
+			if (on_button_back)
 			{
+				removeInfoScreen();
+				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
 				current_state = previous_state;
 				previous_state = temp;
@@ -922,7 +935,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::GAME_OVER)
 		{
 			previous_state = current_state;
-			current_state = GameState::START_SCREEN;
+			current_state = GameState::START_SCREEN_ANIMATION;
 
 			removeGameOverScreen();
 			restart_game();

@@ -62,6 +62,7 @@ const float MAP_WIDTH = 20;
 const float MAP_HEIGHT = 20;
 const vec2 WORLD_ORIGIN = {10, 10};
 
+
 // Set map left right based on width and origin
 const float MAP_LEFT = WORLD_ORIGIN.x - MAP_WIDTH / 2;
 const float MAP_RIGHT = WORLD_ORIGIN.x + MAP_WIDTH / 2;
@@ -82,6 +83,10 @@ const float LARGE_ENEMY_SIZE = 64 * WORK_SCALE_FACTOR;
 // PLAYER BB
 const float PLAYER_BB_WIDTH = (float)PLAYER_SIZE;
 const float PLAYER_BB_HEIGHT = (float)PLAYER_SIZE;
+
+// Hexagon stuff
+const float HEXAGON_RADIUS = (float)PLAYER_SIZE;
+// const vec2 HEXAGON_SPEED = {800, 800};
 
 // invaders are 32x32 px, but cells are 60x60
 const float ENEMY_BB_WIDTH = (float)ENEMY_SIZE;
@@ -130,15 +135,27 @@ const float LOGO_HEIGHT_PX = 122 * WORK_SCALE_FACTOR;
 
 // CUTSCENES
 const float INTRO_CUTSCENE_DURATION_MS = 3 * MS_PER_S; // for animation after clicking start
-const float BOOT_CUTSCENE_DURATION_MS = 3 * MS_PER_S;  // for logo movement at boot
+const float BOOT_CUTSCENE_DURATION_MS = 2 * MS_PER_S;  // for logo movement at boot
 const float GAMEPLAY_CUTSCENE_DURATION_MS = 3 * MS_PER_S;
 const float STATE_TIMER_DEFAULT = 3 * MS_PER_S;
 
 // button positions, scales
-const vec2 START_BUTTON_COORDINATES = {0.f, WINDOW_HEIGHT_PX / 4.5f};
-const vec2 START_BUTTON_SCALE = {WINDOW_WIDTH_PX / 7.f, WINDOW_HEIGHT_PX / 7.f};
+const vec2 LOGO_POSITION_INITIAL = {-WINDOW_WIDTH_PX / 2.f, -WINDOW_HEIGHT_PX / 3.5f};
+const vec2 LOGO_POSITION = LOGO_POSITION_INITIAL + vec2(WINDOW_WIDTH_PX / 2.f, 0.f);
 
-const vec2 SHOP_INFO_BUTTON_SCALE = {WINDOW_WIDTH_PX / 20.f, WINDOW_HEIGHT_PX / 20.f * 1.78f};
+const vec2 START_BUTTON_SCALE = {128 * WORK_SCALE_FACTOR, 32 * WORK_SCALE_FACTOR};
+const vec2 INFO_BUTTON_SCALE = {128 * WORK_SCALE_FACTOR, 32 * WORK_SCALE_FACTOR};
+const vec2 SHOP_BUTTON_SCALE = {128 * WORK_SCALE_FACTOR, 32 * WORK_SCALE_FACTOR};
+const vec2 BACK_BUTTON_SCALE = {128 * WORK_SCALE_FACTOR, 32 * WORK_SCALE_FACTOR};
+
+const float START_SCREEN_BUTTON_PADDING = 10 * WORK_SCALE_FACTOR;
+
+const vec2 START_BUTTON_COORDINATES = {0.f, 0.f};
+const vec2 SHOP_BUTTON_COORDINATES = {0.f, START_BUTTON_COORDINATES.y + START_BUTTON_SCALE.y + START_SCREEN_BUTTON_PADDING};
+const vec2 INFO_BUTTON_COORDINATES = {0.f, SHOP_BUTTON_COORDINATES.y + START_BUTTON_SCALE.y + START_SCREEN_BUTTON_PADDING};
+const vec2 BACK_BUTTON_COORDINATES = {-WINDOW_WIDTH_PX / 3.1f, WINDOW_HEIGHT_PX / 3.1f};
+// BACKGROUND SCALE
+const vec2 BACKGROUND_SCALE = vec2(WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX);
 
 // UI
 const float UI_SCALE = 1;

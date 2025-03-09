@@ -94,7 +94,7 @@ void RenderSystem::initializeGlEffects()
 	{
 		const std::string vertex_shader_name = effect_paths[i] + ".vs.glsl";
 		const std::string fragment_shader_name = effect_paths[i] + ".fs.glsl";
-
+	
 		std::cout << "Loading shaders: " << vertex_shader_name << " and " << fragment_shader_name << std::endl;
 
 		bool is_valid = loadEffectFromFile(vertex_shader_name, fragment_shader_name, effects[i]);
@@ -223,6 +223,50 @@ void RenderSystem::initializeGlGeometryBuffers()
 	screen_vertices[0] = {-1, -6, 0.f};
 	screen_vertices[1] = {6, -1, 0.f};
 	screen_vertices[2] = {-1, 6, 0.f};
+
+	///////////////////////////////////////////////////////
+	// Initialize Hexagon Mesh
+	// std::vector<ColoredVertex> hexagon_vertices;
+	std::vector<TexturedVertex> hexagon_texture_vertices;
+	std::vector<uint16_t> hexagon_indices;
+	constexpr float hex_radius = 0.5f;
+	constexpr float hex_z = 0.0f;
+	constexpr vec3 hex_color = {1.0f, 0.f, 0.f};
+	
+	for (int i = 0; i < 6; i++) {
+		float angle = M_PI / 3.0f * i; 
+		// hexagon_vertices.push_back({
+		// 	{hex_radius * cos(angle), hex_radius * sin(angle), hex_z},
+		// 	hex_color
+		// });
+
+		float u = (cos(angle) + 1.0f) / 2.0f;
+		float v = (sin(angle) + 1.0f) / 2.0f;
+
+		hexagon_texture_vertices.push_back({
+			{hex_radius * cos(angle), hex_radius * sin(angle), hex_z},
+			{u, v}
+		});
+	}
+	
+	// hexagon_vertices.push_back({{0.0f,0.0f,hex_z}, hex_color});
+	hexagon_texture_vertices.push_back({{0.f,0.f,hex_z}, {0.5f, 0.5f}});
+	
+	// uint16_t center_index = uint16_t(hexagon_vertices.size() - 1);
+	uint16_t center_index = uint16_t(hexagon_texture_vertices.size() - 1);
+	
+	for (int i = 0; i < 6; i++) {
+		hexagon_indices.push_back(i);
+		hexagon_indices.push_back((i + 1)% 6);
+		hexagon_indices.push_back(center_index);
+	}
+	
+
+	int hex_geom_index = (int) GEOMETRY_BUFFER_ID::HEXAGON;
+	// meshes[hex_geom_index].vertices = hexagon_vertices;
+	meshes[hex_geom_index].vertex_indices = hexagon_indices;
+	meshes[hex_geom_index].textured_vertices = hexagon_texture_vertices;
+	bindVBOandIBO(GEOMETRY_BUFFER_ID::HEXAGON, meshes[hex_geom_index].textured_vertices, meshes[hex_geom_index].vertex_indices);
 
 	// Counterclockwise as it's the default opengl front winding direction.
 	const std::vector<uint16_t> screen_indices = {0, 1, 2};

@@ -195,16 +195,94 @@ bool isDashing()
 	return registry.dashes.size() > 0;
 }
 
-// Entity createTutorialMap(RenderSystem* renderer, vec2 size) {
-// 	for (Entity& entity : registry.proceduralMaps.entities) {
-//         registry.remove_all_components_of(entity);
-//     }
-//     for (Entity& entity : registry.portals.entities) {
-//         registry.remove_all_components_of(entity);
-//     }
+bool willMeshCollideSoon(const Entity& player, const Entity& hexagon, float predictionTime)
+{
+	Mesh& hexagonMesh = *registry.meshPtrs.get(hexagon);
 
-// 	auto entity = Entity();
-// }
+	Motion& playerMotion = registry.motions.get(player);
+	Motion& hexagonMotion = registry.motions.get(hexagon);
+
+	vec2 playerFuturePos = playerMotion.position + playerMotion.velocity * predictionTime;
+	vec2 hexagonFuturePos = hexagonMotion.position + hexagonMotion.velocity * predictionTime;
+
+	vec2 diff = playerFuturePos - hexagonFuturePos;
+	float distance = length(diff);
+
+	// mesh based collision won't happen 
+	if (distance > (playerMotion.scale.x / 2 + hexagonMotion.scale.x / 2))
+	{
+		return false;
+	}
+
+	// mesh based collision will happen
+
+	vec2 playerCenter = playerFuturePos;
+	float playerRadius = playerMotion.scale.x / 2;
+
+	std::vector<vec2> hexagonWorldVertices = getWorldVertices(hexagonMesh.textured_vertices, hexagonFuturePos, hexagonMotion.scale);
+	int numVertices = hexagonWorldVertices.size();
+
+	bool inside = pointInHexagon(playerCenter, hexagonWorldVertices);
+
+	// check the distance from circle (player) to edge
+	for (int i = 0; i < numVertices; i++) {
+		int next = (i + 1) % numVertices;
+
+		vec2 A = hexagonWorldVertices[i];
+		vec2 B = hexagonWorldVertices[next];
+
+		vec2 AB = A - B;
+
+		float t = dot(playerCenter - A, AB) / dot(AB, AB); // ratio of projections
+
+		t = std::max(0.0f, std::min(1.0f, t)); // clamping
+
+		vec2 projectionPoint = A + AB * t;
+		
+		float distance = length(playerCenter - projectionPoint);
+
+		if (distance < playerRadius) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool pointInHexagon(const vec2& point, const std::vector<vec2> &polygon)
+{
+	bool inside = false;
+
+	int numVertices = polygon.size();
+
+	// using ray cast algorithm
+	for (int i = 0, j = numVertices - 1; i < numVertices; j = i++) {
+		const vec2& vi = polygon[i];
+		const vec2& vj = polygon[j];
+
+		if (((vi.y > point.y) != (vj.y > point.y)) &&
+			(point.x < (vj.x - vi.x) * (point.y - vi.y) / (vj.y - vi.y) + vi.x))
+		{
+			inside = !inside;
+		}
+	}
+
+	return inside;
+}
+
+std::vector<vec2> getWorldVertices(const std::vector<TexturedVertex>& vertices, const vec2 &position, const vec2 &scale) {
+	std::vector<vec2> worldVertices;
+	for (const auto& vertex : vertices) {
+		vec2 worldVertex = {
+			vertex.position.x * scale.x + position.x,
+			vertex.position.y * scale.y + position.y
+		};
+
+		worldVertices.push_back(worldVertex);
+	}
+	return worldVertices;
+}
+
 
 Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, std::pair<int, int>& playerPosition) {
     for (Entity& entity : registry.proceduralMaps.entities) {
@@ -245,7 +323,7 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 			}
 		}
 
-		map.map[map.height-1][hall_x] = tileType::PORTAL;
+		// map.map[map.height-1][hall_x] = tileType::PORTAL;
 
 		std::cout << "Created InfoBoxes" << std::endl;
 
@@ -294,7 +372,7 @@ void createInfoBoxes() {
 		// Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
 		// Player &player = registry.players.get(registry.players.entities[0]);
 		int x = (3  *  i)  + 1;
-		int y = (i % 2 == 0) ? 8 : 11;
+		int y = (i % 2 == 0) ? 11 : 8;
 		vec2 infoPosition = gridCellToPosition({x, y});
 	
 		Motion& motion1 = registry.motions.emplace(entity1);
@@ -345,6 +423,58 @@ Entity createMiniMap(RenderSystem *renderer, vec2 size)
 
 	// add entity to minimaps
 	registry.miniMaps.emplace(entity);
+
+	return entity;
+}
+
+Entity createKey(RenderSystem *renderer, vec2 position) 
+{
+	auto entity = Entity();
+
+	auto &key = registry.keys.emplace(entity);
+
+	Mesh &mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::HEXAGON);
+	registry.meshPtrs.emplace(entity, &mesh);
+
+	auto &motion = registry.motions.emplace(entity);
+	motion.angle = 0.0f;
+	motion.velocity = {0.0f, 0.0f};
+	motion.position = position;
+	motion.scale = {HEXAGON_RADIUS, HEXAGON_RADIUS};
+
+	registry.renderRequests.insert(
+		entity,
+		{TEXTURE_ASSET_ID::KEY,
+		 EFFECT_ASSET_ID::HEXAGON,
+		 GEOMETRY_BUFFER_ID::HEXAGON}
+	);
+
+	return entity;
+}
+
+Entity createChest(RenderSystem *renderer, vec2 position)
+{
+	auto entity = Entity();
+
+	auto &chest = registry.chests.emplace(entity);
+
+	Mesh &mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::HEXAGON);
+	registry.meshPtrs.emplace(entity, &mesh);
+
+	auto &motion = registry.motions.emplace(entity);
+	motion.angle = 0.0f;
+	motion.velocity = {0.0f, 0.0f};
+	motion.position = position;
+	motion.scale = {HEXAGON_RADIUS * 3.f, HEXAGON_RADIUS * 3.f};
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			TEXTURE_ASSET_ID::CHEST,
+			EFFECT_ASSET_ID::HEXAGON,
+			GEOMETRY_BUFFER_ID::HEXAGON
+		}
+	);
 
 	return entity;
 }
@@ -580,30 +710,47 @@ Entity createCamera()
 Entity createStartScreen(vec2 position)
 {
 	Entity startScreenEntity = Entity();
-
+	
+	// render request for back ground
 	registry.renderRequests.insert(
 		startScreenEntity,
-		{TEXTURE_ASSET_ID::SCREEN,
-		 EFFECT_ASSET_ID::TEXTURED,
-		 GEOMETRY_BUFFER_ID::SPRITE});
+		{
+			TEXTURE_ASSET_ID::START_SCREEN_BG,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
 
+	Motion& bg_motion = registry.motions.emplace(startScreenEntity);
+	bg_motion.position = WORLD_ORIGIN;
+	bg_motion.velocity = vec2(0.f,0.f);
+	bg_motion.angle = 0.f;
+	bg_motion.scale = BACKGROUND_SCALE;
+	
 	Start &start = registry.starts.emplace(startScreenEntity);
-
 	GameScreen &screen = registry.gameScreens.emplace(startScreenEntity);
 	screen.type = ScreenType::START;
-
-	Motion &motion = registry.motions.emplace(startScreenEntity);
-	vec2 scale = {LOGO_WIDTH_PX, LOGO_HEIGHT_PX};
-	motion.position = position;
-	motion.scale = scale;
-
-	motion.velocity = {WINDOW_WIDTH_PX / 2.f / BOOT_CUTSCENE_DURATION_MS * 1000.f, 0.f};
 
 	Entity startButtonEntity = createStartButton();
 	Entity shopButtonEntity = createShopButton();
 	Entity infoButtonEntity = createInfoButton();
 
 	start.buttons = std::vector{startButtonEntity, shopButtonEntity, infoButtonEntity};
+	
+	Entity startScreenLogoEntity = Entity();
+	// render request for logo
+	registry.renderRequests.insert(
+		startScreenLogoEntity,
+		{TEXTURE_ASSET_ID::GAME_LOGO,
+		 EFFECT_ASSET_ID::TEXTURED,
+		 GEOMETRY_BUFFER_ID::SPRITE});
+
+	Motion &logo_motion = registry.motions.emplace(startScreenLogoEntity);
+	logo_motion.position = position;
+	logo_motion.scale = {LOGO_WIDTH_PX, LOGO_HEIGHT_PX};
+	logo_motion.velocity = {WINDOW_WIDTH_PX / 2.f / BOOT_CUTSCENE_DURATION_MS * MS_PER_S, 0.f};
+
+	start.logo = startScreenLogoEntity;
 
 	return startScreenEntity;
 }
@@ -614,19 +761,25 @@ Entity createShopScreen()
 
 	registry.renderRequests.insert(
 		shopScreenEntity,
-		{TEXTURE_ASSET_ID::SHOPSCREEN,
+		{TEXTURE_ASSET_ID::START_SCREEN_BG,
 		 EFFECT_ASSET_ID::TEXTURED,
 		 GEOMETRY_BUFFER_ID::SPRITE});
+	
+	Shop& shop = registry.shops.emplace(shopScreenEntity);
 
 	GameScreen &screen = registry.gameScreens.emplace(shopScreenEntity);
 	screen.type = ScreenType::SHOP;
 
 	Motion &motion = registry.motions.emplace(shopScreenEntity);
-	vec2 position = {0.f, 0.f};
-	vec2 scale = {LOGO_WIDTH_PX, LOGO_HEIGHT_PX};
+	vec2 position = WORLD_ORIGIN;
+	vec2 scale = BACKGROUND_SCALE;
 
 	motion.position = position;
 	motion.scale = scale;
+
+	Entity backButtonEntity = createBackButton();
+	
+	shop.buttons = std::vector{backButtonEntity};
 
 	return shopScreenEntity;
 }
@@ -637,19 +790,25 @@ Entity createInfoScreen()
 
 	registry.renderRequests.insert(
 		infoScreenEntity,
-		{TEXTURE_ASSET_ID::INFOSCREEN,
+		{TEXTURE_ASSET_ID::START_SCREEN_BG,
 		 EFFECT_ASSET_ID::TEXTURED,
 		 GEOMETRY_BUFFER_ID::SPRITE});
+
+	Info& info = registry.infos.emplace(infoScreenEntity);
 
 	GameScreen &screen = registry.gameScreens.emplace(infoScreenEntity);
 	screen.type = ScreenType::INFO;
 
 	Motion &motion = registry.motions.emplace(infoScreenEntity);
-	vec2 position = {0.f, 0.f};
-	vec2 scale = {LOGO_WIDTH_PX, LOGO_HEIGHT_PX};
+	vec2 position = WORLD_ORIGIN;
+	vec2 scale = BACKGROUND_SCALE;
 
 	motion.position = position;
 	motion.scale = scale;
+
+	Entity backButtonEntity = createBackButton();
+
+	info.buttons = std::vector{backButtonEntity};
 
 	return infoScreenEntity;
 }
@@ -894,13 +1053,50 @@ void removeStartScreen()
 	Entity start_entity = registry.starts.entities[0];
 	Start &start = registry.starts.components[0];
 	std::vector<Entity> buttons_to_remove = start.buttons;
+	Entity logo = start.logo;
 
+	std::cout << "Button Size" << std::endl;
+	std::cout << buttons_to_remove.size() << std::endl;
+	for (auto &entity : buttons_to_remove)
+	{
+		registry.remove_all_components_of(entity);
+	}
+	registry.remove_all_components_of(logo);
+	registry.remove_all_components_of(start_entity);
+}
+
+void removeShopScreen()
+{
+	if (registry.shops.size() == 0)
+		return;
+	
+	Entity shop_entity = registry.shops.entities[0];
+	Shop &shop = registry.shops.components[0];
+	std::vector<Entity> buttons_to_remove = shop.buttons;
+	std::cout << "Buttons: " << buttons_to_remove.size() << std::endl;
 	for (auto &entity : buttons_to_remove)
 	{
 		registry.remove_all_components_of(entity);
 	}
 
-	registry.remove_all_components_of(start_entity);
+	registry.remove_all_components_of(shop_entity);
+}
+
+void removeInfoScreen()
+{
+	if (registry.infos.size() == 0)
+		return;
+	
+	Entity info_entity = registry.infos.entities[0];
+	Info &info = registry.infos.components[0];
+	std::vector<Entity> buttons_to_remove = info.buttons;
+	std::cout << "Buttons: " << buttons_to_remove.size() << std::endl;
+	for (auto &entity : buttons_to_remove)
+	{
+		registry.remove_all_components_of(entity);
+	}
+
+	registry.remove_all_components_of(info_entity);
 }
 
 Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID texture)
@@ -940,26 +1136,34 @@ Entity createStartButton()
 
 Entity createShopButton()
 {
-	vec2 scale = SHOP_INFO_BUTTON_SCALE;
-	vec2 position = {scale.x - WINDOW_WIDTH_PX / 2.f,
-					 scale.y - WINDOW_HEIGHT_PX / 2.f};
+	vec2 scale = SHOP_BUTTON_SCALE;
+	vec2 position = SHOP_BUTTON_COORDINATES;
 
 	return createButton(ButtonType::SHOPBUTTON,
 						position,
 						scale,
-						TEXTURE_ASSET_ID::SHOPBUTTON);
+						TEXTURE_ASSET_ID::SHOP_BUTTON);
 }
 
 Entity createInfoButton()
 {
-	vec2 scale = SHOP_INFO_BUTTON_SCALE; // currently same scale as shop button
-	vec2 position = {scale.x - WINDOW_WIDTH_PX / 2.f,
-					 scale.y + WINDOW_HEIGHT_PX / 3.f};
+	vec2 scale = INFO_BUTTON_SCALE; // currently same scale as shop button
+	vec2 position = INFO_BUTTON_COORDINATES;
 
 	return createButton(ButtonType::INFOBUTTON,
 						position,
 						scale,
-						TEXTURE_ASSET_ID::NUCLEUS);
+						TEXTURE_ASSET_ID::INFO_BUTTON);
+}
+
+Entity createBackButton() {
+	vec2 scale = BACK_BUTTON_SCALE;
+	vec2 position = BACK_BUTTON_COORDINATES;
+
+	return createButton(ButtonType::BACKBUTTON,
+						position,
+						scale,
+						TEXTURE_ASSET_ID::BACK_BUTTON);
 }
 
 

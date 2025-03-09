@@ -56,7 +56,6 @@ void RenderSystem::drawFPS()
 void RenderSystem::drawTexturedMesh(Entity entity,
 									const mat3 &projection)
 {
-
 	assert(registry.renderRequests.has(entity));
 	const RenderRequest &render_request = registry.renderRequests.get(entity);
 
@@ -140,7 +139,6 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 	if (registry.motions.has(entity))
 	{
 		Motion &motion = registry.motions.get(entity);
-
 		// Transformation code, see Rendering and Transformation in the template
 		// specification for more info Incrementally updates transformation matrix,
 		// thus ORDER IS IMPORTANT
@@ -339,7 +337,9 @@ void RenderSystem::draw()
 
 	for (Entity entity : registry.renderRequests.entities)
 	{
-		if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity) && !registry.portals.has(entity))
+		if (registry.keys.has(entity) || registry.chests.has(entity)) {
+			drawHexagon(entity, projection_2D);
+		} else if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity))
 		{
 			drawTexturedMesh(entity, projection_2D);
 		}
@@ -414,7 +414,7 @@ void RenderSystem::drawShopScreen()
 {
 
 	std::vector<ButtonType> buttons = {
-		ButtonType::SHOPBUTTON};
+		ButtonType::BACKBUTTON};
 
 	drawScreenAndButtons(ScreenType::SHOP, buttons);
 }
@@ -423,7 +423,7 @@ void RenderSystem::drawInfoScreen()
 {
 
 	std::vector<ButtonType> buttons = {
-		ButtonType::INFOBUTTON};
+		ButtonType::BACKBUTTON};
 
 	drawScreenAndButtons(ScreenType::INFO, buttons);
 }
@@ -468,6 +468,10 @@ void RenderSystem::drawScreenAndButtons(
 
 	mat3 projection_matrix = createProjectionMatrix();
 
+	// draw background
+	// draw logo 
+	// draw buttons
+
 	for (uint i = 0; i < registry.gameScreens.size(); i++)
 	{
 		const auto &screenComp = registry.gameScreens.components[i];
@@ -475,6 +479,18 @@ void RenderSystem::drawScreenAndButtons(
 		{
 			Entity screenEntity = registry.gameScreens.entities[i];
 			drawTexturedMesh(screenEntity, projection_matrix);
+		}
+	}
+
+	if (screenType == ScreenType::START)
+	{
+		for (uint i = 0; i < registry.starts.size(); i++)
+		{
+			Start &start = registry.starts.components[i];
+			if (start.logo != Entity())
+			{
+				drawTexturedMesh(start.logo, projection_matrix);
+			}
 		}
 	}
 
@@ -596,6 +612,71 @@ void RenderSystem::drawUIElements()
 
 	drawToScreen();
 	glfwSwapBuffers(window);
+}
+
+void RenderSystem::drawHexagon(Entity entity, const mat3 &projection) 
+{
+	if(!registry.keys.has(entity) && !registry.chests.has(entity)) 
+	{
+		return;
+	}
+
+	if(!registry.renderRequests.has(entity)) 
+	{
+		return;
+	}
+
+	RenderRequest& render_request = registry.renderRequests.get(entity);
+	GLuint program = effects[(GLuint)render_request.used_effect];
+	glUseProgram(program);
+	gl_has_errors();
+
+	GLuint vbo = vertex_buffers[(GLuint)render_request.used_geometry];
+	GLuint ibo = index_buffers[(GLuint)render_request.used_geometry];
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	gl_has_errors();
+
+	GLint in_position_loc = glGetAttribLocation(program, "in_position");
+	GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+
+	glEnableVertexAttribArray(in_position_loc);
+	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void*)0);
+	
+	glEnableVertexAttribArray(in_texcoord_loc);
+	glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void*)sizeof(vec3));
+	gl_has_errors();	
+
+	glActiveTexture(GL_TEXTURE0);
+	GLuint texture_id = texture_gl_handles[(GLuint)render_request.used_texture];
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+	gl_has_errors();
+
+	if(!registry.motions.has(entity)) 
+	{
+		return;
+	}
+
+	Motion& motion = registry.motions.get(entity);
+
+	Transform transform;
+	transform.translate(motion.position);
+	transform.scale(motion.scale);
+
+	GLuint transform_loc = glGetUniformLocation(program, "transform");
+	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float*)&transform.mat);
+	gl_has_errors();
+
+	GLuint projection_loc = glGetUniformLocation(program, "projection");
+	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float*)&projection);
+	gl_has_errors();
+
+	GLint size = 0;
+	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
+	GLsizei num_indices = size / sizeof(uint16_t);
+	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
+
 }
 
 void RenderSystem::drawHealthBar(Entity entity, const mat3 &projection)

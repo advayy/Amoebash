@@ -195,6 +195,7 @@ struct Mesh
 	static bool loadFromOBJFile(std::string obj_path, std::vector<ColoredVertex> &out_vertices, std::vector<uint16_t> &out_vertex_indices, vec2 &out_size);
 	vec2 original_size = {1, 1};
 	std::vector<ColoredVertex> vertices;
+	std::vector<TexturedVertex> textured_vertices;
 	std::vector<uint16_t> vertex_indices;
 };
 
@@ -203,7 +204,8 @@ enum ButtonType
 {
 	STARTBUTTON = 0,
 	SHOPBUTTON = STARTBUTTON + 1,
-	INFOBUTTON = SHOPBUTTON + 1
+	INFOBUTTON = SHOPBUTTON + 1,
+	BACKBUTTON = INFOBUTTON
 };
 
 // Coordinates and bounding box of start button on start screen
@@ -213,6 +215,11 @@ struct screenButton
 	float h;
 	vec2 center;
 	ButtonType type;
+};
+
+struct Logo 
+{
+
 };
 
 enum ScreenType
@@ -231,6 +238,7 @@ struct GameScreen
 {
 	ScreenType type;
 	std::vector<screenButton> screenButtons;
+	Entity logo;
 };
 
 struct Pause
@@ -242,6 +250,17 @@ struct Over
 };
 
 struct Start
+{
+	std::vector<Entity> buttons;
+	Entity logo;
+};
+
+struct Shop 
+{
+	std::vector<Entity> buttons;
+};
+
+struct Info
 {
 	std::vector<Entity> buttons;
 };
@@ -267,6 +286,17 @@ struct HealthBar
 struct DashRecharge
 {
 };
+
+struct Key
+{
+	bool inserted = false;
+};
+
+struct Chest
+{
+	bool gotKey = false;
+};
+
 
 struct BuffUI
 {
@@ -306,12 +336,12 @@ enum class TEXTURE_ASSET_ID
 	PROJECTILE = PLAYER + 1,
 	TILE = PROJECTILE + 1,
 	PARALAX_TILE = TILE + 1,
-	SCREEN = PARALAX_TILE + 1,
-	GAMEOVER = SCREEN + 1,
+	GAME_LOGO = PARALAX_TILE + 1,
+	GAMEOVER = GAME_LOGO + 1,
 	BUTTON = GAMEOVER + 1,
 	PAUSE = BUTTON + 1,
-	SHOPBUTTON = PAUSE + 1,
-	NUCLEUS = SHOPBUTTON + 1,
+	SHOP_BUTTON = PAUSE + 1,
+	NUCLEUS = SHOP_BUTTON + 1,
 	SHOPSCREEN = NUCLEUS + 1,
 	INFOSCREEN = SHOPSCREEN + 1,
 	WALL_TILE = INFOSCREEN + 1,
@@ -324,7 +354,11 @@ enum class TEXTURE_ASSET_ID
 	DASH_UI = HEALTH_BAR_UI + 1,
 	GERMONEY_UI = DASH_UI + 1,
 	WEAPON_PILL_UI = GERMONEY_UI + 1,
-	BUFFS_SHEET = WEAPON_PILL_UI + 1,
+	INFO_BUTTON = WEAPON_PILL_UI + 1,
+	START_SCREEN_BG = INFO_BUTTON + 1,
+	BACK_BUTTON = START_SCREEN_BG + 1,
+	KEY = BACK_BUTTON + 1,
+	BUFFS_SHEET = KEY + 1,
 	PORTAL = BUFFS_SHEET + 1,
 	MOUSE_CONTROL_INFO = PORTAL + 1,
 	PAUSE_INFO = MOUSE_CONTROL_INFO + 1,
@@ -332,7 +366,8 @@ enum class TEXTURE_ASSET_ID
 	ENEMY_INFO = DASH_INFO + 1,
 	RESTART_INFO = ENEMY_INFO + 1,
 	LEAVE_TUTORIAL = RESTART_INFO + 1,
-	TEXTURE_COUNT = LEAVE_TUTORIAL + 1
+	CHEST = LEAVE_TUTORIAL + 1,
+	TEXTURE_COUNT = CHEST + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -349,7 +384,8 @@ enum class EFFECT_ASSET_ID
 	UI = MINI_MAP + 1,
 	HEALTH_BAR = UI + 1,
 	DASH_UI = HEALTH_BAR + 1,
-	EFFECT_COUNT = DASH_UI + 1,
+	HEXAGON = DASH_UI + 1,
+	EFFECT_COUNT = HEXAGON + 1,
 
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
@@ -360,7 +396,8 @@ enum class GEOMETRY_BUFFER_ID
 	LINE = SPRITE + 1,
 	DEBUG_LINE = LINE + 1,
 	SCREEN_TRIANGLE = DEBUG_LINE + 1,
-	GEOMETRY_COUNT = SCREEN_TRIANGLE + 1
+	HEXAGON = SCREEN_TRIANGLE + 1,
+	GEOMETRY_COUNT = HEXAGON + 1
 };
 
 const int geometry_count = (int)GEOMETRY_BUFFER_ID::GEOMETRY_COUNT;

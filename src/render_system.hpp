@@ -39,9 +39,9 @@ class RenderSystem
 		textures_path("tiles/paralax_tile_1_128x.png"),
 		textures_path("ui_art/amoebash_logo.png"),
 		textures_path("ui_art/gameOver.png"),
-		textures_path("ui_art/start.png"),
+		textures_path("ui_art/start_button.png"),
 		textures_path("ui_art/pausescreen.png"),
-		textures_path("ui_art/shop.png"),
+		textures_path("ui_art/shop_button.png"),
 		textures_path("ui_art/nucleus_full_size.png"),
 		textures_path("ui_art/shopscreen.png"),
 		textures_path("ui_art/infoscreen.png"),
@@ -55,6 +55,10 @@ class RenderSystem
 		textures_path("ui_art/HUD_dash_component_clear.png"),
 		textures_path("ui_art/HUD_germoney_hud.png"),
 		textures_path("ui_art/HUD_weapons_pill.png"),
+		textures_path("ui_art/info_button.png"),
+		textures_path("ui_art/start_screen.png"),
+		textures_path("ui_art/button_outline.png"),
+		textures_path("projectiles/key.png"),
 		textures_path("buffs/buffs_sheet.png"),
         textures_path("tiles/whirlpool_portal.png"),
 		textures_path("tutorial/mouse_control.png"),
@@ -62,7 +66,8 @@ class RenderSystem
 		textures_path("tutorial/dash_info.png"),
 		textures_path("tutorial/enemy_info.png"),
 		textures_path("tutorial/restart_info.png"),
-		textures_path("tutorial/leave.png")};
+		textures_path("tutorial/leave.png"),
+		textures_path("projectiles/chest.png")};
 
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.
@@ -76,7 +81,8 @@ class RenderSystem
 		shader_path("minimap"),
 		shader_path("ui"),
 		shader_path("health_bar"),
-		shader_path("dash_ui")};
+		shader_path("dash_ui"),
+		shader_path("hexagon")};
 
 	std::array<GLuint, geometry_count> vertex_buffers;
 	std::array<GLuint, geometry_count> index_buffers;
@@ -141,6 +147,7 @@ public:
 	void drawUIElements();
 	void drawHealthBar(Entity entity, const mat3 &projection);
 	void drawDashRecharge(const mat3 &projection);
+	void drawHexagon(Entity entity, const mat3 &projection);	
 	void drawBuffUI();
 
 private:

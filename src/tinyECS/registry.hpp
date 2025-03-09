@@ -45,8 +45,12 @@ public:
 	ComponentContainer<Pause> pauses;
 	ComponentContainer<Over> overs;
 	ComponentContainer<Start> starts;
+	ComponentContainer<Shop> shops;
+	ComponentContainer<Info> infos;
 	ComponentContainer<GameplayCutScene> cutscenes;
 	ComponentContainer<MiniMap> miniMaps;
+	ComponentContainer<Key> keys;
+	ComponentContainer<Chest> chests;
 	ComponentContainer<ProceduralMap> proceduralMaps;
 	ComponentContainer<InfoBox> infoBoxes;
 
@@ -94,6 +98,10 @@ public:
 		registry_list.push_back(&pauses);
 		registry_list.push_back(&overs);
 		registry_list.push_back(&starts);
+		registry_list.push_back(&shops);
+		registry_list.push_back(&infos);
+		registry_list.push_back(&keys);
+		registry_list.push_back(&chests);
 		registry_list.push_back(&cutscenes);
 		registry_list.push_back(&miniMaps);
 		registry_list.push_back(&proceduralMaps);

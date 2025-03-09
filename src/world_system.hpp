@@ -88,6 +88,7 @@ private:
 
 	// restart level
 	void restart_game();
+	void goToNextLevel();
 
 	void updateCamera(float elapsed_ms);
 	void updateMouseCoords();
