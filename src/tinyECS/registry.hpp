@@ -26,6 +26,7 @@ public:
 	ComponentContainer<GridLine> gridLines;
 	ComponentContainer<Enemy> enemies;
 	ComponentContainer<Projectile> projectiles;
+	ComponentContainer<BacteriophageProjectile> bacteriophageProjectiles;
     ComponentContainer<Portal> portals;
 
 	// mine
@@ -59,14 +60,17 @@ public:
 	ComponentContainer<DamageCooldown> damageCooldowns;
 
 	// enemy state and behavior
-	ComponentContainer<EnemyBehavior> enemyBehaviors;
-	ComponentContainer<EnemyState> enemyStates;
 
 	// hazel
 	ComponentContainer<UIElement> uiElements;
 	ComponentContainer<HealthBar> healthBars;
 	ComponentContainer<DashRecharge> dashRecharges;
 	ComponentContainer<BuffUI> buffUIs;
+
+	// enemy behaviors
+	ComponentContainer<SpikeEnemyAI> spikeEnemyAIs;
+	ComponentContainer<RBCEnemyAI> rbcEnemyAIs;
+	ComponentContainer<BacteriophageAI> bacteriophageAIs;
 
 	// particle
 	ComponentContainer<Particle> particles;
@@ -88,6 +92,7 @@ public:
 		registry_list.push_back(&gridLines);
 		registry_list.push_back(&enemies);
 		registry_list.push_back(&projectiles);
+		registry_list.push_back(&bacteriophageProjectiles);
         registry_list.push_back(&portals);
 		registry_list.push_back(&vignetteTimers);
 		registry_list.push_back(&animations);
@@ -112,13 +117,14 @@ public:
 		registry_list.push_back(&miniMaps);
 		registry_list.push_back(&proceduralMaps);
 		registry_list.push_back(&damageCooldowns);
-		registry_list.push_back(&enemyBehaviors);
-		registry_list.push_back(&enemyStates);
 		registry_list.push_back(&uiElements);
 		registry_list.push_back(&healthBars);
 		registry_list.push_back(&dashRecharges);
 		registry_list.push_back(&infoBoxes);
 		registry_list.push_back(&buffUIs);
+		registry_list.push_back(&spikeEnemyAIs);
+		registry_list.push_back(&rbcEnemyAIs);
+		registry_list.push_back(&bacteriophageAIs);
 		registry_list.push_back(&particles);
 	}
 

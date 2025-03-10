@@ -101,10 +101,13 @@ struct Enemy
 };
 
 // Projectile
-struct Projectile
+struct Projectile 
 {
 	int damage;
+	float ms_until_despawn = PROJECTILE_TTL_MS;
 };
+
+struct BacteriophageProjectile {};
 
 // used for Entities that cause damage
 struct Deadly
@@ -334,8 +337,10 @@ struct InfoBox
 
 enum class TEXTURE_ASSET_ID
 {
-	ENEMY = 0,
-	PLAYER = ENEMY + 1,
+	SPIKE_ENEMY = 0,
+	RBC_ENEMY = SPIKE_ENEMY + 1,
+	BACTERIOPHAGE = RBC_ENEMY + 1,
+	PLAYER = BACTERIOPHAGE + 1,
 	PROJECTILE = PLAYER + 1,
 	TILE = PROJECTILE + 1,
 	PARALAX_TILE = TILE + 1,
@@ -475,39 +480,75 @@ struct DamageCooldown
 	uint last_damage_time;
 };
 
-enum class EnemyState
+struct EnemyAI
+{
+	bool patrolForwards = true;  // initial patrol direction
+	float patrolSpeed = SPIKE_ENEMY_PATROL_SPEED_PER_MS;     // patrol speed 
+	float detectionRadius = SPIKE_ENEMY_DETECTION_RADIUS; // radius in which enemy detects player
+	vec2 patrolOrigin = { 0, 0 };     // origin of patrol
+	float patrolRange = SPIKE_ENEMY_PATROL_RANGE;     // range of patrol
+	float patrolTime = ENEMY_PATROL_TIME_MS / 2;
+};
+
+enum class SpikeEnemyState
 {
 	CHASING = 0,
 	PATROLLING = CHASING + 1,
 	DASHING = PATROLLING + 1
 };
 
-struct EnemyBehavior
+struct SpikeEnemyAI : EnemyAI
 {
-	EnemyState state = EnemyState::PATROLLING;
-	// float dashCooldown = 0.7f;       // cooldown before enemy can dash again
-	bool patrolForwards = true;						// initial patrol direction
-	float patrolSpeed = ENEMY_PATROL_SPEED_PER_MS;	// patrol speed
-	float detectionRadius = ENEMY_DETECTION_RADIUS; // radius in which enemy detects player
-	vec2 patrolOrigin = {0, 0};						// origin of patrol
-	float patrolRange = ENEMY_PATROL_RANGE;			// range of patrol
-	float patrolTime = ENEMY_PATROL_TIME_MS / 2;
+	SpikeEnemyState state = SpikeEnemyState::PATROLLING;
 };
 
-enum class PARTICLE_TYPE {
+enum class RBCEnemyState
+{
+	CHASING = 0,
+	PATROLLING = CHASING + 1,
+	DASHING = PATROLLING + 1,
+	RUNAWAY = DASHING + 1,
+	FLOATING = RUNAWAY + 1
+};
+
+struct RBCEnemyAI : EnemyAI
+{
+	RBCEnemyState state;
+};
+
+enum class BacteriophageState
+{
+	CHASING = 0,
+	PATROLLING = CHASING + 1
+};
+
+struct BacteriophageAI
+{
+	BacteriophageState state;
+	float speed = ENEMY_SPEED;
+	float detectionRadius = BACTERIOPHAGE_ENEMY_DETECTION_RADIUS; // radius in which enemy detects player
+	float time_since_shoot_ms = 0.0f;
+	bool can_shoot = false;
+	int placement_index = 0;
+};
+
+enum class PARTICLE_TYPE 
+{
     DEATH_PARTICLE = 0,
     // add more particle types here
     PARTICLE_TYPE_COUNT
 };
 
-enum class PARTICLE_STATE {
+enum class PARTICLE_STATE 
+{
     BURST = 0,  
     FOLLOW = 1, 
     FADE = 2,   
 };
 
 // Particle component for particle system
-struct Particle {
+struct Particle 
+{
     PARTICLE_TYPE type;
     PARTICLE_STATE state = PARTICLE_STATE::BURST;
     float lifetime_ms = 2000.0f;

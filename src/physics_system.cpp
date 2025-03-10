@@ -122,15 +122,26 @@ void PhysicsSystem::step(float elapsed_ms)
 				}
 		}
 
-		if (registry.players.has(entity))
+		if (registry.players.has(entity) || registry.enemies.has(entity))
 		{
-			// player update: use cached boundaries
 			if (motion.position.x >= rightBound + 1 || motion.position.x <= leftBound ||
 				motion.position.y <= topBound || motion.position.y >= bottomBound + 1)
 			{
-				motion.velocity *= -0.5f;
 				motion.position.x = glm::clamp(motion.position.x, leftBound, rightBound);
 				motion.position.y = glm::clamp(motion.position.y, topBound, bottomBound);
+
+				if (registry.players.has(entity))
+				{
+					motion.velocity *= -0.5f;
+				}
+				else if (registry.enemies.has(entity))
+				{
+					if (registry.rbcEnemyAIs.has(entity))
+					{
+						motion.velocity *= -1;
+						motion.angle -= 180;
+					}
+				}
 			}
 		}
 
@@ -146,84 +157,6 @@ void PhysicsSystem::step(float elapsed_ms)
 		}
 	}
 
-	// iterate over all enemies
-	for (uint j = 0; j < registry.enemies.entities.size(); j++)
-	{
-		Entity enemyEntity = registry.enemies.entities[j];
-		Motion& enemyMotion = registry.motions.get(enemyEntity);
-		EnemyBehavior& enemyBehavior = registry.enemyBehaviors.get(enemyEntity);
-		Animation& enemyAnimation = registry.animations.get(enemyEntity);
-
-		vec2 diff = player_motion.position - enemyMotion.position;
-		float distance = glm::length(diff);
-		bool playerDetected = (distance < (enemyBehavior.detectionRadius * registry.players.get(registry.players.entities[0]).detection_range)); // PLAYERS DETECTION RANGE BUFF?
-		vec2 toPlayer = diff;
-
-		switch (enemyBehavior.state)
-		{
-		case EnemyState::CHASING:
-		{
-			if (distance > 0.001f)
-			{
-				vec2 direction = glm::normalize(toPlayer);
-				enemyMotion.velocity = direction * ENEMY_SPEED; // FLAG REMOVE CONSTANT LATER FOR ENEMIES PARTICULAR SPEED.
-			}
-			break;
-		}
-		case EnemyState::PATROLLING:
-		{
-			// define patrol boundaries based on stored origin and range.
-			float leftBoundary = enemyBehavior.patrolOrigin.x - enemyBehavior.patrolRange;
-			float rightBoundary = enemyBehavior.patrolOrigin.x + enemyBehavior.patrolRange;
-
-			// if enemy goes past boundaries, reverse its patrol direction.
-			if (enemyMotion.position.x < leftBoundary || enemyMotion.position.x > rightBoundary)
-			{
-				enemyBehavior.patrolForwards = !enemyBehavior.patrolForwards;
-				enemyBehavior.patrolTime = 0.0f;
-			}
-
-			enemyBehavior.patrolTime += elapsed_ms;
-
-			// M1 interpolation implementation
-			if (enemyBehavior.patrolForwards)
-			{
-				enemyMotion.position.x = lerp(leftBoundary, rightBoundary, enemyBehavior.patrolTime / ENEMY_PATROL_TIME_MS);  // FLAG REMOVE CONSTANT LATER FOR ENEMIES PARTICULAR SPEED.
-			}
-			else
-			{
-				enemyMotion.position.x = lerp(rightBoundary, leftBoundary, enemyBehavior.patrolTime / ENEMY_PATROL_TIME_MS);  // FLAG REMOVE CONSTANT LATER FOR ENEMIES PARTICULAR SPEED.
-			}
-
-			// sse circular detection to transition to dash state.
-			if (playerDetected)
-			{
-				changeAnimationFrames(enemyEntity, 7, 12);
-				enemyBehavior.state = EnemyState::DASHING;
-			}
-			break;
-		}
-		case EnemyState::DASHING:
-		{
-			if (distance > 0.001f && playerDetected)
-			{
-				// dash toward the player
-				vec2 direction = glm::normalize(toPlayer);
-				enemyMotion.velocity = direction * ENEMY_SPEED;
-			}
-			else
-			{
-				changeAnimationFrames(enemyEntity, 0, 6);
-				enemyBehavior.patrolOrigin = enemyMotion.position;
-				enemyBehavior.state = EnemyState::PATROLLING;
-				enemyBehavior.patrolTime = 0.0f;
-				enemyMotion.velocity = { 0, 0 };
-			}
-			break;
-		}
-		}
-	}
-			
 	// PLAYER DASH ACTION COOLDOWN
 	player.dash_cooldown_timer_ms -= elapsed_ms;
 	if (player.dash_cooldown_timer_ms <= 0)
@@ -267,6 +200,18 @@ void PhysicsSystem::step(float elapsed_ms)
 		if (detector.hasCollided(player_motion, e_motion))
 		{
 			registry.collisions.emplace_with_duplicates(player_entity, e_entity);
+		}
+
+		handleWallCollision(e_entity);
+	}
+
+	for (auto& proj_entity : registry.bacteriophageProjectiles.entities)
+	{
+		Motion& proj_motion = registry.motions.get(proj_entity);
+		// ensure the projectile is the "second" entity
+		if (detector.hasCollided(proj_motion, player_motion))
+		{
+			registry.collisions.emplace_with_duplicates(player_entity, proj_entity);
 		}
 	}
 

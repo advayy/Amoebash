@@ -6,7 +6,10 @@
 #include "tinyECS/tiny_ecs.hpp"
 #include "render_system.hpp"
 
-Entity createEnemy(RenderSystem *renderer, vec2 position);
+Entity createEnemy(RenderSystem* renderer, vec2 position);
+Entity createSpikeEnemy(RenderSystem* renderer, vec2 position);
+Entity createRBCEnemy(RenderSystem* renderer, vec2 position);
+Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_index);
 Entity createPlayer(RenderSystem *renderer, vec2 position);
 Entity createKey(RenderSystem *renderer, vec2 position);
 Entity createChest(RenderSystem *renderer, vec2 position);
@@ -14,6 +17,7 @@ void createButtons();
 
 // projectile
 Entity createProjectile(vec2 pos, vec2 size, vec2 velocity);
+Entity createBacteriophageProjectile(Entity& bacteriophage);
 
 // debugging red lines
 Entity createLine(vec2 position, vec2 size);

@@ -5,64 +5,128 @@
 #include <ctime>
 #include <queue>
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// !!! TODO A1: implement grid lines as gridLines with renderRequests and colors
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-Entity createEnemy(RenderSystem *renderer, vec2 position)
+Entity createEnemy(RenderSystem* renderer, vec2 position)
 {
 	// reserve an entity
 	auto entity = Entity();
 
 	// invader
-	Enemy &enemy = registry.enemies.emplace(entity);
+	Enemy& enemy = registry.enemies.emplace(entity);
 	enemy.health = ENEMY_HEALTH;
 
 	// store a reference to the potentially re-used mesh object
-	Mesh &mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
+	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
 	registry.meshPtrs.emplace(entity, &mesh);
 
 	// TODO A1: initialize the position, scale, and physics components
-	auto &motion = registry.motions.emplace(entity);
+	auto& motion = registry.motions.emplace(entity);
 	motion.angle = 0.f;
-	motion.velocity = {0, 0}; // FLAG
+	motion.velocity = { 0, 0 }; // FLAG
 	motion.position = position;
 
 	// resize, set scale to negative if you want to make it face the opposite way
 	// motion.scale = vec2({ -INVADER_BB_WIDTH, INVADER_BB_WIDTH });
-	motion.scale = vec2({ENEMY_BB_WIDTH, ENEMY_BB_HEIGHT});
+	motion.scale = vec2({ ENEMY_BB_WIDTH, ENEMY_BB_HEIGHT });
+
+	return entity;
+}
+
+Entity createRBCEnemy(RenderSystem* renderer, vec2 position)
+{
+	Entity entity = createEnemy(renderer, position);
+	RBCEnemyAI& enemy_ai = registry.rbcEnemyAIs.emplace(entity);
+	enemy_ai.patrolOrigin = position;
+	enemy_ai.state = RBCEnemyState::FLOATING;
 
 	registry.renderRequests.insert(
 		entity,
-		{TEXTURE_ASSET_ID::ENEMY,
-		 EFFECT_ASSET_ID::SPRITE_SHEET,
-		 GEOMETRY_BUFFER_ID::SPRITE});
+		{
+			TEXTURE_ASSET_ID::RBC_ENEMY,
+			EFFECT_ASSET_ID::SPRITE_SHEET,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
 
-	Animation &a = registry.animations.emplace(entity);
+	Animation& a = registry.animations.emplace(entity);
+	a.start_frame = 0;
+	a.end_frame = 13;
+	a.time_per_frame = 100.0f;
+	a.loop = ANIM_LOOP_TYPES::LOOP;
+
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 14;
+	spriteSheet.current_frame = 0;
+
+	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
+	sprite.width = 32;
+	sprite.height = 32;
+
+	registry.motions.get(entity).velocity = {0.0f, -ENEMY_SPEED / 4};
+
+	return entity;
+}
+
+Entity createSpikeEnemy(RenderSystem* renderer, vec2 position)
+{
+	Entity entity = createEnemy(renderer, position);
+	SpikeEnemyAI& enemy_ai = registry.spikeEnemyAIs.emplace(entity);
+	enemy_ai.patrolOrigin = position;
+	enemy_ai.state = SpikeEnemyState::PATROLLING;
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			TEXTURE_ASSET_ID::SPIKE_ENEMY,
+			EFFECT_ASSET_ID::SPRITE_SHEET,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	Animation& a = registry.animations.emplace(entity);
 	a.start_frame = 0;
 	a.end_frame = 6;
 	a.time_per_frame = 100.0f;
 	a.loop = ANIM_LOOP_TYPES::PING_PONG;
 
-	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(entity);
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
 	spriteSheet.total_frames = 13;
 	spriteSheet.current_frame = 0;
 
-	SpriteSize &sprite = registry.spritesSizes.emplace(entity);
+	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
 	sprite.width = 32;
 	sprite.height = 32;
 
-	EnemyBehavior &behavior = registry.enemyBehaviors.emplace(entity);
-	behavior.patrolOrigin = position;
+	return entity;
+}
 
-	// randomly set the enemy behaviour (to patrol or not)
-	if (rand() % 2 == 0 || true)
-	{
-		behavior.state = EnemyState::PATROLLING;
-	}
-	else
-	{
-		behavior.state = EnemyState::CHASING;
-	}
+Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_index)
+{
+	Entity entity = createEnemy(renderer, position);
+	BacteriophageAI& enemy_ai = registry.bacteriophageAIs.emplace(entity);
+	enemy_ai.placement_index = placement_index;
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			TEXTURE_ASSET_ID::BACTERIOPHAGE,
+			EFFECT_ASSET_ID::SPRITE_SHEET,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	Animation& a = registry.animations.emplace(entity);
+	a.start_frame = 0;
+	a.end_frame = 9;
+	a.time_per_frame = 100.0f;
+	a.loop = ANIM_LOOP_TYPES::PING_PONG;
+
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 9;
+	spriteSheet.current_frame = 0;
+
+	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
+	sprite.width = 32;
+	sprite.height = 32;
 
 	return entity;
 }
@@ -158,6 +222,18 @@ Entity createProjectile(vec2 pos, vec2 size, vec2 velocity)
 
 	return entity;
 }
+
+Entity createBacteriophageProjectile(Entity& bacteriophage)
+{
+	Motion motion = registry.motions.get(bacteriophage);
+	vec2 direction = vec2(cosf((motion.angle - 90) * (M_PI / 180)), sinf((motion.angle - 90) * (M_PI / 180)));
+	vec2 projectile_pos = motion.position + (motion.scale * direction);
+	vec2 projectile_velocity = direction * PROJECTILE_SPEED;
+	Entity projectile = createProjectile(projectile_pos, { PROJECTILE_BB_WIDTH, PROJECTILE_BB_HEIGHT }, projectile_velocity);
+	registry.bacteriophageProjectiles.emplace(projectile);
+	return projectile;
+}
+
 
 void initiatePlayerDash()
 {
@@ -443,7 +519,7 @@ Entity createMiniMap(RenderSystem *renderer, vec2 size)
 	// add render request
 	registry.renderRequests.insert(
 		entity,
-		{TEXTURE_ASSET_ID::ENEMY,
+		{TEXTURE_ASSET_ID::SPIKE_ENEMY,
 		 EFFECT_ASSET_ID::MINI_MAP,
 		 GEOMETRY_BUFFER_ID::SPRITE});
 

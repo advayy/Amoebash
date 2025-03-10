@@ -6,6 +6,7 @@
 // stlib
 #include <vector>
 #include <random>
+#include <map>
 #include <memory>
 
 #define SDL_MAIN_HANDLED
@@ -107,6 +108,8 @@ private:
 
 	int next_enemy_spawn;
 	int enemy_spawn_rate_ms; // see default value in common.hpp
+	int next_projectile_ms;
+	std::map<int, int> bacteriophage_idx;
 
 	unsigned int points;
 
