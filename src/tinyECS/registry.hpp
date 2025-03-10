@@ -7,7 +7,7 @@
 class ECSRegistry
 {
 	// callbacks to remove a particular or all entities in the system
-	std::vector<ContainerInterface*> registry_list;
+	std::vector<ContainerInterface *> registry_list;
 
 public:
 	// Manually created list of all components this game has
@@ -16,7 +16,7 @@ public:
 	ComponentContainer<Motion> motions;
 	ComponentContainer<Collision> collisions;
 	ComponentContainer<Player> players;
-	ComponentContainer<Mesh*> meshPtrs;
+	ComponentContainer<Mesh *> meshPtrs;
 	ComponentContainer<RenderRequest> renderRequests;
 	ComponentContainer<ScreenState> screenStates;
 	ComponentContainer<Deadly> deadlys;
@@ -26,6 +26,7 @@ public:
 	ComponentContainer<GridLine> gridLines;
 	ComponentContainer<Enemy> enemies;
 	ComponentContainer<Projectile> projectiles;
+    ComponentContainer<Portal> portals;
 
 	// mine
 	ComponentContainer<VignetteTimer> vignetteTimers;
@@ -35,7 +36,7 @@ public:
 	ComponentContainer<Dashing> dashes;
 	ComponentContainer<Map> maps;
 	ComponentContainer<Tile> tiles;
-    ComponentContainer<Camera> cameras;
+	ComponentContainer<Camera> cameras;
 	ComponentContainer<SpriteSheetImage> spriteSheetImages;
 
 	// mercury
@@ -44,8 +45,14 @@ public:
 	ComponentContainer<Pause> pauses;
 	ComponentContainer<Over> overs;
 	ComponentContainer<Start> starts;
+	ComponentContainer<Shop> shops;
+	ComponentContainer<Info> infos;
 	ComponentContainer<GameplayCutScene> cutscenes;
 	ComponentContainer<MiniMap> miniMaps;
+	ComponentContainer<Key> keys;
+	ComponentContainer<Chest> chests;
+	ComponentContainer<ProceduralMap> proceduralMaps;
+	ComponentContainer<InfoBox> infoBoxes;
 
 	// debaounce for damage cooldwn
 	ComponentContainer<DamageCooldown> damageCooldowns;
@@ -54,7 +61,11 @@ public:
 	ComponentContainer<EnemyBehavior> enemyBehaviors;
 	ComponentContainer<EnemyState> enemyStates;
 
-
+	// hazel
+	ComponentContainer<UIElement> uiElements;
+	ComponentContainer<HealthBar> healthBars;
+	ComponentContainer<DashRecharge> dashRecharges;
+	ComponentContainer<BuffUI> buffUIs;
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
 	{
@@ -72,6 +83,7 @@ public:
 		registry_list.push_back(&gridLines);
 		registry_list.push_back(&enemies);
 		registry_list.push_back(&projectiles);
+        registry_list.push_back(&portals);
 		registry_list.push_back(&vignetteTimers);
 		registry_list.push_back(&animations);
 		registry_list.push_back(&buffs);
@@ -80,41 +92,54 @@ public:
 		registry_list.push_back(&maps);
 		registry_list.push_back(&tiles);
 		registry_list.push_back(&cameras);
-		registry_list.push_back(&spriteSheetImages);		
+		registry_list.push_back(&spriteSheetImages);
 		registry_list.push_back(&buttons);
 		registry_list.push_back(&gameScreens);
 		registry_list.push_back(&pauses);
 		registry_list.push_back(&overs);
 		registry_list.push_back(&starts);
+		registry_list.push_back(&shops);
+		registry_list.push_back(&infos);
+		registry_list.push_back(&keys);
+		registry_list.push_back(&chests);
 		registry_list.push_back(&cutscenes);
 		registry_list.push_back(&miniMaps);
+		registry_list.push_back(&proceduralMaps);
 		registry_list.push_back(&damageCooldowns);
 		registry_list.push_back(&enemyBehaviors);
 		registry_list.push_back(&enemyStates);
-
+		registry_list.push_back(&uiElements);
+		registry_list.push_back(&healthBars);
+		registry_list.push_back(&dashRecharges);
+		registry_list.push_back(&infoBoxes);
+		registry_list.push_back(&buffUIs);
 	}
 
-	void clear_all_components() {
-		for (ContainerInterface* reg : registry_list)
+	void clear_all_components()
+	{
+		for (ContainerInterface *reg : registry_list)
 			reg->clear();
 	}
 
-	void list_all_components() {
+	void list_all_components()
+	{
 		printf("Debug info on all registry entries:\n");
-		for (ContainerInterface* reg : registry_list)
+		for (ContainerInterface *reg : registry_list)
 			if (reg->size() > 0)
 				printf("%4d components of type %s\n", (int)reg->size(), typeid(*reg).name());
 	}
 
-	void list_all_components_of(Entity e) {
+	void list_all_components_of(Entity e)
+	{
 		printf("Debug info on components of entity %u:\n", (unsigned int)e);
-		for (ContainerInterface* reg : registry_list)
+		for (ContainerInterface *reg : registry_list)
 			if (reg->has(e))
 				printf("type %s\n", typeid(*reg).name());
 	}
 
-	void remove_all_components_of(Entity e) {
-		for (ContainerInterface* reg : registry_list)
+	void remove_all_components_of(Entity e)
+	{
+		for (ContainerInterface *reg : registry_list)
 			reg->remove(e);
 	}
 };

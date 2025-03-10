@@ -1,4 +1,3 @@
-
 #include <SDL.h>
 #include <glm/trigonometric.hpp>
 #include <iostream>
@@ -7,11 +6,56 @@
 #include "render_system.hpp"
 #include "tinyECS/registry.hpp"
 #include "world_system.hpp"
+#include <sstream>
+#include <iomanip>
+
+void RenderSystem::updateFPS(float elapsed_ms)
+{
+	// skip all calculations if FPS display is not enabled
+	if (!show_fps)
+		return;
+
+	// update frame time sum and count
+	frame_time_sum += elapsed_ms;
+	frame_count++;
+
+	// update FPS calculation every second (1000ms)
+	if (frame_time_sum >= 1000.0f)
+	{
+		current_fps = static_cast<float>(frame_count) / (frame_time_sum / 1000.0f);
+		frame_time_sum = 0.0f;
+		frame_count = 0;
+
+		// update window title with FPS
+		std::stringstream title;
+		title << "Amoebash (Debug: ON, FPS: " << std::fixed << std::setprecision(1) << current_fps << ")";
+		glfwSetWindowTitle(window, title.str().c_str());
+	}
+}
+
+void RenderSystem::toggleFPSDisplay()
+{
+	show_fps = !show_fps;
+
+	// reset window title when FPS display is turned off
+	if (!show_fps)
+	{
+		glfwSetWindowTitle(window, "Amoebash");
+	}
+}
+
+void RenderSystem::drawFPS()
+{
+	if (!show_fps)
+		return;
+
+	// keeping this code in case we want to render the FPS on the screen instead
+	// of in the window title in the future.
+}
 
 void RenderSystem::drawTexturedMesh(Entity entity,
 									const mat3 &projection)
 {
-
 	assert(registry.renderRequests.has(entity));
 	const RenderRequest &render_request = registry.renderRequests.get(entity);
 
@@ -19,14 +63,17 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 	assert(used_effect_enum != (GLuint)EFFECT_ASSET_ID::EFFECT_COUNT);
 	const GLuint program = (GLuint)effects[used_effect_enum];
 
-	assert((render_request.used_effect == EFFECT_ASSET_ID::TEXTURED || 
-		render_request.used_effect == EFFECT_ASSET_ID::SPRITE_SHEET || 
-		render_request.used_effect == EFFECT_ASSET_ID::MINI_MAP ||
-		render_request.used_effect == EFFECT_ASSET_ID::TILE) &&
-		"Type of render request not supported");
+	assert((render_request.used_effect == EFFECT_ASSET_ID::TEXTURED ||
+			render_request.used_effect == EFFECT_ASSET_ID::SPRITE_SHEET ||
+			render_request.used_effect == EFFECT_ASSET_ID::MINI_MAP ||
+			render_request.used_effect == EFFECT_ASSET_ID::TILE ||
+			render_request.used_effect == EFFECT_ASSET_ID::UI ||
+			render_request.used_effect == EFFECT_ASSET_ID::HEALTH_BAR ||
+			render_request.used_effect == EFFECT_ASSET_ID::DASH_UI) &&
+		   "Type of render request not supported");
 
 	setUpDefaultProgram(entity, render_request, program);
-	
+
 	if (render_request.used_effect == EFFECT_ASSET_ID::MINI_MAP)
 	{
 		GLint map_width_uloc = glGetUniformLocation(program, "map_width");
@@ -37,7 +84,24 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		glUniform1i(map_height_uloc, MAP_HEIGHT);
 
 		// get player position
-		Player& player = registry.players.get(registry.players.entities[0]);
+		Player &player = registry.players.get(registry.players.entities[0]);
+
+		glUniform2fv(player_grid_position_uloc, 1, (float *)&player.grid_position);
+
+
+
+		// map array logic
+		GLint map_array_uloc = glGetUniformLocation(program, "map_array");
+		std::vector<std::vector<tileType>> map_array = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map;
+		std::vector<int> flat_array;
+		flat_array.reserve(MAP_WIDTH * MAP_HEIGHT);
+
+		for (const auto& row : map_array) {
+			for (const auto& tile : row) {
+				flat_array.push_back(static_cast<int>(tile));
+			}
+		}
+	    glUniform1iv(map_array_uloc, MAP_WIDTH * MAP_HEIGHT, flat_array.data());
 
 		glUniform2fv(player_grid_position_uloc, 1, (float*)&player.grid_position);
 	}
@@ -56,10 +120,10 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 	if (render_request.used_effect == EFFECT_ASSET_ID::TILE)
 	{
 		// also take vec2 camera position
-		Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
+		Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
 		vec2 cameraPos = camera.position;
 		GLint camera_position_uloc = glGetUniformLocation(program, "camera_position");
-		glUniform2fv(camera_position_uloc, 1, (float*)&cameraPos);
+		glUniform2fv(camera_position_uloc, 1, (float *)&cameraPos);
 	}
 
 	// Get number of indices from index buffer, which has elements uint16_t
@@ -74,8 +138,7 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 
 	if (registry.motions.has(entity))
 	{
-		Motion& motion = registry.motions.get(entity);
-
+		Motion &motion = registry.motions.get(entity);
 		// Transformation code, see Rendering and Transformation in the template
 		// specification for more info Incrementally updates transformation matrix,
 		// thus ORDER IS IMPORTANT
@@ -86,7 +149,7 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 
 		// Setting uniform values to the currently bound program
 		GLuint transform_loc = glGetUniformLocation(currProgram, "transform");
-		glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float*)&transform.mat);
+		glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float *)&transform.mat);
 		gl_has_errors();
 	}
 
@@ -94,32 +157,31 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
 	gl_has_errors();
 
-
 	// Drawing of num_indices/3 triangles specified in the index buffer
 	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
 	gl_has_errors();
 }
 
-void RenderSystem::setUpSpriteSheetTexture(Entity& entity, const GLuint program)
+void RenderSystem::setUpSpriteSheetTexture(Entity &entity, const GLuint program)
 {
 	// SpriteSheet UNIFORMS see :
-		// 	int total_frames from SpriteSheetImage
-		// 	int current_frame from SpriteSheetImage
-		// 	int sprite size from sprite
+	// 	int total_frames from SpriteSheetImage
+	// 	int current_frame from SpriteSheetImage
+	// 	int sprite size from sprite
 	GLint total_frames_uloc = glGetUniformLocation(program, "total_frames");
 	GLint current_frame_uloc = glGetUniformLocation(program, "current_frame");
 	GLint sprite_width_uloc = glGetUniformLocation(program, "sprite_width");
 	GLint sprite_height_uloc = glGetUniformLocation(program, "sprite_height");
 
-	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.get(entity);
+	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.get(entity);
 	glUniform1i(total_frames_uloc, spriteSheet.total_frames);
 	glUniform1i(current_frame_uloc, spriteSheet.current_frame);
-	SpriteSize& sprite = registry.spritesSizes.get(entity);
+	SpriteSize &sprite = registry.spritesSizes.get(entity);
 	glUniform1i(sprite_width_uloc, sprite.width);
 	glUniform1i(sprite_height_uloc, sprite.height);
 }
 
-void RenderSystem::setUpDefaultProgram(Entity& entity, const RenderRequest& render_request, const GLuint program)
+void RenderSystem::setUpDefaultProgram(Entity &entity, const RenderRequest &render_request, const GLuint program)
 {
 	// Setting shaders
 	glUseProgram(program);
@@ -141,19 +203,18 @@ void RenderSystem::setUpDefaultProgram(Entity& entity, const RenderRequest& rend
 
 	glEnableVertexAttribArray(in_position_loc);
 	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
-		sizeof(TexturedVertex), (void*)0);
+						  sizeof(TexturedVertex), (void *)0);
 	gl_has_errors();
 
 	glEnableVertexAttribArray(in_texcoord_loc);
 	glVertexAttribPointer(
 		in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
-		(void*)sizeof(
+		(void *)sizeof(
 			vec3)); // note the stride to skip the preceeding vertex position
 
 	// Enabling and binding texture to slot 0
 	glActiveTexture(GL_TEXTURE0);
 	gl_has_errors();
-
 
 	assert(registry.renderRequests.has(entity));
 	GLuint texture_id =
@@ -162,7 +223,6 @@ void RenderSystem::setUpDefaultProgram(Entity& entity, const RenderRequest& rend
 	glBindTexture(GL_TEXTURE_2D, texture_id);
 	gl_has_errors();
 }
-
 
 // first draw to an intermediate texture,
 // apply the "vignette" texture, when requested
@@ -201,12 +261,12 @@ void RenderSystem::drawToScreen()
 	const GLuint vignette_program = effects[(GLuint)EFFECT_ASSET_ID::VIGNETTE];
 
 	// set clock
-	GLuint time_uloc       = glGetUniformLocation(vignette_program, "time");
+	GLuint time_uloc = glGetUniformLocation(vignette_program, "time");
 	GLuint dead_timer_uloc = glGetUniformLocation(vignette_program, "darken_screen_factor");
 	GLuint vignette_timer_uloc = glGetUniformLocation(vignette_program, "vignette_screen_factor");
 
 	glUniform1f(time_uloc, (float)(glfwGetTime() * 10.0f));
-	
+
 	ScreenState &screen = registry.screenStates.get(screen_state_entity);
 	// std::cout << "screen.darken_screen_factor: " << screen.darken_screen_factor << " entity id: " << screen_state_entity << std::endl;
 	glUniform1f(dead_timer_uloc, screen.darken_screen_factor);
@@ -234,7 +294,6 @@ void RenderSystem::drawToScreen()
 	gl_has_errors();
 }
 
-
 // Render our game world
 // http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-14-render-to-texture/
 void RenderSystem::draw()
@@ -246,11 +305,11 @@ void RenderSystem::draw()
 	// First render to the custom framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
 	gl_has_errors();
-	
+
 	// clear backbuffer
 	glViewport(0, 0, w, h);
 	glDepthRange(0.00001, 10);
-	
+
 	// white background
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -271,22 +330,44 @@ void RenderSystem::draw()
 		drawTexturedMesh(entity, projection_2D);
 	}
 
+    // draw portal
+    for (Entity entity : registry.portals.entities) {
+        if (registry.renderRequests.has(entity)) drawTexturedMesh(entity, projection_2D);
+    }
+
 	for (Entity entity : registry.renderRequests.entities)
 	{
-		if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity))
+		if (registry.keys.has(entity) || registry.chests.has(entity)) {
+			drawHexagon(entity, projection_2D);
+		} else if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity))
 		{
 			drawTexturedMesh(entity, projection_2D);
 		}
 	}
-	
+
 	// draw the mini map
 	drawTexturedMesh(registry.miniMaps.entities[0], projection_2D);
-	
-	if (registry.pauses.size() != 0) {
-		auto& pause = registry.pauses.entities[0];
-		drawTexturedMesh(pause, projection_2D);
+
+	// draw static ui elemments
+	for (Entity entity : registry.uiElements.entities)
+	{
+		drawTexturedMesh(entity, projection_2D);
 	}
 
+	// draw the health bar
+	for (Entity entity : registry.healthBars.entities)
+	{
+		drawHealthBar(entity, projection_2D);
+	}
+
+	// draw dash charges
+	drawDashRecharge(projection_2D);
+
+	if (registry.pauses.size() != 0)
+	{
+		auto &pause = registry.pauses.entities[0];
+		drawTexturedMesh(pause, projection_2D);
+	}
 
 	// draw framebuffer to screen
 	// adding "vignette" effect when applied
@@ -297,102 +378,127 @@ void RenderSystem::draw()
 	gl_has_errors();
 }
 
-mat3 RenderSystem::createProjectionMatrix() {
-    Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
-    vec2 cameraPos = camera.position;
-    
-    float left   = cameraPos.x - WINDOW_WIDTH_PX * 0.5f;
-    float right  = left + WINDOW_WIDTH_PX;
-    float top    = cameraPos.y - WINDOW_HEIGHT_PX * 0.5f;
-    float bottom = top + WINDOW_HEIGHT_PX;
+mat3 RenderSystem::createProjectionMatrix()
+{
+	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+	vec2 cameraPos = camera.position;
 
-    float sx = 2.f / (right - left);
-    float sy = 2.f / (top - bottom);
-    float tx = -(right + left)   / (right - left);
-    float ty = -(top + bottom)   / (top - bottom);
+	float left = cameraPos.x - WINDOW_WIDTH_PX * 0.5f;
+	float right = left + WINDOW_WIDTH_PX;
+	float top = cameraPos.y - WINDOW_HEIGHT_PX * 0.5f;
+	float bottom = top + WINDOW_HEIGHT_PX;
+
+	float sx = 2.f / (right - left);
+	float sy = 2.f / (top - bottom);
+	float tx = -(right + left) / (right - left);
+	float ty = -(top + bottom) / (top - bottom);
 
 	return {
-		{ sx, 0.f, 0.f},
-		{0.f,  sy, 0.f},
-		{ tx,  ty, 1.f}
-	};
+		{sx, 0.f, 0.f},
+		{0.f, sy, 0.f},
+		{tx, ty, 1.f}};
 }
 
-void RenderSystem::drawStartScreen() {
-
-    std::vector<ButtonType> buttons = {
-        ButtonType::STARTBUTTON,
-        ButtonType::SHOPBUTTON,
-        ButtonType::INFOBUTTON
-    };
-
-    drawScreenAndButtons(ScreenType::START, buttons);
-}
-
-
-void RenderSystem::drawShopScreen() {
+void RenderSystem::drawStartScreen()
+{
 
 	std::vector<ButtonType> buttons = {
-        ButtonType::SHOPBUTTON
-    };
+		ButtonType::STARTBUTTON,
+		ButtonType::SHOPBUTTON,
+		ButtonType::INFOBUTTON};
+
+	drawScreenAndButtons(ScreenType::START, buttons);
+}
+
+void RenderSystem::drawShopScreen()
+{
+
+	std::vector<ButtonType> buttons = {
+		ButtonType::BACKBUTTON};
 
 	drawScreenAndButtons(ScreenType::SHOP, buttons);
 }
 
+void RenderSystem::drawInfoScreen()
+{
 
-void RenderSystem::drawInfoScreen() {
-	
 	std::vector<ButtonType> buttons = {
-		ButtonType::INFOBUTTON
-	};
+		ButtonType::BACKBUTTON};
 
 	drawScreenAndButtons(ScreenType::INFO, buttons);
 }
 
-void RenderSystem::drawGameOverScreen() {
+void RenderSystem::drawGameOverScreen()
+{
 	std::vector<ButtonType> buttons = {
-		
+
 	};
 
 	drawScreenAndButtons(ScreenType::GAMEOVER, buttons);
+}
 
+void RenderSystem::drawNextLevelScreen() {
+	std::vector<ButtonType> buttons = { };
+    
+	drawScreenAndButtons(ScreenType::NEXT_LEVEL, buttons);
 }
 
 void RenderSystem::drawScreenAndButtons(
-    ScreenType screenType,
-    const std::vector<ButtonType>& buttonTypes) {
+	ScreenType screenType,
+	const std::vector<ButtonType> &buttonTypes)
+{
 
-    int w, h;
-    glfwGetFramebufferSize(window, &w, &h);
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
-    gl_has_errors();
+	int w, h;
+	glfwGetFramebufferSize(window, &w, &h);
+	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+	gl_has_errors();
 
-    glViewport(0, 0, w, h);
-    glDepthRange(0.00001, 10);
+	glViewport(0, 0, w, h);
+	glDepthRange(0.00001, 10);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClearDepth(10.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearDepth(10.f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_DEPTH_TEST);
 
 	gl_has_errors();
 
-    mat3 projection_matrix = createProjectionMatrix();
+	mat3 projection_matrix = createProjectionMatrix();
 
-    for (uint i = 0; i < registry.gameScreens.size(); i++) {
-        const auto& screenComp = registry.gameScreens.components[i];
-        if (screenComp.type == screenType) {
-            Entity screenEntity = registry.gameScreens.entities[i];
-            drawTexturedMesh(screenEntity, projection_matrix);
-        }
-    }
+	// draw background
+	// draw logo 
+	// draw buttons
 
-	if (buttonTypes.size() != 0) {
-		for (uint i = 0; i < registry.buttons.components.size(); i++) {
-			const screenButton& buttonComp = registry.buttons.components[i];
+	for (uint i = 0; i < registry.gameScreens.size(); i++)
+	{
+		const auto &screenComp = registry.gameScreens.components[i];
+		if (screenComp.type == screenType)
+		{
+			Entity screenEntity = registry.gameScreens.entities[i];
+			drawTexturedMesh(screenEntity, projection_matrix);
+		}
+	}
+
+	if (screenType == ScreenType::START)
+	{
+		for (uint i = 0; i < registry.starts.size(); i++)
+		{
+			Start &start = registry.starts.components[i];
+			if (start.logo != Entity())
+			{
+				drawTexturedMesh(start.logo, projection_matrix);
+			}
+		}
+	}
+
+	if (buttonTypes.size() != 0)
+	{
+		for (uint i = 0; i < registry.buttons.components.size(); i++)
+		{
+			const screenButton &buttonComp = registry.buttons.components[i];
 
 			for (auto bt : buttonTypes)
 			{
@@ -405,39 +511,320 @@ void RenderSystem::drawScreenAndButtons(
 			}
 		}
 	}
-    
-    drawToScreen();
-    glfwSwapBuffers(window);
-    gl_has_errors();
+
+	drawToScreen();
+	glfwSwapBuffers(window);
+	gl_has_errors();
 }
 
-void RenderSystem::drawCutScreneAnimation() {
+void RenderSystem::drawCutScreneAnimation()
+{
 
-    int w, h;
-    glfwGetFramebufferSize(window, &w, &h);
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
-    gl_has_errors();
+	int w, h;
+	glfwGetFramebufferSize(window, &w, &h);
+	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+	gl_has_errors();
 
-    glViewport(0, 0, w, h);
-    glDepthRange(0.00001, 10);
+	glViewport(0, 0, w, h);
+	glDepthRange(0.00001, 10);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClearDepth(10.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearDepth(10.f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_DEPTH_TEST);
 
 	gl_has_errors();
 
-    mat3 projection_matrix = createProjectionMatrix();
+	mat3 projection_matrix = createProjectionMatrix();
 
-	for (auto& entity : registry.cutscenes.entities) {
+	for (auto &entity : registry.cutscenes.entities)
+	{
 		drawTexturedMesh(entity, projection_matrix);
 	}
-    
-    drawToScreen();
-    glfwSwapBuffers(window);
-    gl_has_errors();
+
+	drawToScreen();
+	glfwSwapBuffers(window);
+	gl_has_errors();
+}
+
+void RenderSystem::drawUI(Entity entity, const mat3 &projection)
+{
+	Motion &motion = registry.motions.get(entity);
+	Transform transform;
+	transform.translate(motion.position);
+	transform.scale(motion.scale);
+
+	assert(registry.renderRequests.has(entity));
+	const RenderRequest &render_request = registry.renderRequests.get(entity);
+
+	GLuint program = effects[(GLuint)render_request.used_effect];
+	glUseProgram(program);
+	gl_has_errors();
+
+	GLuint vbo = vertex_buffers[(GLuint)render_request.used_geometry];
+	GLuint ibo = index_buffers[(GLuint)render_request.used_geometry];
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	gl_has_errors();
+
+	GLint in_position_loc = glGetAttribLocation(program, "in_position");
+	GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+	glEnableVertexAttribArray(in_position_loc);
+	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)0);
+	glEnableVertexAttribArray(in_texcoord_loc);
+	glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)sizeof(vec3));
+
+	glActiveTexture(GL_TEXTURE0);
+	GLuint texture_id = texture_gl_handles[(GLuint)registry.renderRequests.get(entity).used_texture];
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+	gl_has_errors();
+
+	GLuint transform_loc = glGetUniformLocation(program, "transform");
+	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float *)&transform.mat);
+	gl_has_errors();
+
+	GLuint projection_loc = glGetUniformLocation(program, "projection");
+	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
+	gl_has_errors();
+
+	GLint size = 0;
+	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
+	GLsizei num_indices = size / sizeof(uint16_t);
+	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
+	gl_has_errors();
+}
+
+void RenderSystem::drawUIElements()
+{
+	if (registry.uiElements.size() == 0)
+		return;
+
+	mat3 projection_2D = createProjectionMatrix();
+
+	for (Entity entity : registry.uiElements.entities)
+	{
+		drawUI(entity, projection_2D);
+	}
+
+	drawToScreen();
+	glfwSwapBuffers(window);
+}
+
+void RenderSystem::drawHexagon(Entity entity, const mat3 &projection) 
+{
+	if(!registry.keys.has(entity) && !registry.chests.has(entity)) 
+	{
+		return;
+	}
+
+	if(!registry.renderRequests.has(entity)) 
+	{
+		return;
+	}
+
+	RenderRequest& render_request = registry.renderRequests.get(entity);
+	GLuint program = effects[(GLuint)render_request.used_effect];
+	glUseProgram(program);
+	gl_has_errors();
+
+	GLuint vbo = vertex_buffers[(GLuint)render_request.used_geometry];
+	GLuint ibo = index_buffers[(GLuint)render_request.used_geometry];
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	gl_has_errors();
+
+	GLint in_position_loc = glGetAttribLocation(program, "in_position");
+	GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+
+	glEnableVertexAttribArray(in_position_loc);
+	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void*)0);
+	
+	glEnableVertexAttribArray(in_texcoord_loc);
+	glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void*)sizeof(vec3));
+	gl_has_errors();	
+
+	glActiveTexture(GL_TEXTURE0);
+	GLuint texture_id = texture_gl_handles[(GLuint)render_request.used_texture];
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+	gl_has_errors();
+
+	if(!registry.motions.has(entity)) 
+	{
+		return;
+	}
+
+	Motion& motion = registry.motions.get(entity);
+
+	Transform transform;
+	transform.translate(motion.position);
+	transform.scale(motion.scale);
+
+	GLuint transform_loc = glGetUniformLocation(program, "transform");
+	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float*)&transform.mat);
+	gl_has_errors();
+
+	GLuint projection_loc = glGetUniformLocation(program, "projection");
+	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float*)&projection);
+	gl_has_errors();
+
+	GLint size = 0;
+	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
+	GLsizei num_indices = size / sizeof(uint16_t);
+	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
+
+}
+
+void RenderSystem::drawHealthBar(Entity entity, const mat3 &projection)
+{
+	if (!registry.healthBars.has(entity))
+		return;
+
+	HealthBar &healthBar = registry.healthBars.get(entity);
+	Motion &motion = registry.motions.get(entity);
+	Player &player = registry.players.get(registry.players.entities[0]);
+
+	Transform transform;
+	transform.translate(motion.position);
+	transform.scale(motion.scale);
+
+	assert(registry.renderRequests.has(entity));
+	const RenderRequest &render_request = registry.renderRequests.get(entity);
+
+	GLuint program = effects[(GLuint)EFFECT_ASSET_ID::HEALTH_BAR];
+	glUseProgram(program);
+	gl_has_errors();
+
+	GLuint vbo = vertex_buffers[(GLuint)render_request.used_geometry];
+	GLuint ibo = index_buffers[(GLuint)render_request.used_geometry];
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	gl_has_errors();
+
+	GLint in_position_loc = glGetAttribLocation(program, "in_position");
+	GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+
+	glEnableVertexAttribArray(in_position_loc);
+	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)0);
+	glEnableVertexAttribArray(in_texcoord_loc);
+	glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)sizeof(vec3));
+
+	glActiveTexture(GL_TEXTURE0);
+	GLuint texture_id = texture_gl_handles[(GLuint)TEXTURE_ASSET_ID::HEALTH_BAR_UI];
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+	gl_has_errors();
+
+	GLint max_health_loc = glGetUniformLocation(program, "max_health");
+	glUniform1f(max_health_loc, player.max_health);
+	gl_has_errors();
+
+	GLint health_loc = glGetUniformLocation(program, "current_health");
+	glUniform1f(health_loc, player.current_health);
+	gl_has_errors();
+
+
+	GLint health_texture_loc = glGetUniformLocation(program, "health_texture");
+	glUniform1i(health_texture_loc, 0);
+	gl_has_errors();
+
+	GLint transform_loc = glGetUniformLocation(program, "transform");
+	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float *)&transform.mat);
+	gl_has_errors();
+
+	GLint projection_loc = glGetUniformLocation(program, "projection");
+	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
+	gl_has_errors();
+
+	GLint size = 0;
+	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
+	GLsizei num_indices = size / sizeof(uint16_t);
+	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
+	gl_has_errors();
+}
+
+void RenderSystem::drawDashRecharge(const mat3 &projection)
+{
+	if (registry.dashes.size() == 0)
+	{
+		return;
+	}
+
+	for (Entity entity : registry.dashes.entities)
+	{
+		if (!registry.motions.has(entity))
+		{
+			continue;
+		}
+
+		if (!registry.renderRequests.has(entity))
+		{
+			continue;
+		}
+
+		Motion &motion = registry.motions.get(entity);
+		Transform transform;
+		transform.translate(motion.position);
+		transform.scale(motion.scale);
+
+		const RenderRequest &render_request = registry.renderRequests.get(entity);
+		GLuint program = effects[(GLuint)render_request.used_effect];
+
+		glUseProgram(program);
+		gl_has_errors();
+
+		GLuint vbo = vertex_buffers[(GLuint)render_request.used_geometry];
+		GLuint ibo = index_buffers[(GLuint)render_request.used_geometry];
+
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+		gl_has_errors();
+
+		GLint in_position_loc = glGetAttribLocation(program, "in_position");
+		GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+
+		glEnableVertexAttribArray(in_position_loc);
+		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)0);
+		glEnableVertexAttribArray(in_texcoord_loc);
+		glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)sizeof(vec3));
+
+		glActiveTexture(GL_TEXTURE0);
+		GLuint texture_id = texture_gl_handles[(GLuint)render_request.used_texture];
+		glBindTexture(GL_TEXTURE_2D, texture_id);
+		gl_has_errors();
+
+		GLint transform_loc = glGetUniformLocation(program, "transform");
+		glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float *)&transform.mat);
+		gl_has_errors();
+
+		GLint projection_loc = glGetUniformLocation(program, "projection");
+		glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
+		gl_has_errors();
+
+		GLint size = 0;
+		glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
+		GLsizei num_indices = size / sizeof(uint16_t);
+		glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
+		gl_has_errors();
+	}
+}
+
+void RenderSystem::drawBuffUI()
+{
+	if (registry.buffUIs.size() == 0)
+		return;
+
+	mat3 projection_2D = createProjectionMatrix();
+
+	for (Entity entity : registry.buffUIs.entities)
+	{
+		drawUI(entity, projection_2D);
+	}
+
+	drawToScreen();
+	glfwSwapBuffers(window);
 }

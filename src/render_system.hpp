@@ -9,7 +9,8 @@
 
 // System responsible for setting up OpenGL and for rendering all the
 // visual entities in the game
-class RenderSystem {
+class RenderSystem
+{
 	/**
 	 * The following arrays store the assets the game will use. They are loaded
 	 * at initialization and are assumed to not be modified by the render loop.
@@ -18,7 +19,7 @@ class RenderSystem {
 	 * it is easier to debug and faster to execute for the computer.
 	 */
 	std::array<GLuint, texture_count> texture_gl_handles;
-	std::array<ivec2, texture_count>  texture_dimensions;
+	std::array<ivec2, texture_count> texture_dimensions;
 
 	// Make sure these paths remain in sync with the associated enumerators.
 	// Associated id with .obj path
@@ -38,9 +39,9 @@ class RenderSystem {
 		textures_path("tiles/paralax_tile_1_128x.png"),
 		textures_path("ui_art/amoebash_logo.png"),
 		textures_path("ui_art/gameOver.png"),
-		textures_path("ui_art/start.png"),
+		textures_path("ui_art/start_button.png"),
 		textures_path("ui_art/pausescreen.png"),
-		textures_path("ui_art/shop.png"),
+		textures_path("ui_art/shop_button.png"),
 		textures_path("ui_art/nucleus_full_size.png"),
 		textures_path("ui_art/shopscreen.png"),
 		textures_path("ui_art/infoscreen.png"),
@@ -48,8 +49,25 @@ class RenderSystem {
 		textures_path("transition_animations/noses_spritesheet.png"),
 		textures_path("transition_animations/into_game_transition_sheet.png"),
 		textures_path("transition_animations/nose_accent_spritesheet.png"),
-		textures_path("transition_animations/nucleus_entering_nose_sheet.png")
-	};
+		textures_path("transition_animations/nucleus_entering_nose_sheet.png"),
+		textures_path("ui_art/HUD_outlined_nucleus_full_size.png"),
+		textures_path("ui_art/HUD_health_bar.png"),
+		textures_path("ui_art/HUD_dash_component_clear.png"),
+		textures_path("ui_art/HUD_germoney_hud.png"),
+		textures_path("ui_art/HUD_weapons_pill.png"),
+		textures_path("ui_art/info_button.png"),
+		textures_path("ui_art/start_screen.png"),
+		textures_path("ui_art/button_outline.png"),
+		textures_path("projectiles/key.png"),
+		textures_path("buffs/buffs_sheet.png"),
+        textures_path("tiles/whirlpool_portal.png"),
+		textures_path("tutorial/mouse_control.png"),
+		textures_path("tutorial/pause_info.png"),
+		textures_path("tutorial/dash_info.png"),
+		textures_path("tutorial/enemy_info.png"),
+		textures_path("tutorial/restart_info.png"),
+		textures_path("tutorial/leave.png"),
+		textures_path("projectiles/chest.png")};
 
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.
@@ -60,8 +78,11 @@ class RenderSystem {
 		shader_path("vignette"),
 		shader_path("sprite_sheet_textured"),
 		shader_path("tile"),
-		shader_path("minimap")
-	};
+		shader_path("minimap"),
+		shader_path("ui"),
+		shader_path("health_bar"),
+		shader_path("dash_ui"),
+		shader_path("hexagon")};
 
 	std::array<GLuint, geometry_count> vertex_buffers;
 	std::array<GLuint, geometry_count> index_buffers;
@@ -69,7 +90,7 @@ class RenderSystem {
 
 public:
 	// Initialize the window
-	bool init(GLFWwindow* window);
+	bool init(GLFWwindow *window);
 
 	template <class T>
 	void bindVBOandIBO(GEOMETRY_BUFFER_ID gid, std::vector<T> vertices, std::vector<uint16_t> indices);
@@ -80,7 +101,15 @@ public:
 
 	void initializeGlMeshes();
 
-	Mesh& getMesh(GEOMETRY_BUFFER_ID id) { return meshes[(int)id]; };
+	GLuint getEffect(EFFECT_ASSET_ID id)
+	{
+		return effects[(int)id];
+	}
+
+	Mesh &getMesh(GEOMETRY_BUFFER_ID id)
+	{
+		return meshes[(int)id];
+	};
 
 	void initializeGlGeometryBuffers();
 
@@ -100,26 +129,40 @@ public:
 	void drawShopScreen();
 	void drawInfoScreen();
 	void drawCutScreneAnimation();
+    void drawNextLevelScreen();
 
 	mat3 createProjectionMatrix();
 
-	Entity get_screen_state_entity() { return screen_state_entity; }
+	// FPS counter related methods
+	void updateFPS(float elapsed_ms);
+	void toggleFPSDisplay();
+	void drawFPS();
+
+	Entity get_screen_state_entity()
+	{
+		return screen_state_entity;
+	};
+
+	void drawUI(Entity entity, const mat3 &projection);
+	void drawUIElements();
+	void drawHealthBar(Entity entity, const mat3 &projection);
+	void drawDashRecharge(const mat3 &projection);
+	void drawHexagon(Entity entity, const mat3 &projection);	
+	void drawBuffUI();
 
 private:
 	// Internal drawing functions for each entity type
-	void drawTexturedMesh(Entity entity, const mat3& projection);
-	void drawSpriteSheetTexturedMesh(Entity entity, const mat3& projection);
+	void drawTexturedMesh(Entity entity, const mat3 &projection);
+	void drawSpriteSheetTexturedMesh(Entity entity, const mat3 &projection);
 	void drawToScreen();
 
-	void setUpDefaultProgram(Entity& entity, const RenderRequest& render_request, const GLuint program);
-	void setUpSpriteSheetTexture(Entity& entity, const GLuint program);
+	void setUpDefaultProgram(Entity &entity, const RenderRequest &render_request, const GLuint program);
+	void setUpSpriteSheetTexture(Entity &entity, const GLuint program);
 
-	void drawScreenAndButtons(ScreenType screenType, const std::vector<ButtonType>& buttonTypes);
-
-
+	void drawScreenAndButtons(ScreenType screenType, const std::vector<ButtonType> &buttonTypes);
 
 	// Window handle
-	GLFWwindow* window;
+	GLFWwindow *window;
 
 	// Screen texture handles
 	GLuint frame_buffer;
@@ -127,7 +170,13 @@ private:
 	GLuint off_screen_render_buffer_depth;
 
 	Entity screen_state_entity;
+
+	// FPS counter variables
+	float frame_time_sum = 0.0f;
+	int frame_count = 0;
+	float current_fps = 0.0f;
+	bool show_fps = true; // Start with FPS display enabled
 };
 
 bool loadEffectFromFile(
-	const std::string& vs_path, const std::string& fs_path, GLuint& out_program);
+	const std::string &vs_path, const std::string &fs_path, GLuint &out_program);

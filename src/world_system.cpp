@@ -1,6 +1,7 @@
 // Header
 #include "world_system.hpp"
 #include "world_init.hpp"
+#include "common.hpp"
 
 // stlib
 #include <cassert>
@@ -11,17 +12,19 @@
 
 #include "physics_system.hpp"
 
+bool tutorial_mode = true;
+
 // create the world
-WorldSystem::WorldSystem() :
-	points(0),
-	next_enemy_spawn(0),
-	enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS)
+WorldSystem::WorldSystem() : level(0),
+							 next_enemy_spawn(0),
+							 enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS)
 {
 	// seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
 }
 
-WorldSystem::~WorldSystem() {
+WorldSystem::~WorldSystem()
+{
 	// Destroy music components
 	if (background_music != nullptr)
 		Mix_FreeMusic(background_music);
@@ -38,26 +41,37 @@ WorldSystem::~WorldSystem() {
 	glfwDestroyWindow(window);
 }
 
+// toggle FPS display on/off
+void WorldSystem::toggleFPSDisplay()
+{
+	renderer->toggleFPSDisplay();
+}
+
 // Debugging
-namespace {
-	void glfw_err_cb(int error, const char *desc) {
+namespace
+{
+	void glfw_err_cb(int error, const char *desc)
+	{
 		std::cerr << error << ": " << desc << std::endl;
 	}
 }
 
 // call to close the window, wrapper around GLFW commands
-void WorldSystem::close_window() {
+void WorldSystem::close_window()
+{
 	glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
 // World initialization
 // Note, this has a lot of OpenGL specific things, could be moved to the renderer
-GLFWwindow* WorldSystem::create_window() {
+GLFWwindow *WorldSystem::create_window()
+{
 
 	///////////////////////////////////////
 	// Initialize GLFW
 	glfwSetErrorCallback(glfw_err_cb);
-	if (!glfwInit()) {
+	if (!glfwInit())
+	{
 		std::cerr << "ERROR: Failed to initialize GLFW in world_system.cpp" << std::endl;
 		return nullptr;
 	}
@@ -76,11 +90,12 @@ GLFWwindow* WorldSystem::create_window() {
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 	// CK: setting GLFW_SCALE_TO_MONITOR to true will rescale window but then you must handle different scalings
 	// glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_TRUE);		// GLFW 3.3+
-	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_FALSE);		// GLFW 3.3+
+	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_FALSE); // GLFW 3.3+
 
 	// Create the main window (for rendering, keyboard, and mouse input)
 	window = glfwCreateWindow(WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX, "Towers vs Invaders Assignment", nullptr, nullptr);
-	if (window == nullptr) {
+	if (window == nullptr)
+	{
 		std::cerr << "ERROR: Failed to glfwCreateWindow in world_system.cpp" << std::endl;
 		return nullptr;
 	}
@@ -89,10 +104,13 @@ GLFWwindow* WorldSystem::create_window() {
 	// Input is handled using GLFW, for more info see
 	// http://www.glfw.org/docs/latest/input_guide.html
 	glfwSetWindowUserPointer(window, this);
-	auto key_redirect = [](GLFWwindow* wnd, int _0, int _1, int _2, int _3) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_key(_0, _1, _2, _3); };
-	auto cursor_pos_redirect = [](GLFWwindow* wnd, double _0, double _1) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_mouse_move({ _0, _1 }); };
-	auto mouse_button_pressed_redirect = [](GLFWwindow* wnd, int _button, int _action, int _mods) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_mouse_button_pressed(_button, _action, _mods); };
-	
+	auto key_redirect = [](GLFWwindow *wnd, int _0, int _1, int _2, int _3)
+	{ ((WorldSystem *)glfwGetWindowUserPointer(wnd))->on_key(_0, _1, _2, _3); };
+	auto cursor_pos_redirect = [](GLFWwindow *wnd, double _0, double _1)
+	{ ((WorldSystem *)glfwGetWindowUserPointer(wnd))->on_mouse_move({_0, _1}); };
+	auto mouse_button_pressed_redirect = [](GLFWwindow *wnd, int _button, int _action, int _mods)
+	{ ((WorldSystem *)glfwGetWindowUserPointer(wnd))->on_mouse_button_pressed(_button, _action, _mods); };
+
 	glfwSetKeyCallback(window, key_redirect);
 	glfwSetCursorPosCallback(window, cursor_pos_redirect);
 	glfwSetMouseButtonCallback(window, mouse_button_pressed_redirect);
@@ -100,16 +118,19 @@ GLFWwindow* WorldSystem::create_window() {
 	return window;
 }
 
-bool WorldSystem::start_and_load_sounds() {
-	
+bool WorldSystem::start_and_load_sounds()
+{
+
 	//////////////////////////////////////
 	// Loading music and sounds with SDL
-	if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+	if (SDL_Init(SDL_INIT_AUDIO) < 0)
+	{
 		fprintf(stderr, "Failed to initialize SDL Audio");
 		return false;
 	}
 
-	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) == -1) {
+	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) == -1)
+	{
 		fprintf(stderr, "Failed to open audio device");
 		return false;
 	}
@@ -118,18 +139,20 @@ bool WorldSystem::start_and_load_sounds() {
 	dash_sound_1 = Mix_LoadWAV(audio_path("dash_1.wav").c_str());
 	dash_sound_2 = Mix_LoadWAV(audio_path("dash_2.wav").c_str());
 
-	if (background_music == nullptr || dash_sound_1 == nullptr || dash_sound_2 == nullptr) {
+	if (background_music == nullptr || dash_sound_1 == nullptr || dash_sound_2 == nullptr)
+	{
 		fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
-			audio_path("music.wav").c_str(),
-			audio_path("dash_1.wav").c_str(),
-			audio_path("dash_2.wav").c_str());
+				audio_path("music.wav").c_str(),
+				audio_path("dash_1.wav").c_str(),
+				audio_path("dash_2.wav").c_str());
 		return false;
 	}
 
 	return true;
 }
 
-void WorldSystem::init(RenderSystem* renderer_arg) {
+void WorldSystem::init(RenderSystem *renderer_arg)
+{
 
 	this->renderer = renderer_arg;
 
@@ -138,292 +161,514 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	// std::cout << "Starting music..." << std::endl;
 	// Mix_PlayMusic(background_music, -1);
 
-	
-
 	// Set all states to default
-    restart_game();
+	restart_game();
 	// set initial game state
 	current_state = GameState::START_SCREEN_ANIMATION;
 }
 
-void WorldSystem::updateCamera(float elapsed_ms) {
-	// Get camera entity
-	Entity cameraEntity = registry.cameras.entities[0];
-    Camera& camera = registry.cameras.get(cameraEntity);
 
-    Motion& player_motion = registry.motions.get(registry.players.entities[0]);
+void WorldSystem::updateCamera(float elapsed_ms)
+{
+    Entity cameraEntity = registry.cameras.entities[0];
+    Camera &camera = registry.cameras.get(cameraEntity);
+    Motion &player_motion = registry.motions.get(registry.players.entities[0]);
+    vec2 mouse_world_position = {game_mouse_pos_x, game_mouse_pos_y};
 
-    // Initialize camera position if not already initialized
-    if (!camera.initialized) {
-        camera.position = player_motion.position; // Snap to player
-        camera.initialized = true; // Mark as initialized
-        return; // Skip interpolation for this frame
-    }
+	if (!camera.initialized)
+	{
+		camera.position = player_motion.position; // Snap to initial position
+		camera.initialized = true;
+		return;
+	}	
 
-    // Define deadzone size (75% of the screen width and height)
-    float deadzoneWidth = WINDOW_WIDTH_PX * DEADZONE_FACTOR.x;
-    float deadzoneHeight = WINDOW_HEIGHT_PX * DEADZONE_FACTOR.y;
-
-    // Calculate deadzone boundaries relative to the camera's position
-    float deadzoneLeft = camera.position.x - deadzoneWidth / 2 - 10.0f; // Buffer of 10 pixels
-    float deadzoneRight = camera.position.x + deadzoneWidth / 2 + 10.0f;
-    float deadzoneTop = camera.position.y - deadzoneHeight / 2 - 10.0f;
-    float deadzoneBottom = camera.position.y + deadzoneHeight / 2 + 10.0f;
-
-    // Check if the player is outside the deadzone
-    bool playerOutsideDeadzone =
-        player_motion.position.x < deadzoneLeft ||
-        player_motion.position.x > deadzoneRight ||
-        player_motion.position.y < deadzoneTop ||
-        player_motion.position.y > deadzoneBottom;
-
-    // Only move the camera if the player is outside the deadzone
-    if (playerOutsideDeadzone) {
-        // Define interpolation factor (0 = no movement, 1 = instant snap)
-        float interpolationFactor = 0.1f; // Lower value for smoother movement
-
-        // Convert elapsed_ms to seconds for smoother interpolation
-        float deltaTime = elapsed_ms / 1000.0f;
-
-        // Calculate interpolated camera position
-        vec2 targetPosition = player_motion.position; // Target is the player's position
-		// M1 interpolation implementation
-        camera.position = lerp(camera.position, targetPosition, interpolationFactor * deltaTime);
-
-        // Optional: Clamp camera speed
-        vec2 cameraMovement = targetPosition - camera.position;
-        float maxSpeed = 500.0f * deltaTime; // Adjust max speed as needed
-        if (length(cameraMovement) > maxSpeed) {
-            cameraMovement = normalize(cameraMovement) * maxSpeed;
-        }
-        camera.position += cameraMovement;
-    }
-
-	// Update camera grid position
+	float interpolationFactor = 0.05f;
+    camera.position = lerp(camera.position, player_motion.position, interpolationFactor);
 	camera.grid_position = positionToGridCell(camera.position);
 }
 
-void WorldSystem::updateHuds() {
 
-	vec2 offset = {WINDOW_WIDTH_PX/2 - 100, -WINDOW_HEIGHT_PX/2 + 100};
-	
+
+void WorldSystem::updateHuds()
+{
+
+	vec2 offset = {WINDOW_WIDTH_PX / 2 - 100, -WINDOW_HEIGHT_PX / 2 + 100};
+
 	Entity minimapEntity = registry.miniMaps.entities[0];
-	Motion& minimapMotion = registry.motions.get(minimapEntity);
+	Motion &minimapMotion = registry.motions.get(minimapEntity);
 
-	Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
-	minimapMotion.position = { camera.position.x + offset.x, camera.position.y + offset.y};
-}
+	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+	minimapMotion.position = {camera.position.x + offset.x, camera.position.y + offset.y};
 
-void WorldSystem::updateMouseCoords() {
-    Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
-    game_mouse_pos_x = device_mouse_pos_x + camera.position.x - WINDOW_WIDTH_PX * 0.5f;
-    game_mouse_pos_y = device_mouse_pos_y + camera.position.y - WINDOW_HEIGHT_PX * 0.5f;
-}
-
-// Update our game world
-bool WorldSystem::step(float elapsed_ms_since_last_update) {
-
-	// M1 Feature - Camera controls
-    updateCamera(elapsed_ms_since_last_update);
-    updateMouseCoords();
-	updateHuds();
-
-	// Updating window title with points
-	std::stringstream title_ss;
-	title_ss << "Points: " << points;
-	glfwSetWindowTitle(window, title_ss.str().c_str());
-
-	while (registry.debugComponents.entities.size() > 0)
-	    registry.remove_all_components_of(registry.debugComponents.entities.back());
-
-	// Point the player to the mouse
-	Motion& player_motion = registry.motions.get(registry.players.entities[0]);
-	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x)  * 180.0f / M_PI + 90.0f;
-
-
-	// spawn new invaders
-	next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
-	if (next_enemy_spawn < 0.f && !gameOver) {
-		if (registry.enemies.entities.size() < MAX_ENEMIES_COUNT) {
-			// reset timer
-			next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
-
-			// randomize position
-			int map_w = MAP_RIGHT - MAP_LEFT;
-			int map_h = MAP_BOTTOM - MAP_TOP;
-			int randomXCell = MAP_LEFT + (int)(uniform_dist(rng) * map_w);
-			int randomYCell = MAP_TOP + (int)(uniform_dist(rng) * map_h);
-			vec2 enemyPosition = gridCellToPosition({(float)randomXCell, (float)randomYCell});
-			
-			createEnemy(renderer, enemyPosition);
-
-			// Optional debug output for spawning enemies
-			// std::cout << "TOTAL ENEMIES: " << registry.enemies.entities.size() << std::endl;
+	if (!registry.uiElements.entities.empty())
+	{
+		for (Entity entity : registry.uiElements.entities)
+		{
+			if (!registry.motions.has(entity))
+				continue;
+			Motion &uiMotion = registry.motions.get(entity);
+			UIElement &uiElement = registry.uiElements.get(entity);
+			uiMotion.position = {camera.position.x + uiElement.position.x, camera.position.y + uiElement.position.y};
 		}
 	}
 
+	if (!registry.healthBars.entities.empty())
+	{
+		HealthBar &healthBar = registry.healthBars.get(registry.healthBars.entities[0]);
+		Motion &healthBarMotion = registry.motions.get(registry.healthBars.entities[0]);
+		healthBarMotion.position = {camera.position.x + HEALTH_BAR_POS.x,
+									camera.position.y + HEALTH_BAR_POS.y};
 
-	tileMap();
+	}
+
+	if (registry.dashRecharges.size() > 0)
+	{
+		Player &player = registry.players.get(registry.players.entities[0]);
+		vec2 firstDotPosition = {camera.position.x + DASH_RECHARGE_START_POS.x, camera.position.y + DASH_RECHARGE_START_POS.y};
+
+		int i = 0;
+		for (Entity entity : registry.dashRecharges.entities)
+		{
+			if (!registry.motions.has(entity))
+				continue;
+
+			Motion &motion = registry.motions.get(entity);
+			motion.position = {firstDotPosition.x + (i * DASH_RECHARGE_SPACING), firstDotPosition.y};
+
+			if (i >= player.dash_count)
+				motion.scale = {0, 0};
+			else
+				motion.scale = {DASH_WIDTH, DASH_HEIGHT};
+			i++;
+		}
+	}
+}
+
+void WorldSystem::updateMouseCoords()
+{
+	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+	game_mouse_pos_x = device_mouse_pos_x + camera.position.x - WINDOW_WIDTH_PX * 0.5f;
+	game_mouse_pos_y = device_mouse_pos_y + camera.position.y - WINDOW_HEIGHT_PX * 0.5f;
+}
+
+// Update our game world
+bool WorldSystem::step(float elapsed_ms_since_last_update)
+{
+
+	// M1 Feature - Camera controls
+	updateCamera(elapsed_ms_since_last_update);
+
+	if (tutorial_mode && registry.infoBoxes.size() == 0) {
+		createInfoBoxes();
+	}
+
+	updateMouseCoords();
+	updateHuds();
+
+	// Updating window title with points - disabled for now
+	// std::stringstream title_ss;
+	// title_ss << "Points: " << points;
+	// glfwSetWindowTitle(window, title_ss.str().c_str());
+
+	while (registry.debugComponents.entities.size() > 0)
+		registry.remove_all_components_of(registry.debugComponents.entities.back());
+
+	// Point the player to the mouse
+	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
+	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x) * 180.0f / M_PI + 90.0f;
+
+
+	if (!tutorial_mode)
+	{
+		// spawn new invaders
+		next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
+		if (next_enemy_spawn < 0.f && !gameOver)
+		{
+			if (registry.enemies.entities.size() < MAX_ENEMIES_COUNT)
+			{
+				// reset timer
+				next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
+	
+				// randomize position
+				int map_w = MAP_RIGHT - MAP_LEFT;
+				int map_h = MAP_BOTTOM - MAP_TOP;
+				int randomXCell = MAP_LEFT + (int)(uniform_dist(rng) * map_w);
+				int randomYCell = MAP_TOP + (int)(uniform_dist(rng) * map_h);
+				vec2 enemyPosition = gridCellToPosition({(float)randomXCell, (float)randomYCell});
+	
+				createEnemy(renderer, enemyPosition);
+	
+				// Optional debug output for spawning enemies
+				// std::cout << "TOTAL ENEMIES: " << registry.enemies.entities.size() << std::endl;
+			}
+		}
+	}
+
+    tileProceduralMap();
+
+    // check if player in portal tile
+    if (registry.portals.entities.size() > 0 && registry.motions.has(registry.portals.entities.back())) {
+        Motion &portal_motion = registry.motions.get(registry.portals.entities.back());
+        vec2 portal_position = portal_motion.position;
+
+        float distance = sqrt(pow(player_motion.position.x - portal_position.x, 2) + pow(player_motion.position.y - portal_position.y, 2));
+        float portal_radius = TILE_SIZE / 4.0f;
+
+        if (distance < portal_radius) {
+            // go to black screen
+            Entity screen_state_entity = renderer->get_screen_state_entity();
+            ScreenState &screen = registry.screenStates.get(screen_state_entity);
+            screen.darken_screen_factor = 1;
+            darken_screen_timer = 0.0f;
+
+            current_state = GameState::NEXT_LEVEL;
+			
+			goToNextLevel();
+
+            // restart_game();
+            // removeStartScreen(); // removing buttons that are added again
+
+        }
+    }
+
+    // Update the darken screen timer
+    if (darken_screen_timer >= 0.0f) {
+        darken_screen_timer += elapsed_ms_since_last_update;
+        if (darken_screen_timer >= 1000.0f) {
+            Entity screen_state_entity = renderer->get_screen_state_entity();
+            ScreenState &screen = registry.screenStates.get(screen_state_entity);
+            screen.darken_screen_factor = -1;
+            darken_screen_timer = -1.0f; // Stop the timer
+        }
+    }
+
+	handlePlayerMovement(elapsed_ms_since_last_update);
+	handlePlayerHealth(elapsed_ms_since_last_update);
 
 	return true;
 }
 
-// Reset the world state to its initial state
-void WorldSystem::restart_game() {
+// Handle player health
+void WorldSystem::handlePlayerHealth(float elapsed_ms)
+{
+	Player &player = registry.players.get(registry.players.entities[0]);
+	HealthBar &healthBar = registry.healthBars.get(registry.healthBars.entities[0]);
 
-	std::cout << "Restarting..." << std::endl;
+	// handle regeneration
+	// heal every second
+	player.healing_timer_ms -= elapsed_ms;
+	if (player.healing_timer_ms <= 0 && player.current_health < player.max_health)
+	{
+		player.healing_timer_ms = PLAYER_DEFAULT_HEALING_TIMER_MS;
+		player.current_health += player.max_health * player.healing_rate;
+		if (player.current_health > player.max_health)
+		{
+			player.current_health = player.max_health;
+		}
+	}
 
-	// Debugging for memory/component leaks
-	registry.list_all_components();
+	if (player.current_health <= 0 && current_state != GameState::GAME_OVER)
+	{
+		previous_state = current_state;
+		current_state = GameState::GAME_OVER;
+		createGameOverScreen();
+	}
+}
 
-	// Reset the game speed
+
+// Handle player movement
+void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
+	// if the player is not dashing, then have its velocity be base speed * by direction to mouse, if the mouse is outside deadzone
+	
+	Player &player = registry.players.get(registry.players.entities[0]);
+
+	if(registry.dashes.size() == 0) {
+		Motion &player_motion = registry.motions.get(registry.players.entities[0]);
+
+		vec2 direction = vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position;
+		direction = normalize(direction);
+
+		// If the mouse is outside the deadzone, move the player
+		if(length(vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position) > MOUSE_TRACKING_DEADZONE) {
+			player_motion.velocity = {direction.x * player.speed, direction.y * player.speed};
+		} else {
+			player_motion.velocity = {0, 0};
+		}
+	}
+}
+
+void WorldSystem::goToNextLevel()
+{
 	current_speed = 1.f;
-
-	points = 0;
+	level += 1;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
 
-	//FLAG
 	gameOver = false;
+
+	std::pair<int, int> playerPosition;
+	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
+
+	Player &player = registry.players.get(registry.players.entities[0]);
+	Motion &playerMotion = registry.motions.get(registry.players.entities[0]);
 	
+	playerMotion.position = gridCellToPosition(vec2(playerPosition.second, playerPosition.first));
+	return;
+}
+
+
+// Reset the world state to its initial state
+void WorldSystem::restart_game()
+{
+
+	std::cout << "Restarting..." << std::endl;
+    std::cout << "Level: " << level + 1 << std::endl;
+    
+	// Debugging for memory/component leaks
+	registry.list_all_components();
+    
+	// Reset the game speed
+	current_speed = 1.f;
+    
+	level += 1;
+	next_enemy_spawn = 0;
+	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
+    
+	// FLAG
+	gameOver = false;
+
 	// Not sure if we need to touch screen state here
 	// ScreenState &screen = registry.screenStates.components[0];
 	// screen.darken_screen_factor = -1; // FLAG doesnt seem to help
-	
+
 	registry.deathTimers.clear(); // this seems to work
 	// Remove all entities that we created
 	// All that have a motion, we could also iterate over all bug, eagles, ... but that would be more cumbersome
 	while (registry.motions.entities.size() > 0)
-	    registry.remove_all_components_of(registry.motions.entities.back());
+		registry.remove_all_components_of(registry.motions.entities.back());
 
-	// Remove all dashes 
+	// Remove all dashes
 	while (registry.dashes.entities.size() > 0)
-	    registry.remove_all_components_of(registry.dashes.entities.back());
-	
-	while (registry.gameScreens.entities.size() > 0) 
+		registry.remove_all_components_of(registry.dashes.entities.back());
+
+	while (registry.gameScreens.entities.size() > 0)
 		registry.remove_all_components_of(registry.gameScreens.entities.back());
-	
-	while (registry.buttons.entities.size() > 0 )
+
+	while (registry.buttons.entities.size() > 0)
 		registry.remove_all_components_of(registry.buttons.entities.back());
 
 	// debugging for memory/component leaks
 	registry.list_all_components();
+    
+	std::cout << "Creating Procedural Map, tutorial mode status :" << tutorial_mode << std::endl;
 
-	createPlayer(renderer, gridCellToPosition(WORLD_ORIGIN));
-	createMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
+    std::pair<int, int> playerPosition;
+	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
+
+	if (tutorial_mode) {
+		createPlayer(renderer, gridCellToPosition({0, 10}));
+		createEnemy(renderer, gridCellToPosition({12, 10}));
+		createKey(renderer, gridCellToPosition({16, 10}));
+		createChest(renderer, gridCellToPosition({19, 10}));
+	} else {
+		createPlayer(renderer, gridCellToPosition(vec2(playerPosition.second, playerPosition.first)));
+	}
+	
 	createMiniMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
 
-    createCamera();
+	createCamera();
 
-	// screens
-	if (previous_state == GameState::GAME_OVER || current_state == GameState::START_SCREEN) {
-		createStartScreen(WORLD_ORIGIN);
-	} else {
-		createStartScreen();
-	}
-	createShopScreen();
-	createInfoScreen();
 
-	// timer settings depending on previous state
-	if (current_state == GameState::START_SCREEN_ANIMATION) {
-		stateTimer = BOOT_CUTSCENE_DURATION_MS;
-	} else {
-		stateTimer = INTRO_CUTSCENE_DURATION_MS;
-	}
+	createStartScreen();
+
+
+	stateTimer = BOOT_CUTSCENE_DURATION_MS;
+	(renderer);
+
+	createUIElement(NUCLEUS_UI_POS,
+					vec2(NUCLEUS_UI_WIDTH, NUCLEUS_UI_HEIGHT),
+					TEXTURE_ASSET_ID::NUCLEUS_UI,
+					EFFECT_ASSET_ID::UI);
+	createHealthBar();
+	createDashRecharge();
+	createUIElement(GERMONEY_UI_POS,
+					vec2(GERMONEY_UI_WIDTH, GERMONEY_UI_HEIGHT),
+					TEXTURE_ASSET_ID::GERMONEY_UI,
+					EFFECT_ASSET_ID::UI);
+	createUIElement(WEAPON_PILL_UI_POS,
+					vec2(WEAPON_PILL_UI_WIDTH, WEAPON_PILL_UI_HEIGHT),
+					TEXTURE_ASSET_ID::WEAPON_PILL_UI,
+					EFFECT_ASSET_ID::UI);
 }
 
 // Compute collisions between entities
-void WorldSystem::handle_collisions() {
+void WorldSystem::handle_collisions()
+{
 
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// TODO A1: Loop over all collisions detected by the physics system
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	ComponentContainer<Collision>& collision_container = registry.collisions;
-	for (uint i = 0; i < collision_container.components.size(); i++) {
-		
-		Collision& collision = collision_container.components[i];
-		Entity& entity1 = collision_container.entities[i];
-		Entity& entity2 = collision.other;
+	ComponentContainer<Collision> &collision_container = registry.collisions;
+	for (uint i = 0; i < collision_container.components.size(); i++)
+	{
+
+		Collision &collision = collision_container.components[i];
+		Entity &entity1 = collision_container.entities[i];
+		Entity &entity2 = collision.other;
+		// if one is hexagon and one is player
+		if ((registry.players.has(entity1) && registry.keys.has(entity2)) || (registry.players.has(entity2) && registry.keys.has(entity1)))
+		{
+			// Set player and hexagon
+			Entity player_entity = registry.players.has(entity1) ? entity1 : entity2;
+			Entity key_entity = registry.keys.has(entity1) ? entity1 : entity2;
+
+			float predictionTime = 0.001f; // 100 ms = 0.1s
+
+			if (willMeshCollideSoon(player_entity, key_entity, predictionTime)) {
+				Motion& keyMotion = registry.motions.get(key_entity);
+				Motion& playerMotion = registry.motions.get(player_entity);
+
+				if (glm::length(playerMotion.velocity) > 0.0f) {
+					keyMotion.velocity = playerMotion.velocity * 3.0f;
+				} else {
+					keyMotion.velocity = vec2(0.0f, 0.0f);
+				}
+				std::cout << "Mesh collision imminent between player and hexagon" << std::endl;
+			} else {
+				std::cout << "No mesh collision predicted soon" << std::endl;
+			}
+
+		}
+
+		if ((registry.chests.has(entity1) && registry.keys.has(entity2)) || (registry.keys.has(entity1) && registry.chests.has(entity2)))
+		{
+			// Set player and hexagon
+			Entity key_entity = registry.keys.has(entity1) ? entity1 : entity2;
+			Entity chest_entity = registry.chests.has(entity1) ? entity1 : entity2;
+
+			Motion& keyMotion = registry.motions.get(key_entity);
+			Motion& chestMotion = registry.motions.get(chest_entity);
+
+			Mesh& chestMesh = *registry.meshPtrs.get(chest_entity);
+
+			std::vector<vec2> chestWorldVertices = getWorldVertices(chestMesh.textured_vertices, chestMotion.position, chestMotion.scale);
+
+			if (pointInHexagon(keyMotion.position, chestWorldVertices))
+			{
+				// remove chest
+				registry.remove_all_components_of(chest_entity);
+				registry.remove_all_components_of(key_entity);
+
+				if (tutorial_mode) {
+					current_state = GameState::NEXT_LEVEL;
+					tutorial_mode = false;
+					removeInfoBoxes();
+					restart_game();
+					removeStartScreen();
+				}
+			}
+		}
 
 		// should be deprecated no?
 		// if 1 is a projectile and 2 is an invader or if 1 is an invader and 2 is a projectile
-		if ((registry.projectiles.has(entity1) && registry.enemies.has(entity2)) || (registry.projectiles.has(entity2) && registry.enemies.has(entity1))) {
-			
+		if ((registry.projectiles.has(entity1) && registry.enemies.has(entity2)) || (registry.projectiles.has(entity2) && registry.enemies.has(entity1)))
+		{
+
 			// Set invader and projectile
 			Entity projectile_entity = registry.projectiles.has(entity1) ? entity1 : entity2;
 			Entity enemy_entity = registry.enemies.has(entity1) ? entity1 : entity2;
 
-			Enemy& enemy = registry.enemies.get(registry.enemies.has(entity1) ? entity1 : entity2);
-			Projectile& projectile = registry.projectiles.get(registry.projectiles.has(entity1) ? entity1 : entity2);
-			
+			Enemy &enemy = registry.enemies.get(registry.enemies.has(entity1) ? entity1 : entity2);
+			Projectile &projectile = registry.projectiles.get(registry.projectiles.has(entity1) ? entity1 : entity2);
+
 			// Invader takes damage
 			enemy.health -= projectile.damage;
 
 			// remove projectile
 			registry.remove_all_components_of(projectile_entity);
 
-			// if invader health is below 0, remove invader and increase points
-			if(enemy.health <= 0){
+			// if invader health is below 0
+			// remove invader and increase points
+			// buff created
+			if (enemy.health <= 0)
+			{
+				vec2 enemy_position = registry.motions.get(enemy_entity).position;
 				registry.remove_all_components_of(enemy_entity);
-				points += 1;
- 				Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS 
+				// level += 1;
+				Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS
+
+				createBuff(vec2(enemy_position.x + 60, enemy_position.y + 60));
 			}
+		}
+
+		if (registry.players.has(entity1) && registry.buffs.has(entity2))
+		{
+			collectBuff(entity1, entity2);
+		}
+		else if (registry.players.has(entity2) && registry.buffs.has(entity1))
+		{
+			collectBuff(entity2, entity1);
 		}
 
 		// player-enemy collision
 		if ((registry.players.has(entity1) && registry.enemies.has(entity2)) ||
-			(registry.players.has(entity2) && registry.enemies.has(entity1))) {
-			
+			(registry.players.has(entity2) && registry.enemies.has(entity1)))
+		{
+
 			Entity player_entity = registry.players.has(entity1) ? entity1 : entity2;
 			Entity enemy_entity = registry.enemies.has(entity1) ? entity1 : entity2;
+			Enemy &enemy = registry.enemies.get(enemy_entity);
 
-
-
-			if (isDashing()) {
+			/*
+			if (isDashing())
+			{
 				// remove invader
 				registry.remove_all_components_of(enemy_entity);
 				Mix_PlayChannel(-1, dash_sound_2, 0);
-			} else {
+			}
+			*/
+			// Kill enemy when dashing?
+			if (isDashing())
+			{
+				enemy.health -= PLAYER_DASH_DAMAGE;
+
+				if (enemy.health <= 0)
+				{
+					vec2 enemy_position = registry.motions.get(enemy_entity).position;
+					points += 1;
+					registry.remove_all_components_of(enemy_entity);
+					
+					createBuff(vec2(enemy_position.x + 60, enemy_position.y + 60));
+				}
+			}
+			else
+			{
 				// womp womp	game over or vignetted??
 				uint current_time = SDL_GetTicks();
-			
+
 				// then apply damage.
-				if (!registry.damageCooldowns.has(player_entity)) {
+				if (!registry.damageCooldowns.has(player_entity))
+				{
 					//  add the component and apply damage
-					registry.damageCooldowns.insert(player_entity, { current_time });
-				
-					Player& player = registry.players.get(player_entity);
-					player.health -= 1;
+					registry.damageCooldowns.insert(player_entity, {current_time});
+
+					Player &player = registry.players.get(player_entity);
+					player.current_health -= 1; // FLAG this is not the right kind of damage...
 					Mix_PlayChannel(-1, dash_sound_2, 0);
-				} else {
+				}
+				else
+				{
 					// retrieve the cooldown component
-					DamageCooldown& dc = registry.damageCooldowns.get(player_entity);
-					if (current_time - dc.last_damage_time >= 500) {
+					DamageCooldown &dc = registry.damageCooldowns.get(player_entity);
+					if (current_time - dc.last_damage_time >= 500)
+					{
 						dc.last_damage_time = current_time;
-						Player& player = registry.players.get(player_entity);
-						player.health -= 1;
+						Player &player = registry.players.get(player_entity);
+						player.current_health -= 1;
 						Mix_PlayChannel(-1, dash_sound_2, 0);
 					}
 				}
-				// registry.remove_all_components_of(player_entity);
-				// registry.vignetteTimers.insert(Entity(), { 1000.f });
-
-				// Mix_PlayChannel(-1, dash_sound_2, 0);
 			}
-
-			// We dont do this anymore FLAG
-			// registry.remove_all_components_of(enemy_entity);
-			// registry.remove_all_components_of(player_entity);
-			// Mix_PlayChannel(-1, dash_sound_2, 0);
-
-
-			// Trigger vignette shader
-			// ensure it stays dark for a second before returning to normal
-			// registry.vignetteTimers.insert(Entity(), { 1000.f });
-
-			// ScreenState &screen = registry.screenStates.components[1];
-			// screen.darken_screen_factor = 1;
-			// registry.deathTimers.insert(tower_entity, { 1000.f });
 		}
 	}
 	// Remove all collisions from this simulation step
@@ -431,64 +676,79 @@ void WorldSystem::handle_collisions() {
 }
 
 // Should the game be over ?
-bool WorldSystem::is_over() const {
+bool WorldSystem::is_over() const
+{
 	return bool(glfwWindowShouldClose(window));
 }
 
 // on key callback
-void WorldSystem::on_key(int key, int, int action, int mod) {
+void WorldSystem::on_key(int key, int, int action, int mod)
+{
 
 	// exit game w/ ESC
-	if (action == GLFW_RELEASE && key == GLFW_KEY_ESCAPE) {
+	if (action == GLFW_RELEASE && key == GLFW_KEY_ESCAPE)
+	{
 		close_window();
 	}
 
+	// toggle FPS display with F key
+	if (action == GLFW_RELEASE && key == GLFW_KEY_F)
+	{
+		toggleFPSDisplay();
+	}
+
 	// Resetting game
-	if (action == GLFW_RELEASE && key == GLFW_KEY_R) {
+	if (action == GLFW_RELEASE && key == GLFW_KEY_R)
+	{
 		int w, h;
 		glfwGetWindowSize(window, &w, &h);
 
-        restart_game();
+		restart_game();
 
 		previous_state = current_state;
 		current_state = GameState::START_SCREEN;
-
-		Entity startScreen = registry.starts.entities[0];
-		Motion& startScreenMotion = registry.motions.get(startScreen);
-		startScreenMotion.velocity = {0.f, 0.f};
-		startScreenMotion.position = {0.f, 0.f};
 	}
 
 	// Pausing Game
-	if (action == GLFW_RELEASE && key == GLFW_KEY_SPACE) {
-		if (current_state == GameState::GAME_PLAY) {
+	if (action == GLFW_RELEASE && key == GLFW_KEY_SPACE)
+	{
+		if (current_state == GameState::GAME_PLAY)
+		{
 			current_state = GameState::PAUSE;
 
 			// renderer.
 			createPauseScreen();
-
-		} else if (current_state == GameState::PAUSE) {
+		}
+		else if (current_state == GameState::PAUSE)
+		{
 			current_state = GameState::GAME_PLAY;
 			removePauseScreen();
 		}
 	}
 
 	// Debugging - not used in A1, but left intact for the debug lines
-	if (key == GLFW_KEY_D) {
-		if (action == GLFW_RELEASE) {
-			if (debugging.in_debug_mode) {
+	if (key == GLFW_KEY_D)
+	{
+		if (action == GLFW_RELEASE)
+		{
+			if (debugging.in_debug_mode)
+			{
 				debugging.in_debug_mode = false;
 			}
-			else {
+			else
+			{
 				debugging.in_debug_mode = true;
 			}
 		}
 	}
 
 	// using O key for gameover, for now
-	if (key == GLFW_KEY_O) {
-		if (action == GLFW_RELEASE) {
-			if (current_state == GameState::GAME_PLAY) {
+	if (key == GLFW_KEY_O)
+	{
+		if (action == GLFW_RELEASE)
+		{
+			if (current_state == GameState::GAME_PLAY)
+			{
 				previous_state = GameState::GAME_PLAY;
 				current_state = GameState::GAME_OVER;
 				createGameOverScreen();
@@ -497,99 +757,116 @@ void WorldSystem::on_key(int key, int, int action, int mod) {
 	}
 
 	// Q for going to start screen
-	if (key == GLFW_KEY_Q) {
-		if (action == GLFW_RELEASE) {
-			previous_state = current_state;
+	if (key == GLFW_KEY_Q)
+	{
+		if (action == GLFW_RELEASE)
+		{
+			restart_game();
 			current_state = GameState::START_SCREEN;
 			restart_game();
 		}
 	}
 }
 
-void WorldSystem::on_mouse_move(vec2 mouse_position) {
+void WorldSystem::on_mouse_move(vec2 mouse_position)
+{
 
 	// record the current mouse position
 	device_mouse_pos_x = mouse_position.x;
 	device_mouse_pos_y = mouse_position.y;
 }
 
-void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
+void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
+{
 
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// TODO A1: Handle mouse clicking for invader and tower placement.
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	// on button press
-	if (action == GLFW_RELEASE && !gameOver) {
+	if (action == GLFW_RELEASE && !gameOver)
+	{
 
 		vec2 tile = positionToGridCell(vec2(game_mouse_pos_x, game_mouse_pos_y));
 
-				
-		if(button == GLFW_MOUSE_BUTTON_LEFT && canDash() && current_state == GameState::GAME_PLAY)
+		if (button == GLFW_MOUSE_BUTTON_LEFT && canDash() && current_state == GameState::GAME_PLAY)
 		{
 			initiatePlayerDash();
 			Mix_PlayChannel(-1, dash_sound_1, 0);
 		}
-		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::START_SCREEN) 
+		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::START_SCREEN)
 		{
-			
-			screenButton* startButton = nullptr; 
 
-			for (auto& button : registry.buttons.components) {
-				if (button.type == ButtonType::STARTBUTTON) {
-					startButton = &button;  
+			screenButton *startButton = nullptr;
+
+			for (auto &button : registry.buttons.components)
+			{
+				if (button.type == ButtonType::STARTBUTTON)
+				{
+					startButton = &button;
 					break;
 				}
-			} 
+			}
 
-			if (!startButton) {
+			if (!startButton)
+			{
 				return;
-			} 
+			}
 
 			// Find shop button
-			screenButton* shopButton = nullptr; 
-			for (auto& button : registry.buttons.components) {
-				if (button.type == ButtonType::SHOPBUTTON) {
-					shopButton = &button; 
-					break;  
+			screenButton *shopButton = nullptr;
+			for (auto &button : registry.buttons.components)
+			{
+				if (button.type == ButtonType::SHOPBUTTON)
+				{
+					shopButton = &button;
+					break;
 				}
 			}
 
-			if (!shopButton) {
+			if (!shopButton)
+			{
 				return;
-			} 
+			}
 
-			screenButton* nucleusButton = nullptr; 
-			for (auto& button : registry.buttons.components) {
-				if (button.type == ButtonType::INFOBUTTON) {
-					nucleusButton = &button; 
-					break;  
+			screenButton *nucleusButton = nullptr;
+			for (auto &button : registry.buttons.components)
+			{
+				if (button.type == ButtonType::INFOBUTTON)
+				{
+					nucleusButton = &button;
+					break;
 				}
 			}
 
-			if (!nucleusButton) {
+			if (!nucleusButton)
+			{
 				return;
-			} 
+			}
 
+			
+			
 
 			bool on_button_shop = buttonClick(*shopButton);
 			bool on_button_nucleus = buttonClick(*nucleusButton);
 			bool on_button = buttonClick(*startButton);
-			
 
-
-
-
-
-			if (on_button_shop) {
+			if (on_button_shop)
+			{
 				previous_state = current_state;
 				current_state = GameState::SHOP;
-
-			} else if (on_button_nucleus) {
+				removeStartScreen();
+				createShopScreen();
+			}
+			else if (on_button_nucleus)
+			{
 				previous_state = current_state;
 				current_state = GameState::INFO;
-
-			} else if (on_button) {
+				removeStartScreen();
+				createInfoScreen();
+			}
+			else if (on_button)
+			{
 				previous_state = current_state;
 				current_state = GameState::GAMEPLAY_CUTSCENE;
 				// need to add render request for cutscene animations
@@ -598,85 +875,57 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 			}
 		}
 
-		// gameplay -> shop
-		else if(button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::GAME_PLAY) {
-			
-			// Find shop button
-			screenButton* shopButton = nullptr; 
-			for (auto& button : registry.buttons.components) {
-				if (button.type == ButtonType::SHOPBUTTON) {
-					shopButton = &button; 
-					break;  
+		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::SHOP)
+		{
+			// Find back button
+			screenButton *backButton = nullptr;
+			for (auto &button : registry.buttons.components)
+			{
+				if (button.type == ButtonType::BACKBUTTON)
+				{
+					backButton = &button;
+					break;
 				}
 			}
 
-			if (!shopButton) {
+			if (!backButton)
+			{
 				return;
-			} 
-
-			screenButton* nucleusButton = nullptr; 
-			for (auto& button : registry.buttons.components) {
-				if (button.type == ButtonType::INFOBUTTON) {
-					nucleusButton = &button; 
-					break;  
-				}
 			}
 
-			if (!nucleusButton) {
-				return;
-			} 
-
-
-			bool on_button_shop = buttonClick(*shopButton);
-			bool on_button_nucleus = buttonClick(*nucleusButton);
-			
-
-			if (on_button_shop) {
-				previous_state = current_state;
-				current_state = GameState::SHOP;
-			} else if (on_button_nucleus) {
-				previous_state = current_state;
-				current_state = GameState::INFO;
-			}
-		}
-
-		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::SHOP) {
-			// Find shop button
-			screenButton* shopButton = nullptr; 
-			for (auto& button : registry.buttons.components) {
-				if (button.type == ButtonType::SHOPBUTTON) {
-					shopButton = &button; 
-					break;  
-				}
-			}
-
-			if (!shopButton) {
-				return;
-			} 
-
-			bool on_button_shop = buttonClick(*shopButton);
-			if (on_button_shop) {
+			bool on_button_back = buttonClick(*backButton);
+			if (on_button_back)
+			{
+				removeShopScreen();
+				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
 				current_state = previous_state;
 				previous_state = temp;
 			}
-
-		} 
-		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::INFO) {
-			screenButton* nucleusButton = nullptr; 
-			for (auto& button : registry.buttons.components) {
-				if (button.type == ButtonType::INFOBUTTON) {
-					nucleusButton = &button; 
-					break;  
+		}
+		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::INFO)
+		{
+			// Find back button
+			screenButton *backButton = nullptr;
+			for (auto &button : registry.buttons.components)
+			{
+				if (button.type == ButtonType::BACKBUTTON)
+				{
+					backButton = &button;
+					break;
 				}
 			}
 
-			if (!nucleusButton) {
+			if (!backButton)
+			{
 				return;
-			} 
+			}
 
-			bool on_button_shop = buttonClick(*nucleusButton);
-			if (on_button_shop) {
+			bool on_button_back = buttonClick(*backButton);
+			if (on_button_back)
+			{
+				removeInfoScreen();
+				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
 				current_state = previous_state;
 				previous_state = temp;
@@ -684,9 +933,10 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 		}
 
 		// gameover state -> start screen state
-		else if(button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::GAME_OVER) {
+		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::GAME_OVER)
+		{
 			previous_state = current_state;
-			current_state = GameState::START_SCREEN;
+			current_state = GameState::START_SCREEN_ANIMATION;
 
 			removeGameOverScreen();
 			restart_game();
@@ -694,7 +944,8 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 	}
 }
 
-bool WorldSystem::buttonClick(screenButton& button) {
+bool WorldSystem::buttonClick(screenButton &button)
+{
 	float button_x = button.center[0];
 	float button_y = button.center[1];
 
@@ -703,11 +954,58 @@ bool WorldSystem::buttonClick(screenButton& button) {
 
 	bool res = (x_distance < button.w / 2.f) && (y_distance < button.h / 2.f);
 
-
 	// std::cout << device_mouse_pos_x << " " << device_mouse_pos_y << std::endl;
 	// std::cout << game_mouse_pos_x << " " << game_mouse_pos_y << std::endl;
 	// std::cout << button_x << " " << button_y << std::endl;
 	// std::cout << "button: " << res << std::endl;
 
 	return res;
+}
+
+void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
+{
+
+	Player &player = registry.players.get(player_entity);
+	if (!registry.buffs.has(buff_entity))
+	{
+		return;
+	}
+
+	Buff &buff = registry.buffs.get(buff_entity);
+	buff.collected = true;
+
+	registry.remove_all_components_of(buff_entity);
+
+	switch (buff.type)
+	{
+	case 0: // Tail
+		player.speed *= 1.05f;
+		std::cout << "Collected Tail: Player Speed increased by 5%" << std::endl;
+		break;
+
+	case 1: // Mitochondria
+		player.dash_cooldown_ms *= 0.95f;
+		std::cout << "Collected Mitochondria: Dash cooldown decreased by 5%" << std::endl;
+		break;
+
+	case 2: // Hemoglobin
+		player.detection_range *= 0.95f;
+		std::cout << "Collected Hemoglobin: Enemies Detection range decreased by 5%" << std::endl;
+		break;
+
+	case 3: // Golgi Apparatus Buff (need to be implemented)
+		
+		std::cout << "Collected Golgi Body: need to be implemented" << std::endl;
+		break;
+
+	case 4: // Chloroplast
+		player.healing_rate += 0.05;
+	std::cout << "Collected Chloroplast: Healing increased by 5% " << std::endl;
+		break;
+	default:
+		std::cerr << "Unknown buff type: " << buff.type << std::endl;
+		break;
+	}
+
+	renderCollectedBuff(renderer, buff.type);
 }

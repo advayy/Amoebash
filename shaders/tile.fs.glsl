@@ -31,7 +31,7 @@ vec2 get_offset_texcoord(vec2 texcoord, int frame) {
 vec2 apply_paralax(vec2 texcoord, int frame, vec2 camera_position) {
 
     float frameIndex = frame;
-    float parallaxFactor = float(frame)/float(total_frames - 1);
+    float parallaxFactor = (float(frame))/float(total_frames - 1);
 
     vec2 adjustedTexCoord = texcoord + ((camera_position/3000) * parallaxFactor);
 
@@ -58,15 +58,19 @@ void main()
 	for (int i = current_frame; i < total_frames; i++) {
 
 		vec2 texcoord = get_offset_texcoord(texcoord, i);
-		texcoord = apply_paralax(texcoord, i, camera_position);
+
+		if (!(i == total_frames - 1)) {
+			texcoord = apply_paralax(texcoord, i, camera_position);
+		}
 
 		vec4 layer_color = texture(sampler0, texcoord);
 
 		if(i == 0) {
 			fcolor = layer_color;
-		} else if (layer_color.a > 0.0) {
+		} else if (layer_color.a == 1.0) {
 			fcolor = layer_color;
 		}
 	}	
+	
 	color = fcolor;
 }
