@@ -12,6 +12,7 @@
 #include "world_system.hpp"
 #include "animation_system.hpp"
 #include "world_init.hpp"
+#include "particle_system.hpp"
 
 using Clock = std::chrono::high_resolution_clock;
 
@@ -24,6 +25,7 @@ int main()
 	WorldSystem world_system;
 	RenderSystem renderer_system;
 	PhysicsSystem physics_system;
+    ParticleSystem particle_system;
 
 	// initialize window
 	GLFWwindow *window = world_system.create_window();
@@ -93,6 +95,7 @@ int main()
 			animation_system.step(elapsed_ms);
 			physics_system.step(elapsed_ms);
 			world_system.handle_collisions();
+            particle_system.step(elapsed_ms);
 
 			renderer_system.draw();
 			renderer_system.drawUIElements();

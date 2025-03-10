@@ -11,6 +11,7 @@
 #include <glm/gtx/compatibility.hpp>
 
 #include "physics_system.hpp"
+#include "particle_system.hpp"
 
 bool tutorial_mode = true;
 
@@ -340,6 +341,11 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	handlePlayerMovement(elapsed_ms_since_last_update);
 	handlePlayerHealth(elapsed_ms_since_last_update);
 
+	
+	// step the particle system only when its needed
+	// for optimaztion, we could only step the particles that are on screen
+	particle_system.step(elapsed_ms_since_last_update);
+
 	return true;
 }
 
@@ -593,6 +599,7 @@ void WorldSystem::handle_collisions()
 				Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS
 
 				createBuff(vec2(enemy_position.x + 60, enemy_position.y + 60));
+				particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
 			}
 		}
 
@@ -634,6 +641,7 @@ void WorldSystem::handle_collisions()
 					registry.remove_all_components_of(enemy_entity);
 					
 					createBuff(vec2(enemy_position.x + 60, enemy_position.y + 60));
+					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
 				}
 			}
 			else

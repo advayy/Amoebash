@@ -6,12 +6,16 @@
 // stlib
 #include <vector>
 #include <random>
+#include <memory>
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include <SDL_mixer.h>
 
 #include "render_system.hpp"
+#include "particle_system.hpp"
+
+class ParticleSystem;
 
 enum class GameState
 {
@@ -112,6 +116,9 @@ private:
 	// Game state
 	RenderSystem *renderer;
 	float current_speed;
+
+	// particle
+	ParticleSystem particle_system;
 
 	// grid
 	std::vector<Entity> grid_lines;
