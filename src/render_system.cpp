@@ -339,7 +339,7 @@ void RenderSystem::draw()
 	{
 		if (registry.keys.has(entity) || registry.chests.has(entity)) {
 			drawHexagon(entity, projection_2D);
-		} else if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity))
+		} else if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity) && !registry.portals.has(entity))
 		{
 			drawTexturedMesh(entity, projection_2D);
 		}

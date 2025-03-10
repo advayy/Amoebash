@@ -350,11 +350,11 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 		// assign portal to random empty tile
 		std::pair<int, int> portalTile = getRandomEmptyTile(map.map);
 
-        while (!isPathAvailable(map.map, playerTile, portalTile)) {
-            std::cout << "PATH DOES NOT EXIST, TRYING AGAIN." << std::endl;
+        while (getDistance(map.map, playerTile, portalTile) < 15) {
+            std::cout << "PATH DOES NOT EXIST OR NOT ENOUGH DISTANCE, TRYING AGAIN." << std::endl;
             portalTile = getRandomEmptyTile(map.map);
         }
-        std::cout << "PATH EXISTS!" << std::endl;
+        std::cout << "PATH EXISTS AND IS GOOD DISTANCE!" << std::endl;
         
         map.map[portalTile.second][portalTile.first] = tileType::PORTAL;
 	}
@@ -891,7 +891,7 @@ Entity createCutSceneBackGround()
 	Motion &motion = registry.motions.emplace(backGroundEntity);
 	motion.angle = 0.0f;
 	motion.velocity = {0.0f, 0.0f};
-	motion.position = {0.0f, 0.0f};
+	motion.position = WORLD_ORIGIN;
 
 	motion.scale = vec2({WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX});
 
@@ -1233,7 +1233,7 @@ std::pair<int, int> getRandomEmptyTile(const std::vector<std::vector<tileType>>&
     return emptyTiles[randomIndex];
 }
 
-bool isPathAvailable(const std::vector<std::vector<tileType>>& grid, std::pair<int,int> start, std::pair<int,int> end) {
+int getDistance(const std::vector<std::vector<tileType>>& grid, std::pair<int,int> start, std::pair<int,int> end) {
     if (start.first < 0 || start.second < 0 || end.first < 0 || end.second < 0) return false;
     if (start.second >= (int)grid.size() || end.second >= (int)grid.size()) return false;
     if (start.first >= (int)grid[0].size() || end.first >= (int)grid[0].size()) return false;
@@ -1243,16 +1243,19 @@ bool isPathAvailable(const std::vector<std::vector<tileType>>& grid, std::pair<i
         return false;
 
     std::vector<std::vector<bool>> visited(grid.size(), std::vector<bool>(grid[0].size(), false));
-    std::queue<std::pair<int,int>> bfsQueue;
+    std::vector<std::vector<int>> distance(grid.size(), std::vector<int>(grid[0].size(), -1));
+
+    std::queue<std::pair<int, int>> bfsQueue;
     bfsQueue.push(start);
     visited[start.second][start.first] = true;
+    distance[start.second][start.first] = 0;
 
     std::vector<std::pair<int,int>> directions = {{0,1},{0,-1},{1,0},{-1,0}};
     while (!bfsQueue.empty()) {
         auto [cx, cy] = bfsQueue.front();
         bfsQueue.pop();
 
-        if (cx == end.first && cy == end.second) return true;
+        if (cx == end.first && cy == end.second) return distance[cy][cx];
 
         for (auto [dx, dy] : directions) {
             int nx = cx + dx;
@@ -1261,13 +1264,14 @@ bool isPathAvailable(const std::vector<std::vector<tileType>>& grid, std::pair<i
             if (nx >= 0 && ny >= 0 && ny < (int)grid.size() && nx < (int)grid[0].size()) {
                 if (!visited[ny][nx] && grid[ny][nx] == tileType::EMPTY) {
                     visited[ny][nx] = true;
+                    distance[ny][nx] = distance[cy][cx] + 1;
                     bfsQueue.push({nx, ny});
                 }
             }
         }
     }
 
-    return false;
+    return -1;
 }
 
 

@@ -289,14 +289,9 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 				// reset timer
 				next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
 	
-				// randomize position
-				int map_w = MAP_RIGHT - MAP_LEFT;
-				int map_h = MAP_BOTTOM - MAP_TOP;
-				int randomXCell = MAP_LEFT + (int)(uniform_dist(rng) * map_w);
-				int randomYCell = MAP_TOP + (int)(uniform_dist(rng) * map_h);
-				vec2 enemyPosition = gridCellToPosition({(float)randomXCell, (float)randomYCell});
-	
-				createEnemy(renderer, enemyPosition);
+				// randomize empty tile on mpa
+                std::pair<int, int> enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
+				createEnemy(renderer, gridCellToPosition({enemyPosition.second, enemyPosition.first}));
 	
 				// Optional debug output for spawning enemies
 				// std::cout << "TOTAL ENEMIES: " << registry.enemies.entities.size() << std::endl;
@@ -706,7 +701,7 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 		restart_game();
 
 		previous_state = current_state;
-		current_state = GameState::START_SCREEN;
+		current_state = GameState::START_SCREEN_ANIMATION;
 	}
 
 	// Pausing Game

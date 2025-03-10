@@ -72,7 +72,7 @@ Entity createBackButton();
 int countAdjacentWalls(const std::vector<int>& grid, int x, int y);
 std::vector<std::vector<tileType>> applyCellularAutomataRules(const std::vector<std::vector<tileType>>& grid);
 std::pair<int, int> getRandomEmptyTile(const std::vector<std::vector<tileType>>& grid);
-bool isPathAvailable(const std::vector<std::vector<tileType>>& grid, std::pair<int,int> start, std::pair<int,int> end);
+int getDistance(const std::vector<std::vector<tileType>>& grid, std::pair<int,int> start, std::pair<int,int> end);
 
 Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, EFFECT_ASSET_ID effect_id);
 Entity createHealthBar();
