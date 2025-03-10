@@ -303,7 +303,7 @@ bool willMeshCollideSoon(const Entity& player, const Entity& hexagon, float pred
 	std::vector<vec2> hexagonWorldVertices = getWorldVertices(hexagonMesh.textured_vertices, hexagonFuturePos, hexagonMotion.scale);
 	int numVertices = hexagonWorldVertices.size();
 
-	bool inside = pointInHexagon(playerCenter, hexagonWorldVertices);
+	bool inside = pointInPolygon(playerCenter, hexagonWorldVertices);
 
 	// check the distance from circle (player) to edge
 	for (int i = 0; i < numVertices; i++) {
@@ -330,7 +330,7 @@ bool willMeshCollideSoon(const Entity& player, const Entity& hexagon, float pred
 	return false;
 }
 
-bool pointInHexagon(const vec2& point, const std::vector<vec2> &polygon)
+bool pointInPolygon(const vec2& point, const std::vector<vec2> &polygon)
 {
 	bool inside = false;
 

@@ -115,6 +115,7 @@ public:
 	};
 
 	void initializeGlGeometryBuffers();
+	std::vector<TexturedVertex> loadMeshVertices(const std::string &filename);
 
 	// Initialize the screen texture used as intermediate render target
 	// The draw loop first renders to this texture, then it is used for the vignette shader

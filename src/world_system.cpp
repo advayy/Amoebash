@@ -649,7 +649,7 @@ void WorldSystem::handle_collisions()
 
 				std::vector<vec2> chestWorldVertices = getWorldVertices(chestMesh.textured_vertices, chestMotion.position, chestMotion.scale);
 
-				if (pointInHexagon(keyMotion.position, chestWorldVertices))
+				if (pointInPolygon(keyMotion.position, chestWorldVertices))
 				{
 					// remove chest
 					registry.remove_all_components_of(entity);

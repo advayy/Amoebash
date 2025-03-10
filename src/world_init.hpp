@@ -29,7 +29,7 @@ void initiatePlayerDash();
 bool canDash();
 bool isDashing();
 bool willMeshCollideSoon(const Entity& player, const Entity& hexagon, float predictionTime);
-bool pointInHexagon(const vec2& point, const std::vector<vec2> &polygon);
+bool pointInPolygon(const vec2& point, const std::vector<vec2> &polygon);
 std::vector<vec2> getWorldVertices(const std::vector<TexturedVertex>& vertices, const vec2 &position, const vec2 &scale);
 
 
