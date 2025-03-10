@@ -167,16 +167,21 @@ void initiatePlayerDash()
 
 	if (isDashing())
 	{
-		for (Entity &entity : registry.dashes.entities)
+		for (Entity& entity : registry.dashes.entities)
 		{
-			registry.remove_all_components_of(entity);
+			registry.dashes.remove(entity);
 		}
 	}
 
 	player.dash_count--;
 
 	Dashing &d = registry.dashes.emplace(Entity());
-	d.angle = player_motion.angle;
+	d.angle_deg = player_motion.angle;
+	float angle_radians = (d.angle_deg - 90) * (M_PI / 180.0f);
+	d.velocity = {
+		player.dash_speed * cosf(angle_radians),
+		player.dash_speed * sinf(angle_radians)
+	};
 	d.timer_ms = DASH_DURATION_MS;
 	player.dash_cooldown_timer_ms = player.dash_cooldown_ms;
 
@@ -285,6 +290,9 @@ std::vector<vec2> getWorldVertices(const std::vector<TexturedVertex>& vertices, 
 
 
 Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, std::pair<int, int>& playerPosition) {
+    // print entering map
+    std::cout << "Entering createProceduralMap" << std::endl;
+
     for (Entity& entity : registry.proceduralMaps.entities) {
         registry.remove_all_components_of(entity);
     }
@@ -297,7 +305,6 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 
     auto entity = Entity();
 	ProceduralMap& map = registry.proceduralMaps.emplace(entity);
-
 
     // initalize map dimensions
 	map.width = size.x;
@@ -322,43 +329,63 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 				}
 			}
 		}
-
-		// map.map[map.height-1][hall_x] = tileType::PORTAL;
-
 		std::cout << "Created InfoBoxes" << std::endl;
 
 	} else {
 		std::cout << "Should randomize map" << std::endl;
 	
 		// Initialize map to random walls / floors
-		const int wallProbability = 40;
-		for (int y = 0; y < map.height; ++y) {
-			for (int x = 0; x < map.width; ++x) {
-				map.map[y][x] = (std::rand() % 100 < wallProbability) ? tileType::WALL : tileType::EMPTY;
-			}
-		}
-		
-		// Call cellular automata algorithm
-		map.map = applyCellularAutomataRules(map.map);
+        std::random_device rd;
+		std::default_random_engine rng(rd());
+		std::uniform_int_distribution<int> uniform_dist(0, 99);
 
-        // assign player to random empty tile
-        std::pair<int, int> playerTile = getRandomEmptyTile(map.map);
-        playerPosition.first = playerTile.first;
-        playerPosition.second = playerTile.second;
-	
-		// assign portal to random empty tile
-		std::pair<int, int> portalTile = getRandomEmptyTile(map.map);
+        const int wallProbability = 40;
+        do {
+            for (int y = 0; y < map.height; ++y) {
+                for (int x = 0; x < map.width; ++x) {
+                    int random_value = uniform_dist(rng);
+                    map.map[y][x] = (random_value < wallProbability ? tileType::WALL : tileType::EMPTY);
+                }
+            }
+            
+            // Call cellular automata algorithm
+            map.map = applyCellularAutomataRules(map.map);
+            
+            // assign player to random empty tile
+            std::pair<int, int> playerTile = getRandomEmptyTile(map.map);
+            playerPosition.first = playerTile.first;
+            playerPosition.second = playerTile.second;
+            
+            // assign portal to random empty tile
+            std::pair<int, int> portalTile = getRandomEmptyTile(map.map);
 
-        while (getDistance(map.map, playerTile, portalTile) < 15) {
-            std::cout << "PATH DOES NOT EXIST OR NOT ENOUGH DISTANCE, TRYING AGAIN." << std::endl;
-            portalTile = getRandomEmptyTile(map.map);
-        }
-        std::cout << "PATH EXISTS AND IS GOOD DISTANCE!" << std::endl;
-        
-        map.map[portalTile.second][portalTile.first] = tileType::PORTAL;
+            // print map
+            for (int y = 0; y < map.height; ++y) {
+                for (int x = 0; x < map.width; ++x) {
+                    if (x == playerTile.first && y == playerTile.second) {
+                        std::cout << "!!";
+                    } else if (x == portalTile.first && y == portalTile.second) {
+                        std::cout << "P";
+                    } else {
+                        std::cout << (map.map[y][x] == tileType::WALL ? "X" : ".");
+                    }
+                }
+                std::cout << std::endl;
+            }
+
+            if (getDistance(map.map, playerTile, portalTile) < 15) {
+                std::cout << "PATH DOES NOT EXIST OR NOT ENOUGH DISTANCE, TRYING AGAIN." << std::endl;
+                continue;
+            }
+
+            std::cout << "PATH EXISTS AND IS GOOD DISTANCE!" << std::endl;
+            map.map[portalTile.second][portalTile.first] = tileType::PORTAL;
+
+            return entity;
+        } while (true);
 	}
 
-	return entity;
+    return entity;
 }
 
 void createInfoBoxes() {
@@ -486,6 +513,8 @@ void tileProceduralMap() {
 
 	ProceduralMap& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]);
 
+	std::map<int, std::map<int, int>> currentTiles;
+
 	// remove all tiles that arent in the chunk distance
 	for (Entity &entity : registry.tiles.entities)
 	{
@@ -495,12 +524,16 @@ void tileProceduralMap() {
 		vec2 cameraGrid = {cameraGrid_x, cameraGrid_y};
 		if (abs(glm::distance(cameraGrid, tilePos)) > CHUNK_DISTANCE)
 		{
-			removeTile({tile.grid_x, tile.grid_y});
+			registry.remove_all_components_of(entity);
+		}
+		else
+		{
+			// mark this tile as already drawn, so we don't create it again
+			currentTiles[tile.grid_x][tile.grid_y] = 1;
 		}
 	}
 
 	// setting map bounds
-
 	int left = (cameraGrid_x - (WINDOW_GRID_WIDTH / 2) - CHUNK_DISTANCE / 2);	 // max((cameraGrid_x - (WINDOW_GRID_WIDTH/2 + CHUNK_DISTANCE/2)), (float) map.left);
 	int right = (cameraGrid_x + (WINDOW_GRID_WIDTH / 2) + CHUNK_DISTANCE / 2);	 // min((cameraGrid_x + (WINDOW_GRID_WIDTH/2 +CHUNK_DISTANCE/2)), (float) map.right);
 	int top = (cameraGrid_y - (WINDOW_GRID_HEIGHT / 2) - CHUNK_DISTANCE / 2);	 // max((cameraGrid_y - (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.top);
@@ -512,18 +545,27 @@ void tileProceduralMap() {
 		{
 			vec2 gridCoord = {x, y};
 
+			// check for already existing tiles, don't need to draw these again
+			if (currentTiles.find(x) != currentTiles.end() && currentTiles[x].find(y) != currentTiles[x].end()) continue;
+
 			if (x < map.left || x >= map.right || y < map.top || y >= map.bottom) {
 				addWallTile(gridCoord);
 			} else if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE) {
 				
 				// print here
 				// std::cout << "x: " << x << " y: " << y << std::endl;
-				if (map.map[x][y] == tileType::EMPTY) { // if its being tiled what tile to put
-					addTile(gridCoord);
-                } else if (map.map[x][y] == tileType::PORTAL) {
-                    addTile(gridCoord);
+				if (map.map[x][y] == tileType::EMPTY) 
+				{
+					// if its being tiled what tile to put
+					addParalaxTile(gridCoord);
+                } 
+				else if (map.map[x][y] == tileType::PORTAL) 
+				{
+					addParalaxTile(gridCoord);
                     addPortalTile(gridCoord);
-                } else {
+                } 
+				else 
+				{
 					addWallTile(gridCoord);
 				}
 			}
@@ -531,84 +573,16 @@ void tileProceduralMap() {
 	}
 }
 
-Entity addTile(vec2 gridCoord)
+Entity addParalaxTile(vec2 gridCoord)
 {
-	for (Entity &entity : registry.tiles.entities)
-	{
-		Tile &tile = registry.tiles.get(entity);
-		if (tile.grid_x == gridCoord.x && tile.grid_y == gridCoord.y)
-		{
-			return entity;
-		}
-	}
-
-	Entity newTile = Entity();
-	Tile &new_tile = registry.tiles.emplace(newTile);
-	new_tile.grid_x = gridCoord.x;
-	new_tile.grid_y = gridCoord.y;
-
-	Motion &motion = registry.motions.emplace(newTile);
-	motion.position = gridCellToPosition(gridCoord);
-	motion.angle = 0.f;
-	motion.velocity = {0, 0};
-	motion.scale = {GRID_CELL_WIDTH_PX, GRID_CELL_HEIGHT_PX};
-
-	registry.renderRequests.insert(
-		newTile,
-		{TEXTURE_ASSET_ID::PARALAX_TILE,
-		 EFFECT_ASSET_ID::TILE,
-		 GEOMETRY_BUFFER_ID::SPRITE});
-
-	// Add spritesheet component to tile
-	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(newTile);
-	spriteSheet.total_frames = 3;
-
-	// Add sprite size component to tile
-	SpriteSize &sprite = registry.spritesSizes.emplace(newTile);
-	sprite.width = GRID_CELL_WIDTH_PX;
-	sprite.height = GRID_CELL_HEIGHT_PX;
-
-	return newTile;
+	return addTile(gridCoord, TEXTURE_ASSET_ID::PARALAX_TILE, 3);
 }
 
 Entity addWallTile(vec2 gridCoord)
 {
-	for (Entity &entity : registry.tiles.entities)
-	{
-		Tile &tile = registry.tiles.get(entity);
-		if (tile.grid_x == gridCoord.x && tile.grid_y == gridCoord.y)
-		{
-			return entity;
-		}
-	}
-
-	Entity newTile = Entity();
-	Tile &new_tile = registry.tiles.emplace(newTile);
-	new_tile.grid_x = gridCoord.x;
-	new_tile.grid_y = gridCoord.y;
-
-	Motion &motion = registry.motions.emplace(newTile);
-	motion.position = gridCellToPosition(gridCoord);
-	motion.angle = 0.f;
-	motion.velocity = {0, 0};
-	motion.scale = {GRID_CELL_WIDTH_PX, GRID_CELL_HEIGHT_PX};
-
-	registry.renderRequests.insert(
-		newTile,
-		{TEXTURE_ASSET_ID::WALL_TILE,
-		 EFFECT_ASSET_ID::TILE,
-		 GEOMETRY_BUFFER_ID::SPRITE});
-
-	// Add spritesheet component to tile
-	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(newTile);
-	spriteSheet.total_frames = 1;
-
-	// Add sprite size component to tile
-	SpriteSize &sprite = registry.spritesSizes.emplace(newTile);
-	sprite.width = GRID_CELL_WIDTH_PX;
-	sprite.height = GRID_CELL_HEIGHT_PX;
-
-	return newTile;
+	auto tile = addTile(gridCoord, TEXTURE_ASSET_ID::WALL_TILE, 1);
+	registry.walls.emplace(tile);
+	return tile;
 }
 
 Entity addPortalTile(vec2 gridCoord) {
@@ -655,17 +629,38 @@ Entity addPortalTile(vec2 gridCoord) {
     return newTile;
 }
 
-void removeTile(vec2 gridCoord)
+Entity addTile(vec2 gridCoord, TEXTURE_ASSET_ID texture_id, int total_frames)
 {
-	for (Entity &entity : registry.tiles.entities)
-	{
-		Tile &tile = registry.tiles.get(entity);
-		if (tile.grid_x == gridCoord.x && tile.grid_y == gridCoord.y)
+	Entity newTile = Entity();
+
+	Tile& new_tile = registry.tiles.emplace(newTile);
+	new_tile.grid_x = gridCoord.x;
+	new_tile.grid_y = gridCoord.y;
+
+	Motion& motion = registry.motions.emplace(newTile);
+	motion.position = gridCellToPosition(gridCoord);
+	motion.angle = 0.f;
+	motion.velocity = { 0, 0 };
+	motion.scale = { GRID_CELL_WIDTH_PX, GRID_CELL_HEIGHT_PX };
+
+	registry.renderRequests.insert(
+		newTile,
 		{
-			registry.remove_all_components_of(entity);
-			return;
-		}
-	}
+			texture_id,
+			EFFECT_ASSET_ID::TILE,
+			GEOMETRY_BUFFER_ID::SPRITE
+		});
+
+	// Add spritesheet component to tile
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(newTile);
+	spriteSheet.total_frames = total_frames;
+
+	// Add sprite size component to tile
+	SpriteSize& sprite = registry.spritesSizes.emplace(newTile);
+	sprite.width = GRID_CELL_WIDTH_PX;
+	sprite.height = GRID_CELL_HEIGHT_PX;
+
+	return newTile;
 }
 
 vec2 positionToGridCell(vec2 position)
@@ -938,10 +933,10 @@ Entity createNose()
 
 	spriteSheet.total_frames = 7;
 
-	std::random_device rd;
-	std::default_random_engine rng(rd());
 	std::uniform_real_distribution<float> uniform_dist(0.0f, 1.0f);
 
+    std::random_device rd;
+    std::default_random_engine rng(rd());
 	int random_value = static_cast<int>(uniform_dist(rng) * spriteSheet.total_frames);
 	spriteSheet.current_frame = random_value;
 
@@ -976,10 +971,10 @@ Entity createNoseAccent()
 	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(accentEntity);
 	spriteSheet.total_frames = 5;
 
-	std::random_device rd;
-	std::default_random_engine rng(rd());
 	std::uniform_real_distribution<float> uniform_dist(0.0f, 1.0f);
 
+    std::random_device rd;
+    std::default_random_engine rng(rd());
 	int random_value = static_cast<int>(uniform_dist(rng) * spriteSheet.total_frames);
 	std::cout << random_value << std::endl;
 	spriteSheet.current_frame = random_value;
@@ -1228,8 +1223,10 @@ std::pair<int, int> getRandomEmptyTile(const std::vector<std::vector<tileType>>&
         }
     }
 
-    int randomIndex = std::rand() % emptyTiles.size();
-    return emptyTiles[randomIndex];
+    std::random_device rd;
+    std::default_random_engine rng(rd());
+    std::uniform_int_distribution<int> uniform_dist(0, emptyTiles.size() - 1);
+    return emptyTiles[uniform_dist(rng)];
 }
 
 int getDistance(const std::vector<std::vector<tileType>>& grid, std::pair<int,int> start, std::pair<int,int> end) {

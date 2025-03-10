@@ -36,6 +36,7 @@ public:
 	ComponentContainer<Dashing> dashes;
 	ComponentContainer<Map> maps;
 	ComponentContainer<Tile> tiles;
+	ComponentContainer<Wall> walls;
 	ComponentContainer<Camera> cameras;
 	ComponentContainer<SpriteSheetImage> spriteSheetImages;
 
@@ -95,6 +96,7 @@ public:
 		registry_list.push_back(&dashes);
 		registry_list.push_back(&maps);
 		registry_list.push_back(&tiles);
+		registry_list.push_back(&walls);
 		registry_list.push_back(&cameras);
 		registry_list.push_back(&spriteSheetImages);
 		registry_list.push_back(&buttons);

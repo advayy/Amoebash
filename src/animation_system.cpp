@@ -9,16 +9,20 @@ void AnimationSystem::step(float elapsed_ms)
 		Animation& animation = registry.animations.get(entity);
 		SpriteSheetImage& sprite_sheet = registry.spriteSheetImages.get(entity);
 
+		// check if frame should be updated
 		if (animation.time_since_last_frame >= animation.time_per_frame)
 		{
+			// we've reached the last frame going forwards
 			if (animation.forwards && sprite_sheet.current_frame + 1 > animation.end_frame)
 			{
 				if (animation.loop == ANIM_LOOP_TYPES::NO_LOOP)
 				{
+					// animation is over since no loop, remove the entity from game
 					registry.remove_all_components_of(entity);
 				}
 				else if (animation.loop == ANIM_LOOP_TYPES::PING_PONG)
 				{
+					// go backwards through the frames
 					sprite_sheet.current_frame--;
 					animation.forwards = !animation.forwards;
 				}
@@ -27,6 +31,7 @@ void AnimationSystem::step(float elapsed_ms)
 					sprite_sheet.current_frame = animation.start_frame;
 				}
 			}
+			// we've reached the last frame going backwards
 			else if (!animation.forwards && sprite_sheet.current_frame - 1 < animation.start_frame)
 			{
 				if (!animation.forwards && animation.loop == ANIM_LOOP_TYPES::NO_LOOP)
@@ -35,6 +40,7 @@ void AnimationSystem::step(float elapsed_ms)
 				}
 				else if (animation.loop == ANIM_LOOP_TYPES::PING_PONG)
 				{
+					// go forwards through the frames
 					sprite_sheet.current_frame++;
 					animation.forwards = !animation.forwards;
 				}

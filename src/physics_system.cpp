@@ -40,11 +40,35 @@ void PhysicsSystem::step(float elapsed_ms)
 	float topBound = MAP_TOP * GRID_CELL_HEIGHT_PX;
 	float bottomBound = MAP_BOTTOM * GRID_CELL_HEIGHT_PX - 1;
 
-	// cache player's motion if players exist
-	Motion *playerMotion = nullptr;
-	if (!registry.players.entities.empty())
+	Entity& player_entity = registry.players.entities[0];
+	Motion& player_motion = registry.motions.get(player_entity);
+	Player& player = registry.players.get(player_entity);
+
+	// Handle player dashing
+	// this needs to be done first since the collision resolution updates the player dash angle
+	// so we need the updated velocities before we update player position
+	for (uint i = 0; i < registry.dashes.size(); i++)// Is alwats a loop of 1 as we remove other dashes when we start a dash
 	{
-		playerMotion = &registry.motions.get(registry.players.entities[0]);
+		Entity dash_entity = registry.dashes.entities[i];
+		Dashing& dash = registry.dashes.get(dash_entity);
+		Motion& motion = registry.motions.get(player_entity);
+
+		dash.timer_ms -= elapsed_ms;
+
+		if (dash.timer_ms <= 0)
+		{
+			registry.dashes.remove(dash_entity);
+			motion.velocity = { 0, 0 };
+			toggleDashAnimation(player_entity, false); // goes back to idle animation
+		}
+		else
+		{
+			// update player velocity
+			motion.velocity = dash.velocity;
+
+			// Gradually change the velocity
+			dash.velocity *= VELOCITY_DECAY_RATE; // FLAG MIGHT NEED TO SWAP THIS ONE OUT TOO.
+		}
 	}
 
 	auto &motion_registry = registry.motions;
@@ -122,161 +146,205 @@ void PhysicsSystem::step(float elapsed_ms)
 		}
 	}
 
-	// enemy update – use cached playerMotion
-	if (playerMotion)
+	// iterate over all enemies
+	for (uint j = 0; j < registry.enemies.entities.size(); j++)
 	{
-		// iterate over all enemies
-		for (uint j = 0; j < registry.enemies.entities.size(); j++)
+		Entity enemyEntity = registry.enemies.entities[j];
+		Motion& enemyMotion = registry.motions.get(enemyEntity);
+		EnemyBehavior& enemyBehavior = registry.enemyBehaviors.get(enemyEntity);
+		Animation& enemyAnimation = registry.animations.get(enemyEntity);
+
+		vec2 diff = player_motion.position - enemyMotion.position;
+		float distance = glm::length(diff);
+		bool playerDetected = (distance < (enemyBehavior.detectionRadius * registry.players.get(registry.players.entities[0]).detection_range)); // PLAYERS DETECTION RANGE BUFF?
+		vec2 toPlayer = diff;
+
+		switch (enemyBehavior.state)
 		{
-			Entity enemyEntity = registry.enemies.entities[j];
-			Motion &enemyMotion = registry.motions.get(enemyEntity);
-			EnemyBehavior &enemyBehavior = registry.enemyBehaviors.get(enemyEntity);
-			Animation &enemyAnimation = registry.animations.get(enemyEntity);
-
-			vec2 diff = playerMotion->position - enemyMotion.position;
-			float distance = glm::length(diff);
-			bool playerDetected = (distance < (enemyBehavior.detectionRadius * registry.players.get(registry.players.entities[0]).detection_range)); // PLAYERS DETECTION RANGE BUFF?
-			vec2 toPlayer = diff;
-
-			switch (enemyBehavior.state)
+		case EnemyState::CHASING:
+		{
+			if (distance > 0.001f)
 			{
-			case EnemyState::CHASING:
+				vec2 direction = glm::normalize(toPlayer);
+				enemyMotion.velocity = direction * ENEMY_SPEED; // FLAG REMOVE CONSTANT LATER FOR ENEMIES PARTICULAR SPEED.
+			}
+			break;
+		}
+		case EnemyState::PATROLLING:
+		{
+			// define patrol boundaries based on stored origin and range.
+			float leftBoundary = enemyBehavior.patrolOrigin.x - enemyBehavior.patrolRange;
+			float rightBoundary = enemyBehavior.patrolOrigin.x + enemyBehavior.patrolRange;
+
+			// if enemy goes past boundaries, reverse its patrol direction.
+			if (enemyMotion.position.x < leftBoundary || enemyMotion.position.x > rightBoundary)
 			{
-				if (distance > 0.001f)
-				{
-					vec2 direction = glm::normalize(toPlayer);
-					enemyMotion.velocity = direction * ENEMY_SPEED; // FLAG REMOVE CONSTANT LATER FOR ENEMIES PARTICULAR SPEED.
-				}
-				break;
+				enemyBehavior.patrolForwards = !enemyBehavior.patrolForwards;
+				enemyBehavior.patrolTime = 0.0f;
 			}
-			case EnemyState::PATROLLING:
+
+			enemyBehavior.patrolTime += elapsed_ms;
+
+			// M1 interpolation implementation
+			if (enemyBehavior.patrolForwards)
 			{
-				// define patrol boundaries based on stored origin and range.
-				float leftBoundary = enemyBehavior.patrolOrigin.x - enemyBehavior.patrolRange;
-				float rightBoundary = enemyBehavior.patrolOrigin.x + enemyBehavior.patrolRange;
-
-				// if enemy goes past boundaries, reverse its patrol direction.
-				if (enemyMotion.position.x < leftBoundary || enemyMotion.position.x > rightBoundary)
-				{
-					enemyBehavior.patrolForwards = !enemyBehavior.patrolForwards;
-					enemyBehavior.patrolTime = 0.0f;
-				}
-
-				enemyBehavior.patrolTime += elapsed_ms;
-
-				// M1 interpolation implementation
-				if (enemyBehavior.patrolForwards)
-				{
-					enemyMotion.position.x = lerp(leftBoundary, rightBoundary, enemyBehavior.patrolTime / ENEMY_PATROL_TIME_MS);  // FLAG REMOVE CONSTANT LATER FOR ENEMIES PARTICULAR SPEED.
-				}
-				else
-				{
-					enemyMotion.position.x = lerp(rightBoundary, leftBoundary, enemyBehavior.patrolTime / ENEMY_PATROL_TIME_MS);  // FLAG REMOVE CONSTANT LATER FOR ENEMIES PARTICULAR SPEED.
-				}
-
-				// sse circular detection to transition to dash state.
-				if (playerDetected)
-				{
-					changeAnimationFrames(enemyEntity, 7, 12);
-					enemyBehavior.state = EnemyState::DASHING;
-				}
-				break;
+				enemyMotion.position.x = lerp(leftBoundary, rightBoundary, enemyBehavior.patrolTime / ENEMY_PATROL_TIME_MS);  // FLAG REMOVE CONSTANT LATER FOR ENEMIES PARTICULAR SPEED.
 			}
-			case EnemyState::DASHING:
+			else
 			{
-				if (distance > 0.001f && playerDetected)
-				{
-					// dash toward the player
-					vec2 direction = glm::normalize(toPlayer);
-					enemyMotion.velocity = direction * ENEMY_SPEED;
-				}
-				else
-				{
-					changeAnimationFrames(enemyEntity, 0, 6);
-					enemyBehavior.patrolOrigin = enemyMotion.position;
-					enemyBehavior.state = EnemyState::PATROLLING;
-					enemyBehavior.patrolTime = 0.0f;
-					enemyMotion.velocity = {0, 0};
-				}
-				break;
+				enemyMotion.position.x = lerp(rightBoundary, leftBoundary, enemyBehavior.patrolTime / ENEMY_PATROL_TIME_MS);  // FLAG REMOVE CONSTANT LATER FOR ENEMIES PARTICULAR SPEED.
 			}
+
+			// sse circular detection to transition to dash state.
+			if (playerDetected)
+			{
+				changeAnimationFrames(enemyEntity, 7, 12);
+				enemyBehavior.state = EnemyState::DASHING;
 			}
+			break;
+		}
+		case EnemyState::DASHING:
+		{
+			if (distance > 0.001f && playerDetected)
+			{
+				// dash toward the player
+				vec2 direction = glm::normalize(toPlayer);
+				enemyMotion.velocity = direction * ENEMY_SPEED;
+			}
+			else
+			{
+				changeAnimationFrames(enemyEntity, 0, 6);
+				enemyBehavior.patrolOrigin = enemyMotion.position;
+				enemyBehavior.state = EnemyState::PATROLLING;
+				enemyBehavior.patrolTime = 0.0f;
+				enemyMotion.velocity = { 0, 0 };
+			}
+			break;
+		}
 		}
 	}
-
-
+			
 	// PLAYER DASH ACTION COOLDOWN
-	Entity player_entity = registry.players.entities[0];
-	Player &player = registry.players.get(player_entity);
 	player.dash_cooldown_timer_ms -= elapsed_ms;
-	if(player.dash_cooldown_timer_ms <= 0)
-		{
-			if(player.dash_count < player.max_dash_count) {
-				player.dash_count++;
-				
-				if(player.dash_count == player.max_dash_count) {
-					player.dash_cooldown_timer_ms = 0;
-				} else {
-					player.dash_cooldown_timer_ms = player.dash_cooldown_ms;
-				}
-			}
-		}
-		
-
-	// Handle player dashing
-	for (uint i = 0; i < registry.dashes.size(); i++)// Is alwats a loop of 1 as we remove other dashes when we start a dash
+	if (player.dash_cooldown_timer_ms <= 0)
 	{
-		Entity dash_entity = registry.dashes.entities[i];
-
-		Dashing &dash = registry.dashes.components[i];
-		Motion &motion = registry.motions.get(player_entity);
-
-		dash.timer_ms -= elapsed_ms;
-
-		if (dash.timer_ms <= 0) // NO LONGER DASHING
+		if (player.dash_count < player.max_dash_count)
 		{
-			registry.dashes.remove(dash_entity);
-			motion.velocity = {0, 0};
-			toggleDashAnimation(player_entity, false); // goes back to idle animation
-		}
-		else {
-			// Compute base velocity for dash
-			float angle_radians = (dash.angle - 90) * (M_PI / 180.0f);
-			vec2 base_velocity = {
-				player.dash_speed * cosf(angle_radians),
-				player.dash_speed * sinf(angle_radians)
-			};
+			player.dash_count++;
 
-			// Apply velocity decay
-			motion.velocity.x = base_velocity.x * dash.speed_factor;
-			motion.velocity.y = base_velocity.y * dash.speed_factor;
-
-			// Gradually reduce speed factor
-			dash.speed_factor *= VELOCITY_DECAY_RATE; // FLAG MIGHT NEED TO SWAP THIS ONE OUT TOO.
+			if (player.dash_count == player.max_dash_count)
+			{
+				player.dash_cooldown_timer_ms = 0;
+			}
+			else
+			{
+				player.dash_cooldown_timer_ms = player.dash_cooldown_ms;
+			}
 		}
 	}
 
 	// update player grid position
 	player.grid_position = positionToGridCell(registry.motions.get(registry.players.entities[0]).position);
 
-	// Handle collisions
-	ComponentContainer<Motion> &motion_container = registry.motions;
-	for (uint i = 0; i < motion_container.components.size(); i++)
+	// Collisions are always in this order: (Player | Projectiles | Chest, Key | Enemy | Wall | Buff)
+	for (auto& e_entity : registry.enemies.entities)
 	{
-		Motion &motion_i = motion_container.components[i];
-		Entity entity_i = motion_container.entities[i];
-
-		if (registry.uiElements.has(entity_i))
-			continue;
-
-		for (uint j = i + 1; j < motion_container.components.size(); j++)
+		// Handle enemy-projectile or enemy-player collisions
+		Motion& e_motion = registry.motions.get(e_entity);
+		
+		for (auto& proj_entity : registry.projectiles.entities)
 		{
-			Motion &motion_j = motion_container.components[j];
-			if (collides(motion_i, motion_j))
+			Motion& proj_motion = registry.motions.get(proj_entity);
+
+			// ensure the projectile is the "first" entity
+			if (detector.hasCollided(proj_motion, e_motion))
 			{
-				Entity entity_j = motion_container.entities[j];
-				registry.collisions.emplace_with_duplicates(entity_i, entity_j);
+				registry.collisions.emplace_with_duplicates(proj_entity, e_entity);
 			}
+		}
+
+		// ensure the player is the "first" entity
+		if (detector.hasCollided(player_motion, e_motion))
+		{
+			registry.collisions.emplace_with_duplicates(player_entity, e_entity);
+		}
+	}
+
+	for (auto& buff_entity : registry.buffs.entities)
+	{
+		// Handle player-buff collisions
+		Motion& buff_motion = registry.motions.get(buff_entity);
+
+		if (detector.hasCollided(player_motion, buff_motion))
+		{
+			registry.collisions.emplace_with_duplicates(player_entity, buff_entity);
+		}
+
+		handleWallCollision(buff_entity);
+	}
+
+	for (auto& key_entity : registry.keys.entities)
+	{
+		// Handle player-key collisions
+		Motion& key_motion = registry.motions.get(key_entity);
+
+		if (detector.hasCollided(player_motion, key_motion))
+		{
+			registry.collisions.emplace_with_duplicates(player_entity, key_entity);
+		}
+
+		for (auto& chest_entity : registry.chests.entities)
+		{
+			// Handle chest-key collisions
+			Motion& chest_motion = registry.motions.get(chest_entity);
+
+			if (detector.hasCollided(chest_motion, key_motion))
+			{
+				registry.collisions.emplace_with_duplicates(chest_entity, key_entity);
+			}
+		}
+
+		handleWallCollision(key_entity);
+	}
+	
+	handleWallCollision(player_entity);
+}
+
+void PhysicsSystem::handleWallCollision(Entity& entity)
+{
+	Motion& motion = registry.motions.get(entity);
+
+	std::vector<Entity> nearby_walls;
+
+	for (auto& wall_entity : registry.walls.entities)
+	{
+		Motion& wall = registry.motions.get(wall_entity);
+		float distance_to_motion = glm::distance(motion.position, wall.position);
+
+		// skip the far away walls
+		if (distance_to_motion > GRID_CELL_WIDTH_PX) continue;
+
+		nearby_walls.push_back(wall_entity);
+	}
+
+	for (auto& wall_entity : nearby_walls)
+	{
+		if (registry.players.has(entity))
+		{
+			if (registry.dashes.components.size() > 0)
+			{
+				Dashing& dash = registry.dashes.components[0];
+				auto collided = detector.checkAndHandlePlayerWallCollision(motion, dash.angle_deg, wall_entity);
+				if (collided.first) detector.handleDashOnWallEdge(collided.second, dash);
+			}
+			else
+			{
+				detector.checkAndHandlePlayerWallCollision(motion, motion.angle, wall_entity);
+			}
+		}
+		else
+		{
+			detector.checkAndHandleGeneralWallCollision(motion, wall_entity);
 		}
 	}
 }

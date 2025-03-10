@@ -5,9 +5,10 @@
 #include "tinyECS/registry.hpp"
 
 
-class AnimationSystem 
+class AnimationSystem
 {
 public:
+	// step the animation engine forward by elapsed_ms milliseconds
 	void step(float elapsed_ms);
 
 	AnimationSystem() {}

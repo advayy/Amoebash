@@ -33,9 +33,9 @@ struct Player
 
 struct Dashing
 {
+	vec2 velocity = { 0, 0 };
+	float angle_deg = 0.0f;
 	float timer_ms = 700.0f;
-	float angle = 0.0;
-	float speed_factor = 1.0;
 };
 
 struct SpriteSize
@@ -135,6 +135,8 @@ struct Collision
 	Collision(Entity &other) { this->other = other; };
 };
 
+struct Wall {};
+
 // Data structure for toggling debug mode
 struct Debug
 {
@@ -205,7 +207,8 @@ enum ButtonType
 	STARTBUTTON = 0,
 	SHOPBUTTON = STARTBUTTON + 1,
 	INFOBUTTON = SHOPBUTTON + 1,
-	BACKBUTTON = INFOBUTTON
+	BACKBUTTON = INFOBUTTON,
+	NONE = BACKBUTTON + 1
 };
 
 // Coordinates and bounding box of start button on start screen

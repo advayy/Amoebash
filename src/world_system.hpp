@@ -87,8 +87,10 @@ private:
 	void on_mouse_move(vec2 pos);
 	void on_mouse_button_pressed(int button, int action, int mods);
 
+	// to get the clicked button
+	ButtonType getClickedButton();
 	// to check if button was clicked
-	bool buttonClick(screenButton &button);
+	bool isButtonClicked(screenButton& button);
 
 	// restart level
 	void restart_game();
@@ -114,7 +116,7 @@ private:
     float darken_screen_timer = -1.0f;
 
 	// Game state
-	RenderSystem *renderer;
+	RenderSystem* renderer;
 	float current_speed;
 
 	// particle

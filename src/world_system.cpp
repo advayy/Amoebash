@@ -7,6 +7,7 @@
 #include <cassert>
 #include <sstream>
 #include <iostream>
+#include <map>
 // include lerp
 #include <glm/gtx/compatibility.hpp>
 
@@ -159,8 +160,8 @@ void WorldSystem::init(RenderSystem *renderer_arg)
 
 	// start playing background music indefinitely
 
-	// std::cout << "Starting music..." << std::endl;
-	// Mix_PlayMusic(background_music, -1);
+	std::cout << "Starting music..." << std::endl;
+	Mix_PlayMusic(background_music, -1);
 
 	// Set all states to default
 	restart_game();
@@ -278,7 +279,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
 	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x) * 180.0f / M_PI + 90.0f;
 
-
 	if (!tutorial_mode)
 	{
 		// spawn new invaders
@@ -289,7 +289,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 			{
 				// reset timer
 				next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
-	
 				// randomize empty tile on mpa
                 std::pair<int, int> enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
 				createEnemy(renderer, gridCellToPosition({enemyPosition.second, enemyPosition.first}));
@@ -390,9 +389,12 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 		direction = normalize(direction);
 
 		// If the mouse is outside the deadzone, move the player
-		if(length(vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position) > MOUSE_TRACKING_DEADZONE) {
+		if(length(vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position) > MOUSE_TRACKING_DEADZONE) 
+		{
 			player_motion.velocity = {direction.x * player.speed, direction.y * player.speed};
-		} else {
+		} 
+		else
+		{
 			player_motion.velocity = {0, 0};
 		}
 	}
@@ -400,20 +402,43 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 
 void WorldSystem::goToNextLevel()
 {
+    // print go to next level
+    std::cout << "Going to next level" << std::endl;
+
 	current_speed = 1.f;
 	level += 1;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
 
+    int buffSize = registry.buffs.entities.size();
+    for (int i = 0; i < buffSize; i++) {
+        registry.remove_all_components_of(registry.buffs.entities.back());
+    }
+
+    int enemySize = registry.enemies.entities.size();
+    for (int i = 0; i < enemySize; i++) {
+        registry.remove_all_components_of(registry.enemies.entities.back());
+    }
+
+	// while(registry.buffUIs.entities.size() > 0)
+	// 	registry.remove_all_components_of(registry.buffs.entities.back());
+
+	// while(registry.enemies.entities.size() > 0)
+	// 	registry.remove_all_components_of(registry.enemies.entities.back());
 	gameOver = false;
 
 	std::pair<int, int> playerPosition;
+    // print entering
+    std::cout << "Entering createProceduralMap" << std::endl;
 	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
 
 	Player &player = registry.players.get(registry.players.entities[0]);
 	Motion &playerMotion = registry.motions.get(registry.players.entities[0]);
 	
 	playerMotion.position = gridCellToPosition(vec2(playerPosition.second, playerPosition.first));
+
+    // print exiting
+    std::cout << "Exiting createProceduralMap" << std::endl;
 	return;
 }
 
@@ -502,178 +527,144 @@ void WorldSystem::restart_game()
 					EFFECT_ASSET_ID::UI);
 }
 
-// Compute collisions between entities
+// Compute collisions between entities. Collisions are always in this order: (Player | Projectiles, Enemy | Wall | Buff)
 void WorldSystem::handle_collisions()
 {
-
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO A1: Loop over all collisions detected by the physics system
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	ComponentContainer<Collision> &collision_container = registry.collisions;
-	for (uint i = 0; i < collision_container.components.size(); i++)
+	for (auto& entity : registry.collisions.entities)
 	{
+		Collision& collision = registry.collisions.get(entity);
+		Entity& entity2 = collision.other;
 
-		Collision &collision = collision_container.components[i];
-		Entity &entity1 = collision_container.entities[i];
-		Entity &entity2 = collision.other;
-		// if one is hexagon and one is player
-		if ((registry.players.has(entity1) && registry.keys.has(entity2)) || (registry.players.has(entity2) && registry.keys.has(entity1)))
+		if (registry.keys.has(entity2))
 		{
-			// Set player and hexagon
-			Entity player_entity = registry.players.has(entity1) ? entity1 : entity2;
-			Entity key_entity = registry.keys.has(entity1) ? entity1 : entity2;
-
-			float predictionTime = 0.001f; // 100 ms = 0.1s
-
-			if (willMeshCollideSoon(player_entity, key_entity, predictionTime)) {
-				Motion& keyMotion = registry.motions.get(key_entity);
-				Motion& playerMotion = registry.motions.get(player_entity);
-
-				if (glm::length(playerMotion.velocity) > 0.0f) {
-					keyMotion.velocity = playerMotion.velocity * 3.0f;
-				} else {
-					keyMotion.velocity = vec2(0.0f, 0.0f);
-				}
-				std::cout << "Mesh collision imminent between player and hexagon" << std::endl;
-			} else {
-				std::cout << "No mesh collision predicted soon" << std::endl;
-			}
-
-		}
-
-		if ((registry.chests.has(entity1) && registry.keys.has(entity2)) || (registry.keys.has(entity1) && registry.chests.has(entity2)))
-		{
-			// Set player and hexagon
-			Entity key_entity = registry.keys.has(entity1) ? entity1 : entity2;
-			Entity chest_entity = registry.chests.has(entity1) ? entity1 : entity2;
-
-			Motion& keyMotion = registry.motions.get(key_entity);
-			Motion& chestMotion = registry.motions.get(chest_entity);
-
-			Mesh& chestMesh = *registry.meshPtrs.get(chest_entity);
-
-			std::vector<vec2> chestWorldVertices = getWorldVertices(chestMesh.textured_vertices, chestMotion.position, chestMotion.scale);
-
-			if (pointInHexagon(keyMotion.position, chestWorldVertices))
+			if (registry.players.has(entity))
 			{
-				// remove chest
-				registry.remove_all_components_of(chest_entity);
-				registry.remove_all_components_of(key_entity);
+				float predictionTime = 0.001f; // 100 ms = 0.1s
 
-				if (tutorial_mode) {
-					current_state = GameState::NEXT_LEVEL;
-					tutorial_mode = false;
-					removeInfoBoxes();
-					restart_game();
-					removeStartScreen();
-				}
-			}
-		}
-
-		// should be deprecated no?
-		// if 1 is a projectile and 2 is an invader or if 1 is an invader and 2 is a projectile
-		if ((registry.projectiles.has(entity1) && registry.enemies.has(entity2)) || (registry.projectiles.has(entity2) && registry.enemies.has(entity1)))
-		{
-
-			// Set invader and projectile
-			Entity projectile_entity = registry.projectiles.has(entity1) ? entity1 : entity2;
-			Entity enemy_entity = registry.enemies.has(entity1) ? entity1 : entity2;
-
-			Enemy &enemy = registry.enemies.get(registry.enemies.has(entity1) ? entity1 : entity2);
-			Projectile &projectile = registry.projectiles.get(registry.projectiles.has(entity1) ? entity1 : entity2);
-
-			// Invader takes damage
-			enemy.health -= projectile.damage;
-
-			// remove projectile
-			registry.remove_all_components_of(projectile_entity);
-
-			// if invader health is below 0
-			// remove invader and increase points
-			// buff created
-			if (enemy.health <= 0)
-			{
-				vec2 enemy_position = registry.motions.get(enemy_entity).position;
-				registry.remove_all_components_of(enemy_entity);
-				// level += 1;
-				Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS
-
-				createBuff(vec2(enemy_position.x + 60, enemy_position.y + 60));
-				particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
-			}
-		}
-
-		if (registry.players.has(entity1) && registry.buffs.has(entity2))
-		{
-			collectBuff(entity1, entity2);
-		}
-		else if (registry.players.has(entity2) && registry.buffs.has(entity1))
-		{
-			collectBuff(entity2, entity1);
-		}
-
-		// player-enemy collision
-		if ((registry.players.has(entity1) && registry.enemies.has(entity2)) ||
-			(registry.players.has(entity2) && registry.enemies.has(entity1)))
-		{
-
-			Entity player_entity = registry.players.has(entity1) ? entity1 : entity2;
-			Entity enemy_entity = registry.enemies.has(entity1) ? entity1 : entity2;
-			Enemy &enemy = registry.enemies.get(enemy_entity);
-
-			/*
-			if (isDashing())
-			{
-				// remove invader
-				registry.remove_all_components_of(enemy_entity);
-				Mix_PlayChannel(-1, dash_sound_2, 0);
-			}
-			*/
-			// Kill enemy when dashing?
-			if (isDashing())
-			{
-				enemy.health -= PLAYER_DASH_DAMAGE;
-
-				if (enemy.health <= 0)
+				if (willMeshCollideSoon(entity, entity2, predictionTime))
 				{
-					vec2 enemy_position = registry.motions.get(enemy_entity).position;
-					points += 1;
-					registry.remove_all_components_of(enemy_entity);
-					
-					createBuff(vec2(enemy_position.x + 60, enemy_position.y + 60));
-					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
-				}
-			}
-			else
-			{
-				// womp womp	game over or vignetted??
-				uint current_time = SDL_GetTicks();
+					Motion& keyMotion = registry.motions.get(entity2);
+					Motion& playerMotion = registry.motions.get(entity);
 
-				// then apply damage.
-				if (!registry.damageCooldowns.has(player_entity))
-				{
-					//  add the component and apply damage
-					registry.damageCooldowns.insert(player_entity, {current_time});
-
-					Player &player = registry.players.get(player_entity);
-					player.current_health -= 1; // FLAG this is not the right kind of damage...
-					Mix_PlayChannel(-1, dash_sound_2, 0);
-				}
-				else
-				{
-					// retrieve the cooldown component
-					DamageCooldown &dc = registry.damageCooldowns.get(player_entity);
-					if (current_time - dc.last_damage_time >= 500)
+					if (glm::length(playerMotion.velocity) > 0.0f) 
 					{
-						dc.last_damage_time = current_time;
-						Player &player = registry.players.get(player_entity);
-						player.current_health -= 1;
-						Mix_PlayChannel(-1, dash_sound_2, 0);
+						keyMotion.velocity = playerMotion.velocity * 3.0f;
+					}
+					else 
+					{
+						keyMotion.velocity = vec2(0.0f, 0.0f);
+					}
+					std::cout << "Mesh collision imminent between player and hexagon" << std::endl;
+				}
+				else 
+				{
+					std::cout << "No mesh collision predicted soon" << std::endl;
+				}
+			}
+			else if (registry.chests.has(entity))
+			{
+				Motion& keyMotion = registry.motions.get(entity2);
+				Motion& chestMotion = registry.motions.get(entity);
+
+				Mesh& chestMesh = *registry.meshPtrs.get(entity);
+
+				std::vector<vec2> chestWorldVertices = getWorldVertices(chestMesh.textured_vertices, chestMotion.position, chestMotion.scale);
+
+				if (pointInHexagon(keyMotion.position, chestWorldVertices))
+				{
+					// remove chest
+					registry.remove_all_components_of(entity);
+					registry.remove_all_components_of(entity2);
+
+					if (tutorial_mode) {
+						current_state = GameState::NEXT_LEVEL;
+						tutorial_mode = false;
+						removeInfoBoxes();
+						restart_game();
+						removeStartScreen();
 					}
 				}
 			}
 		}
+		else if (registry.enemies.has(entity2))
+		{
+			Enemy& enemy = registry.enemies.get(entity2);
+			if (registry.projectiles.has(entity))
+			{
+				Projectile& projectile = registry.projectiles.get(entity);
+
+				// Invader takes damage
+				enemy.health -= projectile.damage;
+
+				// remove projectile
+				registry.remove_all_components_of(entity);
+
+				// if invader health is below 0
+				// remove invader and increase points
+				// buff created
+				if (enemy.health <= 0)
+				{
+					vec2 enemy_position = registry.motions.get(entity2).position;
+					registry.remove_all_components_of(entity2);
+					// level += 1;
+					Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS
+
+					createBuff(vec2(enemy_position.x + 60, enemy_position.y + 60));
+					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
+				}
+			}
+			else if (registry.players.has(entity))
+			{
+				if (isDashing())
+				{
+					enemy.health -= PLAYER_DASH_DAMAGE;
+
+					if (enemy.health <= 0)
+					{
+						vec2 enemy_position = registry.motions.get(entity2).position;
+						points += 1;
+						registry.remove_all_components_of(entity2);
+
+						createBuff(vec2(enemy_position.x + 60, enemy_position.y + 60));
+						particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
+					}
+				}
+				else
+				{
+					// womp womp	game over or vignetted??
+					uint current_time = SDL_GetTicks();
+
+					// then apply damage.
+					if (!registry.damageCooldowns.has(entity))
+					{
+						//  add the component and apply damage
+						registry.damageCooldowns.insert(entity, { current_time });
+
+						Player& player = registry.players.get(entity);
+						player.current_health -= 1; // FLAG this is not the right kind of damage...
+						Mix_PlayChannel(-1, dash_sound_2, 0);
+					}
+					else
+					{
+						// retrieve the cooldown component
+						DamageCooldown& dc = registry.damageCooldowns.get(entity);
+						if (current_time - dc.last_damage_time >= 500)
+						{
+							dc.last_damage_time = current_time;
+							Player& player = registry.players.get(entity);
+							player.current_health -= 1;
+							Mix_PlayChannel(-1, dash_sound_2, 0);
+						}
+					}
+				}
+			}
+		}
+		else if (registry.buffs.has(entity2) && registry.players.has(entity))
+		{
+			collectBuff(entity, entity2);
+		}
 	}
+
 	// Remove all collisions from this simulation step
 	registry.collisions.clear();
 }
@@ -778,6 +769,17 @@ void WorldSystem::on_mouse_move(vec2 mouse_position)
 	device_mouse_pos_y = mouse_position.y;
 }
 
+ButtonType WorldSystem::getClickedButton()
+{
+	for (auto& button : registry.buttons.components) {
+		if (isButtonClicked(button)) {
+			return button.type;
+		}
+	}
+
+	return ButtonType::NONE;
+}
+
 void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 {
 
@@ -786,88 +788,53 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	// on button press
-	if (action == GLFW_RELEASE && !gameOver)
+	if (gameOver) return;
+	else if (action == GLFW_RELEASE)
 	{
-
 		vec2 tile = positionToGridCell(vec2(game_mouse_pos_x, game_mouse_pos_y));
 
-		if (button == GLFW_MOUSE_BUTTON_LEFT && canDash() && current_state == GameState::GAME_PLAY)
+		if (current_state == GameState::GAME_PLAY)
 		{
-			initiatePlayerDash();
-			Mix_PlayChannel(-1, dash_sound_1, 0);
+			if (button == GLFW_MOUSE_BUTTON_LEFT)
+			{
+				ButtonType clickedButton = getClickedButton();
+
+				if (clickedButton == ButtonType::SHOPBUTTON)
+				{
+					previous_state = current_state;
+					current_state = GameState::SHOP;
+				}
+				else if (clickedButton == ButtonType::INFOBUTTON)
+				{
+					previous_state = current_state;
+					current_state = GameState::INFO;
+				}
+				else if (canDash())
+				{
+					initiatePlayerDash();
+					Mix_PlayChannel(-1, dash_sound_1, 0);
+				}
+			}
 		}
-		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::START_SCREEN)
+		else if (current_state == GameState::START_SCREEN && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
+			ButtonType clickedButton = getClickedButton();
 
-			screenButton *startButton = nullptr;
-
-			for (auto &button : registry.buttons.components)
-			{
-				if (button.type == ButtonType::STARTBUTTON)
-				{
-					startButton = &button;
-					break;
-				}
-			}
-
-			if (!startButton)
-			{
-				return;
-			}
-
-			// Find shop button
-			screenButton *shopButton = nullptr;
-			for (auto &button : registry.buttons.components)
-			{
-				if (button.type == ButtonType::SHOPBUTTON)
-				{
-					shopButton = &button;
-					break;
-				}
-			}
-
-			if (!shopButton)
-			{
-				return;
-			}
-
-			screenButton *nucleusButton = nullptr;
-			for (auto &button : registry.buttons.components)
-			{
-				if (button.type == ButtonType::INFOBUTTON)
-				{
-					nucleusButton = &button;
-					break;
-				}
-			}
-
-			if (!nucleusButton)
-			{
-				return;
-			}
-
-			
-			
-
-			bool on_button_shop = buttonClick(*shopButton);
-			bool on_button_nucleus = buttonClick(*nucleusButton);
-			bool on_button = buttonClick(*startButton);
-
-			if (on_button_shop)
+			if (clickedButton == ButtonType::SHOPBUTTON) 
 			{
 				previous_state = current_state;
 				current_state = GameState::SHOP;
 				removeStartScreen();
 				createShopScreen();
 			}
-			else if (on_button_nucleus)
+			else if (clickedButton == ButtonType::INFOBUTTON) 
 			{
 				previous_state = current_state;
 				current_state = GameState::INFO;
 				removeStartScreen();
 				createInfoScreen();
 			}
-			else if (on_button)
+			else if (clickedButton == ButtonType::STARTBUTTON) 
 			{
 				previous_state = current_state;
 				current_state = GameState::GAMEPLAY_CUTSCENE;
@@ -876,27 +843,9 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				createGameplayCutScene();
 			}
 		}
-
-		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::SHOP)
+		else if (current_state == GameState::SHOP && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
-			// Find back button
-			screenButton *backButton = nullptr;
-			for (auto &button : registry.buttons.components)
-			{
-				if (button.type == ButtonType::BACKBUTTON)
-				{
-					backButton = &button;
-					break;
-				}
-			}
-
-			if (!backButton)
-			{
-				return;
-			}
-
-			bool on_button_back = buttonClick(*backButton);
-			if (on_button_back)
+			if (getClickedButton() == ButtonType::BACKBUTTON)
 			{
 				removeShopScreen();
 				createStartScreen(LOGO_POSITION);
@@ -905,26 +854,9 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				previous_state = temp;
 			}
 		}
-		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::INFO)
+		else if (current_state == GameState::INFO && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
-			// Find back button
-			screenButton *backButton = nullptr;
-			for (auto &button : registry.buttons.components)
-			{
-				if (button.type == ButtonType::BACKBUTTON)
-				{
-					backButton = &button;
-					break;
-				}
-			}
-
-			if (!backButton)
-			{
-				return;
-			}
-
-			bool on_button_back = buttonClick(*backButton);
-			if (on_button_back)
+			if (getClickedButton() == ButtonType::BACKBUTTON)
 			{
 				removeInfoScreen();
 				createStartScreen(LOGO_POSITION);
@@ -933,9 +865,8 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				previous_state = temp;
 			}
 		}
-
 		// gameover state -> start screen state
-		else if (button == GLFW_MOUSE_BUTTON_LEFT && current_state == GameState::GAME_OVER)
+		else if (current_state == GameState::GAME_OVER && button == GLFW_MOUSE_BUTTON_LEFT) 
 		{
 			previous_state = current_state;
 			current_state = GameState::START_SCREEN_ANIMATION;
@@ -946,7 +877,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 	}
 }
 
-bool WorldSystem::buttonClick(screenButton &button)
+bool WorldSystem::isButtonClicked(screenButton &button)
 {
 	float button_x = button.center[0];
 	float button_y = button.center[1];

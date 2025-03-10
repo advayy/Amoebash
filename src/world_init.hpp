@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+
 #include "common.hpp"
 #include "tinyECS/tiny_ecs.hpp"
 #include "render_system.hpp"
@@ -34,8 +36,8 @@ void tileProceduralMap();
 
 Entity createMiniMap(RenderSystem *renderer, vec2 size);
 
-Entity addTile(vec2 gridCoord);
-void removeTile(vec2 gridCoord);
+Entity addTile(vec2 gridCoord, TEXTURE_ASSET_ID texture_id, int total_frames);
+Entity addParalaxTile(vec2 gridCoord);
 Entity addWallTile(vec2 gridCoord);
 Entity addPortalTile(vec2 gridCoord);
 
