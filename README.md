@@ -56,3 +56,11 @@ Basic Features
 - Linear Interpolation
 	- Within the `updateCamera()` method, we use LERP to smoothly move the camera.
 	- We also use LERP during enemy patrol, in the `step()` method in `/src/physics_system.cpp`
+
+
+### **M2**
+
+Advanced Feature
+- Precise Collisions
+	- We have precise collisions among different entities (e.g. wall and player , mob and player , wall and mob). We use the "Separating Axis Theorem" to detect collisions happening among different entities.
+	- You can take a look at 'collision_detect.cpp' and 'collision_detect.hpp' in the collisions folder for further detail.
