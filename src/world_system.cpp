@@ -289,13 +289,76 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 			{
 				// reset timer
 				next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
+
+				// randomize position
 				// randomize empty tile on mpa
-                std::pair<int, int> enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
-				createEnemy(renderer, gridCellToPosition({enemyPosition.second, enemyPosition.first}));
+				std::pair<int, int> enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
+	
+				int random_num = rand();
+				if (random_num % 3 == 0)
+				{
+					createSpikeEnemy(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }));
+				}
+				else if (random_num % 3 == 1)
+				{
+					createRBCEnemy(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }));
+				}
+				else if (registry.bacteriophageAIs.entities.size() < MAX_BACTERIOPHAGE_COUNT)
+				{
+					while (glm::distance(player_motion.position, gridCellToPosition({ enemyPosition.second, enemyPosition.first })) < SPIKE_ENEMY_DETECTION_RADIUS)
+					{
+						// randomize empty tile on mpa
+						enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
+					}
+
+					int index = (int)(uniform_dist(rng) * MAX_BACTERIOPHAGE_COUNT);
+					while (bacteriophage_idx.find(index) != bacteriophage_idx.end())
+					{
+						index = (int)(uniform_dist(rng) * MAX_BACTERIOPHAGE_COUNT);
+					}
+					bacteriophage_idx[index] = 1;
+
+					createBacteriophage(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }), index);
+				}
 	
 				// Optional debug output for spawning enemies
 				// std::cout << "TOTAL ENEMIES: " << registry.enemies.entities.size() << std::endl;
 			}
+		}
+	}
+
+	// despawn any old projectiles
+	for (auto& projectile_e : registry.projectiles.entities)
+	{
+		Projectile& projectile = registry.projectiles.get(projectile_e);
+		projectile.ms_until_despawn -= elapsed_ms_since_last_update * current_speed;
+
+		if (projectile.ms_until_despawn < 0.0f)
+		{
+			registry.remove_all_components_of(projectile_e);
+		}
+	}
+
+	// spawn new projectiles
+	next_projectile_ms -= elapsed_ms_since_last_update * current_speed;
+	if (next_projectile_ms < 0.f && !gameOver)
+	{
+		next_projectile_ms = (PROJECTILE_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (PROJECTILE_SPAWN_RATE_MS / 2);
+
+		int shooting_enemy = 0;
+		while (shooting_enemy < registry.bacteriophageAIs.entities.size())
+		{
+			BacteriophageAI& enemy_behavior = registry.bacteriophageAIs.get(registry.bacteriophageAIs.entities[shooting_enemy]);
+			if (enemy_behavior.state != BacteriophageState::CHASING)
+			{
+				shooting_enemy++;
+			}
+			else break;
+		}
+
+		if (shooting_enemy < registry.bacteriophageAIs.entities.size())
+		{
+			createBacteriophageProjectile(registry.bacteriophageAIs.entities[shooting_enemy]);
 		}
 	}
 
@@ -318,10 +381,10 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
             current_state = GameState::NEXT_LEVEL;
 			
-			goToNextLevel();
+			// goToNextLevel();
 
-            // restart_game();
-            // removeStartScreen(); // removing buttons that are added again
+            restart_game();
+            removeStartScreen(); // removing buttons that are added again
 
         }
     }
@@ -410,15 +473,15 @@ void WorldSystem::goToNextLevel()
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
 
-    int buffSize = registry.buffs.entities.size();
-    for (int i = 0; i < buffSize; i++) {
-        registry.remove_all_components_of(registry.buffs.entities.back());
-    }
+    // int buffSize = registry.buffs.entities.size();
+    // for (int i = 0; i < buffSize; i++) {
+    //     registry.remove_all_components_of(registry.buffs.entities.back());
+    // }
 
-    int enemySize = registry.enemies.entities.size();
-    for (int i = 0; i < enemySize; i++) {
-        registry.remove_all_components_of(registry.enemies.entities.back());
-    }
+    // int enemySize = registry.enemies.entities.size();
+    // for (int i = 0; i < enemySize; i++) {
+    //     registry.remove_all_components_of(registry.enemies.entities.back());
+    // }
 
 	// while(registry.buffUIs.entities.size() > 0)
 	// 	registry.remove_all_components_of(registry.buffs.entities.back());
@@ -459,6 +522,8 @@ void WorldSystem::restart_game()
 	level += 1;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
+
+	bacteriophage_idx.clear();
     
 	// FLAG
 	gameOver = false;
@@ -493,7 +558,7 @@ void WorldSystem::restart_game()
 
 	if (tutorial_mode) {
 		createPlayer(renderer, gridCellToPosition({0, 10}));
-		createEnemy(renderer, gridCellToPosition({12, 10}));
+		createSpikeEnemy(renderer, gridCellToPosition({12, 10}));
 		createKey(renderer, gridCellToPosition({16, 10}));
 		createChest(renderer, gridCellToPosition({19, 10}));
 	} else {
@@ -535,7 +600,21 @@ void WorldSystem::handle_collisions()
 		Collision& collision = registry.collisions.get(entity);
 		Entity& entity2 = collision.other;
 
-		if (registry.keys.has(entity2))
+		if (registry.bacteriophageProjectiles.has(entity2))
+		{
+			if (registry.players.has(entity))
+			{
+				Player& player = registry.players.get(entity);
+				Projectile& projectile = registry.projectiles.get(entity2);
+
+				// Player takes damage
+				player.current_health -= projectile.damage;
+
+				// remove projectile
+				registry.remove_all_components_of(entity2);
+			}
+		}
+		else if (registry.keys.has(entity2))
 		{
 			if (registry.players.has(entity))
 			{
@@ -570,7 +649,7 @@ void WorldSystem::handle_collisions()
 
 				std::vector<vec2> chestWorldVertices = getWorldVertices(chestMesh.textured_vertices, chestMotion.position, chestMotion.scale);
 
-				if (pointInHexagon(keyMotion.position, chestWorldVertices))
+				if (pointInPolygon(keyMotion.position, chestWorldVertices))
 				{
 					// remove chest
 					registry.remove_all_components_of(entity);
@@ -604,6 +683,11 @@ void WorldSystem::handle_collisions()
 				// buff created
 				if (enemy.health <= 0)
 				{
+					if (registry.bacteriophageAIs.has(entity2))
+					{
+						bacteriophage_idx.erase(registry.bacteriophageAIs.get(entity2).placement_index);
+					}
+
 					vec2 enemy_position = registry.motions.get(entity2).position;
 					registry.remove_all_components_of(entity2);
 					// level += 1;
@@ -621,6 +705,11 @@ void WorldSystem::handle_collisions()
 
 					if (enemy.health <= 0)
 					{
+						if (registry.bacteriophageAIs.has(entity2))
+						{
+							bacteriophage_idx.erase(registry.bacteriophageAIs.get(entity2).placement_index);
+						}
+
 						vec2 enemy_position = registry.motions.get(entity2).position;
 						points += 1;
 						registry.remove_all_components_of(entity2);
