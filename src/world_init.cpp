@@ -409,6 +409,7 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 
 	} else {
 		std::cout << "Should randomize map" << std::endl;
+		std::srand(static_cast<unsigned>(std::time(0)));
 	
 		// Initialize map to random walls / floors
         std::random_device rd;
