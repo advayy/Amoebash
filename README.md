@@ -53,6 +53,6 @@ Basic Features
 	- As the player moves, the camera follows along. We use matrices to recalculate the camera position to always keep the player in frame. Check out the `updateCamera()` function in `/src/world_system.cpp` to see the implementation.
 - Basic integrated assets
 	- We have pixel-art style assets for all entities in the game. Check out the `/data/textures` folder for the asset files, and `/src/render_system.hpp` to see where we define them in code.
-- Linear Interpolation
+- LERP 
 	- Within the `updateCamera()` method, we use LERP to smoothly move the camera.
 	- We also use LERP during enemy patrol, in the `step()` method in `/src/physics_system.cpp`
