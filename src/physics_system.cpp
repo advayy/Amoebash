@@ -202,7 +202,7 @@ void PhysicsSystem::step(float elapsed_ms)
 			registry.collisions.emplace_with_duplicates(player_entity, e_entity);
 		}
 
-		handleWallCollision(e_entity);
+		// handleWallCollision(e_entity);
 	}
 
 	for (auto& proj_entity : registry.bacteriophageProjectiles.entities)
@@ -225,7 +225,7 @@ void PhysicsSystem::step(float elapsed_ms)
 			registry.collisions.emplace_with_duplicates(player_entity, buff_entity);
 		}
 
-		handleWallCollision(buff_entity);
+		// handleWallCollision(buff_entity);
 	}
 
 	for (auto& key_entity : registry.keys.entities)
@@ -249,10 +249,10 @@ void PhysicsSystem::step(float elapsed_ms)
 			}
 		}
 
-		handleWallCollision(key_entity);
+		// handleWallCollision(key_entity);
 	}
 	
-	handleWallCollision(player_entity);
+	// handleWallCollision(player_entity);
 }
 
 void PhysicsSystem::handleWallCollision(Entity& entity)
