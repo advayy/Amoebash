@@ -377,3 +377,4 @@ float CollisionDetector::clampNegativeAngle(float angle)
 {
 	return angle < 0 ? 360.0f + angle : angle;
 }
+

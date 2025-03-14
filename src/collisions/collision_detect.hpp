@@ -150,4 +150,5 @@ public:
 		param dash: the dash to modify
 	*/
 	void handleDashOnWallEdge(vec2 wall_edge, Dashing& dash);
+
 };
