@@ -387,38 +387,20 @@ Entity addPortalTile(vec2 gridCoord) {
         }
     }
 
-    Entity newTile = Entity();
-    Portal &portal = registry.portals.emplace(newTile);
+    auto tile = addTile(gridCoord, TEXTURE_ASSET_ID::PORTAL, total_portal_frames);
+
+    Portal &portal = registry.portals.emplace(tile);
     portal.grid_x = gridCoord.x;
     portal.grid_y = gridCoord.y;
 
-    Motion &motion = registry.motions.emplace(newTile);
-    motion.position = gridCellToPosition(gridCoord);
-    motion.angle = 0.f;
-    motion.velocity = {0, 0};
-    motion.scale = {GRID_CELL_WIDTH_PX, GRID_CELL_HEIGHT_PX};
-
-    registry.renderRequests.insert(
-        newTile,
-        {TEXTURE_ASSET_ID::PORTAL,
-         EFFECT_ASSET_ID::SPRITE_SHEET,
-         GEOMETRY_BUFFER_ID::SPRITE}
-    );
-
-    SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(newTile);
-    spriteSheet.total_frames = total_portal_frames;
-
-    Animation &a = registry.animations.emplace(newTile);
+    Animation &a = registry.animations.emplace(tile);
     a.time_per_frame = MS_PER_S / total_portal_frames;
     a.loop = ANIM_LOOP_TYPES::LOOP;
     a.start_frame = 0;
-    a.end_frame = total_portal_frames;
+    a.end_frame =
+     total_portal_frames;
 
-    SpriteSize &sprite = registry.spritesSizes.emplace(newTile);
-    sprite.width = GRID_CELL_WIDTH_PX;
-    sprite.height = GRID_CELL_HEIGHT_PX;
-
-    return newTile;
+    return tile;
 }
 
 Entity addTile(vec2 gridCoord, TEXTURE_ASSET_ID texture_id, int total_frames)
@@ -439,7 +421,7 @@ Entity addTile(vec2 gridCoord, TEXTURE_ASSET_ID texture_id, int total_frames)
 		newTile,
 		{
 			texture_id,
-			EFFECT_ASSET_ID::TILE,
+			texture_id == TEXTURE_ASSET_ID::PORTAL ? EFFECT_ASSET_ID::SPRITE_SHEET : EFFECT_ASSET_ID::TILE,
 			GEOMETRY_BUFFER_ID::SPRITE
 		});
 
