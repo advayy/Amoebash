@@ -189,8 +189,7 @@ void WorldSystem::updateCamera(float elapsed_ms)
 	camera.grid_position = positionToGridCell(camera.position);
 }
 
-
-
+// move to ui_system.cpp
 void WorldSystem::updateHuds()
 {
 

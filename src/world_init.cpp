@@ -173,6 +173,7 @@ Entity createPlayer(RenderSystem *renderer, vec2 position)
 	return entity;
 }
 
+// move to animation_system.cpp
 void toggleDashAnimation(Entity entity, bool is_dashing)
 {
 	Animation &a = registry.animations.get(entity);
@@ -234,7 +235,7 @@ Entity createBacteriophageProjectile(Entity& bacteriophage)
 	return projectile;
 }
 
-
+// move to world_system.cpp
 void initiatePlayerDash()
 {
 	Entity &player_e = registry.players.entities[0];
@@ -265,17 +266,20 @@ void initiatePlayerDash()
 	toggleDashAnimation(player_e, true);
 }
 
+// move to world_system.cpp
 bool canDash()
 {
 	Player &player = registry.players.get(registry.players.entities[0]);
 	return player.dash_count > 0; // PLAYER HAS 1 DASH SAVED ATLEAST
 }
 
+//  move to world_system.cpp
 bool isDashing()
 {
 	return registry.dashes.size() > 0;
 }
 
+// move to collision_detect.cpp
 bool willMeshCollideSoon(const Entity& player, const Entity& hexagon, float predictionTime)
 {
 	Mesh& hexagonMesh = *registry.meshPtrs.get(hexagon);
@@ -330,6 +334,7 @@ bool willMeshCollideSoon(const Entity& player, const Entity& hexagon, float pred
 	return false;
 }
 
+// move to collision_detect.cpp
 bool pointInPolygon(const vec2& point, const std::vector<vec2> &polygon)
 {
 	bool inside = false;
@@ -351,6 +356,7 @@ bool pointInPolygon(const vec2& point, const std::vector<vec2> &polygon)
 	return inside;
 }
 
+// move to collision_detect.cpp
 std::vector<vec2> getWorldVertices(const std::vector<TexturedVertex>& vertices, const vec2 &position, const vec2 &scale) {
 	std::vector<vec2> worldVertices;
 	for (const auto& vertex : vertices) {
@@ -465,6 +471,7 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
     return entity;
 }
 
+// move to ui_system.cpp
 void createInfoBoxes() {
 
 	TEXTURE_ASSET_ID baseTexture = TEXTURE_ASSET_ID::MOUSE_CONTROL_INFO;
@@ -498,6 +505,7 @@ void createInfoBoxes() {
 	}
 }
 
+// move to ui_system.cpp
 void removeInfoBoxes() {
 	for (auto e : registry.infoBoxes.entities) {
 		registry.remove_all_components_of(e);
@@ -505,6 +513,7 @@ void removeInfoBoxes() {
 	return;
 }
 
+// move to ui_system.cpp
 Entity createMiniMap(RenderSystem *renderer, vec2 size)
 {
 	auto entity = Entity();
@@ -582,6 +591,7 @@ Entity createChest(RenderSystem *renderer, vec2 position)
 	return entity;
 }
 
+// move to world_system.cpp
 void tileProceduralMap() {
 	vec2 camera_pos = registry.cameras.get(registry.cameras.entities[0]).grid_position;
 
@@ -740,6 +750,7 @@ Entity addTile(vec2 gridCoord, TEXTURE_ASSET_ID texture_id, int total_frames)
 	return newTile;
 }
 
+// move to common.cpp
 vec2 positionToGridCell(vec2 position)
 {
 	// map the players position to the closest grid cell
@@ -750,6 +761,7 @@ vec2 positionToGridCell(vec2 position)
 	return gridCell;
 }
 
+// move to common.cpp
 vec2 gridCellToPosition(vec2 gridCell)
 {
 	vec2 position = {0, 0};
@@ -778,6 +790,7 @@ Entity createCamera()
 
 // Below are the components of the start Screen
 
+// move to ui_system.cpp
 Entity createStartScreen(vec2 position)
 {
 	Entity startScreenEntity = Entity();
@@ -826,6 +839,7 @@ Entity createStartScreen(vec2 position)
 	return startScreenEntity;
 }
 
+// move to ui_system.cpp
 Entity createShopScreen()
 {
 	Entity shopScreenEntity = Entity();
@@ -855,6 +869,7 @@ Entity createShopScreen()
 	return shopScreenEntity;
 }
 
+// move to ui_system.cpp
 Entity createInfoScreen()
 {
 	Entity infoScreenEntity = Entity();
@@ -884,6 +899,7 @@ Entity createInfoScreen()
 	return infoScreenEntity;
 }
 
+// move to ui_system.cpp
 Entity createGameOverScreen()
 {
 	Entity gameOverScreenEntity = Entity();
@@ -909,6 +925,7 @@ Entity createGameOverScreen()
 	return gameOverScreenEntity;
 }
 
+// move to ui_system.cpp
 Entity createPauseScreen()
 {
 	Entity pauseScreenEntity = Entity();
@@ -934,6 +951,7 @@ Entity createPauseScreen()
 	return pauseScreenEntity;
 }
 
+// move to ui_system.cpp
 void createGameplayCutScene()
 {
 	Entity backGround = createCutSceneBackGround();
@@ -947,6 +965,7 @@ void createGameplayCutScene()
 	registry.cutscenes.emplace(nucleus);
 }
 
+// move to ui_system.cpp
 void removeCutScene()
 {
 	for (auto &e : registry.cutscenes.entities)
@@ -955,6 +974,7 @@ void removeCutScene()
 	}
 }
 
+// move to ui_system.cpp
 Entity createCutSceneBackGround()
 {
 	Entity backGroundEntity = Entity();
@@ -988,6 +1008,7 @@ Entity createCutSceneBackGround()
 	return backGroundEntity;
 }
 
+// move to ui_system.cpp
 Entity createNose()
 {
 	Entity noseEntity = Entity();
@@ -1025,6 +1046,7 @@ Entity createNose()
 	return noseEntity;
 }
 
+// move to ui_system.cpp
 Entity createNoseAccent()
 {
 	Entity accentEntity = Entity();
@@ -1064,6 +1086,7 @@ Entity createNoseAccent()
 	return accentEntity;
 }
 
+// move to ui_system.cpp
 Entity createEnteringNucleus()
 {
 	Entity nucleusEntity = Entity();
@@ -1098,6 +1121,7 @@ Entity createEnteringNucleus()
 	return nucleusEntity;
 }
 
+// move to ui_system.cpp
 void removePauseScreen()
 {
 	if (registry.pauses.size() == 0)
@@ -1107,6 +1131,7 @@ void removePauseScreen()
 	registry.remove_all_components_of(pause);
 }
 
+// move to ui_system.cpp
 void removeGameOverScreen()
 {
 	if (registry.overs.size() == 0)
@@ -1116,6 +1141,7 @@ void removeGameOverScreen()
 	registry.remove_all_components_of(over);
 }
 
+// move to ui_system.cpp
 void removeStartScreen()
 {
 	if (registry.starts.size() == 0)
@@ -1136,6 +1162,7 @@ void removeStartScreen()
 	registry.remove_all_components_of(start_entity);
 }
 
+// move to ui_system.cpp
 void removeShopScreen()
 {
 	if (registry.shops.size() == 0)
@@ -1153,6 +1180,7 @@ void removeShopScreen()
 	registry.remove_all_components_of(shop_entity);
 }
 
+// move to ui_system.cpp
 void removeInfoScreen()
 {
 	if (registry.infos.size() == 0)
@@ -1170,6 +1198,7 @@ void removeInfoScreen()
 	registry.remove_all_components_of(info_entity);
 }
 
+// move to ui_system.cpp
 Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID texture)
 {
 	Entity buttonEntity = Entity();
@@ -1194,6 +1223,7 @@ Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID
 	return buttonEntity;
 }
 
+// move to ui_system.cpp
 Entity createStartButton()
 {
 	vec2 position = START_BUTTON_COORDINATES;
@@ -1205,6 +1235,7 @@ Entity createStartButton()
 						TEXTURE_ASSET_ID::BUTTON);
 }
 
+// move to ui_system.cpp
 Entity createShopButton()
 {
 	vec2 scale = SHOP_BUTTON_SCALE;
@@ -1216,6 +1247,7 @@ Entity createShopButton()
 						TEXTURE_ASSET_ID::SHOP_BUTTON);
 }
 
+// move to ui_system.cpp
 Entity createInfoButton()
 {
 	vec2 scale = INFO_BUTTON_SCALE; // currently same scale as shop button
@@ -1227,6 +1259,7 @@ Entity createInfoButton()
 						TEXTURE_ASSET_ID::INFO_BUTTON);
 }
 
+// move to ui_system.cpp
 Entity createBackButton() {
 	vec2 scale = BACK_BUTTON_SCALE;
 	vec2 position = BACK_BUTTON_COORDINATES;
@@ -1286,6 +1319,7 @@ std::vector<std::vector<tileType>> applyCellularAutomataRules(const std::vector<
     return newGrid;
 }
 
+// move to world_system.cpp
 std::pair<int, int> getRandomEmptyTile(const std::vector<std::vector<tileType>>& grid) {
     std::vector<std::pair<int, int>> emptyTiles;
 
@@ -1347,7 +1381,7 @@ int getDistance(const std::vector<std::vector<tileType>>& grid, std::pair<int,in
     return -1;
 }
 
-
+// move to ui_system.cpp
 Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, EFFECT_ASSET_ID effect_id)
 {
 	Entity entity = Entity();
@@ -1367,6 +1401,7 @@ Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, E
 	return entity;
 }
 
+// move to ui_system.cpp
 Entity createHealthBar()
 {
 	Entity entity = Entity();
@@ -1389,6 +1424,7 @@ Entity createHealthBar()
 	return entity;
 }
 
+// move to ui_system.cpp
 void createDashRecharge()
 {
 	for (int i = 0; i < DASH_RECHARGE_COUNT; i++)
@@ -1443,6 +1479,7 @@ Entity createBuff(vec2 position)
 	return entity;
 }
 
+// move to ui_system.cpp
 Entity createBuffUI(vec2 position, int buffType)
 {
 	Entity buffUI = Entity();
@@ -1472,6 +1509,7 @@ Entity createBuffUI(vec2 position, int buffType)
 	return buffUI;
 }
 
+// move to ui_system.cpp
 void renderCollectedBuff(RenderSystem *renderer, int buffType)
 {
 	int numCollectedBuffs = registry.buffUIs.size();
