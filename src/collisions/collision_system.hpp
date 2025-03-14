@@ -4,7 +4,7 @@
 #include <map>
 #include <optional>
 
-class CollisionDetector
+class CollisionSystem
 {
 private:
 	/*

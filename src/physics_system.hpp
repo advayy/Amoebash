@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common.hpp"
-#include "collisions/collision_detect.hpp"
+#include "collisions/collision_system.hpp"
 #include "tinyECS/tiny_ecs.hpp"
 #include "tinyECS/components.hpp"
 #include "tinyECS/registry.hpp"
@@ -28,6 +28,6 @@ private:
 	void handleWallCollision(Entity& entity);
 
 	// the collision detector to detect and handle collisions
-	CollisionDetector detector;
+	CollisionSystem detector;
 };
 
