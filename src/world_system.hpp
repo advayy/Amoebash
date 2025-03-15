@@ -15,6 +15,7 @@
 
 #include "render_system.hpp"
 #include "particle_system.hpp"
+#include "physics_system.hpp"
 
 class ParticleSystem;
 
@@ -71,8 +72,9 @@ public:
 	void handlePlayerHealth(float elapsed_ms);
 	bool tutorial_mode = true;
 
-
-
+    void initiatePlayerDash();
+    bool canDash();
+    bool isDashing();
 
 private:
 	bool gameOver = false;
@@ -99,7 +101,6 @@ private:
 
 	void updateCamera(float elapsed_ms);
 	void updateMouseCoords();
-	void updateHuds();
 
 	void handlePlayerMovement(float elapsed_ms_since_last_update);
 	
@@ -125,6 +126,9 @@ private:
 	// particle
 	ParticleSystem particle_system;
 
+    // physics 
+    PhysicsSystem physics_system;
+
 	// grid
 	std::vector<Entity> grid_lines;
 
@@ -140,4 +144,8 @@ private:
 	// C++ random number generator
 	std::default_random_engine rng;
 	std::uniform_real_distribution<float> uniform_dist; // number between 0..1
+
+    CollisionSystem detector;
+
+    void tileProceduralMap();
 };

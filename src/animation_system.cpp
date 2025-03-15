@@ -67,10 +67,31 @@ void AnimationSystem::step(float elapsed_ms)
 	}
 }
 
-
 void changeAnimationFrames(Entity entity, int start_frame, int end_frame)
 {
 	Animation& animation = registry.animations.get(entity);
 	animation.start_frame = start_frame;
 	animation.end_frame = end_frame;
+}
+
+void toggleDashAnimation(Entity entity, bool is_dashing)
+{
+	Animation &a = registry.animations.get(entity);
+	SpriteSheetImage &s = registry.spriteSheetImages.get(entity);
+
+	if (is_dashing)
+	{
+		a.start_frame = player_dash_start;
+		a.end_frame = player_dash_end;
+		a.loop = ANIM_LOOP_TYPES::LOOP;
+	}
+	else
+	{
+		a.start_frame = player_idle_start;
+		a.end_frame = player_idle_end;
+		a.loop = ANIM_LOOP_TYPES::PING_PONG;
+	}
+
+	s.current_frame = a.start_frame;
+	a.forwards = true;
 }

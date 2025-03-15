@@ -16,3 +16,5 @@ public:
 
 // animation utils
 void changeAnimationFrames(Entity entity, int start_frame, int end_frame);
+
+void toggleDashAnimation(Entity entity, bool is_dashing);
