@@ -197,6 +197,9 @@ void RenderSystem::initializeGlGeometryBuffers()
 	glGenBuffers((GLsizei)vertex_buffers.size(), vertex_buffers.data());
 	// Index Buffer creation.
 	glGenBuffers((GLsizei)index_buffers.size(), index_buffers.data());
+	
+	// INSTANCING: generate the particle instance VBO for instanced rendering.
+	glGenBuffers(1, &particle_instance_vbo);
 
 	// Index and Vertex buffer data initialization.
 	initializeGlMeshes();

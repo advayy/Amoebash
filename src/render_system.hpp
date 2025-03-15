@@ -154,6 +154,9 @@ public:
 	void drawHexagon(Entity entity, const mat3 &projection);	
 	void drawBuffUI();
 
+	// INSTANCING: instanced particle drawing
+	void drawInstancedParticles();
+
 private:
 	// Internal drawing functions for each entity type
 	void drawTexturedMesh(Entity entity, const mat3 &projection);
@@ -180,6 +183,9 @@ private:
 	int frame_count = 0;
 	float current_fps = 0.0f;
 	bool show_fps = true; // Start with FPS display enabled
+
+	// New instance buffer to hold per-particle transform matrices
+	GLuint particle_instance_vbo;
 };
 
 bool loadEffectFromFile(
