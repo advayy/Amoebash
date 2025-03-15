@@ -901,6 +901,7 @@ void RenderSystem::drawInstancedParticles()
     // ise the stored sprite_index_count
     GLsizei num_indices = sprite_index_count;
     
+	// draw the instanced particles as a set
     glDrawElementsInstanced(GL_TRIANGLES, num_indices,
                             GL_UNSIGNED_SHORT, nullptr, instanceTransforms.size());
     
