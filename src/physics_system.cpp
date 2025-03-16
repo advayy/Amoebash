@@ -40,25 +40,25 @@ void PhysicsSystem::step(float elapsed_ms)
 	float topBound = MAP_TOP * GRID_CELL_HEIGHT_PX;
 	float bottomBound = MAP_BOTTOM * GRID_CELL_HEIGHT_PX - 1;
 
-	Entity& player_entity = registry.players.entities[0];
-	Motion& player_motion = registry.motions.get(player_entity);
-	Player& player = registry.players.get(player_entity);
+	Entity &player_entity = registry.players.entities[0];
+	Motion &player_motion = registry.motions.get(player_entity);
+	Player &player = registry.players.get(player_entity);
 
 	// Handle player dashing
 	// this needs to be done first since the collision resolution updates the player dash angle
 	// so we need the updated velocities before we update player position
-	for (uint i = 0; i < registry.dashes.size(); i++)// Is alwats a loop of 1 as we remove other dashes when we start a dash
+	for (uint i = 0; i < registry.dashes.size(); i++) // Is alwats a loop of 1 as we remove other dashes when we start a dash
 	{
 		Entity dash_entity = registry.dashes.entities[i];
-		Dashing& dash = registry.dashes.get(dash_entity);
-		Motion& motion = registry.motions.get(player_entity);
+		Dashing &dash = registry.dashes.get(dash_entity);
+		Motion &motion = registry.motions.get(player_entity);
 
 		dash.timer_ms -= elapsed_ms;
 
 		if (dash.timer_ms <= 0)
 		{
 			registry.dashes.remove(dash_entity);
-			motion.velocity = { 0, 0 };
+			motion.velocity = {0, 0};
 			toggleDashAnimation(player_entity, false); // goes back to idle animation
 		}
 		else
@@ -79,47 +79,50 @@ void PhysicsSystem::step(float elapsed_ms)
 
 		motion.position += motion.velocity * step_seconds;
 
-		if (registry.keys.has(entity)) {
-			float dampingFactor = 0.8f;
-			motion.velocity *= dampingFactor;
-			if (glm::length(motion.velocity) < 0.01f) {
-				motion.velocity = vec2(0.0f, 0.0f);
-			}
-			if (motion.position.x >= rightBound + 1 || motion.position.x <= leftBound ||
-				motion.position.y <= topBound || motion.position.y >= bottomBound + 1)  {
-					// temporary hexagon motion
-					
-					
-					
-					motion.position.x = glm::clamp(motion.position.x, leftBound, rightBound);
-					motion.position.y = glm::clamp(motion.position.y, topBound, bottomBound);
-					
-					if (motion.velocity != vec2(0.0f, 0.0f)) {
-						motion.velocity = -1.f * motion.velocity;
-					}
-				}
-		}
-
-		if (registry.keys.has(entity)) 
+		if (registry.keys.has(entity))
 		{
 			float dampingFactor = 0.8f;
 			motion.velocity *= dampingFactor;
-			if (glm::length(motion.velocity) < 0.01f) {
+			if (glm::length(motion.velocity) < 0.01f)
+			{
 				motion.velocity = vec2(0.0f, 0.0f);
 			}
 			if (motion.position.x >= rightBound + 1 || motion.position.x <= leftBound ||
-				motion.position.y <= topBound || motion.position.y >= bottomBound + 1)  {
-					// temporary hexagon motion
-					
-					
-					
-					motion.position.x = glm::clamp(motion.position.x, leftBound, rightBound);
-					motion.position.y = glm::clamp(motion.position.y, topBound, bottomBound);
-					
-					if (motion.velocity != vec2(0.0f, 0.0f)) {
-						motion.velocity = -1.f * motion.velocity;
-					}
+				motion.position.y <= topBound || motion.position.y >= bottomBound + 1)
+			{
+				// temporary hexagon motion
+
+				motion.position.x = glm::clamp(motion.position.x, leftBound, rightBound);
+				motion.position.y = glm::clamp(motion.position.y, topBound, bottomBound);
+
+				if (motion.velocity != vec2(0.0f, 0.0f))
+				{
+					motion.velocity = -1.f * motion.velocity;
 				}
+			}
+		}
+
+		if (registry.keys.has(entity))
+		{
+			float dampingFactor = 0.8f;
+			motion.velocity *= dampingFactor;
+			if (glm::length(motion.velocity) < 0.01f)
+			{
+				motion.velocity = vec2(0.0f, 0.0f);
+			}
+			if (motion.position.x >= rightBound + 1 || motion.position.x <= leftBound ||
+				motion.position.y <= topBound || motion.position.y >= bottomBound + 1)
+			{
+				// temporary hexagon motion
+
+				motion.position.x = glm::clamp(motion.position.x, leftBound, rightBound);
+				motion.position.y = glm::clamp(motion.position.y, topBound, bottomBound);
+
+				if (motion.velocity != vec2(0.0f, 0.0f))
+				{
+					motion.velocity = -1.f * motion.velocity;
+				}
+			}
 		}
 
 		if (registry.players.has(entity) || registry.enemies.has(entity))
@@ -142,6 +145,67 @@ void PhysicsSystem::step(float elapsed_ms)
 						motion.angle -= 180;
 					}
 				}
+			}
+		}
+
+		// update dash recharge
+		if (!registry.dashRecharges.entities.empty())
+		{
+			Player &player = registry.players.get(registry.players.entities[0]);
+			static vec2 previousPlayerPos = registry.motions.get(registry.players.entities[0]).position;
+			vec2 playerPos = registry.motions.get(registry.players.entities[0]).position;
+			static float counter = 0.0f;
+			counter += step_seconds / 100.f;
+
+			bool is_dashing = registry.dashes.size() > 0;
+			float player_speed = length(player_motion.velocity);
+			float base_lerp_factor = 0.005f;
+			float lerp_factor = base_lerp_factor;
+			if (player_speed > player.speed)
+			{
+				lerp_factor = base_lerp_factor + (player_speed / player.speed) * 0.005f;
+			}
+
+			static float dash_lerp_factor = 0.001f;
+			if (isDashing)
+			{
+				dash_lerp_factor += 0.002f;
+				dash_lerp_factor = glm::min(dash_lerp_factor, 0.005f);
+				lerp_factor = dash_lerp_factor;
+			}
+
+			previousPlayerPos = lerp(previousPlayerPos, playerPos, 0.005f);
+
+			int i = 0;
+			for (Entity entity : registry.dashRecharges.entities)
+			{
+				if (!registry.motions.has(entity))
+					continue;
+
+				Motion &motion = registry.motions.get(entity);
+				float angle = (2 * M_PI / DASH_RECHARGE_COUNT) * i;
+				float offset_x = sin(counter * 3.0f + i * 1.5f) * 5.0f;
+				float offset_y = cos(counter * 3.0f + i * 1.5f) * 5.0f;
+
+				float random_radius_offset = sin(counter * 0.8f + i * 0.7f) * 12.0f;
+				vec2 target_pos = previousPlayerPos + vec2(
+														  (DASH_RADIUS + random_radius_offset) * cos(angle) + offset_x,
+														  (DASH_RADIUS + random_radius_offset) * sin(angle) + offset_y);
+
+				motion.position = lerp(motion.position, target_pos, lerp_factor);
+
+				motion.velocity += vec2(
+					sin(counter * 2.0f + i * 2.1f) * 0.01f,
+					cos(counter * 2.3f + i * 1.9f) * 0.01f);
+
+				if (i >= player.dash_count)
+					motion.scale = {0, 0};
+				else
+					motion.scale = {DASH_WIDTH, DASH_HEIGHT};
+
+				motion.velocity *= 0.98f;
+
+				i++;
 			}
 		}
 
@@ -180,14 +244,14 @@ void PhysicsSystem::step(float elapsed_ms)
 	player.grid_position = positionToGridCell(registry.motions.get(registry.players.entities[0]).position);
 
 	// Collisions are always in this order: (Player | Projectiles | Chest, Key | Enemy | Wall | Buff)
-	for (auto& e_entity : registry.enemies.entities)
+	for (auto &e_entity : registry.enemies.entities)
 	{
 		// Handle enemy-projectile or enemy-player collisions
-		Motion& e_motion = registry.motions.get(e_entity);
-		
-		for (auto& proj_entity : registry.projectiles.entities)
+		Motion &e_motion = registry.motions.get(e_entity);
+
+		for (auto &proj_entity : registry.projectiles.entities)
 		{
-			Motion& proj_motion = registry.motions.get(proj_entity);
+			Motion &proj_motion = registry.motions.get(proj_entity);
 
 			// ensure the projectile is the "first" entity
 			if (detector.hasCollided(proj_motion, e_motion))
@@ -205,9 +269,9 @@ void PhysicsSystem::step(float elapsed_ms)
 		handleWallCollision(e_entity);
 	}
 
-	for (auto& proj_entity : registry.bacteriophageProjectiles.entities)
+	for (auto &proj_entity : registry.bacteriophageProjectiles.entities)
 	{
-		Motion& proj_motion = registry.motions.get(proj_entity);
+		Motion &proj_motion = registry.motions.get(proj_entity);
 		// ensure the projectile is the "second" entity
 		if (detector.hasCollided(proj_motion, player_motion))
 		{
@@ -215,10 +279,10 @@ void PhysicsSystem::step(float elapsed_ms)
 		}
 	}
 
-	for (auto& buff_entity : registry.buffs.entities)
+	for (auto &buff_entity : registry.buffs.entities)
 	{
 		// Handle player-buff collisions
-		Motion& buff_motion = registry.motions.get(buff_entity);
+		Motion &buff_motion = registry.motions.get(buff_entity);
 
 		if (detector.hasCollided(player_motion, buff_motion))
 		{
@@ -228,20 +292,20 @@ void PhysicsSystem::step(float elapsed_ms)
 		handleWallCollision(buff_entity);
 	}
 
-	for (auto& key_entity : registry.keys.entities)
+	for (auto &key_entity : registry.keys.entities)
 	{
 		// Handle player-key collisions
-		Motion& key_motion = registry.motions.get(key_entity);
+		Motion &key_motion = registry.motions.get(key_entity);
 
 		if (detector.hasCollided(player_motion, key_motion))
 		{
 			registry.collisions.emplace_with_duplicates(player_entity, key_entity);
 		}
 
-		for (auto& chest_entity : registry.chests.entities)
+		for (auto &chest_entity : registry.chests.entities)
 		{
 			// Handle chest-key collisions
-			Motion& chest_motion = registry.motions.get(chest_entity);
+			Motion &chest_motion = registry.motions.get(chest_entity);
 
 			if (detector.hasCollided(chest_motion, key_motion))
 			{
@@ -251,36 +315,38 @@ void PhysicsSystem::step(float elapsed_ms)
 
 		handleWallCollision(key_entity);
 	}
-	
+
 	handleWallCollision(player_entity);
 }
 
-void PhysicsSystem::handleWallCollision(Entity& entity)
+void PhysicsSystem::handleWallCollision(Entity &entity)
 {
-	Motion& motion = registry.motions.get(entity);
+	Motion &motion = registry.motions.get(entity);
 
 	std::vector<Entity> nearby_walls;
 
-	for (auto& wall_entity : registry.walls.entities)
+	for (auto &wall_entity : registry.walls.entities)
 	{
-		Motion& wall = registry.motions.get(wall_entity);
+		Motion &wall = registry.motions.get(wall_entity);
 		float distance_to_motion = glm::distance(motion.position, wall.position);
 
 		// skip the far away walls
-		if (distance_to_motion > GRID_CELL_WIDTH_PX) continue;
+		if (distance_to_motion > GRID_CELL_WIDTH_PX)
+			continue;
 
 		nearby_walls.push_back(wall_entity);
 	}
 
-	for (auto& wall_entity : nearby_walls)
+	for (auto &wall_entity : nearby_walls)
 	{
 		if (registry.players.has(entity))
 		{
 			if (registry.dashes.components.size() > 0)
 			{
-				Dashing& dash = registry.dashes.components[0];
+				Dashing &dash = registry.dashes.components[0];
 				auto collided = detector.checkAndHandlePlayerWallCollision(motion, dash.angle_deg, wall_entity);
-				if (collided.first) detector.handleDashOnWallEdge(collided.second, dash);
+				if (collided.first)
+					detector.handleDashOnWallEdge(collided.second, dash);
 			}
 			else
 			{

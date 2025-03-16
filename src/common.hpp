@@ -62,7 +62,6 @@ const float MAP_WIDTH = 20;
 const float MAP_HEIGHT = 20;
 const vec2 WORLD_ORIGIN = {10, 10};
 
-
 // Set map left right based on width and origin
 const float MAP_LEFT = WORLD_ORIGIN.x - MAP_WIDTH / 2;
 const float MAP_RIGHT = WORLD_ORIGIN.x + MAP_WIDTH / 2;
@@ -193,7 +192,8 @@ const vec2 HEALTH_BAR_POS = {
 
 // dash recharge
 const float DASH_WIDTH = 18 * UI_SCALE;
-const float DASH_HEIGHT = 21.6 * UI_SCALE;
+const float DASH_HEIGHT = 18 * UI_SCALE;
+const float DASH_RADIUS = 40.0f;
 
 // const float DASH_RECHARGE_SPACING = (HEALTH_BAR_WIDTH - DASH_WIDTH) / (DASH_RECHARGE_COUNT - 1);
 const float DASH_RECHARGE_SPACING = DASH_WIDTH + 8;
@@ -212,7 +212,7 @@ const float WEAPON_PILL_UI_HEIGHT = 58 * UI_SCALE;
 const vec2 WEAPON_PILL_UI_POS = {WINDOW_WIDTH_PX / 2 - UI_MARGIN_X - WEAPON_PILL_UI_WIDTH / 2,
 								 WINDOW_HEIGHT_PX / 2 - UI_MARGIN_Y - NUCLEUS_UI_HEIGHT / 2}; // pos.y aligns w/ nuclues
 
-// 
+//
 const int NUMBER_OF_BUFFS = 5;
 const float BUFF_WIDTH = 20.0f * WORK_SCALE_FACTOR;
 const float BUFF_HEIGHT = 20.0f * WORK_SCALE_FACTOR;
