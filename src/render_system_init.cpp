@@ -46,9 +46,8 @@ bool RenderSystem::init(GLFWwindow *window_arg)
 
 	// We are not really using VAO's but without at least one bound we will crash in
 	// some systems.
-	GLuint vao;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
+	glGenVertexArrays(1, &default_vao);
+	glBindVertexArray(default_vao);
 	gl_has_errors();
 
 	initScreenTexture();
@@ -197,6 +196,9 @@ void RenderSystem::initializeGlGeometryBuffers()
 	glGenBuffers((GLsizei)vertex_buffers.size(), vertex_buffers.data());
 	// Index Buffer creation.
 	glGenBuffers((GLsizei)index_buffers.size(), index_buffers.data());
+	
+	// INSTANCING: generate the particle instance VBO for instanced rendering.
+	glGenBuffers(1, &particle_instance_vbo);
 
 	// Index and Vertex buffer data initialization.
 	initializeGlMeshes();
@@ -217,6 +219,8 @@ void RenderSystem::initializeGlGeometryBuffers()
 	// Counterclockwise as it's the default OpenGL front winding direction.
 	const std::vector<uint16_t> textured_indices = {0, 3, 1, 1, 3, 2};
 	bindVBOandIBO(GEOMETRY_BUFFER_ID::SPRITE, textured_vertices, textured_indices);
+	// NEW: Save the index count for instancing particles later.
+    sprite_index_count = (GLsizei)textured_indices.size();
 
 	/* LEGACY - not used, but code below still relies on it...*/
 	////////////////////////
