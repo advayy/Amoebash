@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common.hpp"
-#include "collisions/collision_detect.hpp"
+#include "collisions/collision_system.hpp"
 #include "tinyECS/tiny_ecs.hpp"
 #include "tinyECS/components.hpp"
 #include "tinyECS/registry.hpp"
@@ -17,6 +17,10 @@ public:
 	{
 	}
 
+
+    std::vector<vec2> getWorldVertices(const std::vector<TexturedVertex>& vertices, const vec2 &position, const vec2 &scale);
+    bool pointInPolygon(const vec2& point, const std::vector<vec2> &polygon);
+    bool willMeshCollideSoon(const Entity& player, const Entity& hexagon, float predictionTime);
 private:
 	/*
 	* Handles wall collisions for the given entity
@@ -24,5 +28,6 @@ private:
 	void handleWallCollision(Entity& entity);
 
 	// the collision detector to detect and handle collisions
-	CollisionDetector detector;
+	CollisionSystem detector;
 };
+
