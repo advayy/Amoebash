@@ -13,6 +13,8 @@
 
 #include "physics_system.hpp"
 #include "particle_system.hpp"
+#include "animation_system.hpp"
+#include "ui_system.hpp"
 
 bool tutorial_mode = true;
 
@@ -187,63 +189,6 @@ void WorldSystem::updateCamera(float elapsed_ms)
 	float interpolationFactor = 0.05f;
     camera.position = lerp(camera.position, player_motion.position, interpolationFactor);
 	camera.grid_position = positionToGridCell(camera.position);
-}
-
-
-
-void WorldSystem::updateHuds()
-{
-
-	vec2 offset = {WINDOW_WIDTH_PX / 2 - 100, -WINDOW_HEIGHT_PX / 2 + 100};
-
-	Entity minimapEntity = registry.miniMaps.entities[0];
-	Motion &minimapMotion = registry.motions.get(minimapEntity);
-
-	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
-	minimapMotion.position = {camera.position.x + offset.x, camera.position.y + offset.y};
-
-	if (!registry.uiElements.entities.empty())
-	{
-		for (Entity entity : registry.uiElements.entities)
-		{
-			if (!registry.motions.has(entity))
-				continue;
-			Motion &uiMotion = registry.motions.get(entity);
-			UIElement &uiElement = registry.uiElements.get(entity);
-			uiMotion.position = {camera.position.x + uiElement.position.x, camera.position.y + uiElement.position.y};
-		}
-	}
-
-	if (!registry.healthBars.entities.empty())
-	{
-		HealthBar &healthBar = registry.healthBars.get(registry.healthBars.entities[0]);
-		Motion &healthBarMotion = registry.motions.get(registry.healthBars.entities[0]);
-		healthBarMotion.position = {camera.position.x + HEALTH_BAR_POS.x,
-									camera.position.y + HEALTH_BAR_POS.y};
-
-	}
-
-	if (registry.dashRecharges.size() > 0)
-	{
-		Player &player = registry.players.get(registry.players.entities[0]);
-		vec2 firstDotPosition = {camera.position.x + DASH_RECHARGE_START_POS.x, camera.position.y + DASH_RECHARGE_START_POS.y};
-
-		int i = 0;
-		for (Entity entity : registry.dashRecharges.entities)
-		{
-			if (!registry.motions.has(entity))
-				continue;
-
-			Motion &motion = registry.motions.get(entity);
-			motion.position = {firstDotPosition.x + (i * DASH_RECHARGE_SPACING), firstDotPosition.y};
-
-			if (i >= player.dash_count)
-				motion.scale = {0, 0};
-			else
-				motion.scale = {DASH_WIDTH, DASH_HEIGHT};
-			i++;
-		}
-	}
 }
 
 void WorldSystem::updateMouseCoords()
@@ -620,7 +565,7 @@ void WorldSystem::handle_collisions()
 			{
 				float predictionTime = 0.001f; // 100 ms = 0.1s
 
-				if (willMeshCollideSoon(entity, entity2, predictionTime))
+				if (physics_system.willMeshCollideSoon(entity, entity2, predictionTime))
 				{
 					Motion& keyMotion = registry.motions.get(entity2);
 					Motion& playerMotion = registry.motions.get(entity);
@@ -647,9 +592,9 @@ void WorldSystem::handle_collisions()
 
 				Mesh& chestMesh = *registry.meshPtrs.get(entity);
 
-				std::vector<vec2> chestWorldVertices = getWorldVertices(chestMesh.textured_vertices, chestMotion.position, chestMotion.scale);
+				std::vector<vec2> chestWorldVertices = physics_system.getWorldVertices(chestMesh.textured_vertices, chestMotion.position, chestMotion.scale);
 
-				if (pointInPolygon(keyMotion.position, chestWorldVertices))
+				if (physics_system.pointInPolygon(keyMotion.position, chestWorldVertices))
 				{
 					// remove chest
 					registry.remove_all_components_of(entity);
@@ -1030,4 +975,113 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 	}
 
 	renderCollectedBuff(renderer, buff.type);
+}
+
+void WorldSystem::initiatePlayerDash()
+{
+	Entity &player_e = registry.players.entities[0];
+	Player &player = registry.players.get(player_e);
+	Motion &player_motion = registry.motions.get(player_e);
+
+	if (isDashing())
+	{
+		for (Entity& entity : registry.dashes.entities)
+		{
+			registry.dashes.remove(entity);
+		}
+	}
+
+	player.dash_count--;
+
+	Dashing &d = registry.dashes.emplace(Entity());
+	d.angle_deg = player_motion.angle;
+	float angle_radians = (d.angle_deg - 90) * (M_PI / 180.0f);
+	d.velocity = {
+		player.dash_speed * cosf(angle_radians),
+		player.dash_speed * sinf(angle_radians)
+	};
+	d.timer_ms = DASH_DURATION_MS;
+	player.dash_cooldown_timer_ms = player.dash_cooldown_ms;
+
+	// Change animation frames
+	toggleDashAnimation(player_e, true);
+}
+
+bool WorldSystem::canDash()
+{
+	Player &player = registry.players.get(registry.players.entities[0]);
+	return player.dash_count > 0; // PLAYER HAS 1 DASH SAVED ATLEAST
+}
+
+bool WorldSystem::isDashing()
+{
+	return registry.dashes.size() > 0;
+}
+
+void WorldSystem::tileProceduralMap() {
+	vec2 camera_pos = registry.cameras.get(registry.cameras.entities[0]).grid_position;
+
+	float cameraGrid_x = camera_pos.x;
+	float cameraGrid_y = camera_pos.y;
+
+	ProceduralMap& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]);
+
+	std::map<int, std::map<int, int>> currentTiles;
+
+	// remove all tiles that arent in the chunk distance
+	for (Entity &entity : registry.tiles.entities)
+	{
+
+		Tile &tile = registry.tiles.get(entity);
+		vec2 tilePos = {tile.grid_x, tile.grid_y};
+		vec2 cameraGrid = {cameraGrid_x, cameraGrid_y};
+		if (abs(glm::distance(cameraGrid, tilePos)) > CHUNK_DISTANCE)
+		{
+			registry.remove_all_components_of(entity);
+		}
+		else
+		{
+			// mark this tile as already drawn, so we don't create it again
+			currentTiles[tile.grid_x][tile.grid_y] = 1;
+		}
+	}
+
+	// setting map bounds
+	int left = (cameraGrid_x - (WINDOW_GRID_WIDTH / 2) - CHUNK_DISTANCE / 2);	 // max((cameraGrid_x - (WINDOW_GRID_WIDTH/2 + CHUNK_DISTANCE/2)), (float) map.left);
+	int right = (cameraGrid_x + (WINDOW_GRID_WIDTH / 2) + CHUNK_DISTANCE / 2);	 // min((cameraGrid_x + (WINDOW_GRID_WIDTH/2 +CHUNK_DISTANCE/2)), (float) map.right);
+	int top = (cameraGrid_y - (WINDOW_GRID_HEIGHT / 2) - CHUNK_DISTANCE / 2);	 // max((cameraGrid_y - (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.top);
+	int bottom = (cameraGrid_y + (WINDOW_GRID_HEIGHT / 2) + CHUNK_DISTANCE / 2); // min((cameraGrid_y + (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.bottom);
+
+	for (int x = left; x < right; x += 1)
+	{
+		for (int y = top; y < bottom; y += 1)
+		{
+			vec2 gridCoord = {x, y};
+
+			// check for already existing tiles, don't need to draw these again
+			if (currentTiles.find(x) != currentTiles.end() && currentTiles[x].find(y) != currentTiles[x].end()) continue;
+
+			if (x < map.left || x >= map.right || y < map.top || y >= map.bottom) {
+				addWallTile(gridCoord);
+			} else if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE) {
+				
+				// print here
+				// std::cout << "x: " << x << " y: " << y << std::endl;
+				if (map.map[x][y] == tileType::EMPTY) 
+				{
+					// if its being tiled what tile to put
+					addParalaxTile(gridCoord);
+                } 
+				else if (map.map[x][y] == tileType::PORTAL) 
+				{
+					addParalaxTile(gridCoord);
+                    addPortalTile(gridCoord);
+                } 
+				else 
+				{
+					addWallTile(gridCoord);
+				}
+			}
+		}
+	}
 }

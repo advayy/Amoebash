@@ -1,16 +1,16 @@
-#include "collision_detect.hpp"
+#include "collision_system.hpp"
 #include "world_init.hpp"
 #include <limits>
 #include <stack>
 #include <iostream>
 #include <math.h>
 
-vec2 CollisionDetector::getDirectionVecFromAngle(float angle)
+vec2 CollisionSystem::getDirectionVecFromAngle(float angle)
 {
 	return { cosf((angle - 90) * (M_PI / 180.0f)), sinf((angle - 90) * (M_PI / 180.0f)) };
 }
 
-bool CollisionDetector::isPointInRectangle(vec2 point, std::vector<vec2> vertices)
+bool CollisionSystem::isPointInRectangle(vec2 point, std::vector<vec2> vertices)
 {
 	vec2 top_left = vertices[0];
 	vec2 top_right = vertices[1];
@@ -19,7 +19,7 @@ bool CollisionDetector::isPointInRectangle(vec2 point, std::vector<vec2> vertice
 	return point.y >= top_left.y && point.y <= bottom_left.y && point.x >= top_left.x && point.x <= top_right.x;
 }
 
-std::vector<vec2> CollisionDetector::getRectVertices(const Motion rectangle)
+std::vector<vec2> CollisionSystem::getRectVertices(const Motion rectangle)
 {
 	vec2 position = rectangle.position;
 	float angle = rectangle.angle;
@@ -40,7 +40,7 @@ std::vector<vec2> CollisionDetector::getRectVertices(const Motion rectangle)
 	};
 }
 
-std::vector<vec2> CollisionDetector::getEdges(const std::vector<vec2> vertices)
+std::vector<vec2> CollisionSystem::getEdges(const std::vector<vec2> vertices)
 {
 	std::vector<vec2> edges;
 	for (int i = 0; i < vertices.size(); i++)
@@ -58,7 +58,7 @@ std::vector<vec2> CollisionDetector::getEdges(const std::vector<vec2> vertices)
 	return edges;
 }
 
-bool CollisionDetector::checkPolygonCollision(const std::vector<vec2>& poly1_v, const std::vector<vec2>& poly1_e, const std::vector<vec2>& poly2_v, const std::vector<vec2>& poly2_e)
+bool CollisionSystem::checkPolygonCollision(const std::vector<vec2>& poly1_v, const std::vector<vec2>& poly1_e, const std::vector<vec2>& poly2_v, const std::vector<vec2>& poly2_e)
 {
 	float poly1_min;
 	float poly1_max;
@@ -122,18 +122,18 @@ bool CollisionDetector::checkPolygonCollision(const std::vector<vec2>& poly1_v, 
 	return true;
 }
 
-bool CollisionDetector::checkPolygonCollisionWithVertices(const std::vector<vec2>& poly1_v, const std::vector<vec2>& poly2_v)
+bool CollisionSystem::checkPolygonCollisionWithVertices(const std::vector<vec2>& poly1_v, const std::vector<vec2>& poly2_v)
 {
 	return checkPolygonCollision(poly1_v, getEdges(poly1_v), poly2_v, getEdges(poly2_v));
 }
 
-bool CollisionDetector::hasCollided(const Motion& motion1, const Motion& motion2)
+bool CollisionSystem::hasCollided(const Motion& motion1, const Motion& motion2)
 {
 
 	return checkPolygonCollisionWithVertices(getRectVertices(motion1), getRectVertices(motion2));
 }
 
-vec2 CollisionDetector::getPointOnPlayer(std::vector<vec2> player_vertices, float player_angle, vec2 wall_edge)
+vec2 CollisionSystem::getPointOnPlayer(std::vector<vec2> player_vertices, float player_angle, vec2 wall_edge)
 {
 	float clamped_angle = clampNegativeAngle(player_angle);
 	bool top_left = isQuadrant1Or3(clamped_angle);
@@ -142,7 +142,7 @@ vec2 CollisionDetector::getPointOnPlayer(std::vector<vec2> player_vertices, floa
 	return top_left ? player_vertices[0] : player_vertices[1];
 }
 
-std::optional<std::pair<std::vector<vec2>, std::vector<vec2>>> CollisionDetector::checkWallCollision(Motion& motion, Entity& wall)
+std::optional<std::pair<std::vector<vec2>, std::vector<vec2>>> CollisionSystem::checkWallCollision(Motion& motion, Entity& wall)
 {
 	std::vector<vec2> vertices = getRectVertices(motion);
 	std::vector<vec2> edges = getEdges(vertices);
@@ -164,7 +164,7 @@ std::optional<std::pair<std::vector<vec2>, std::vector<vec2>>> CollisionDetector
 	}
 }
 
-float CollisionDetector::getIntersectionDist(vec2 point, vec2 direction, vec2 point2, vec2 direction2)
+float CollisionSystem::getIntersectionDist(vec2 point, vec2 direction, vec2 point2, vec2 direction2)
 {
 	float multiplier;
 
@@ -186,7 +186,7 @@ float CollisionDetector::getIntersectionDist(vec2 point, vec2 direction, vec2 po
 	return glm::distance(point, intersection);
 }
 
-void CollisionDetector::resolveWallCollision(Motion& motion, vec2 intersection_edge, vec2 intersection_edge_vertex, float movement_angle, float object_angle_rad)
+void CollisionSystem::resolveWallCollision(Motion& motion, vec2 intersection_edge, vec2 intersection_edge_vertex, float movement_angle, float object_angle_rad)
 {
 	// if its a vertical edge
 	if (abs(intersection_edge.x) < 0.01f)
@@ -222,7 +222,7 @@ void CollisionDetector::resolveWallCollision(Motion& motion, vec2 intersection_e
 	}
 }
 
-void CollisionDetector::checkAndHandleGeneralWallCollision(Motion& motion, Entity& wall)
+void CollisionSystem::checkAndHandleGeneralWallCollision(Motion& motion, Entity& wall)
 {
 	auto collision = checkWallCollision(motion, wall);
 
@@ -268,7 +268,7 @@ void CollisionDetector::checkAndHandleGeneralWallCollision(Motion& motion, Entit
 	}
 }
 
-std::pair<bool, vec2> CollisionDetector::checkAndHandlePlayerWallCollision(Motion& player_motion, float movement_angle, Entity& wall)
+std::pair<bool, vec2> CollisionSystem::checkAndHandlePlayerWallCollision(Motion& player_motion, float movement_angle, Entity& wall)
 {
 	auto collision = checkWallCollision(player_motion, wall);
 
@@ -336,7 +336,7 @@ std::pair<bool, vec2> CollisionDetector::checkAndHandlePlayerWallCollision(Motio
 	return { collision.has_value(), edge_of_collision};
 }
 
-void CollisionDetector::handleDashOnWallEdge(vec2 wall_edge, Dashing& dash)
+void CollisionSystem::handleDashOnWallEdge(vec2 wall_edge, Dashing& dash)
 {
 	float dash_angle = dash.angle_deg < 0 ? 360.0f + dash.angle_deg : dash.angle_deg;
 	// if its a vertical edge
@@ -352,28 +352,29 @@ void CollisionDetector::handleDashOnWallEdge(vec2 wall_edge, Dashing& dash)
 	}
 }
 
-void CollisionDetector::addWallToCache(Entity& wall, const Motion& wall_motion)
+void CollisionSystem::addWallToCache(Entity& wall, const Motion& wall_motion)
 {
 	auto vertices = getRectVertices(wall_motion);
 	wall_cache.insert({ wall.id(), std::make_pair(vertices, getEdges(vertices)) });
 }
 
-bool CollisionDetector::isTopQuadrant(float angle)
+bool CollisionSystem::isTopQuadrant(float angle)
 {
 	return (angle >= 270 && angle <= 360) || (angle <= 90 && angle >= 0);
 }
 
-bool CollisionDetector::isRightQuadrant(float angle)
+bool CollisionSystem::isRightQuadrant(float angle)
 {
 	return angle >= 0 && angle <= 180;
 }
 
-bool CollisionDetector::isQuadrant1Or3(float angle)
+bool CollisionSystem::isQuadrant1Or3(float angle)
 {
 	return (angle >= 0 && angle <= 90) || (angle >= 180 && angle <= 270);
 }
 
-float CollisionDetector::clampNegativeAngle(float angle)
+float CollisionSystem::clampNegativeAngle(float angle)
 {
 	return angle < 0 ? 360.0f + angle : angle;
 }
+

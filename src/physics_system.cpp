@@ -202,7 +202,7 @@ void PhysicsSystem::step(float elapsed_ms)
 			registry.collisions.emplace_with_duplicates(player_entity, e_entity);
 		}
 
-		handleWallCollision(e_entity);
+		// handleWallCollision(e_entity);
 	}
 
 	for (auto& proj_entity : registry.bacteriophageProjectiles.entities)
@@ -225,7 +225,7 @@ void PhysicsSystem::step(float elapsed_ms)
 			registry.collisions.emplace_with_duplicates(player_entity, buff_entity);
 		}
 
-		handleWallCollision(buff_entity);
+		// handleWallCollision(buff_entity);
 	}
 
 	for (auto& key_entity : registry.keys.entities)
@@ -249,10 +249,10 @@ void PhysicsSystem::step(float elapsed_ms)
 			}
 		}
 
-		handleWallCollision(key_entity);
+		// handleWallCollision(key_entity);
 	}
 	
-	handleWallCollision(player_entity);
+	// handleWallCollision(player_entity);
 }
 
 void PhysicsSystem::handleWallCollision(Entity& entity)
@@ -292,4 +292,95 @@ void PhysicsSystem::handleWallCollision(Entity& entity)
 			detector.checkAndHandleGeneralWallCollision(motion, wall_entity);
 		}
 	}
+}
+
+// move to collision_detect.cpp
+bool PhysicsSystem::willMeshCollideSoon(const Entity& player, const Entity& hexagon, float predictionTime)
+{
+    Mesh& hexagonMesh = *registry.meshPtrs.get(hexagon);
+
+    Motion& playerMotion = registry.motions.get(player);
+    Motion& hexagonMotion = registry.motions.get(hexagon);
+
+    vec2 playerFuturePos = playerMotion.position + playerMotion.velocity * predictionTime;
+    vec2 hexagonFuturePos = hexagonMotion.position + hexagonMotion.velocity * predictionTime;
+
+    vec2 diff = playerFuturePos - hexagonFuturePos;
+    float distance = length(diff);
+
+    // mesh based collision won't happen 
+    if (distance > (playerMotion.scale.x / 2 + hexagonMotion.scale.x / 2))
+    {
+        return false;
+    }
+
+    // mesh based collision will happen
+
+    vec2 playerCenter = playerFuturePos;
+    float playerRadius = playerMotion.scale.x / 2;
+
+    std::vector<vec2> hexagonWorldVertices = getWorldVertices(hexagonMesh.textured_vertices, hexagonFuturePos, hexagonMotion.scale);
+    int numVertices = hexagonWorldVertices.size();
+
+    bool inside = pointInPolygon(playerCenter, hexagonWorldVertices);
+
+    // check the distance from circle (player) to edge
+    for (int i = 0; i < numVertices; i++) {
+        int next = (i + 1) % numVertices;
+
+        vec2 A = hexagonWorldVertices[i];
+        vec2 B = hexagonWorldVertices[next];
+
+        vec2 AB = A - B;
+
+        float t = dot(playerCenter - A, AB) / dot(AB, AB); // ratio of projections
+
+        t = std::max(0.0f, std::min(1.0f, t)); // clamping
+
+        vec2 projectionPoint = A + AB * t;
+        
+        float distance = length(playerCenter - projectionPoint);
+
+        if (distance < playerRadius) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// move to collision_detect.cpp
+bool PhysicsSystem::pointInPolygon(const vec2& point, const std::vector<vec2> &polygon)
+{
+    bool inside = false;
+
+    int numVertices = polygon.size();
+
+    // using ray cast algorithm
+    for (int i = 0, j = numVertices - 1; i < numVertices; j = i++) {
+        const vec2& vi = polygon[i];
+        const vec2& vj = polygon[j];
+
+        if (((vi.y > point.y) != (vj.y > point.y)) &&
+            (point.x < (vj.x - vi.x) * (point.y - vi.y) / (vj.y - vi.y) + vi.x))
+        {
+            inside = !inside;
+        }
+    }
+
+    return inside;
+}
+
+// move to collision_detect.cpp
+std::vector<vec2> PhysicsSystem::getWorldVertices(const std::vector<TexturedVertex>& vertices, const vec2 &position, const vec2 &scale) {
+    std::vector<vec2> worldVertices;
+    for (const auto& vertex : vertices) {
+        vec2 worldVertex = {
+            vertex.position.x * scale.x + position.x,
+            vertex.position.y * scale.y + position.y
+        };
+
+        worldVertices.push_back(worldVertex);
+    }
+    return worldVertices;
 }

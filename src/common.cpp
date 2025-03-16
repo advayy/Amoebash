@@ -1,4 +1,5 @@
 #include "common.hpp"
+#include <random>
 
 // Note, we could also use the functions from GLM but we write the transformations here to show the uderlying math
 void Transform::scale(vec2 scale)
@@ -56,4 +57,22 @@ bool gl_has_errors()
 	}
 
 	return true;
+}
+
+vec2 positionToGridCell(vec2 position)
+{
+	// map the players position to the closest grid cell
+	vec2 gridCell = {0, 0};
+	// Check which grid cell CONTAINS the players position
+	gridCell.x = floor(position.x / GRID_CELL_WIDTH_PX);
+	gridCell.y = floor(position.y / GRID_CELL_HEIGHT_PX);
+	return gridCell;
+}
+
+vec2 gridCellToPosition(vec2 gridCell)
+{
+	vec2 position = {0, 0};
+	position.x = (gridCell.x * GRID_CELL_WIDTH_PX) + (GRID_CELL_WIDTH_PX / 2.0f);
+	position.y = (gridCell.y * GRID_CELL_HEIGHT_PX) + (GRID_CELL_HEIGHT_PX / 2.0f);
+	return position;
 }
