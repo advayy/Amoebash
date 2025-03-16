@@ -152,29 +152,15 @@ void PhysicsSystem::step(float elapsed_ms)
 		if (!registry.dashRecharges.entities.empty())
 		{
 			Player &player = registry.players.get(registry.players.entities[0]);
-			static vec2 previousPlayerPos = registry.motions.get(registry.players.entities[0]).position;
 			vec2 playerPos = registry.motions.get(registry.players.entities[0]).position;
 			static float counter = 0.0f;
 			counter += step_seconds / 100.f;
+			float base_lerp_factor = 0.15f;
+			float speed_factor = pow(glm::clamp(1.0f - (player.speed / player.dash_speed), 0.01f, 1.0f), 2.3f);
+			float lerp_factor = base_lerp_factor * speed_factor;
 
-			bool is_dashing = registry.dashes.size() > 0;
-			float player_speed = length(player_motion.velocity);
-			float base_lerp_factor = 0.005f;
-			float lerp_factor = base_lerp_factor;
-			if (player_speed > player.speed)
-			{
-				lerp_factor = base_lerp_factor + (player_speed / player.speed) * 0.005f;
-			}
-
-			static float dash_lerp_factor = 0.001f;
-			if (isDashing)
-			{
-				dash_lerp_factor += 0.002f;
-				dash_lerp_factor = glm::min(dash_lerp_factor, 0.005f);
-				lerp_factor = dash_lerp_factor;
-			}
-
-			previousPlayerPos = lerp(previousPlayerPos, playerPos, 0.005f);
+			static vec2 previousPlayerPos = registry.motions.get(registry.players.entities[0]).position;
+			previousPlayerPos = lerp(previousPlayerPos, playerPos, lerp_factor / 15.0f);
 
 			int i = 0;
 			for (Entity entity : registry.dashRecharges.entities)
@@ -184,26 +170,21 @@ void PhysicsSystem::step(float elapsed_ms)
 
 				Motion &motion = registry.motions.get(entity);
 				float angle = (2 * M_PI / DASH_RECHARGE_COUNT) * i;
+
 				float offset_x = sin(counter * 3.0f + i * 1.5f) * 5.0f;
 				float offset_y = cos(counter * 3.0f + i * 1.5f) * 5.0f;
-
 				float random_radius_offset = sin(counter * 0.8f + i * 0.7f) * 12.0f;
+
 				vec2 target_pos = previousPlayerPos + vec2(
 														  (DASH_RADIUS + random_radius_offset) * cos(angle) + offset_x,
 														  (DASH_RADIUS + random_radius_offset) * sin(angle) + offset_y);
 
 				motion.position = lerp(motion.position, target_pos, lerp_factor);
 
-				motion.velocity += vec2(
-					sin(counter * 2.0f + i * 2.1f) * 0.01f,
-					cos(counter * 2.3f + i * 1.9f) * 0.01f);
-
 				if (i >= player.dash_count)
 					motion.scale = {0, 0};
 				else
 					motion.scale = {DASH_WIDTH, DASH_HEIGHT};
-
-				motion.velocity *= 0.98f;
 
 				i++;
 			}

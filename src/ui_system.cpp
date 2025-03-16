@@ -4,41 +4,42 @@
 #include <random>
 #include <iostream>
 
-void createInfoBoxes() {
+void createInfoBoxes()
+{
 
 	TEXTURE_ASSET_ID baseTexture = TEXTURE_ASSET_ID::MOUSE_CONTROL_INFO;
 
-	for (int i = 0; i < 6; i ++) {
+	for (int i = 0; i < 6; i++)
+	{
 		auto entity1 = Entity();
-	
+
 		// Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
 		// Player &player = registry.players.get(registry.players.entities[0]);
-		int x = (3  *  i)  + 1;
+		int x = (3 * i) + 1;
 		int y = (i % 2 == 0) ? 11 : 8;
 		vec2 infoPosition = gridCellToPosition({x, y});
-	
-		Motion& motion1 = registry.motions.emplace(entity1);
+
+		Motion &motion1 = registry.motions.emplace(entity1);
 		motion1.position = infoPosition;
 
 		motion1.scale = {128.f * WORK_SCALE_FACTOR * 3, 128.f * WORK_SCALE_FACTOR};
-	
-		InfoBox& info1 = registry.infoBoxes.emplace(entity1);
-	
+
+		InfoBox &info1 = registry.infoBoxes.emplace(entity1);
+
 		registry.renderRequests.insert(
 			entity1,
-			{
-				baseTexture,
-				EFFECT_ASSET_ID::TEXTURED,
-				GEOMETRY_BUFFER_ID::SPRITE
-			}
-		);
+			{baseTexture,
+			 EFFECT_ASSET_ID::TEXTURED,
+			 GEOMETRY_BUFFER_ID::SPRITE});
 
 		baseTexture = static_cast<TEXTURE_ASSET_ID>(static_cast<int>(baseTexture) + 1);
 	}
 }
 
-void removeInfoBoxes() {
-	for (auto e : registry.infoBoxes.entities) {
+void removeInfoBoxes()
+{
+	for (auto e : registry.infoBoxes.entities)
+	{
 		registry.remove_all_components_of(e);
 	}
 	return;
@@ -72,23 +73,20 @@ Entity createMiniMap(RenderSystem *renderer, vec2 size)
 Entity createStartScreen(vec2 position)
 {
 	Entity startScreenEntity = Entity();
-	
+
 	// render request for back ground
 	registry.renderRequests.insert(
 		startScreenEntity,
-		{
-			TEXTURE_ASSET_ID::START_SCREEN_BG,
-			EFFECT_ASSET_ID::TEXTURED,
-			GEOMETRY_BUFFER_ID::SPRITE
-		}
-	);
+		{TEXTURE_ASSET_ID::START_SCREEN_BG,
+		 EFFECT_ASSET_ID::TEXTURED,
+		 GEOMETRY_BUFFER_ID::SPRITE});
 
-	Motion& bg_motion = registry.motions.emplace(startScreenEntity);
+	Motion &bg_motion = registry.motions.emplace(startScreenEntity);
 	bg_motion.position = WORLD_ORIGIN;
-	bg_motion.velocity = vec2(0.f,0.f);
+	bg_motion.velocity = vec2(0.f, 0.f);
 	bg_motion.angle = 0.f;
 	bg_motion.scale = BACKGROUND_SCALE;
-	
+
 	Start &start = registry.starts.emplace(startScreenEntity);
 	GameScreen &screen = registry.gameScreens.emplace(startScreenEntity);
 	screen.type = ScreenType::START;
@@ -98,7 +96,7 @@ Entity createStartScreen(vec2 position)
 	Entity infoButtonEntity = createInfoButton();
 
 	start.buttons = std::vector{startButtonEntity, shopButtonEntity, infoButtonEntity};
-	
+
 	Entity startScreenLogoEntity = Entity();
 	// render request for logo
 	registry.renderRequests.insert(
@@ -126,8 +124,8 @@ Entity createShopScreen()
 		{TEXTURE_ASSET_ID::START_SCREEN_BG,
 		 EFFECT_ASSET_ID::TEXTURED,
 		 GEOMETRY_BUFFER_ID::SPRITE});
-	
-	Shop& shop = registry.shops.emplace(shopScreenEntity);
+
+	Shop &shop = registry.shops.emplace(shopScreenEntity);
 
 	GameScreen &screen = registry.gameScreens.emplace(shopScreenEntity);
 	screen.type = ScreenType::SHOP;
@@ -140,7 +138,7 @@ Entity createShopScreen()
 	motion.scale = scale;
 
 	Entity backButtonEntity = createBackButton();
-	
+
 	shop.buttons = std::vector{backButtonEntity};
 
 	return shopScreenEntity;
@@ -156,7 +154,7 @@ Entity createInfoScreen()
 		 EFFECT_ASSET_ID::TEXTURED,
 		 GEOMETRY_BUFFER_ID::SPRITE});
 
-	Info& info = registry.infos.emplace(infoScreenEntity);
+	Info &info = registry.infos.emplace(infoScreenEntity);
 
 	GameScreen &screen = registry.gameScreens.emplace(infoScreenEntity);
 	screen.type = ScreenType::INFO;
@@ -303,8 +301,8 @@ Entity createNose()
 
 	std::uniform_real_distribution<float> uniform_dist(0.0f, 1.0f);
 
-    std::random_device rd;
-    std::default_random_engine rng(rd());
+	std::random_device rd;
+	std::default_random_engine rng(rd());
 	int random_value = static_cast<int>(uniform_dist(rng) * spriteSheet.total_frames);
 	spriteSheet.current_frame = random_value;
 
@@ -341,8 +339,8 @@ Entity createNoseAccent()
 
 	std::uniform_real_distribution<float> uniform_dist(0.0f, 1.0f);
 
-    std::random_device rd;
-    std::default_random_engine rng(rd());
+	std::random_device rd;
+	std::default_random_engine rng(rd());
 	int random_value = static_cast<int>(uniform_dist(rng) * spriteSheet.total_frames);
 	std::cout << random_value << std::endl;
 	spriteSheet.current_frame = random_value;
@@ -431,7 +429,7 @@ void removeShopScreen()
 {
 	if (registry.shops.size() == 0)
 		return;
-	
+
 	Entity shop_entity = registry.shops.entities[0];
 	Shop &shop = registry.shops.components[0];
 	std::vector<Entity> buttons_to_remove = shop.buttons;
@@ -448,7 +446,7 @@ void removeInfoScreen()
 {
 	if (registry.infos.size() == 0)
 		return;
-	
+
 	Entity info_entity = registry.infos.entities[0];
 	Info &info = registry.infos.components[0];
 	std::vector<Entity> buttons_to_remove = info.buttons;
@@ -518,7 +516,8 @@ Entity createInfoButton()
 						TEXTURE_ASSET_ID::INFO_BUTTON);
 }
 
-Entity createBackButton() {
+Entity createBackButton()
+{
 	vec2 scale = BACK_BUTTON_SCALE;
 	vec2 position = BACK_BUTTON_COORDINATES;
 
@@ -571,21 +570,42 @@ Entity createHealthBar()
 
 void createDashRecharge()
 {
+	Player &player = registry.players.get(registry.players.entities[0]);
+	vec2 playerPos = registry.motions.get(registry.players.entities[0]).position;
+
 	for (int i = 0; i < DASH_RECHARGE_COUNT; i++)
 	{
-		Entity dot = Entity();
-		Motion &motion = registry.motions.emplace(dot);
+		Entity dash = Entity();
+		Motion &motion = registry.motions.emplace(dash);
 
-		motion.position = {DASH_RECHARGE_START_POS.x + (i * DASH_RECHARGE_SPACING), DASH_RECHARGE_START_POS.y};
+		float angle = (2 * M_PI / DASH_RECHARGE_COUNT) * i;
+		float random_offset = ((rand() % 100) / 500.0f) - 0.1f;
+		motion.position = {playerPos.x + (DASH_RADIUS + random_offset) * cos(angle),
+						   playerPos.y + (DASH_RADIUS + random_offset) * sin(angle)};
 		motion.scale = {DASH_WIDTH, DASH_HEIGHT};
+		motion.velocity = {0, 0};
 
 		registry.renderRequests.insert(
-			dot,
+			dash,
 			{TEXTURE_ASSET_ID::DASH_UI,
-			 EFFECT_ASSET_ID::DASH_UI,
+			 EFFECT_ASSET_ID::SPRITE_SHEET,
 			 GEOMETRY_BUFFER_ID::SPRITE});
 
-		registry.dashRecharges.emplace(dot);
+		Animation &a = registry.animations.emplace(dash);
+		a.start_frame = 1;
+		a.end_frame = 3;
+		a.time_per_frame = 300.0f;
+		a.loop = ANIM_LOOP_TYPES::PING_PONG;
+
+		SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(dash);
+		spriteSheet.total_frames = 3;
+		spriteSheet.current_frame = 0;
+
+		SpriteSize &sprite = registry.spritesSizes.emplace(dash);
+		sprite.width = 19;
+		sprite.height = 20;
+
+		registry.dashRecharges.emplace(dash);
 	}
 }
 
@@ -606,15 +626,15 @@ Entity createBuffUI(vec2 position, int buffType)
 									GEOMETRY_BUFFER_ID::SPRITE});
 
 	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(buffUI);
-	spriteSheet.total_frames = 20;	 
+	spriteSheet.total_frames = 20;
 	spriteSheet.current_frame = buff.buffType;
-								
+
 	SpriteSize &sprite = registry.spritesSizes.emplace(buffUI);
 	sprite.width = BUFF_UI_WIDTH;
 	sprite.height = BUFF_UI_HEIGHT;
-	
+
 	registry.uiElements.emplace(buffUI, UIElement{motion.position, motion.scale});
-	
+
 	return buffUI;
 }
 
@@ -665,7 +685,6 @@ void updateHuds()
 		Motion &healthBarMotion = registry.motions.get(registry.healthBars.entities[0]);
 		healthBarMotion.position = {camera.position.x + HEALTH_BAR_POS.x,
 									camera.position.y + HEALTH_BAR_POS.y};
-
 	}
 
 	if (registry.dashRecharges.size() > 0)
