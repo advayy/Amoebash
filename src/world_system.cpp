@@ -162,7 +162,7 @@ void WorldSystem::init(RenderSystem *renderer_arg)
 
 	// start playing background music indefinitely
 
-	std::cout << "Starting music..." << std::endl;
+	// std::cout << "Starting music..." << std::endl;
 	Mix_PlayMusic(background_music, -1);
 
 	// Set all states to default
@@ -286,6 +286,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
 	// spawn new projectiles
 	next_projectile_ms -= elapsed_ms_since_last_update * current_speed;
+
 	if (next_projectile_ms < 0.f && !gameOver)
 	{
 		next_projectile_ms = (PROJECTILE_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (PROJECTILE_SPAWN_RATE_MS / 2);
@@ -300,6 +301,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 			}
 			else break;
 		}
+
 
 		if (shooting_enemy < registry.bacteriophageAIs.entities.size())
 		{
@@ -411,7 +413,7 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 void WorldSystem::goToNextLevel()
 {
     // print go to next level
-    std::cout << "Going to next level" << std::endl;
+    // std::cout << "Going to next level" << std::endl;
 
 	current_speed = 1.f;
 	level += 1;
@@ -437,7 +439,7 @@ void WorldSystem::goToNextLevel()
 
 	std::pair<int, int> playerPosition;
     // print entering
-    std::cout << "Entering createProceduralMap" << std::endl;
+    // std::cout << "Entering createProceduralMap" << std::endl;
 	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
 
 	Player &player = registry.players.get(registry.players.entities[0]);
@@ -446,7 +448,7 @@ void WorldSystem::goToNextLevel()
 	playerMotion.position = gridCellToPosition(vec2(playerPosition.second, playerPosition.first));
 
     // print exiting
-    std::cout << "Exiting createProceduralMap" << std::endl;
+    // std::cout << "Exiting createProceduralMap" << std::endl;
 	return;
 }
 
@@ -455,8 +457,8 @@ void WorldSystem::goToNextLevel()
 void WorldSystem::restart_game()
 {
 
-	std::cout << "Restarting..." << std::endl;
-    std::cout << "Level: " << level + 1 << std::endl;
+	// std::cout << "Restarting..." << std::endl;
+    // std::cout << "Level: " << level + 1 << std::endl;
     
 	// Debugging for memory/component leaks
 	registry.list_all_components();
@@ -472,6 +474,8 @@ void WorldSystem::restart_game()
     
 	// FLAG
 	gameOver = false;
+
+	next_projectile_ms = 0;
 
 	// Not sure if we need to touch screen state here
 	// ScreenState &screen = registry.screenStates.components[0];
@@ -496,7 +500,7 @@ void WorldSystem::restart_game()
 	// debugging for memory/component leaks
 	registry.list_all_components();
     
-	std::cout << "Creating Procedural Map, tutorial mode status :" << tutorial_mode << std::endl;
+	// std::cout << "Creating Procedural Map, tutorial mode status :" << tutorial_mode << std::endl;
 
     std::pair<int, int> playerPosition;
 	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
@@ -578,11 +582,11 @@ void WorldSystem::handle_collisions()
 					{
 						keyMotion.velocity = vec2(0.0f, 0.0f);
 					}
-					std::cout << "Mesh collision imminent between player and hexagon" << std::endl;
+					// std::cout << "Mesh collision imminent between player and hexagon" << std::endl;
 				}
 				else 
 				{
-					std::cout << "No mesh collision predicted soon" << std::endl;
+					// std::cout << "No mesh collision predicted soon" << std::endl;
 				}
 			}
 			else if (registry.chests.has(entity))

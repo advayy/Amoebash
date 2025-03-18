@@ -344,7 +344,7 @@ Entity createNoseAccent()
     std::random_device rd;
     std::default_random_engine rng(rd());
 	int random_value = static_cast<int>(uniform_dist(rng) * spriteSheet.total_frames);
-	std::cout << random_value << std::endl;
+	// std::cout << random_value << std::endl;
 	spriteSheet.current_frame = random_value;
 
 	// not used at the moment
@@ -417,8 +417,8 @@ void removeStartScreen()
 	std::vector<Entity> buttons_to_remove = start.buttons;
 	Entity logo = start.logo;
 
-	std::cout << "Button Size" << std::endl;
-	std::cout << buttons_to_remove.size() << std::endl;
+	// std::cout << "Button Size" << std::endl;
+	// std::cout << buttons_to_remove.size() << std::endl;
 	for (auto &entity : buttons_to_remove)
 	{
 		registry.remove_all_components_of(entity);
@@ -435,7 +435,7 @@ void removeShopScreen()
 	Entity shop_entity = registry.shops.entities[0];
 	Shop &shop = registry.shops.components[0];
 	std::vector<Entity> buttons_to_remove = shop.buttons;
-	std::cout << "Buttons: " << buttons_to_remove.size() << std::endl;
+	// std::cout << "Buttons: " << buttons_to_remove.size() << std::endl;
 	for (auto &entity : buttons_to_remove)
 	{
 		registry.remove_all_components_of(entity);
@@ -452,7 +452,7 @@ void removeInfoScreen()
 	Entity info_entity = registry.infos.entities[0];
 	Info &info = registry.infos.components[0];
 	std::vector<Entity> buttons_to_remove = info.buttons;
-	std::cout << "Buttons: " << buttons_to_remove.size() << std::endl;
+	// std::cout << "Buttons: " << buttons_to_remove.size() << std::endl;
 	for (auto &entity : buttons_to_remove)
 	{
 		registry.remove_all_components_of(entity);
