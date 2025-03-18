@@ -926,6 +926,14 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			removeGameOverScreen();
 			restart_game();
 		}
+
+		else if (current_state == GameState::PAUSE && button == GLFW_MOUSE_BUTTON_LEFT)
+		{
+			if (getClickedButton() == ButtonType::SAVEBUTTON)
+			{
+				std::cout << "Save button clicked!" << std::endl;
+			}
+		}
 	}
 }
 
@@ -934,15 +942,23 @@ bool WorldSystem::isButtonClicked(screenButton &button)
 	float button_x = button.center[0];
 	float button_y = button.center[1];
 
-	float x_distance = std::abs(button_x - device_mouse_pos_x);
-	float y_distance = std::abs(button_y - device_mouse_pos_y);
+	float prenormalized_x = button_x - device_mouse_pos_x;
+	float prenormalized_y = button_y - device_mouse_pos_y;
+
+	if (current_state == GameState::GAME_PLAY || current_state == GameState::PAUSE) {
+		Camera& camera = registry.cameras.components[0];
+		vec2 camera_pos = camera.position;
+
+		prenormalized_x -= camera_pos.x;
+		prenormalized_y -= camera_pos.y;
+	}
+
+	float x_distance = std::abs(prenormalized_x);
+	float y_distance = std::abs(prenormalized_y);
+		
+	std::cout << "Mouse Distance: " << x_distance << " " << y_distance << std::endl;
 
 	bool res = (x_distance < button.w / 2.f) && (y_distance < button.h / 2.f);
-
-	// std::cout << device_mouse_pos_x << " " << device_mouse_pos_y << std::endl;
-	// std::cout << game_mouse_pos_x << " " << game_mouse_pos_y << std::endl;
-	// std::cout << button_x << " " << button_y << std::endl;
-	// std::cout << "button: " << res << std::endl;
 
 	return res;
 }
