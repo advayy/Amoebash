@@ -192,7 +192,19 @@ void WorldSystem::updateCamera(float elapsed_ms)
 	}	
 
 	float interpolationFactor = 0.05f;
-    camera.position = lerp(camera.position, player_motion.position, interpolationFactor);
+	
+	if (glm::length(player_motion.velocity) > 0.001f)
+	{
+		vec2 velocityUnitVector = glm::normalize(player_motion.velocity);
+		float lerpRadius = CAMERA_POSITION_RADIUS;
+	
+		vec2 targetPosition = player_motion.position + velocityUnitVector * lerpRadius;
+	
+	
+		camera.position = lerp(camera.position, targetPosition, interpolationFactor);
+	} else {
+		camera.position = lerp(camera.position, player_motion.position, interpolationFactor);
+	}
 	camera.grid_position = positionToGridCell(camera.position);
 }
 
