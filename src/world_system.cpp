@@ -3,6 +3,9 @@
 #include "world_init.hpp"
 #include "common.hpp"
 
+// json library
+#include "../ext/json/json.hpp"
+
 // stlib
 #include <cassert>
 #include <sstream>
@@ -17,6 +20,8 @@
 #include "ui_system.hpp"
 
 bool tutorial_mode = true;
+
+using json = nlohmann::json;
 
 // create the world
 WorldSystem::WorldSystem() : level(0),
