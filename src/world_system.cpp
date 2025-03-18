@@ -198,32 +198,10 @@ void WorldSystem::updateMouseCoords()
 	game_mouse_pos_y = device_mouse_pos_y + camera.position.y - WINDOW_HEIGHT_PX * 0.5f;
 }
 
-// Update our game world
-bool WorldSystem::step(float elapsed_ms_since_last_update)
+
+void WorldSystem::spawnEnemies(float elapsed_ms_since_last_update)
 {
-
-	// M1 Feature - Camera controls
-	updateCamera(elapsed_ms_since_last_update);
-
-	if (tutorial_mode && registry.infoBoxes.size() == 0) {
-		createInfoBoxes();
-	}
-
-	updateMouseCoords();
-	updateHuds();
-
-	// Updating window title with points - disabled for now
-	// std::stringstream title_ss;
-	// title_ss << "Points: " << points;
-	// glfwSetWindowTitle(window, title_ss.str().c_str());
-
-	while (registry.debugComponents.entities.size() > 0)
-		registry.remove_all_components_of(registry.debugComponents.entities.back());
-
-	// Point the player to the mouse
 	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
-	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x) * 180.0f / M_PI + 90.0f;
-
 	if (!tutorial_mode)
 	{
 		// spawn new invaders
@@ -265,14 +243,13 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
 					createBacteriophage(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }), index);
 				}
-	
-				// Optional debug output for spawning enemies
-				// std::cout << "TOTAL ENEMIES: " << registry.enemies.entities.size() << std::endl;
 			}
 		}
 	}
+}
 
-	// despawn any old projectiles
+void WorldSystem::handleProjectiles(float elapsed_ms_since_last_update)
+{
 	for (auto& projectile_e : registry.projectiles.entities)
 	{
 		Projectile& projectile = registry.projectiles.get(projectile_e);
@@ -308,9 +285,11 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 			createBacteriophageProjectile(registry.bacteriophageAIs.entities[shooting_enemy]);
 		}
 	}
+}
 
-    tileProceduralMap();
-
+void WorldSystem::checkPortalCollision(){
+	// Point the player to the mouse
+	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
     // check if player in portal tile
     if (registry.portals.entities.size() > 0 && registry.motions.has(registry.portals.entities.back())) {
         Motion &portal_motion = registry.motions.get(registry.portals.entities.back());
@@ -335,6 +314,29 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
         }
     }
+}
+
+// Update our game world
+bool WorldSystem::step(float elapsed_ms_since_last_update)
+{
+
+	// M1 Feature - Camera controls
+	updateCamera(elapsed_ms_since_last_update);
+
+	if (tutorial_mode && registry.infoBoxes.size() == 0) {
+		createInfoBoxes();
+	}
+
+	updateMouseCoords();
+	updateHuds();
+	handlePlayerMovement(elapsed_ms_since_last_update);
+	handlePlayerHealth(elapsed_ms_since_last_update);
+
+	spawnEnemies(elapsed_ms_since_last_update);
+	handleProjectiles(elapsed_ms_since_last_update);
+
+    tileProceduralMap();
+	checkPortalCollision();
 
     // Update the darken screen timer
     if (darken_screen_timer >= 0.0f) {
@@ -346,10 +348,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
             darken_screen_timer = -1.0f; // Stop the timer
         }
     }
-
-	handlePlayerMovement(elapsed_ms_since_last_update);
-	handlePlayerHealth(elapsed_ms_since_last_update);
-
 	
 	// step the particle system only when its needed
 	// for optimaztion, we could only step the particles that are on screen
@@ -391,6 +389,8 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 	// if the player is not dashing, then have its velocity be base speed * by direction to mouse, if the mouse is outside deadzone
 	
 	Player &player = registry.players.get(registry.players.entities[0]);
+	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
+	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x) * 180.0f / M_PI + 90.0f;
 
 	if(registry.dashes.size() == 0) {
 		Motion &player_motion = registry.motions.get(registry.players.entities[0]);
