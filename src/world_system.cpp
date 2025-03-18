@@ -931,7 +931,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		{
 			if (getClickedButton() == ButtonType::SAVEBUTTON)
 			{
-				std::cout << "Save button clicked!" << std::endl;
+				saveGame();
 			}
 		}
 	}
@@ -955,9 +955,7 @@ bool WorldSystem::isButtonClicked(screenButton &button)
 
 	float x_distance = std::abs(prenormalized_x);
 	float y_distance = std::abs(prenormalized_y);
-		
-	std::cout << "Mouse Distance: " << x_distance << " " << y_distance << std::endl;
-
+	
 	bool res = (x_distance < button.w / 2.f) && (y_distance < button.h / 2.f);
 
 	return res;
@@ -1118,4 +1116,44 @@ void WorldSystem::tileProceduralMap() {
 			}
 		}
 	}
+}
+
+void WorldSystem::saveGame() {
+	std::cout << "Saving Game!" << std::endl;
+	
+	json gameData;
+	
+	// save map data
+	Entity proceduralMapEntity = registry.proceduralMaps.entities[0];
+	ProceduralMap& map = registry.proceduralMaps.get(proceduralMapEntity);
+	
+	gameData["map"] = json(map);
+
+	// save player status + position
+	Entity playerEntity = registry.players.entities[0];
+	Player& player = registry.players.get(playerEntity);
+	Motion& playerMotion = registry.motions.get(playerEntity);
+
+	// save buff status
+	std::vector<BuffUI> buffs = registry.buffUIs.components;
+
+	gameData["buffs"] = json(buffs);
+
+	gameData["player"]["playerStatus"] = json(player);
+	gameData["player"]["position"] = json(playerMotion.position);
+
+	// save game progress
+
+	std::string filename = std::string(PROJECT_SOURCE_DIR) + "/data/save/world_status.json";
+
+	std::ofstream o(filename);
+
+	if (!o.is_open()) {
+		std::cerr << "Could not open file for writing JSON" << std::endl;
+		return;
+	}	
+
+	o << gameData.dump(4) << std::endl;
+
+	std::cout << "Done Saving!" << std::endl;
 }

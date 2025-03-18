@@ -63,6 +63,9 @@ public:
 	// should the game be over ?
 	bool is_over() const;
 
+	// for game saving
+	void saveGame();
+
 	GameState current_state = GameState::START_SCREEN_ANIMATION;
 	GameState previous_state = GameState::START_SCREEN_ANIMATION;
 
