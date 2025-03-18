@@ -211,7 +211,8 @@ enum ButtonType
 	SHOPBUTTON = STARTBUTTON + 1,
 	INFOBUTTON = SHOPBUTTON + 1,
 	BACKBUTTON = INFOBUTTON,
-	NONE = BACKBUTTON + 1
+	SAVEBUTTON = BACKBUTTON + 1,
+	NONE = SAVEBUTTON + 1
 };
 
 // Coordinates and bounding box of start button on start screen

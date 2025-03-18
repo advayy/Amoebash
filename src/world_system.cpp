@@ -21,6 +21,7 @@
 
 bool tutorial_mode = true;
 
+// json object from json library
 using json = nlohmann::json;
 
 // create the world
