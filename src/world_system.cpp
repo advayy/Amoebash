@@ -419,6 +419,9 @@ void WorldSystem::goToNextLevel()
 	level += 1;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
+	
+	initializedMap = false;
+	currentTiles.clear();
 
     // int buffSize = registry.buffs.entities.size();
     // for (int i = 0; i < buffSize; i++) {
@@ -476,6 +479,10 @@ void WorldSystem::restart_game()
 	gameOver = false;
 
 	next_projectile_ms = 0;
+
+	initializedMap = false;
+	currentTiles.clear();
+
 
 	// Not sure if we need to touch screen state here
 	// ScreenState &screen = registry.screenStates.components[0];
@@ -1023,6 +1030,10 @@ bool WorldSystem::isDashing()
 }
 
 void WorldSystem::tileProceduralMap() {
+	if(initializedMap) {
+		return;
+	}
+
 	vec2 camera_pos = registry.cameras.get(registry.cameras.entities[0]).grid_position;
 
 	float cameraGrid_x = camera_pos.x;
@@ -1030,31 +1041,17 @@ void WorldSystem::tileProceduralMap() {
 
 	ProceduralMap& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]);
 
-	std::map<int, std::map<int, int>> currentTiles;
-
-	// remove all tiles that arent in the chunk distance
-	for (Entity &entity : registry.tiles.entities)
-	{
-
-		Tile &tile = registry.tiles.get(entity);
-		vec2 tilePos = {tile.grid_x, tile.grid_y};
-		vec2 cameraGrid = {cameraGrid_x, cameraGrid_y};
-		if (abs(glm::distance(cameraGrid, tilePos)) > CHUNK_DISTANCE)
-		{
-			registry.remove_all_components_of(entity);
-		}
-		else
-		{
-			// mark this tile as already drawn, so we don't create it again
-			currentTiles[tile.grid_x][tile.grid_y] = 1;
-		}
-	}
-
 	// setting map bounds
-	int left = (cameraGrid_x - (WINDOW_GRID_WIDTH / 2) - CHUNK_DISTANCE / 2);	 // max((cameraGrid_x - (WINDOW_GRID_WIDTH/2 + CHUNK_DISTANCE/2)), (float) map.left);
-	int right = (cameraGrid_x + (WINDOW_GRID_WIDTH / 2) + CHUNK_DISTANCE / 2);	 // min((cameraGrid_x + (WINDOW_GRID_WIDTH/2 +CHUNK_DISTANCE/2)), (float) map.right);
-	int top = (cameraGrid_y - (WINDOW_GRID_HEIGHT / 2) - CHUNK_DISTANCE / 2);	 // max((cameraGrid_y - (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.top);
-	int bottom = (cameraGrid_y + (WINDOW_GRID_HEIGHT / 2) + CHUNK_DISTANCE / 2); // min((cameraGrid_y + (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.bottom);
+	int left = (cameraGrid_x - (WINDOW_GRID_WIDTH / 2) - CHUNK_DISTANCE / 2);	 
+	int right = (cameraGrid_x + (WINDOW_GRID_WIDTH / 2) + CHUNK_DISTANCE / 2);	 
+	int top = (cameraGrid_y - (WINDOW_GRID_HEIGHT / 2) - CHUNK_DISTANCE / 2);	
+	int bottom = (cameraGrid_y + (WINDOW_GRID_HEIGHT / 2) + CHUNK_DISTANCE / 2);
+
+	left = -3;
+	right = 23;
+	top = -3;
+	bottom = 23;
+
 
 	for (int x = left; x < right; x += 1)
 	{
@@ -1066,26 +1063,32 @@ void WorldSystem::tileProceduralMap() {
 			if (currentTiles.find(x) != currentTiles.end() && currentTiles[x].find(y) != currentTiles[x].end()) continue;
 
 			if (x < map.left || x >= map.right || y < map.top || y >= map.bottom) {
+				currentTiles[x][y] = 1;
 				addWallTile(gridCoord);
-			} else if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE) {
+			} else { // if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE)
 				
 				// print here
 				// std::cout << "x: " << x << " y: " << y << std::endl;
 				if (map.map[x][y] == tileType::EMPTY) 
 				{
 					// if its being tiled what tile to put
+					currentTiles[x][y] = 1;
 					addParalaxTile(gridCoord);
                 } 
 				else if (map.map[x][y] == tileType::PORTAL) 
 				{
+					currentTiles[x][y] = 1;
 					addParalaxTile(gridCoord);
                     addPortalTile(gridCoord);
                 } 
 				else 
 				{
+					currentTiles[x][y] = 1;
 					addWallTile(gridCoord);
 				}
 			}
 		}
 	}
+
+	initializedMap=true;
 }

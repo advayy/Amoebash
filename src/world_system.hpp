@@ -151,5 +151,7 @@ private:
 
     CollisionSystem detector;
 
+	std::map<int, std::map<int, int>> currentTiles;
+	bool initializedMap = false;
     void tileProceduralMap();
 };
