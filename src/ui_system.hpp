@@ -11,6 +11,7 @@ Entity createStartScreen(vec2 position = LOGO_POSITION_INITIAL);
 Entity createShopScreen();
 Entity createInfoScreen();
 Entity createGameOverScreen();
+Entity createNucleusMenuScreen();
 Entity createPauseScreen();
 
 void createGameplayCutScene();

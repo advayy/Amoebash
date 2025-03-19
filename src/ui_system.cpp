@@ -200,6 +200,30 @@ Entity createGameOverScreen()
 	return gameOverScreenEntity;
 }
 
+Entity createNucleusMenuScreen() {
+	Entity nucleusMenuScreen = Entity();
+
+	registry.renderRequests.insert(
+		nucleusMenuScreen,
+		{TEXTURE_ASSET_ID::GAMEOVER,
+		 EFFECT_ASSET_ID::TEXTURED,
+		 GEOMETRY_BUFFER_ID::SPRITE});
+
+	Over &over = registry.overs.emplace(nucleusMenuScreen);
+
+	GameScreen &screen = registry.gameScreens.emplace(nucleusMenuScreen);
+	screen.type = ScreenType::GAMEOVER;
+
+	Motion &motion = registry.motions.emplace(nucleusMenuScreen);
+	Camera &camera = registry.cameras.components[0];
+
+	vec2 scale = {LOGO_WIDTH_PX, LOGO_HEIGHT_PX};
+	motion.position = camera.position;
+	motion.scale = scale;
+
+	return nucleusMenuScreen;
+}
+
 Entity createPauseScreen()
 {
 	Entity pauseScreenEntity = Entity();
