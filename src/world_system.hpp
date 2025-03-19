@@ -90,6 +90,8 @@ private:
 	void on_mouse_move(vec2 pos);
 	void on_mouse_button_pressed(int button, int action, int mods);
 
+    void shootGun();
+
 	// to get the clicked button
 	ButtonType getClickedButton();
 	// to check if button was clicked

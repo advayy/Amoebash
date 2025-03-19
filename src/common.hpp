@@ -141,8 +141,8 @@ const float PROJECTILE_TTL_MS = 4 * MS_PER_S;
 
 // GUN and PROJECTILE
 const float GUN_COOLDOWN_MS = 500.0f;
-const float GUN_SIZE = 16 * WORK_SCALE_FACTOR;
-const float GUN_UI_SIZE = 18 * WORK_SCALE_FACTOR;
+const float GUN_SIZE = 20 * WORK_SCALE_FACTOR;
+const float GUN_UI_SIZE = 20 * WORK_SCALE_FACTOR;
 const float GUN_PROJECTILE_DAMAGE = 20;
 const float GUN_PROJECTILE_SPEED = 600.0f;
 
