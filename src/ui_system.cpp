@@ -41,6 +41,15 @@ void removeInfoBoxes() {
 	for (auto e : registry.infoBoxes.entities) {
 		registry.remove_all_components_of(e);
 	}
+
+	for (auto e : registry.keys.entities) {
+		registry.remove_all_components_of(e);
+	}
+
+	for (auto e : registry.chests.entities) {
+		registry.remove_all_components_of(e);
+	}
+	
 	return;
 }
 

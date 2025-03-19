@@ -253,11 +253,7 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 				}
 			}
 		}
-		std::cout << "Created InfoBoxes" << std::endl;
-
 	} else {
-		std::cout << "Should randomize map" << std::endl;
-	
 		// Initialize map to random walls / floors
         std::random_device rd;
 		std::default_random_engine rng(rd());
