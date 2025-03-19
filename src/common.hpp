@@ -139,6 +139,13 @@ const float PROJECTILE_SPAWN_RATE_MS = 2 * MS_PER_S;
 const float PROJECTILE_SPEED = 300.0f;
 const float PROJECTILE_TTL_MS = 4 * MS_PER_S;
 
+// GUN and PROJECTILE
+const float GUN_COOLDOWN_MS = 500.0f;
+const float GUN_SIZE = 16 * WORK_SCALE_FACTOR;
+const float GUN_UI_SIZE = 18 * WORK_SCALE_FACTOR;
+const float GUN_PROJECTILE_DAMAGE = 20;
+const float GUN_PROJECTILE_SPEED = 600.0f;
+
 const float PROJECTILE_BB_WIDTH = (float)PROJECTILE_SIZE;
 const float PROJECTILE_BB_HEIGHT = (float)PROJECTILE_SIZE;
 
@@ -213,6 +220,8 @@ const float WEAPON_PILL_UI_WIDTH = 118 * UI_SCALE;
 const float WEAPON_PILL_UI_HEIGHT = 58 * UI_SCALE;
 const vec2 WEAPON_PILL_UI_POS = {WINDOW_WIDTH_PX / 2 - UI_MARGIN_X - WEAPON_PILL_UI_WIDTH / 2,
 								 WINDOW_HEIGHT_PX / 2 - UI_MARGIN_Y - NUCLEUS_UI_HEIGHT / 2}; // pos.y aligns w/ nuclues
+const vec2 GUN_UI_POS = {WEAPON_PILL_UI_POS.x - WEAPON_PILL_UI_WIDTH / 4,
+                         WEAPON_PILL_UI_POS.y};
 
 // 
 const int NUMBER_OF_BUFFS = 5;

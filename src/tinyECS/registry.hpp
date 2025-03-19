@@ -75,6 +75,8 @@ public:
 	// particle
 	ComponentContainer<Particle> particles;
 
+    ComponentContainer<Gun> guns;
+
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
 	{
@@ -126,6 +128,7 @@ public:
 		registry_list.push_back(&rbcEnemyAIs);
 		registry_list.push_back(&bacteriophageAIs);
 		registry_list.push_back(&particles);
+        registry_list.push_back(&guns);
 	}
 
 	void clear_all_components()

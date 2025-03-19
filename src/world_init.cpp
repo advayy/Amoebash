@@ -171,14 +171,40 @@ Entity createPlayer(RenderSystem *renderer, vec2 position)
 	sprite.width = 32;
 	sprite.height = 32;
 
+    createGun(renderer, position);
+
 	return entity;
 }
 
-Entity createProjectile(vec2 pos, vec2 size, vec2 velocity)
+Entity createGun(RenderSystem *renderer, vec2 position) {
+    auto entity = Entity();
+
+    registry.guns.emplace(entity);
+
+    // Initialize the motion
+    auto &motion = registry.motions.emplace(entity);
+    motion.angle = 0.0f;
+    motion.velocity = {0.0f, 0.0f};
+    motion.position = position;
+
+    motion.scale = vec2({GUN_SIZE, GUN_SIZE});
+
+    registry.renderRequests.insert(
+        entity,
+        {TEXTURE_ASSET_ID::GUN,
+         EFFECT_ASSET_ID::TEXTURED,
+         GEOMETRY_BUFFER_ID::SPRITE
+        }
+    );
+
+    return entity;
+}
+
+Entity createProjectile(vec2 pos, vec2 size, vec2 velocity, float damage)
 {
 	auto entity = Entity();
 	auto &p = registry.projectiles.emplace(entity);
-	p.damage = PROJECTILE_DAMAGE;
+	p.damage = damage;
 
 	// Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
 	// registry.meshPtrs.emplace(entity, &mesh);
@@ -208,7 +234,7 @@ Entity createBacteriophageProjectile(Entity& bacteriophage)
 	vec2 direction = vec2(cosf((motion.angle - 90) * (M_PI / 180)), sinf((motion.angle - 90) * (M_PI / 180)));
 	vec2 projectile_pos = motion.position + (motion.scale * direction);
 	vec2 projectile_velocity = direction * PROJECTILE_SPEED;
-	Entity projectile = createProjectile(projectile_pos, { PROJECTILE_BB_WIDTH, PROJECTILE_BB_HEIGHT }, projectile_velocity);
+	Entity projectile = createProjectile(projectile_pos, { PROJECTILE_BB_WIDTH, PROJECTILE_BB_HEIGHT }, projectile_velocity, PROJECTILE_DAMAGE);;
 	registry.bacteriophageProjectiles.emplace(projectile);
 	return projectile;
 }

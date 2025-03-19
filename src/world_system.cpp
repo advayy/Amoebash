@@ -365,6 +365,22 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	// for optimaztion, we could only step the particles that are on screen
 	particle_system.step(elapsed_ms_since_last_update);
 
+    // update gun cooldown
+    Gun &gun = registry.guns.get(registry.guns.entities[0]);
+    if (gun.cooldown_timer_ms > 0.0f) {
+        gun.cooldown_timer_ms -= elapsed_ms_since_last_update;
+    }
+
+    // update gun position to match player
+    Motion &gun_motion = registry.motions.get(registry.guns.entities[0]);
+    gun_motion.angle = player_motion.angle;
+
+    float angle_radians = glm::radians(player_motion.angle);
+    vec2 offset = {cos(angle_radians) * (PLAYER_BB_WIDTH / 2), sin(angle_radians) * (PLAYER_BB_WIDTH / 2)};
+
+    gun_motion.position = {player_motion.position[0] + offset.x, player_motion.position[1] + offset.y};
+    gun_motion.velocity = player_motion.velocity;
+
 	return true;
 }
 
@@ -547,6 +563,10 @@ void WorldSystem::restart_game()
 					vec2(WEAPON_PILL_UI_WIDTH, WEAPON_PILL_UI_HEIGHT),
 					TEXTURE_ASSET_ID::WEAPON_PILL_UI,
 					EFFECT_ASSET_ID::UI);
+    createUIElement(GUN_UI_POS,
+                    vec2(GUN_UI_SIZE, GUN_UI_SIZE),
+                    TEXTURE_ASSET_ID::GUN,
+                    EFFECT_ASSET_ID::UI);
 }
 
 // Compute collisions between entities. Collisions are always in this order: (Player | Projectiles, Enemy | Wall | Buff)
@@ -861,6 +881,21 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 					Mix_PlayChannel(-1, dash_sound_1, 0);
 				}
 			}
+            else if (button == GLFW_MOUSE_BUTTON_RIGHT)
+            {
+                Gun &gun = registry.guns.get(registry.guns.entities[0]);
+                Motion &gun_motion = registry.motions.get(registry.guns.entities[0]);
+                if (gun.cooldown_timer_ms <= 0.0f) {
+                    gun.cooldown_timer_ms = GUN_COOLDOWN_MS; // Reset cooldown
+
+                    float angle_radians = glm::radians(gun_motion.angle);
+                    vec2 velocity = {cos(angle_radians) * GUN_PROJECTILE_SPEED, sin(angle_radians) * GUN_PROJECTILE_SPEED};
+
+                    velocity = {velocity.y, -velocity.x};
+
+                    createProjectile(gun_motion.position, {PROJECTILE_SIZE, PROJECTILE_SIZE}, velocity, GUN_PROJECTILE_DAMAGE);
+                }
+            }
 		}
 		else if (current_state == GameState::START_SCREEN && button == GLFW_MOUSE_BUTTON_LEFT)
 		{

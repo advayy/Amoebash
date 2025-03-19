@@ -11,11 +11,12 @@ Entity createSpikeEnemy(RenderSystem* renderer, vec2 position);
 Entity createRBCEnemy(RenderSystem* renderer, vec2 position);
 Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_index);
 Entity createPlayer(RenderSystem *renderer, vec2 position);
+Entity createGun(RenderSystem *renderer, vec2 position);
 Entity createKey(RenderSystem *renderer, vec2 position);
 Entity createChest(RenderSystem *renderer, vec2 position);
 
 // projectile
-Entity createProjectile(vec2 pos, vec2 size, vec2 velocity);
+Entity createProjectile(vec2 pos, vec2 size, vec2 velocity, float damage);
 Entity createBacteriophageProjectile(Entity& bacteriophage);
 
 Entity createCamera();
