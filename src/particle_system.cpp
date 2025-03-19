@@ -118,8 +118,8 @@ Entity ParticleSystem::createDeathParticle(vec2 position)
     motion.velocity = {cos(angle) * speed, sin(angle) * speed};
 
     // random size variation
-    float size_factor = 15.0f + uniform_dist(rng) * 10.0f;
-    motion.scale = {size_factor, size_factor};
+    float size_factor = 16.0f + uniform_dist(rng) * 10.0f;
+    motion.scale = {size_factor/2, size_factor};
 
     // random color (temporary)
     // float r = 0.5f + uniform_dist(rng) * 0.2f;

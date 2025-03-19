@@ -93,10 +93,10 @@ int main()
 			// CK: be mindful of the order of your systems and rearrange this list only if necessary
 			world_system.step(elapsed_ms);
 			ai_system.step(elapsed_ms);
-			animation_system.step(elapsed_ms);
 			physics_system.step(elapsed_ms);
 			world_system.handle_collisions();
             particle_system.step(elapsed_ms);
+			animation_system.step(elapsed_ms);
 
 			renderer_system.draw();
 			renderer_system.drawUIElements();

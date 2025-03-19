@@ -76,6 +76,10 @@ public:
     bool canDash();
     bool isDashing();
 
+	void spawnEnemies(float elapsed_ms_since_last_update);
+	void handleProjectiles(float elapsed_ms_since_last_update);
+	void checkPortalCollision();
+
 private:
 	bool gameOver = false;
 
@@ -147,5 +151,7 @@ private:
 
     CollisionSystem detector;
 
+	std::map<int, std::map<int, int>> currentTiles;
+	bool initializedMap = false;
     void tileProceduralMap();
 };
