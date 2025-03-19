@@ -6,6 +6,12 @@
 
 extern bool tutorial_mode;
 
+// struct Progression {
+//  // cutscene viewer?
+// // upgrades purchesed?
+// // idl
+// }
+
 struct Player
 {
 	int current_health = PLAYER_DEFAULT_HEALTH;
@@ -27,8 +33,8 @@ struct Player
 
 	// Detection range for enemies
 	float detection_range = 1.0f;
-
 	vec2 grid_position = {0, 0};
+	std::vector<int> buffsCollected;
 };
 
 struct Dashing
@@ -376,8 +382,8 @@ enum class TEXTURE_ASSET_ID
 	LEAVE_TUTORIAL = RESTART_INFO + 1,
 	CHEST = LEAVE_TUTORIAL + 1,
 	PARTICLE = CHEST + 1,
-	NUCLEUS_MENU = PARTICLE +1,
-	NUCLEUS_MENU_SLOT = NUCLEUS_MENU+1,
+	NUCLEUS_MENU = PARTICLE + 1,
+	NUCLEUS_MENU_SLOT = NUCLEUS_MENU + 1,
 	TEXTURE_COUNT = NUCLEUS_MENU_SLOT + 1
 };
 

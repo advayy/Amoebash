@@ -11,6 +11,8 @@ Entity createStartScreen(vec2 position = LOGO_POSITION_INITIAL);
 Entity createShopScreen();
 Entity createInfoScreen();
 Entity createGameOverScreen();
+Entity createNucleusMenuNucleus();
+Entity createNucleusMenuSlot(int n);
 Entity createNucleusMenuScreen();
 Entity createPauseScreen();
 

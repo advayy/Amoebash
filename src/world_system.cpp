@@ -911,7 +911,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				previous_state = temp;
 			}
 		}
-		// gameover state -> start screen state
+		// gameover state -> start screen state // FLAG this should be done with the button on the screen
 		else if (current_state == GameState::GAME_OVER && button == GLFW_MOUSE_BUTTON_LEFT) 
 		{
 			previous_state = current_state;
@@ -951,6 +951,7 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 	}
 
 	Buff &buff = registry.buffs.get(buff_entity);
+	player.buffsCollected.push_back(buff.type);
 	buff.collected = true;
 
 	registry.remove_all_components_of(buff_entity);

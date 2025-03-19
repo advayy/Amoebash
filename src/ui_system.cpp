@@ -177,50 +177,63 @@ Entity createInfoScreen()
 
 Entity createGameOverScreen()
 {
-	Entity gameOverScreenEntity = Entity();
-
-	registry.renderRequests.insert(
-		gameOverScreenEntity,
-		{TEXTURE_ASSET_ID::GAMEOVER,
-		 EFFECT_ASSET_ID::TEXTURED,
-		 GEOMETRY_BUFFER_ID::SPRITE});
-
-	Over &over = registry.overs.emplace(gameOverScreenEntity);
-
-	GameScreen &screen = registry.gameScreens.emplace(gameOverScreenEntity);
-	screen.type = ScreenType::GAMEOVER;
-
-	Motion &motion = registry.motions.emplace(gameOverScreenEntity);
-	Camera &camera = registry.cameras.components[0];
-
-	vec2 scale = {LOGO_WIDTH_PX, LOGO_HEIGHT_PX};
-	motion.position = camera.position;
-	motion.scale = scale;
-
-	return gameOverScreenEntity;
+	return createNucleusMenuScreen();
 }
 
+Entity createNucleusMenuNucleus() {
+	Entity e = Entity();
+
+	registry.renderRequests.insert(e,
+	{
+		TEXTURE_ASSET_ID::NUCLEUS_MENU,
+		EFFECT_ASSET_ID::TEXTURED,
+		GEOMETRY_BUFFER_ID::SPRITE
+	});
+	Motion &motion = registry.motions.emplace(e);
+
+	vec2 scale = {NUCLEUS_MENU_NUCLEUS_WIDTH, NUCLEUS_MENU_NUCLEUS_HEIGHT};
+
+	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+	motion.position = {camera.position.x + (2*30), camera.position.y + (2*30)};
+	motion.scale = scale;
+
+	return e;
+}
+
+Entity createNucleusMenuSlot(int n){
+	Entity e = Entity();
+
+	registry.renderRequests.insert(e,
+	{
+		TEXTURE_ASSET_ID::NUCLEUS_MENU_SLOT,
+		EFFECT_ASSET_ID::TEXTURED,
+		GEOMETRY_BUFFER_ID::SPRITE
+	});
+
+	return e;
+}
+
+
 Entity createNucleusMenuScreen() {
+	// Add all buffs collected to the screen,
+	// Add the number of cups
+	// add the nucleus thing
+	Entity nucleus = createNucleusMenuNucleus();
 	Entity nucleusMenuScreen = Entity();
+	
+	registry.overs.emplace(nucleus);
+	registry.overs.emplace(nucleusMenuScreen);
 
-	registry.renderRequests.insert(
-		nucleusMenuScreen,
-		{TEXTURE_ASSET_ID::GAMEOVER,
-		 EFFECT_ASSET_ID::TEXTURED,
-		 GEOMETRY_BUFFER_ID::SPRITE});
-
-	Over &over = registry.overs.emplace(nucleusMenuScreen);
+	// go through player/ game progression list of like 
 
 	GameScreen &screen = registry.gameScreens.emplace(nucleusMenuScreen);
+
 	screen.type = ScreenType::GAMEOVER;
 
 	Motion &motion = registry.motions.emplace(nucleusMenuScreen);
 	Camera &camera = registry.cameras.components[0];
 
-	vec2 scale = {LOGO_WIDTH_PX, LOGO_HEIGHT_PX};
 	motion.position = camera.position;
-	motion.scale = scale;
-
 	return nucleusMenuScreen;
 }
 

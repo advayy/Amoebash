@@ -71,7 +71,7 @@ class RenderSystem
 		textures_path("tutorial/leave.png"),
 		textures_path("projectiles/chest.png"),
 		textures_path("effects/germoney.png"),
-		textures_path("nucleus_menu/nucleus_menu_nucleus_186x148.png"),
+		textures_path("nucleus_menu/nucleus_menu_nucleus.png"),
 		textures_path("nucleus_menu/nucleus_menu_slot_34x34.png")
 	};
 

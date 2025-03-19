@@ -479,18 +479,18 @@ void RenderSystem::drawScreenAndButtons(
 	// draw logo 
 	// draw buttons
 
-	for (uint i = 0; i < registry.gameScreens.size(); i++)
-	{
-		const auto &screenComp = registry.gameScreens.components[i];
-		if (screenComp.type == screenType)
-		{
-			Entity screenEntity = registry.gameScreens.entities[i];
-			drawTexturedMesh(screenEntity, projection_matrix);
-		}
-	}
 
 	if (screenType == ScreenType::START)
 	{
+		for (uint i = 0; i < registry.gameScreens.size(); i++)
+		{
+			const auto &screenComp = registry.gameScreens.components[i];
+			if (screenComp.type == screenType)
+			{
+				Entity screenEntity = registry.gameScreens.entities[i];
+				drawTexturedMesh(screenEntity, projection_matrix);
+			}
+		} 
 		for (uint i = 0; i < registry.starts.size(); i++)
 		{
 			Start &start = registry.starts.components[i];
@@ -501,7 +501,17 @@ void RenderSystem::drawScreenAndButtons(
 		}
 	}
 
-	if (buttonTypes.size() != 0)
+	if (screenType == ScreenType::GAMEOVER) {
+		for (uint i = 0; i < registry.overs.entities.size(); i++)
+		{
+			Entity e = registry.overs.entities[i];
+			if(registry.renderRequests.has(e)) {
+				drawTexturedMesh(e, projection_matrix);
+			}
+		}
+	}
+
+	if (buttonTypes.size() != 0 && screenType != ScreenType::GAMEOVER)
 	{
 		for (uint i = 0; i < registry.buttons.components.size(); i++)
 		{
