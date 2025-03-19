@@ -195,7 +195,8 @@ const vec2 HEALTH_BAR_POS = {
 
 // dash recharge
 const float DASH_WIDTH = 18 * UI_SCALE;
-const float DASH_HEIGHT = 21.6 * UI_SCALE;
+const float DASH_HEIGHT = 18 * UI_SCALE;
+const float DASH_RADIUS = 40.0f * UI_SCALE;;
 
 // const float DASH_RECHARGE_SPACING = (HEALTH_BAR_WIDTH - DASH_WIDTH) / (DASH_RECHARGE_COUNT - 1);
 const float DASH_RECHARGE_SPACING = DASH_WIDTH + 8;
