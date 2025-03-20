@@ -462,70 +462,39 @@
     },
     "player": {
         "motion": {
-            "angle": 257.78668212890625,
+            "angle": 157.2093505859375,
             "position": {
-                "x": 3764.347900390625,
-                "y": 3719.345947265625
+                "x": 4282.72802734375,
+                "y": 3185.32861328125
             },
             "scale": {
                 "x": 64.0,
                 "y": 64.0
             },
             "velocity": {
-                "x": -574.643310546875,
-                "y": 10.375555992126465
+                "x": 0.0,
+                "y": 0.0
             }
         },
         "playerStatus": {
             "current_health": 100,
             "dash_cooldown_ms": 902,
-            "dash_cooldown_timer_ms": 393,
-            "dash_count": 1,
+            "dash_cooldown_timer_ms": 530,
+            "dash_count": 2,
             "dash_damage": 20,
             "dash_range": 200.0,
             "dash_speed": 500.0,
             "detection_range": 1.0,
             "grid_position": {
-                "x": 14.0,
-                "y": 14.0
+                "x": 16.0,
+                "y": 12.0
             },
             "healing_rate": 0.05000000074505806,
-            "healing_timer_ms": -750.4189453125,
+            "healing_timer_ms": -6165.111328125,
             "max_dash_count": 3,
             "max_health": 100,
             "speed": 200
         }
     },
-    "projectiles": [
-        {
-            "angle": 0.0,
-            "position": {
-                "x": 4362.38330078125,
-                "y": 2247.177978515625
-            },
-            "scale": {
-                "x": 20.0,
-                "y": 20.0
-            },
-            "velocity": {
-                "x": -6.944740295410156,
-                "y": -299.91961669921875
-            }
-        },
-        {
-            "angle": 0.0,
-            "position": {
-                "x": 4058.6826171875,
-                "y": 3769.288818359375
-            },
-            "scale": {
-                "x": 20.0,
-                "y": 20.0
-            },
-            "velocity": {
-                "x": 6.008555889129639,
-                "y": -299.9398193359375
-            }
-        }
-    ]
+    "projectiles": []
 }
