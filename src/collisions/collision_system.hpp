@@ -112,7 +112,7 @@ private:
 	/*
 		Clamps the given angle to between 0 and 360, so adds 360 to negative angles
 	*/
-	float clampNegativeAngle(float angle);
+	float clampAngle(float angle);
 	/*
 		Check collisions between the given motion and wall
 
@@ -163,7 +163,7 @@ public:
 
 		return: True + wall edge of collision if collided, False + empty edge if not
 	*/
-	EDGE_TYPE CollisionSystem::checkAndHandleWallCollision(Motion& player_motion, Entity& wall);
+	EDGE_TYPE checkAndHandleWallCollision(Motion& player_motion, Entity& wall);
 	/*
 		Modifies the given dash so that it doesn't collide into the given wall edge
 
