@@ -221,7 +221,7 @@ Entity createBacteriophageProjectile(Entity& bacteriophage)
 
 Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, std::pair<int, int>& playerPosition) {
     // print entering map
-    std::cout << "Entering createProceduralMap" << std::endl;
+    // std::cout << "Entering createProceduralMap" << std::endl;
 
     for (Entity& entity : registry.proceduralMaps.entities) {
         registry.remove_all_components_of(entity);
@@ -230,8 +230,8 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
         registry.remove_all_components_of(entity);
     }
 	
-	std::cout << "Hello Creating Procedural Map" << std::endl;
-	std::cout << "Procedural Map, tutorial status: " << tutorial_on << std::endl;
+	// std::cout << "Hello Creating Procedural Map" << std::endl;
+	// std::cout << "Procedural Map, tutorial status: " << tutorial_on << std::endl;
 
     auto entity = Entity();
 	ProceduralMap& map = registry.proceduralMaps.emplace(entity);
@@ -259,10 +259,10 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 				}
 			}
 		}
-		std::cout << "Created InfoBoxes" << std::endl;
+		// std::cout << "Created InfoBoxes" << std::endl;
 
 	} else {
-		std::cout << "Should randomize map" << std::endl;
+		// std::cout << "Should randomize map" << std::endl;
 	
 		// Initialize map to random walls / floors
         std::random_device rd;
@@ -293,22 +293,22 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
             for (int y = 0; y < map.height; ++y) {
                 for (int x = 0; x < map.width; ++x) {
                     if (x == playerTile.first && y == playerTile.second) {
-                        std::cout << "!!";
+                        // std::cout << "!!";
                     } else if (x == portalTile.first && y == portalTile.second) {
-                        std::cout << "P";
+                        // std::cout << "P";
                     } else {
-                        std::cout << (map.map[y][x] == tileType::WALL ? "X" : ".");
+                        // std::cout << (map.map[y][x] == tileType::WALL ? "X" : ".");
                     }
                 }
-                std::cout << std::endl;
+                // std::cout << std::endl;
             }
 
             if (getDistance(map.map, playerTile, portalTile) < 15) {
-                std::cout << "PATH DOES NOT EXIST OR NOT ENOUGH DISTANCE, TRYING AGAIN." << std::endl;
+                // std::cout << "PATH DOES NOT EXIST OR NOT ENOUGH DISTANCE, TRYING AGAIN." << std::endl;
                 continue;
             }
 
-            std::cout << "PATH EXISTS AND IS GOOD DISTANCE!" << std::endl;
+            // std::cout << "PATH EXISTS AND IS GOOD DISTANCE!" << std::endl;
             map.map[portalTile.second][portalTile.first] = tileType::PORTAL;
 
             return entity;

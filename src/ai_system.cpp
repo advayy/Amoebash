@@ -133,7 +133,7 @@ void AISystem::step(float elapsed_ms)
 				std::default_random_engine rng(rd());
 				std::uniform_real_distribution<float> uniform_dist(0.0f, 360 * 1.0f);
 				enemyMotion.angle = uniform_dist(rng);
-				std::cout << enemyMotion.angle << std::endl;
+				// std::cout << enemyMotion.angle << std::endl;
 				enemyBehavior.patrolTime = 0.f;
 
 
@@ -159,7 +159,6 @@ void AISystem::step(float elapsed_ms)
 				}
 				enemyMotion.angle = new_angle;
 				enemyMotion.velocity = -direction * ENEMY_SPEED;
-				std::cout << "I AM RUNNING AWAY FROM YOU" << std::endl;
 			}
 			else {
 				enemyBehavior.patrolOrigin = enemyMotion.position;
