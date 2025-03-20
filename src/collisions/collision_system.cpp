@@ -295,6 +295,7 @@ QUADRANT CollisionSystem::getAngleQuadrant(float angle)
 	if (angle >= 90 && angle < 180) return QUADRANT::QUADRANT_2;
 	if (angle >= 180 && angle < 270) return QUADRANT::QUADRANT_3;
 	if (angle >= 270 && angle < 360) return QUADRANT::QUADRANT_4;
+	else return QUADRANT::QUADRANT_1;
 }
 
 float CollisionSystem::clampAngle(float angle)
