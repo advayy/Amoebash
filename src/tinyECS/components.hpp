@@ -6,11 +6,18 @@
 
 extern bool tutorial_mode;
 
-// struct Progression {
-//  // cutscene viewer?
-// // upgrades purchesed?
-// // idl
-// }
+struct Progression {
+ 	// cutscene viewer?
+
+	std::vector<int> buffsFromLastRun;
+	std::vector<int> pickedInNucleus;
+	int slots_unlocked = 9;
+};
+
+
+struct Slot {
+
+};
 
 struct Player
 {

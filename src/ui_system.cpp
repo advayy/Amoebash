@@ -194,14 +194,16 @@ Entity createNucleusMenuNucleus() {
 	vec2 scale = {NUCLEUS_MENU_NUCLEUS_WIDTH, NUCLEUS_MENU_NUCLEUS_HEIGHT};
 
 	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
-	motion.position = {camera.position.x + (2*30), camera.position.y + (2*30)};
+	motion.position = {camera.position.x + (2*100), camera.position.y + (2*-20)};
 	motion.scale = scale;
 
 	return e;
 }
 
-Entity createNucleusMenuSlot(int n){
+Entity createNucleusMenuSlot(vec2 position){
 	Entity e = Entity();
+
+	registry.slots.emplace(e);
 
 	registry.renderRequests.insert(e,
 	{
@@ -209,6 +211,11 @@ Entity createNucleusMenuSlot(int n){
 		EFFECT_ASSET_ID::TEXTURED,
 		GEOMETRY_BUFFER_ID::SPRITE
 	});
+
+	Motion& m = registry.motions.emplace(e);
+
+	m.position = position;
+	m.scale = {NUCLEUS_MENU_SLOT_WIDTH, NUCLEUS_MENU_SLOT_HEIGHT};
 
 	return e;
 }
@@ -218,13 +225,53 @@ Entity createNucleusMenuScreen() {
 	// Add all buffs collected to the screen,
 	// Add the number of cups
 	// add the nucleus thing
+	Progression p = registry.progressions.get(registry.progressions.entities[0]);
+
 	Entity nucleus = createNucleusMenuNucleus();
 	Entity nucleusMenuScreen = Entity();
 	
 	registry.overs.emplace(nucleus);
 	registry.overs.emplace(nucleusMenuScreen);
 
-	// go through player/ game progression list of like 
+	// go through player/ game progression list of like buffs from last run... and place them using drawBuffUI?
+	// center of nucleus 	
+	
+	Camera &camera_temp = registry.cameras.get(registry.cameras.entities[0]);
+	vec2 origin_position = {camera_temp.position.x + (2*100), camera_temp.position.y + (2*-20)};	
+
+	if(p.slots_unlocked == 1) { // upgrade 1...
+		registry.overs.emplace(createNucleusMenuSlot(origin_position));
+	} else if (p.slots_unlocked == 4) {
+		vec2 pos1 = {origin_position.x + NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT, origin_position.y};
+		vec2 pos2 = {origin_position.x, origin_position.y + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
+		vec2 pos3 = {origin_position.x - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y};
+		vec2 pos4 = {origin_position.x, origin_position.y - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
+
+		registry.overs.emplace(createNucleusMenuSlot(pos1));
+		registry.overs.emplace(createNucleusMenuSlot(pos2));
+		registry.overs.emplace(createNucleusMenuSlot(pos3));
+		registry.overs.emplace(createNucleusMenuSlot(pos4));
+	} else if (p.slots_unlocked == 9) {
+		registry.overs.emplace(createNucleusMenuSlot(origin_position));
+		vec2 pos1 = {origin_position.x + NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT, origin_position.y};
+		vec2 pos2 = {origin_position.x, origin_position.y + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
+		vec2 pos3 = {origin_position.x - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y};
+		vec2 pos4 = {origin_position.x, origin_position.y - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
+
+		vec2 pos5 = {origin_position.x + NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT, origin_position.y + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
+		vec2 pos6 = {origin_position.x - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
+		vec2 pos7 = {origin_position.x + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
+		vec2 pos8 = {origin_position.x - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
+
+		registry.overs.emplace(createNucleusMenuSlot(pos1));
+		registry.overs.emplace(createNucleusMenuSlot(pos2));
+		registry.overs.emplace(createNucleusMenuSlot(pos3));
+		registry.overs.emplace(createNucleusMenuSlot(pos4));
+		registry.overs.emplace(createNucleusMenuSlot(pos5));
+		registry.overs.emplace(createNucleusMenuSlot(pos6));
+		registry.overs.emplace(createNucleusMenuSlot(pos7));
+		registry.overs.emplace(createNucleusMenuSlot(pos8));
+	}
 
 	GameScreen &screen = registry.gameScreens.emplace(nucleusMenuScreen);
 

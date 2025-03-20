@@ -155,8 +155,11 @@ bool WorldSystem::start_and_load_sounds()
 	return true;
 }
 
+
 void WorldSystem::init(RenderSystem *renderer_arg)
 {
+	// Either load progression or create a progression entity
+	initializeProgression();
 
 	this->renderer = renderer_arg;
 
@@ -389,6 +392,10 @@ void WorldSystem::handlePlayerHealth(float elapsed_ms)
 
 	if (player.current_health <= 0 && current_state != GameState::GAME_OVER)
 	{
+		// save buffs to progression
+		Progression& p = registry.progressions.get(registry.progressions.entities[0]);
+		p.buffsFromLastRun = player.buffsCollected;
+
 		previous_state = current_state;
 		current_state = GameState::GAME_OVER;
 		createGameOverScreen();
