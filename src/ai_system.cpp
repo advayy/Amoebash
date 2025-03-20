@@ -67,6 +67,17 @@ SpikeEnemyState AISystem::handleDefaultEnemyBehavior(Entity& enemyEntity, EnemyA
 		{
 			// dash toward the player
 			enemyMotion.velocity = direction * ENEMY_SPEED;
+            if (dist <= 25.f)
+            {
+                enemyBehavior.bombTimer -= elapsed_ms;
+                if (enemyBehavior.bombTimer <= 0)
+                {
+                    Enemy& enemy = registry.enemies.get(enemyEntity);
+                    enemy.health = 0;
+                    Player &player = registry.players.get(registry.players.entities[0]);
+                    player.current_health -= SPIKE_ENEMY_BOMB_DAMAGE;
+                }
+            }
 		}
 		else
 		{
@@ -74,10 +85,27 @@ SpikeEnemyState AISystem::handleDefaultEnemyBehavior(Entity& enemyEntity, EnemyA
 			enemyBehavior.patrolOrigin = enemyMotion.position;
 			enemyBehavior.patrolTime = 0.0f;
 			enemyMotion.velocity = { 0, 0 };
+            enemyBehavior.bombTimer = SPIKE_ENEMY_BOMB_TIMER;
+
 			return SpikeEnemyState::PATROLLING;
 		}
 		break;
 	}
+    case SpikeEnemyState::KNOCKBACK:
+    {
+        enemyBehavior.knockbackTimer -= elapsed_ms;
+        if (enemyBehavior.knockbackTimer <= 0)
+        {
+            changeAnimationFrames(enemyEntity, 0, 6);
+            enemyBehavior.patrolOrigin = enemyMotion.position;
+            enemyBehavior.patrolTime = 0.0f;
+            enemyMotion.velocity = { 0, 0 };
+            return SpikeEnemyState::DASHING;
+        } else {
+            enemyMotion.velocity *= SPIKE_ENEMY_KNOCKBACK_DECAY;
+        }
+        break;
+    }
 	}
 
 	return (SpikeEnemyState)state;

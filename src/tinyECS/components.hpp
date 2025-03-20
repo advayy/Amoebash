@@ -489,13 +489,16 @@ struct EnemyAI
 	vec2 patrolOrigin = { 0, 0 };     // origin of patrol
 	float patrolRange = SPIKE_ENEMY_PATROL_RANGE;     // range of patrol
 	float patrolTime = ENEMY_PATROL_TIME_MS / 2;
+    float knockbackTimer = 0.f;
+    float bombTimer = SPIKE_ENEMY_BOMB_TIMER;
 };
 
 enum class SpikeEnemyState
 {
 	CHASING = 0,
 	PATROLLING = CHASING + 1,
-	DASHING = PATROLLING + 1
+	DASHING = PATROLLING + 1,
+    KNOCKBACK = DASHING + 1
 };
 
 struct SpikeEnemyAI : EnemyAI
