@@ -162,7 +162,7 @@ void WorldSystem::init(RenderSystem *renderer_arg)
 
 	// start playing background music indefinitely
 
-	std::cout << "Starting music..." << std::endl;
+	// std::cout << "Starting music..." << std::endl;
 	Mix_PlayMusic(background_music, -1);
 
 	// Set all states to default
@@ -187,7 +187,19 @@ void WorldSystem::updateCamera(float elapsed_ms)
 	}	
 
 	float interpolationFactor = 0.05f;
-    camera.position = lerp(camera.position, player_motion.position, interpolationFactor);
+	
+	if (glm::length(player_motion.velocity) > 0.001f)
+	{
+		vec2 velocityUnitVector = glm::normalize(player_motion.velocity);
+		float lerpRadius = CAMERA_POSITION_RADIUS;
+	
+		vec2 targetPosition = player_motion.position + velocityUnitVector * lerpRadius;
+	
+	
+		camera.position = lerp(camera.position, targetPosition, interpolationFactor);
+	} else {
+		camera.position = lerp(camera.position, player_motion.position, interpolationFactor);
+	}
 	camera.grid_position = positionToGridCell(camera.position);
 }
 
@@ -198,32 +210,10 @@ void WorldSystem::updateMouseCoords()
 	game_mouse_pos_y = device_mouse_pos_y + camera.position.y - WINDOW_HEIGHT_PX * 0.5f;
 }
 
-// Update our game world
-bool WorldSystem::step(float elapsed_ms_since_last_update)
+
+void WorldSystem::spawnEnemies(float elapsed_ms_since_last_update)
 {
-
-	// M1 Feature - Camera controls
-	updateCamera(elapsed_ms_since_last_update);
-
-	if (tutorial_mode && registry.infoBoxes.size() == 0) {
-		createInfoBoxes();
-	}
-
-	updateMouseCoords();
-	updateHuds();
-
-	// Updating window title with points - disabled for now
-	// std::stringstream title_ss;
-	// title_ss << "Points: " << points;
-	// glfwSetWindowTitle(window, title_ss.str().c_str());
-
-	while (registry.debugComponents.entities.size() > 0)
-		registry.remove_all_components_of(registry.debugComponents.entities.back());
-
-	// Point the player to the mouse
 	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
-	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x) * 180.0f / M_PI + 90.0f;
-
 	if (!tutorial_mode)
 	{
 		// spawn new invaders
@@ -265,14 +255,13 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
 					createBacteriophage(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }), index);
 				}
-	
-				// Optional debug output for spawning enemies
-				// std::cout << "TOTAL ENEMIES: " << registry.enemies.entities.size() << std::endl;
 			}
 		}
 	}
+}
 
-	// despawn any old projectiles
+void WorldSystem::handleProjectiles(float elapsed_ms_since_last_update)
+{
 	for (auto& projectile_e : registry.projectiles.entities)
 	{
 		Projectile& projectile = registry.projectiles.get(projectile_e);
@@ -286,6 +275,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
 	// spawn new projectiles
 	next_projectile_ms -= elapsed_ms_since_last_update * current_speed;
+
 	if (next_projectile_ms < 0.f && !gameOver)
 	{
 		next_projectile_ms = (PROJECTILE_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (PROJECTILE_SPAWN_RATE_MS / 2);
@@ -301,14 +291,17 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 			else break;
 		}
 
+
 		if (shooting_enemy < registry.bacteriophageAIs.entities.size())
 		{
 			createBacteriophageProjectile(registry.bacteriophageAIs.entities[shooting_enemy]);
 		}
 	}
+}
 
-    tileProceduralMap();
-
+void WorldSystem::checkPortalCollision(){
+	// Point the player to the mouse
+	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
     // check if player in portal tile
     if (registry.portals.entities.size() > 0 && registry.motions.has(registry.portals.entities.back())) {
         Motion &portal_motion = registry.motions.get(registry.portals.entities.back());
@@ -333,6 +326,29 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
         }
     }
+}
+
+// Update our game world
+bool WorldSystem::step(float elapsed_ms_since_last_update)
+{
+
+	// M1 Feature - Camera controls
+	updateCamera(elapsed_ms_since_last_update);
+
+	if (tutorial_mode && registry.infoBoxes.size() == 0) {
+		createInfoBoxes();
+	}
+
+	updateMouseCoords();
+	updateHuds();
+	handlePlayerMovement(elapsed_ms_since_last_update);
+	handlePlayerHealth(elapsed_ms_since_last_update);
+
+	spawnEnemies(elapsed_ms_since_last_update);
+	handleProjectiles(elapsed_ms_since_last_update);
+
+    tileProceduralMap();
+	checkPortalCollision();
 
     // Update the darken screen timer
     if (darken_screen_timer >= 0.0f) {
@@ -344,10 +360,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
             darken_screen_timer = -1.0f; // Stop the timer
         }
     }
-
-	handlePlayerMovement(elapsed_ms_since_last_update);
-	handlePlayerHealth(elapsed_ms_since_last_update);
-
 	
 	// step the particle system only when its needed
 	// for optimaztion, we could only step the particles that are on screen
@@ -389,6 +401,8 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 	// if the player is not dashing, then have its velocity be base speed * by direction to mouse, if the mouse is outside deadzone
 	
 	Player &player = registry.players.get(registry.players.entities[0]);
+	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
+	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x) * 180.0f / M_PI + 90.0f;
 
 	if(registry.dashes.size() == 0) {
 		Motion &player_motion = registry.motions.get(registry.players.entities[0]);
@@ -411,12 +425,15 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 void WorldSystem::goToNextLevel()
 {
     // print go to next level
-    std::cout << "Going to next level" << std::endl;
+    // std::cout << "Going to next level" << std::endl;
 
 	current_speed = 1.f;
 	level += 1;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
+	
+	initializedMap = false;
+	currentTiles.clear();
 
     // int buffSize = registry.buffs.entities.size();
     // for (int i = 0; i < buffSize; i++) {
@@ -437,7 +454,7 @@ void WorldSystem::goToNextLevel()
 
 	std::pair<int, int> playerPosition;
     // print entering
-    std::cout << "Entering createProceduralMap" << std::endl;
+    // std::cout << "Entering createProceduralMap" << std::endl;
 	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
 
 	Player &player = registry.players.get(registry.players.entities[0]);
@@ -446,7 +463,7 @@ void WorldSystem::goToNextLevel()
 	playerMotion.position = gridCellToPosition(vec2(playerPosition.second, playerPosition.first));
 
     // print exiting
-    std::cout << "Exiting createProceduralMap" << std::endl;
+    // std::cout << "Exiting createProceduralMap" << std::endl;
 	return;
 }
 
@@ -455,8 +472,8 @@ void WorldSystem::goToNextLevel()
 void WorldSystem::restart_game()
 {
 
-	std::cout << "Restarting..." << std::endl;
-    std::cout << "Level: " << level + 1 << std::endl;
+	// std::cout << "Restarting..." << std::endl;
+    // std::cout << "Level: " << level + 1 << std::endl;
     
 	// Debugging for memory/component leaks
 	registry.list_all_components();
@@ -472,6 +489,12 @@ void WorldSystem::restart_game()
     
 	// FLAG
 	gameOver = false;
+
+	next_projectile_ms = 0;
+
+	initializedMap = false;
+	currentTiles.clear();
+
 
 	// Not sure if we need to touch screen state here
 	// ScreenState &screen = registry.screenStates.components[0];
@@ -496,7 +519,7 @@ void WorldSystem::restart_game()
 	// debugging for memory/component leaks
 	registry.list_all_components();
     
-	std::cout << "Creating Procedural Map, tutorial mode status :" << tutorial_mode << std::endl;
+	// std::cout << "Creating Procedural Map, tutorial mode status :" << tutorial_mode << std::endl;
 
     std::pair<int, int> playerPosition;
 	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
@@ -578,11 +601,11 @@ void WorldSystem::handle_collisions()
 					{
 						keyMotion.velocity = vec2(0.0f, 0.0f);
 					}
-					std::cout << "Mesh collision imminent between player and hexagon" << std::endl;
+					// std::cout << "Mesh collision imminent between player and hexagon" << std::endl;
 				}
 				else 
 				{
-					std::cout << "No mesh collision predicted soon" << std::endl;
+					// std::cout << "No mesh collision predicted soon" << std::endl;
 				}
 			}
 			else if (registry.chests.has(entity))
@@ -1019,6 +1042,10 @@ bool WorldSystem::isDashing()
 }
 
 void WorldSystem::tileProceduralMap() {
+	if(initializedMap) {
+		return;
+	}
+
 	vec2 camera_pos = registry.cameras.get(registry.cameras.entities[0]).grid_position;
 
 	float cameraGrid_x = camera_pos.x;
@@ -1026,31 +1053,17 @@ void WorldSystem::tileProceduralMap() {
 
 	ProceduralMap& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]);
 
-	std::map<int, std::map<int, int>> currentTiles;
-
-	// remove all tiles that arent in the chunk distance
-	for (Entity &entity : registry.tiles.entities)
-	{
-
-		Tile &tile = registry.tiles.get(entity);
-		vec2 tilePos = {tile.grid_x, tile.grid_y};
-		vec2 cameraGrid = {cameraGrid_x, cameraGrid_y};
-		if (abs(glm::distance(cameraGrid, tilePos)) > CHUNK_DISTANCE)
-		{
-			registry.remove_all_components_of(entity);
-		}
-		else
-		{
-			// mark this tile as already drawn, so we don't create it again
-			currentTiles[tile.grid_x][tile.grid_y] = 1;
-		}
-	}
-
 	// setting map bounds
-	int left = (cameraGrid_x - (WINDOW_GRID_WIDTH / 2) - CHUNK_DISTANCE / 2);	 // max((cameraGrid_x - (WINDOW_GRID_WIDTH/2 + CHUNK_DISTANCE/2)), (float) map.left);
-	int right = (cameraGrid_x + (WINDOW_GRID_WIDTH / 2) + CHUNK_DISTANCE / 2);	 // min((cameraGrid_x + (WINDOW_GRID_WIDTH/2 +CHUNK_DISTANCE/2)), (float) map.right);
-	int top = (cameraGrid_y - (WINDOW_GRID_HEIGHT / 2) - CHUNK_DISTANCE / 2);	 // max((cameraGrid_y - (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.top);
-	int bottom = (cameraGrid_y + (WINDOW_GRID_HEIGHT / 2) + CHUNK_DISTANCE / 2); // min((cameraGrid_y + (WINDOW_GRID_HEIGHT/2 + CHUNK_DISTANCE/2)), (float) map.bottom);
+	int left = (cameraGrid_x - (WINDOW_GRID_WIDTH / 2) - CHUNK_DISTANCE / 2);	 
+	int right = (cameraGrid_x + (WINDOW_GRID_WIDTH / 2) + CHUNK_DISTANCE / 2);	 
+	int top = (cameraGrid_y - (WINDOW_GRID_HEIGHT / 2) - CHUNK_DISTANCE / 2);	
+	int bottom = (cameraGrid_y + (WINDOW_GRID_HEIGHT / 2) + CHUNK_DISTANCE / 2);
+
+	left = -3;
+	right = 23;
+	top = -3;
+	bottom = 23;
+
 
 	for (int x = left; x < right; x += 1)
 	{
@@ -1062,26 +1075,32 @@ void WorldSystem::tileProceduralMap() {
 			if (currentTiles.find(x) != currentTiles.end() && currentTiles[x].find(y) != currentTiles[x].end()) continue;
 
 			if (x < map.left || x >= map.right || y < map.top || y >= map.bottom) {
+				currentTiles[x][y] = 1;
 				addWallTile(gridCoord);
-			} else if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE) {
+			} else { // if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE)
 				
 				// print here
 				// std::cout << "x: " << x << " y: " << y << std::endl;
 				if (map.map[x][y] == tileType::EMPTY) 
 				{
 					// if its being tiled what tile to put
+					currentTiles[x][y] = 1;
 					addParalaxTile(gridCoord);
                 } 
 				else if (map.map[x][y] == tileType::PORTAL) 
 				{
+					currentTiles[x][y] = 1;
 					addParalaxTile(gridCoord);
                     addPortalTile(gridCoord);
                 } 
 				else 
 				{
+					currentTiles[x][y] = 1;
 					addWallTile(gridCoord);
 				}
 			}
 		}
 	}
+
+	initializedMap=true;
 }

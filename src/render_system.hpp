@@ -85,7 +85,8 @@ class RenderSystem
 		shader_path("ui"),
 		shader_path("health_bar"),
 		shader_path("dash_ui"),
-		shader_path("hexagon")};
+		shader_path("hexagon"),
+		shader_path("particle_textured")};
 
 	std::array<GLuint, geometry_count> vertex_buffers;
 	std::array<GLuint, geometry_count> index_buffers;
@@ -154,6 +155,9 @@ public:
 	void drawHexagon(Entity entity, const mat3 &projection);	
 	void drawBuffUI();
 
+	// INSTANCING: instanced particle drawing
+	void drawInstancedParticles();
+
 private:
 	// Internal drawing functions for each entity type
 	void drawTexturedMesh(Entity entity, const mat3 &projection);
@@ -180,6 +184,18 @@ private:
 	int frame_count = 0;
 	float current_fps = 0.0f;
 	bool show_fps = true; // Start with FPS display enabled
+
+	// New: Particle effect shader
+	GLuint particle_effect;
+
+	// New instance buffer to hold per-particle transform matrices
+	GLuint particle_instance_vbo;
+
+	// NEW: Default VAO for rendering
+	GLuint default_vao;
+
+	// NEW: Store the sprite index count
+	GLsizei sprite_index_count;
 };
 
 bool loadEffectFromFile(

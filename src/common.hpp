@@ -75,6 +75,7 @@ const bool DEBUG_GRID = false;
 const vec2 DEADZONE_FACTOR = {0.50f, 0.50f};
 const float CAMERA_TRACKING_DEADZONE = 100.0 * WORK_SCALE_FACTOR;
 const float MOUSE_TRACKING_DEADZONE = 100.0 * WORK_SCALE_FACTOR;
+const float CAMERA_POSITION_RADIUS = 100.f;
 
 // These are hard coded to the dimensions of the entity's texture
 const float PLAYER_SIZE = 32 * WORK_SCALE_FACTOR;

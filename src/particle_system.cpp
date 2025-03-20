@@ -16,13 +16,13 @@ ParticleSystem::ParticleSystem()
 
 void ParticleSystem::step(float elapsed_ms)
 {
-    // handle all particles
-    for (uint i = 0; i < registry.particles.size(); i++)
+    // Iterate backwards to safely remove expired particles.
+    for (int i = (int)registry.particles.size() - 1; i >= 0; i--)
     {
         Entity entity = registry.particles.entities[i];
         Particle& particle = registry.particles.components[i];
 
-        // update  lifetime
+        // update lifetime
         particle.lifetime_ms -= elapsed_ms;
 
         // Remove expired particles
@@ -32,48 +32,36 @@ void ParticleSystem::step(float elapsed_ms)
             continue;
         }
 
-        // update particle behavior stae based on type
+        // update particle behavior based on type
         switch (particle.type)
         {
             case PARTICLE_TYPE::DEATH_PARTICLE:
             {
                 Motion& motion = registry.motions.get(entity);
 
-                // during initial burst phase
                 if (particle.state == PARTICLE_STATE::BURST)
                 {
-                    // gradually slow down as particles expand outward
                     motion.velocity *= 0.98f;
-
-                    // transition to follow state after a delay
                     particle.state_timer_ms -= elapsed_ms;
                     if (particle.state_timer_ms <= 0)
                     {
                         particle.state = PARTICLE_STATE::FOLLOW;
-                        particle.state_timer_ms = 1000.f; // time spent following
+                        particle.state_timer_ms = 1000.f;
                     }
                 }
-                // dring follow phase
                 else if (particle.state == PARTICLE_STATE::FOLLOW)
                 {
-                    // get player position if any
                     if (!registry.players.entities.empty())
                     {
                         Entity player_entity = registry.players.entities[0];
                         Motion& player_motion = registry.motions.get(player_entity);
-
-                        // calculate direction to player
                         vec2 direction = player_motion.position - motion.position;
                         float distance = glm::length(direction);
-
-                        // normalize direction and apply acceleration
                         if (distance > 0.1f)
                         {
                             direction = glm::normalize(direction);
                             float speed_factor = particle.speed_factor * (1.0f + (1.0f - particle.lifetime_ms / particle.max_lifetime_ms) * 200.0f);
                             motion.velocity += direction * speed_factor * (elapsed_ms / 1000.f);
-
-                            // cap velocity
                             float max_speed = 600.0f;
                             float current_speed = glm::length(motion.velocity);
                             if (current_speed > max_speed)
@@ -82,8 +70,6 @@ void ParticleSystem::step(float elapsed_ms)
                             }
                         }
                     }
-
-                    // apply fading based on lifetime (temporary)
                     float life_ratio = particle.lifetime_ms / particle.max_lifetime_ms;
                     if (registry.colors.has(entity))
                     {
@@ -93,7 +79,6 @@ void ParticleSystem::step(float elapsed_ms)
                 }
                 break;
             }
-            /// add more type particles heree
             default:
                 break;
         }
@@ -133,8 +118,8 @@ Entity ParticleSystem::createDeathParticle(vec2 position)
     motion.velocity = {cos(angle) * speed, sin(angle) * speed};
 
     // random size variation
-    float size_factor = 15.0f + uniform_dist(rng) * 10.0f;
-    motion.scale = {size_factor, size_factor};
+    float size_factor = 16.0f + uniform_dist(rng) * 10.0f;
+    motion.scale = {size_factor/2, size_factor};
 
     // random color (temporary)
     // float r = 0.5f + uniform_dist(rng) * 0.2f;
