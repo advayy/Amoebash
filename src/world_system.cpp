@@ -825,6 +825,15 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 			current_state = GameState::START_SCREEN;
 		}
 	}
+
+    // S for shooting gun
+    if (key == GLFW_KEY_S)
+    {
+        if (action == GLFW_RELEASE)
+        {
+            shootGun();
+        }
+    }
 }
 
 void WorldSystem::on_mouse_move(vec2 mouse_position)
