@@ -568,17 +568,17 @@ Entity createBuff(vec2 position)
 	motion.scale = {BUFF_WIDTH, BUFF_HEIGHT};
 
 	Entity player_entity = registry.players.entities[0];
-    Motion &player_motion = registry.motions.get(player_entity);
+    	Motion &player_motion = registry.motions.get(player_entity);
     
 	// Assign buff a random throwing direction perpendicular to the player's direction within +/-30 deg
-    vec2 player_direction =  glm::normalize(player_motion.velocity);
-    vec2 perp_right = vec2(-player_direction.y, player_direction.x);
-    vec2 perp_left = vec2(player_direction.y, -player_direction.x);
-    vec2 perp_base = (rand() % 2 == 0) ? perp_right : perp_left;
+    	vec2 player_direction =  glm::normalize(player_motion.velocity);
+    	vec2 perp_right = vec2(-player_direction.y, player_direction.x);
+    	vec2 perp_left = vec2(player_direction.y, -player_direction.x);
+    	vec2 perp_base = (rand() % 2 == 0) ? perp_right : perp_left;
 	float random_angle_offset = ((rand() % 60) - 30) * (M_PI / 180.0f);
-    float rotation_cos = cos(random_angle_offset);
-    float rotation_sin = sin(random_angle_offset);
-    vec2 angle = vec2(
+    	float rotation_cos = cos(random_angle_offset);
+    	float rotation_sin = sin(random_angle_offset);
+    	vec2 angle = vec2(
         perp_base.x * rotation_cos - perp_base.y * rotation_sin,
         perp_base.x * rotation_sin + perp_base.y * rotation_cos
     );
