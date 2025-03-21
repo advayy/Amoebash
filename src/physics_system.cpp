@@ -155,7 +155,6 @@ void PhysicsSystem::step(float elapsed_ms)
 				motion.velocity = {0, 0};
 			}
 		}
-
 	}
 
 	// PLAYER DASH ACTION COOLDOWN
@@ -176,53 +175,9 @@ void PhysicsSystem::step(float elapsed_ms)
 			}
 		}
 	}
-	
-	
+
 	// update player grid position
 	player.grid_position = positionToGridCell(registry.motions.get(registry.players.entities[0]).position);
-
-	// update dash recharge bubbles
-	if (!registry.dashRecharges.entities.empty()) 
-	{
-		Player &player = registry.players.get(registry.players.entities[0]);
-		vec2 playerPos = registry.motions.get(registry.players.entities[0]).position;
-		static float counter = 0.0f;
-		counter += step_seconds;
-		static vec2 previousPlayerPos = playerPos;
-		float lerp_factor = 0.3f;
-		
-		vec2 currentPlayerVelocity = (playerPos - previousPlayerPos) / step_seconds;
-		vec2 velocity = glm::lerp(vec2(0.0f), currentPlayerVelocity, lerp_factor);
-		previousPlayerPos += velocity * step_seconds;
-
-		int i = 0;
-		for (Entity entity : registry.dashRecharges.entities) 
-		{
-			if (!registry.motions.has(entity)) 
-				continue;
-			
-			Motion &motion = registry.motions.get(entity);
-			float angle = (2 * M_PI / DASH_RECHARGE_COUNT) * i;
-			
-			float offset_x = sin(counter * 2.5f + i * 1.5f) * 5.0f;
-			float offset_y = cos(counter * 2.5f + i * 1.5f) * 5.0f;
-			float random_radius_offset = sin(counter * 0.8f + i * 0.7f) * 12.0f;
-			
-			vec2 target_pos = previousPlayerPos + vec2(
-				(DASH_RADIUS + random_radius_offset) * cos(angle) + offset_x,
-				(DASH_RADIUS + random_radius_offset) * sin(angle) + offset_y
-			);
-			
-			motion.position = glm::lerp(motion.position, target_pos, lerp_factor);
-			
-			if (i >= player.dash_count) 
-				motion.scale = {0, 0};
-			else 
-				motion.scale = {DASH_WIDTH, DASH_HEIGHT};
-			
-			i++;
-		}
-	}
 
 	// Collisions are always in this order: (Player | Projectiles | Chest, Key | Enemy | Wall | Buff)
 	for (auto& e_entity : registry.enemies.entities)

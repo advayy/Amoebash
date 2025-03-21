@@ -571,36 +571,21 @@ Entity createHealthBar()
 
 void createDashRecharge()
 {
-	Player &player = registry.players.get(registry.players.entities[0]);
-	vec2 playerPos = registry.motions.get(registry.players.entities[0]).position;
-
 	for (int i = 0; i < DASH_RECHARGE_COUNT; i++)
 	{
-		Entity dash = Entity();
+		Entity dot = Entity();
+		Motion &motion = registry.motions.emplace(dot);
 
-		Animation &a = registry.animations.emplace(dash);
-		a.start_frame = 1;
-		a.end_frame = 3;
-		a.time_per_frame = 300.0f;
-		a.loop = ANIM_LOOP_TYPES::PING_PONG;
-
-		SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(dash);
-		spriteSheet.total_frames = 3;
-		spriteSheet.current_frame = 0;
-
-		SpriteSize &sprite = registry.spritesSizes.emplace(dash);
-		sprite.width = 19;
-		sprite.height = 20;
+		motion.position = {DASH_RECHARGE_START_POS.x + (i * DASH_RECHARGE_SPACING), DASH_RECHARGE_START_POS.y};
+		motion.scale = {DASH_WIDTH, DASH_HEIGHT};
 
 		registry.renderRequests.insert(
-			dash,
+			dot,
 			{TEXTURE_ASSET_ID::DASH_UI,
-			 EFFECT_ASSET_ID::SPRITE_SHEET,
+			 EFFECT_ASSET_ID::DASH_UI,
 			 GEOMETRY_BUFFER_ID::SPRITE});
 
-		
-		Motion &motion = registry.motions.emplace(dash);
-		registry.dashRecharges.emplace(dash);
+		registry.dashRecharges.emplace(dot);
 	}
 }
 
@@ -681,5 +666,27 @@ void updateHuds()
 		healthBarMotion.position = {camera.position.x + HEALTH_BAR_POS.x,
 									camera.position.y + HEALTH_BAR_POS.y};
 
+	}
+
+	if (registry.dashRecharges.size() > 0)
+	{
+		Player &player = registry.players.get(registry.players.entities[0]);
+		vec2 firstDotPosition = {camera.position.x + DASH_RECHARGE_START_POS.x, camera.position.y + DASH_RECHARGE_START_POS.y};
+
+		int i = 0;
+		for (Entity entity : registry.dashRecharges.entities)
+		{
+			if (!registry.motions.has(entity))
+				continue;
+
+			Motion &motion = registry.motions.get(entity);
+			motion.position = {firstDotPosition.x + (i * DASH_RECHARGE_SPACING), firstDotPosition.y};
+
+			if (i >= player.dash_count)
+				motion.scale = {0, 0};
+			else
+				motion.scale = {DASH_WIDTH, DASH_HEIGHT};
+			i++;
+		}
 	}
 }
