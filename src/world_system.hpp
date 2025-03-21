@@ -154,4 +154,10 @@ private:
 	std::map<int, std::map<int, int>> currentTiles;
 	bool initializedMap = false;
     void tileProceduralMap();
+
+	bool isClickableBuffClicked(Entity* return_e);
+	bool mouseBuffIntersect(vec2 mouse_pos, vec2 c_pos);
+	void handleClickableBuff(Entity e);
+	Entity getFreeSlot();
+	bool isFreeSlot();
 };

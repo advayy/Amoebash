@@ -7,17 +7,24 @@
 extern bool tutorial_mode;
 
 struct Progression {
- 	// cutscene viewer?
-
 	std::vector<int> buffsFromLastRun;
 	std::vector<int> pickedInNucleus;
-	int slots_unlocked = 9;
+	int slots_unlocked = 1;
 };
 
 
 struct Slot {
-
+	int number = 0;
+	bool filled = false;
 };
+
+struct ClickableBuff {
+	int type;
+	bool picked = false;
+	vec2 returnPosition = {0, 0};
+	Entity slotEntity;
+};
+
 
 struct Player
 {
@@ -224,7 +231,8 @@ enum ButtonType
 	SHOPBUTTON = STARTBUTTON + 1,
 	INFOBUTTON = SHOPBUTTON + 1,
 	BACKBUTTON = INFOBUTTON,
-	NONE = BACKBUTTON + 1
+	PROCEED_BUTTON = BACKBUTTON + 1,
+	NONE = PROCEED_BUTTON + 1
 };
 
 // Coordinates and bounding box of start button on start screen
@@ -266,6 +274,7 @@ struct Pause
 
 struct Over
 {
+	std::vector<Entity> buttons;
 };
 
 struct Start

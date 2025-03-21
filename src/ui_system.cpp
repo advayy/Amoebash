@@ -200,10 +200,11 @@ Entity createNucleusMenuNucleus() {
 	return e;
 }
 
-Entity createNucleusMenuSlot(vec2 position){
+Entity createNucleusMenuSlot(vec2 position, int slotNumber){
 	Entity e = Entity();
 
-	registry.slots.emplace(e);
+	Slot& s = registry.slots.emplace(e);
+	s.number = slotNumber;
 
 	registry.renderRequests.insert(e,
 	{
@@ -231,47 +232,14 @@ Entity createNucleusMenuScreen() {
 	Entity nucleusMenuScreen = Entity();
 	
 	registry.overs.emplace(nucleus);
-	registry.overs.emplace(nucleusMenuScreen);
+	Over& o = registry.overs.emplace(nucleusMenuScreen);
 
 	// go through player/ game progression list of like buffs from last run... and place them using drawBuffUI?
 	// center of nucleus 	
 	
 	Camera &camera_temp = registry.cameras.get(registry.cameras.entities[0]);
-	vec2 origin_position = {camera_temp.position.x + (2*100), camera_temp.position.y + (2*-20)};	
-
-	if(p.slots_unlocked == 1) { // upgrade 1...
-		registry.overs.emplace(createNucleusMenuSlot(origin_position));
-	} else if (p.slots_unlocked == 4) {
-		vec2 pos1 = {origin_position.x + NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT, origin_position.y};
-		vec2 pos2 = {origin_position.x, origin_position.y + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
-		vec2 pos3 = {origin_position.x - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y};
-		vec2 pos4 = {origin_position.x, origin_position.y - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
-
-		registry.overs.emplace(createNucleusMenuSlot(pos1));
-		registry.overs.emplace(createNucleusMenuSlot(pos2));
-		registry.overs.emplace(createNucleusMenuSlot(pos3));
-		registry.overs.emplace(createNucleusMenuSlot(pos4));
-	} else if (p.slots_unlocked == 9) {
-		registry.overs.emplace(createNucleusMenuSlot(origin_position));
-		vec2 pos1 = {origin_position.x + NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT, origin_position.y};
-		vec2 pos2 = {origin_position.x, origin_position.y + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
-		vec2 pos3 = {origin_position.x - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y};
-		vec2 pos4 = {origin_position.x, origin_position.y - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
-
-		vec2 pos5 = {origin_position.x + NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT, origin_position.y + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
-		vec2 pos6 = {origin_position.x - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
-		vec2 pos7 = {origin_position.x + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
-		vec2 pos8 = {origin_position.x - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
-
-		registry.overs.emplace(createNucleusMenuSlot(pos1));
-		registry.overs.emplace(createNucleusMenuSlot(pos2));
-		registry.overs.emplace(createNucleusMenuSlot(pos3));
-		registry.overs.emplace(createNucleusMenuSlot(pos4));
-		registry.overs.emplace(createNucleusMenuSlot(pos5));
-		registry.overs.emplace(createNucleusMenuSlot(pos6));
-		registry.overs.emplace(createNucleusMenuSlot(pos7));
-		registry.overs.emplace(createNucleusMenuSlot(pos8));
-	}
+	vec2 origin_position = {camera_temp.position.x + (2*100), camera_temp.position.y + (2*-20)};
+	vec2 screeenCentre = {camera_temp.position.x , camera_temp.position.y};	
 
 	GameScreen &screen = registry.gameScreens.emplace(nucleusMenuScreen);
 
@@ -279,10 +247,110 @@ Entity createNucleusMenuScreen() {
 
 	Motion &motion = registry.motions.emplace(nucleusMenuScreen);
 	Camera &camera = registry.cameras.components[0];
-
 	motion.position = camera.position;
+
+	Entity nextButtonEntity = createNextButton(vec2({origin_position.x + 180, origin_position.y + NUCLEUS_MENU_NUCLEUS_HEIGHT}));
+	o.buttons = {nextButtonEntity};
+
+
+	if(p.slots_unlocked == 1) { // upgrade 1...
+		registry.overs.emplace(createNucleusMenuSlot(origin_position, 1));
+	} else if (p.slots_unlocked == 4) {
+		vec2 pos1 = {origin_position.x + NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT, origin_position.y};
+		vec2 pos2 = {origin_position.x, origin_position.y + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
+		vec2 pos3 = {origin_position.x - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y};
+		vec2 pos4 = {origin_position.x, origin_position.y - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
+		
+		registry.overs.emplace(createNucleusMenuSlot(pos4, 1)); // top
+		registry.overs.emplace(createNucleusMenuSlot(pos2, 2)); // left m
+		registry.overs.emplace(createNucleusMenuSlot(pos1, 3)); // right m
+		registry.overs.emplace(createNucleusMenuSlot(pos3, 4)); // bottom
+	} else if (p.slots_unlocked == 9) {
+		
+		vec2 pos1 = {origin_position.x - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
+		vec2 pos2 = {origin_position.x, origin_position.y - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
+		vec2 pos3 = {origin_position.x + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
+		vec2 pos4 = {origin_position.x - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y};
+		// origin
+		vec2 pos5 = {origin_position.x + NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT, origin_position.y};
+		vec2 pos6 = {origin_position.x - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
+		vec2 pos7 = {origin_position.x, origin_position.y + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
+		vec2 pos8 = {origin_position.x + NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT, origin_position.y + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
+
+		registry.overs.emplace(createNucleusMenuSlot(pos1, 1));
+		registry.overs.emplace(createNucleusMenuSlot(pos2, 2));
+		registry.overs.emplace(createNucleusMenuSlot(pos3, 3));
+		registry.overs.emplace(createNucleusMenuSlot(pos4, 4));
+		registry.overs.emplace(createNucleusMenuSlot(origin_position, 5));
+		registry.overs.emplace(createNucleusMenuSlot(pos5, 5));
+		registry.overs.emplace(createNucleusMenuSlot(pos6, 6));
+		registry.overs.emplace(createNucleusMenuSlot(pos7, 7));
+		registry.overs.emplace(createNucleusMenuSlot(pos8, 8));
+	}
+
+	// place each buff on the screen and make it "clickable" - with a clicked and a return to?
+	// HOW MUCH CAN I PLACE ON SCREEN? 
+	// START CORNER PADDING ?
+
+	// CAN PLACE WITHIN THESE RANGES + PADDING TOP, BOTTOM, LEFT
+	float screenTop = screeenCentre.y - WINDOW_HEIGHT_PX/2;
+	float screenLeft = screeenCentre.x - WINDOW_WIDTH_PX/2;
+	float screenBottom = screeenCentre.y + WINDOW_HEIGHT_PX/2;
+	float rightMax = (camera.position.x + (2*100)) - NUCLEUS_MENU_NUCLEUS_WIDTH/2;
+	float padding = 20;
+	vec2 startPos = {screenLeft + padding + BUFF_WIDTH, screenTop + padding + BUFF_HEIGHT};
+	vec2 currentPos = startPos;
+
+	for(int i = 0; i < p.buffsFromLastRun.size(); i++) {
+
+		registry.overs.emplace(createClickableBuffUI(currentPos, p.buffsFromLastRun[i]));
+		currentPos.y += padding + BUFF_HEIGHT;
+
+		if((currentPos.y + padding + BUFF_HEIGHT) >= screenBottom) // forecast next position will fit otherwise shift start right and update current to start...
+		{
+			startPos.x += padding + BUFF_WIDTH;
+			currentPos = startPos;
+		}
+	}
+
 	return nucleusMenuScreen;
 }
+
+
+Entity createClickableBuffUI(vec2 position, int buffType)
+{
+	Entity buff = Entity();
+
+	ClickableBuff& clickable = registry.clickableBuffs.emplace(buff);
+
+	clickable.picked = false;
+	clickable.returnPosition = position;
+	clickable.type = buffType;
+
+	
+	Motion &motion = registry.motions.emplace(buff);
+	motion.position = position;
+
+	motion.scale = {BUFF_WIDTH, BUFF_HEIGHT};
+
+	registry.renderRequests.insert(buff,
+								   {TEXTURE_ASSET_ID::BUFFS_SHEET,
+									EFFECT_ASSET_ID::SPRITE_SHEET,
+									GEOMETRY_BUFFER_ID::SPRITE});
+
+	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(buff);
+	spriteSheet.total_frames = 20;	 
+	spriteSheet.current_frame = buffType;
+								
+	SpriteSize &sprite = registry.spritesSizes.emplace(buff);
+	sprite.width = BUFF_WIDTH;
+	sprite.height = BUFF_HEIGHT;
+	
+	return buff;
+}
+
+
+
 
 Entity createPauseScreen()
 {
@@ -324,10 +392,11 @@ void createGameplayCutScene()
 
 void removeCutScene()
 {
-	for (auto &e : registry.cutscenes.entities)
-	{
-		registry.remove_all_components_of(e);
-	}
+		auto entities_copy = registry.cutscenes.entities; // Create a copy of the container
+		for (auto &e : entities_copy) // Iterate over the copy
+		{
+			registry.remove_all_components_of(e);
+		}
 }
 
 Entity createCutSceneBackGround()
@@ -487,8 +556,16 @@ void removeGameOverScreen()
 	if (registry.overs.size() == 0)
 		return;
 
-	Entity over = registry.overs.entities[0];
-	registry.remove_all_components_of(over);
+	std::vector<Entity> toRemove;
+
+	for(int i = 0; i < registry.overs.size(); i++) {
+		toRemove.push_back(registry.overs.entities[0]);
+	}
+
+	for(int i = 0;  i < toRemove.size(); i++) {
+		registry.remove_all_components_of(toRemove[i]);
+	}
+
 }
 
 void removeStartScreen()
@@ -607,6 +684,15 @@ Entity createBackButton() {
 	vec2 position = BACK_BUTTON_COORDINATES;
 
 	return createButton(ButtonType::BACKBUTTON,
+						position,
+						scale,
+						TEXTURE_ASSET_ID::BACK_BUTTON);
+}
+
+Entity createNextButton(vec2 position) {
+	vec2 scale = BACK_BUTTON_SCALE;
+
+	return createButton(ButtonType::PROCEED_BUTTON,
 						position,
 						scale,
 						TEXTURE_ASSET_ID::BACK_BUTTON);

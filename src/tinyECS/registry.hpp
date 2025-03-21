@@ -68,6 +68,7 @@ public:
 	ComponentContainer<HealthBar> healthBars;
 	ComponentContainer<DashRecharge> dashRecharges;
 	ComponentContainer<BuffUI> buffUIs;
+	ComponentContainer<ClickableBuff> clickableBuffs;
 
 	// enemy behaviors
 	ComponentContainer<SpikeEnemyAI> spikeEnemyAIs;

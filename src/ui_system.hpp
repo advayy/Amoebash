@@ -10,11 +10,13 @@ Entity createMiniMap(RenderSystem *renderer, vec2 size);
 Entity createStartScreen(vec2 position = LOGO_POSITION_INITIAL);
 Entity createShopScreen();
 Entity createInfoScreen();
+Entity createNextButton(vec2 position);
 Entity createGameOverScreen();
 Entity createNucleusMenuNucleus();
-Entity createNucleusMenuSlot(int n);
+Entity createNucleusMenuSlot(vec2 position, int slotNumber);
 Entity createNucleusMenuScreen();
 Entity createPauseScreen();
+Entity createClickableBuffUI(vec2 position, int buffType);
 
 void createGameplayCutScene();
 Entity createNose();

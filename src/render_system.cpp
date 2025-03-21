@@ -438,8 +438,8 @@ void RenderSystem::drawInfoScreen()
 void RenderSystem::drawGameOverScreen()
 {
 	std::vector<ButtonType> buttons = {
-
-	};
+		ButtonType::PROCEED_BUTTON
+	}; // ACTS as a next button
 
 	drawScreenAndButtons(ScreenType::GAMEOVER, buttons);
 }
@@ -511,14 +511,16 @@ void RenderSystem::drawScreenAndButtons(
 		}
 	}
 
-	if (buttonTypes.size() != 0 && screenType != ScreenType::GAMEOVER)
+	if (buttonTypes.size() != 0)
 	{
+
 		for (uint i = 0; i < registry.buttons.components.size(); i++)
 		{
 			const screenButton &buttonComp = registry.buttons.components[i];
 
 			for (auto bt : buttonTypes)
 			{
+
 				if (buttonComp.type == bt)
 				{
 					Entity buttonEntity = registry.buttons.entities[i];
