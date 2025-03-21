@@ -144,6 +144,7 @@ Entity createBoss(RenderSystem* renderer, vec2 position, BossState state)
 	enemy_ai.state = state;
 	enemy_ai.cool_down = 2000.f;
 	enemy_ai.detectionRadius = SPIKE_ENEMY_DETECTION_RADIUS * 1.5f;
+	enemy_ai.projectile_size = BOSS_PROJECTILE;
 
 	Enemy& enemy = registry.enemies.get(entity);
 	enemy.health = BOSS_HEALTH;

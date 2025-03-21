@@ -250,6 +250,7 @@ void WorldSystem::updateBoss()
 			ai.detectionRadius = originalAI.detectionRadius * 0.75f;
 			en.health = smallHealth;
 			en.total_health = smallHealth;
+			ai.projectile_size /= 2.f;
 		}
 
 		registry.remove_all_components_of(boss);

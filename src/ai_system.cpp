@@ -187,17 +187,16 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 	if (enemyBehavior.state != BossState::INITIAL)
 		enemy.health *= 0.9999999f;
 
-	std::cout << enemy.health << " " << enemy.total_health << std::endl;
-
 	switch (enemyBehavior.state)
 	{
 		case BossState::INITIAL:
 		{
 			if(playerDetected)
 			{
+				std::vector<BossState> possibleStates = { BossState::SHOOT_PARADE, BossState::RUMBLE };
+				BossState next_state = possibleStates[std::rand() % possibleStates.size()];
 
-				int next = 1 + (std::rand() % ((int)BossState::NUM_STATES - 1));
-				enemyBehavior.state = static_cast<BossState>(next);
+				enemyBehavior.state = next_state;
 				
 				if (enemyBehavior.state == BossState::SHOOT_PARADE)
 				{
@@ -215,6 +214,7 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 		}
 		case BossState::IDLE: 
 		{
+
 			if (enemyMotion.angle != 0.f) {
 				const float smoothing_factor = 0.1f;
 
@@ -228,9 +228,15 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 			enemyBehavior.cool_down -= elapsed_ms;
 			if(enemyBehavior.cool_down < 0.f)
 			{
+				float health_ratio = enemy.health / enemy.total_health;
+				bool can_flee = (health_ratio < 0.65f);
 
-				int next = 1 + (std::rand() % ((int)BossState::NUM_STATES - 1));
-				enemyBehavior.state = static_cast<BossState>(next);
+				std::vector<BossState> possibleStates = { BossState::SHOOT_PARADE, BossState::RUMBLE };
+				if (can_flee)
+					possibleStates.push_back(BossState::FLEE);
+
+				BossState next_state = possibleStates[std::rand() % possibleStates.size()];
+				enemyBehavior.state = next_state;
 				
 				if (enemyBehavior.state == BossState::SHOOT_PARADE)
 				{
@@ -243,6 +249,11 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 					enemyBehavior.rumble_duration = 1000.f;
 					enemyBehavior.is_charging = true;
 				}
+				else if (enemyBehavior.state == BossState::FLEE)
+				{
+					enemyBehavior.flee_timer = 1500.f;
+					enemyBehavior.is_fleeing = true;
+				}
 			}		
 			break;
 		}
@@ -253,14 +264,14 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 			enemyBehavior.shoot_cool_down -= elapsed_ms;
 			
 			if (enemyBehavior.shoot_cool_down < 0.f) {
-				for (int angleDeg = 0; angleDeg < 360; angleDeg += 15)
+				for (int angleDeg = 0; angleDeg < 360; angleDeg += 30)
 				{
 					float angleRad = glm::radians((float)angleDeg);
 					vec2 dir = { cosf(angleRad), sinf(angleRad) };
 					vec2 velocity = dir * PROJECTILE_SPEED * 3.f;
 					vec2 spawnPos = enemyMotion.position + dir * enemyMotion.scale.x / 3.f;
 
-					createBossProjectile(spawnPos, {PROJECTILE_BB_WIDTH * 3.f, PROJECTILE_BB_HEIGHT * 3.f}, velocity);
+					createBossProjectile(spawnPos, enemyBehavior.projectile_size, velocity);
 
 				}
 
@@ -269,7 +280,7 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 
 			if (enemyBehavior.cool_down < 0.f) {
 				enemyBehavior.state = BossState::IDLE;
-				enemyBehavior.cool_down = 10000.f;
+				enemyBehavior.cool_down = 3000.f;
 			}	
 
 			break;
@@ -298,9 +309,27 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 					
 					enemyMotion.velocity = { 0.f, 0.f };
 					enemyBehavior.state = BossState::IDLE;
-					enemyBehavior.cool_down = 5000.f;
+					enemyBehavior.cool_down = 3000.f;
 					enemyBehavior.rumble_charge_time = 1500.f;
 					enemyBehavior.is_charging = true;
+				}
+			}
+			break;
+		}
+
+		case BossState::FLEE :
+		{
+			if (enemyBehavior.is_fleeing) {
+				enemyBehavior.flee_timer -= elapsed_ms;
+
+				vec2 flee_dir = -glm::normalize(direction);
+				enemyMotion.velocity = flee_dir * ENEMY_SPEED;
+
+				if (enemyBehavior.flee_timer < 0.f) {
+					enemyMotion.velocity = { 0.f, 0.f };
+					enemyBehavior.state = BossState::IDLE;
+					enemyBehavior.cool_down = 3000.f;
+					enemyBehavior.is_fleeing = false;
 				}
 			}
 			break;
@@ -310,7 +339,7 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 			break;
 	}
 
-	// std::cout << static_cast<int>(enemyBehavior.state) << std::endl;
+	std::cout << static_cast<int>(enemyBehavior.state) << std::endl;
 	
 	return enemyBehavior.state;
 }

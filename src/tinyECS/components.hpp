@@ -540,7 +540,8 @@ enum class BossState
 	IDLE = INITIAL + 1,
 	SHOOT_PARADE = IDLE + 1,
 	RUMBLE = SHOOT_PARADE + 1,
-	NUM_STATES = RUMBLE + 1
+	FLEE = RUMBLE + 1,
+	NUM_STATES = FLEE + 1
 };
 
 struct BossAI : EnemyAI
@@ -553,6 +554,11 @@ struct BossAI : EnemyAI
 	float rumble_charge_time = 1500.f;  // time before rushing
 	float rumble_duration = 1000.f;     // time spent rushing
 	bool is_charging = true;
+	vec2 projectile_size = BOSS_PROJECTILE;
+	
+	float flee_duration = 1000.f;    // Arbitrary duration in ms
+	float flee_timer = 0.f;
+	bool is_fleeing = false;
 };
 
 enum class PARTICLE_TYPE 
