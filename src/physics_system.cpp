@@ -250,7 +250,8 @@ void PhysicsSystem::step(float elapsed_ms)
 		// handleWallCollision(e_entity);
 	}
 
-	for (auto& proj_entity : registry.bacteriophageProjectiles.entities)
+	// for (auto& proj_entity : registry.bacteriophageProjectiles.entities)
+	for (auto& proj_entity : registry.projectiles.entities)
 	{
 		Motion& proj_motion = registry.motions.get(proj_entity);
 		// ensure the projectile is the "second" entity

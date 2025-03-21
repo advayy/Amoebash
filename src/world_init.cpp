@@ -14,6 +14,7 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 	// invader
 	Enemy& enemy = registry.enemies.emplace(entity);
 	enemy.health = ENEMY_HEALTH;
+	enemy.total_health = ENEMY_HEALTH;
 
 	// store a reference to the potentially re-used mesh object
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
@@ -132,7 +133,7 @@ Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_
 	return entity;
 }
 
-Entity createBoss(RenderSystem* renderer, vec2 position)
+Entity createBoss(RenderSystem* renderer, vec2 position, BossState state)
 {
 	Entity entity = createEnemy(renderer, position);
 
@@ -140,10 +141,13 @@ Entity createBoss(RenderSystem* renderer, vec2 position)
 	motion.scale *= 5.f;
 
 	BossAI& enemy_ai = registry.bossAIs.emplace(entity);
-	enemy_ai.state = BossState::IDLE;
+	enemy_ai.state = state;
 	enemy_ai.cool_down = 2000.f;
-	enemy_ai.detectionRadius = SPIKE_ENEMY_DETECTION_RADIUS;
+	enemy_ai.detectionRadius = SPIKE_ENEMY_DETECTION_RADIUS * 1.5f;
 
+	Enemy& enemy = registry.enemies.get(entity);
+	enemy.health = BOSS_HEALTH;
+	enemy.total_health = BOSS_HEALTH;
 
 	registry.renderRequests.insert(
 		entity,
@@ -243,12 +247,22 @@ Entity createProjectile(vec2 pos, vec2 size, vec2 velocity)
 
 Entity createBacteriophageProjectile(Entity& bacteriophage)
 {
-	Motion motion = registry.motions.get(bacteriophage);
+	Motion& motion = registry.motions.get(bacteriophage);
 	vec2 direction = vec2(cosf((motion.angle - 90) * (M_PI / 180)), sinf((motion.angle - 90) * (M_PI / 180)));
 	vec2 projectile_pos = motion.position + (motion.scale * direction);
 	vec2 projectile_velocity = direction * PROJECTILE_SPEED;
 	Entity projectile = createProjectile(projectile_pos, { PROJECTILE_BB_WIDTH, PROJECTILE_BB_HEIGHT }, projectile_velocity);
 	registry.bacteriophageProjectiles.emplace(projectile);
+	return projectile;
+}
+
+Entity createBossProjectile(vec2 position, vec2 size, vec2 velocity)
+{
+	Entity projectile = createProjectile(position, size, velocity);
+	Projectile& p = registry.projectiles.get(projectile);
+	p.damage /= 3.f;
+	registry.bossProjectiles.emplace(projectile);
+
 	return projectile;
 }
 

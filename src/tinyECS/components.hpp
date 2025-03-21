@@ -98,6 +98,7 @@ struct Camera
 struct Enemy
 {
 	int health;
+	int total_health;
 };
 
 // Projectile
@@ -105,9 +106,12 @@ struct Projectile
 {
 	int damage;
 	float ms_until_despawn = PROJECTILE_TTL_MS;
+	bool from_enemy = true;
 };
 
 struct BacteriophageProjectile {};
+
+struct BossProjectile {};
 
 // used for Entities that cause damage
 struct Deadly
@@ -532,16 +536,23 @@ struct BacteriophageAI
 
 enum class BossState
 {
-	IDLE = 0,
+	INITIAL = 0,
+	IDLE = INITIAL + 1,
 	SHOOT_PARADE = IDLE + 1,
-	RUMBLE = SHOOT_PARADE + 1
+	RUMBLE = SHOOT_PARADE + 1,
+	NUM_STATES = RUMBLE + 1
 };
 
 struct BossAI : EnemyAI
 {
-	BossState state;
+	BossState state = BossState::INITIAL;
 	float cool_down;
 	float shoot_cool_down;
+
+	// RUMBLE-specific state
+	float rumble_charge_time = 1500.f;  // time before rushing
+	float rumble_duration = 1000.f;     // time spent rushing
+	bool is_charging = true;
 };
 
 enum class PARTICLE_TYPE 

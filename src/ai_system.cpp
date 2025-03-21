@@ -18,6 +18,7 @@ bool AISystem::isPlayerInRadius(vec2 player, vec2 enemy, float& distance, vec2& 
 SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity& enemyEntity, SpikeEnemyAI& enemyBehavior, float dist, vec2 direction, bool playerDetected, float elapsed_ms)
 {
 	Motion& enemyMotion = registry.motions.get(enemyEntity);
+
 	switch (enemyBehavior.state)
 	{
 		case SpikeEnemyState::CHASING:
@@ -181,16 +182,67 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 {
 	Motion &enemyMotion = registry.motions.get(enemyEntity);
 
+	
+	Enemy& enemy = registry.enemies.get(enemyEntity);
+	if (enemyBehavior.state != BossState::INITIAL)
+		enemy.health *= 0.9999999f;
+
+	std::cout << enemy.health << " " << enemy.total_health << std::endl;
+
 	switch (enemyBehavior.state)
 	{
+		case BossState::INITIAL:
+		{
+			if(playerDetected)
+			{
+
+				int next = 1 + (std::rand() % ((int)BossState::NUM_STATES - 1));
+				enemyBehavior.state = static_cast<BossState>(next);
+				
+				if (enemyBehavior.state == BossState::SHOOT_PARADE)
+				{
+					enemyBehavior.shoot_cool_down = 0.f;
+					enemyBehavior.cool_down = 3000.f;
+				}
+				else if (enemyBehavior.state == BossState::RUMBLE)
+				{
+					enemyBehavior.rumble_charge_time = 1500.f;
+					enemyBehavior.rumble_duration = 1000.f;
+					enemyBehavior.is_charging = true;
+				}
+			}
+			break;
+		}
 		case BossState::IDLE: 
 		{
+			if (enemyMotion.angle != 0.f) {
+				const float smoothing_factor = 0.1f;
+
+				enemyMotion.angle = glm::lerp(enemyMotion.angle, 0.f, smoothing_factor);
+
+				if (std::fabs(enemyMotion.angle) < 0.1f) {
+					enemyMotion.angle = 0.f;
+				}
+			}
+
 			enemyBehavior.cool_down -= elapsed_ms;
-			if(playerDetected && enemyBehavior.cool_down < 0.f)
+			if(enemyBehavior.cool_down < 0.f)
 			{
-				enemyBehavior.state = BossState::SHOOT_PARADE;
-				enemyBehavior.shoot_cool_down = 0.f;
-				enemyBehavior.cool_down = 3000.f;
+
+				int next = 1 + (std::rand() % ((int)BossState::NUM_STATES - 1));
+				enemyBehavior.state = static_cast<BossState>(next);
+				
+				if (enemyBehavior.state == BossState::SHOOT_PARADE)
+				{
+					enemyBehavior.shoot_cool_down = 0.f;
+					enemyBehavior.cool_down = 3000.f;
+				}
+				else if (enemyBehavior.state == BossState::RUMBLE)
+				{
+					enemyBehavior.rumble_charge_time = 1500.f;
+					enemyBehavior.rumble_duration = 1000.f;
+					enemyBehavior.is_charging = true;
+				}
 			}		
 			break;
 		}
@@ -201,14 +253,15 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 			enemyBehavior.shoot_cool_down -= elapsed_ms;
 			
 			if (enemyBehavior.shoot_cool_down < 0.f) {
-				for (int angleDeg = 0; angleDeg < 360; angleDeg += 30)
+				for (int angleDeg = 0; angleDeg < 360; angleDeg += 15)
 				{
 					float angleRad = glm::radians((float)angleDeg);
 					vec2 dir = { cosf(angleRad), sinf(angleRad) };
-					vec2 velocity = dir * PROJECTILE_SPEED * 5.f;
-					vec2 spawnPos = enemyMotion.position + dir * 500.f;
+					vec2 velocity = dir * PROJECTILE_SPEED * 3.f;
+					vec2 spawnPos = enemyMotion.position + dir * enemyMotion.scale.x / 3.f;
 
-					createProjectile(spawnPos, {PROJECTILE_BB_WIDTH, PROJECTILE_BB_HEIGHT}, velocity);
+					createBossProjectile(spawnPos, {PROJECTILE_BB_WIDTH * 3.f, PROJECTILE_BB_HEIGHT * 3.f}, velocity);
+
 				}
 
 				enemyBehavior.shoot_cool_down = 500.f;	
@@ -222,11 +275,42 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 			break;
 		}
 
+		case BossState::RUMBLE:
+		{
+			if (enemyBehavior.is_charging) {
+				enemyBehavior.rumble_charge_time -= elapsed_ms;
+				enemyMotion.velocity = { 0.f, 0.f };
+
+				enemyMotion.angle = atan2(direction.y, direction.x) * (180.f / M_PI) + 90.f;
+
+				if (enemyBehavior.rumble_charge_time <= 0.f) {
+					vec2 locked_direction = glm::normalize(direction);
+					enemyMotion.velocity = locked_direction * ENEMY_SPEED * 4.f;
+
+					enemyBehavior.is_charging = false;
+					enemyBehavior.rumble_duration = 1000.f;
+				}
+			}
+			else {
+				enemyBehavior.rumble_duration -= elapsed_ms;
+
+				if (enemyBehavior.rumble_duration <= 0.f) {
+					
+					enemyMotion.velocity = { 0.f, 0.f };
+					enemyBehavior.state = BossState::IDLE;
+					enemyBehavior.cool_down = 5000.f;
+					enemyBehavior.rumble_charge_time = 1500.f;
+					enemyBehavior.is_charging = true;
+				}
+			}
+			break;
+		}
+
 		default:
 			break;
 	}
 
-	std::cout << static_cast<int>(enemyBehavior.state) << std::endl;
+	// std::cout << static_cast<int>(enemyBehavior.state) << std::endl;
 	
 	return enemyBehavior.state;
 }

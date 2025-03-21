@@ -210,54 +210,100 @@ void WorldSystem::updateMouseCoords()
 	game_mouse_pos_y = device_mouse_pos_y + camera.position.y - WINDOW_HEIGHT_PX * 0.5f;
 }
 
+void WorldSystem::updateBoss()
+{
+	std::vector<Entity> bosses_to_split;
+
+	for (auto boss : registry.bossAIs.entities) 
+	{
+		Enemy& enemy = registry.enemies.get(boss);
+
+		if (enemy.total_health < 125.f) continue;
+
+		if (enemy.health < enemy.total_health / 2.f) {
+			bosses_to_split.push_back(boss);
+		}
+	}
+
+	for (auto boss :bosses_to_split) 
+	{
+		Motion& originalMotion = registry.motions.get(boss);
+		BossAI& originalAI = registry.bossAIs.get(boss);
+		Enemy& originalEnemy = registry.enemies.get(boss);
+
+		vec2 smallScale = originalMotion.scale * 0.5f;
+		float smallHealth = originalEnemy.total_health * 0.5f;
+
+		vec2 offset = vec2(smallScale.x * 1.2f, 0.f);
+		vec2 pos1 = originalMotion.position - offset;
+		vec2 pos2 = originalMotion.position + offset;
+
+		Entity smallBoss1 = createBoss(nullptr, pos1, BossState::IDLE);
+		Entity smallBoss2 = createBoss(nullptr, pos2, BossState::IDLE);
+
+		for (Entity e : {smallBoss1, smallBoss2}) {
+			Motion& m = registry.motions.get(e);
+			BossAI& ai = registry.bossAIs.get(e);
+			Enemy& en = registry.enemies.get(e);
+
+			m.scale = smallScale;
+			ai.detectionRadius = originalAI.detectionRadius * 0.75f;
+			en.health = smallHealth;
+			en.total_health = smallHealth;
+		}
+
+		registry.remove_all_components_of(boss);
+	}
+
+
+}
 
 void WorldSystem::spawnEnemies(float elapsed_ms_since_last_update)
 {
 	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
-	if (!tutorial_mode)
+
+	// spawn new invaders
+	next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
+	if (next_enemy_spawn < 0.f && !gameOver)
 	{
-		// spawn new invaders
-		next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
-		if (next_enemy_spawn < 0.f && !gameOver)
+		if (registry.enemies.entities.size() < MAX_ENEMIES_COUNT)
 		{
-			if (registry.enemies.entities.size() < MAX_ENEMIES_COUNT)
+			// reset timer
+			next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
+
+			// randomize position
+			// randomize empty tile on mpa
+			std::pair<int, int> enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
+
+			int random_num = rand();
+			if (random_num % 3 == 0)
 			{
-				// reset timer
-				next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
-
-				// randomize position
-				// randomize empty tile on mpa
-				std::pair<int, int> enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
-	
-				int random_num = rand();
-				if (random_num % 3 == 0)
+				createSpikeEnemy(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }));
+			}
+			else if (random_num % 3 == 1)
+			{
+				createRBCEnemy(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }));
+			}
+			else if (registry.bacteriophageAIs.entities.size() < MAX_BACTERIOPHAGE_COUNT)
+			{
+				while (glm::distance(player_motion.position, gridCellToPosition({ enemyPosition.second, enemyPosition.first })) < SPIKE_ENEMY_DETECTION_RADIUS)
 				{
-					createSpikeEnemy(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }));
+					// randomize empty tile on mpa
+					enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
 				}
-				else if (random_num % 3 == 1)
-				{
-					createRBCEnemy(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }));
-				}
-				else if (registry.bacteriophageAIs.entities.size() < MAX_BACTERIOPHAGE_COUNT)
-				{
-					while (glm::distance(player_motion.position, gridCellToPosition({ enemyPosition.second, enemyPosition.first })) < SPIKE_ENEMY_DETECTION_RADIUS)
-					{
-						// randomize empty tile on mpa
-						enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
-					}
 
-					int index = (int)(uniform_dist(rng) * MAX_BACTERIOPHAGE_COUNT);
-					while (bacteriophage_idx.find(index) != bacteriophage_idx.end())
-					{
-						index = (int)(uniform_dist(rng) * MAX_BACTERIOPHAGE_COUNT);
-					}
-					bacteriophage_idx[index] = 1;
-
-					createBacteriophage(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }), index);
+				int index = (int)(uniform_dist(rng) * MAX_BACTERIOPHAGE_COUNT);
+				while (bacteriophage_idx.find(index) != bacteriophage_idx.end())
+				{
+					index = (int)(uniform_dist(rng) * MAX_BACTERIOPHAGE_COUNT);
 				}
+				bacteriophage_idx[index] = 1;
+
+				createBacteriophage(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }), index);
 			}
 		}
 	}
+	
 }
 
 void WorldSystem::handleProjectiles(float elapsed_ms_since_last_update)
@@ -344,7 +390,11 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	handlePlayerMovement(elapsed_ms_since_last_update);
 	handlePlayerHealth(elapsed_ms_since_last_update);
 
-	spawnEnemies(elapsed_ms_since_last_update);
+	if (!tutorial_mode && stage_num != 5) {
+		spawnEnemies(elapsed_ms_since_last_update);
+	} else {
+		updateBoss();
+	}
 	handleProjectiles(elapsed_ms_since_last_update);
 
     tileProceduralMap();
@@ -580,7 +630,7 @@ void WorldSystem::handle_collisions()
 		Collision& collision = registry.collisions.get(entity);
 		Entity& entity2 = collision.other;
 
-		if (registry.bacteriophageProjectiles.has(entity2))
+		if (registry.bacteriophageProjectiles.has(entity2) || registry.bossProjectiles.has(entity2))
 		{
 			if (registry.players.has(entity))
 			{
@@ -594,6 +644,7 @@ void WorldSystem::handle_collisions()
 				registry.remove_all_components_of(entity2);
 			}
 		}
+
 		else if (registry.keys.has(entity2))
 		{
 			if (registry.players.has(entity))
@@ -647,16 +698,12 @@ void WorldSystem::handle_collisions()
 		}
 		else if (registry.enemies.has(entity2))
 		{
-
-			if (registry.bossAIs.has(entity2)) {
-				Enemy& ae = registry.enemies.get(entity2);
-				std::cout << ae.health << std::endl;
-			}
-
 			Enemy& enemy = registry.enemies.get(entity2);
 			if (registry.projectiles.has(entity))
 			{
 				Projectile& projectile = registry.projectiles.get(entity);
+
+				if (projectile.from_enemy) continue;
 
 				// Invader takes damage
 				enemy.health -= projectile.damage;
