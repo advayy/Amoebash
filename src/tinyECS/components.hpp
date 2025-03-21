@@ -530,6 +530,20 @@ struct BacteriophageAI
 	int placement_index = 0;
 };
 
+enum class BossState
+{
+	IDLE = 0,
+	SHOOT_PARADE = IDLE + 1,
+	RUMBLE = SHOOT_PARADE + 1
+};
+
+struct BossAI : EnemyAI
+{
+	BossState state;
+	float cool_down;
+	float shoot_cool_down;
+};
+
 enum class PARTICLE_TYPE 
 {
     DEATH_PARTICLE = 0,

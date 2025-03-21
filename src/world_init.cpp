@@ -132,6 +132,45 @@ Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_
 	return entity;
 }
 
+Entity createBoss(RenderSystem* renderer, vec2 position)
+{
+	Entity entity = createEnemy(renderer, position);
+
+	Motion& motion = registry.motions.get(entity);
+	motion.scale *= 5.f;
+
+	BossAI& enemy_ai = registry.bossAIs.emplace(entity);
+	enemy_ai.state = BossState::IDLE;
+	enemy_ai.cool_down = 2000.f;
+	enemy_ai.detectionRadius = SPIKE_ENEMY_DETECTION_RADIUS;
+
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			TEXTURE_ASSET_ID::SPIKE_ENEMY,
+			EFFECT_ASSET_ID::SPRITE_SHEET,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	Animation& a = registry.animations.emplace(entity);
+	a.start_frame = 0;
+	a.end_frame = 6;
+	a.time_per_frame = 100.0f;
+	a.loop = ANIM_LOOP_TYPES::PING_PONG;
+
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 13;
+	spriteSheet.current_frame = 0;
+
+	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
+	sprite.width = 32;
+	sprite.height = 32;
+
+	return entity;
+}
+
 Entity createPlayer(RenderSystem *renderer, vec2 position)
 {
 	auto entity = Entity();
@@ -211,6 +250,37 @@ Entity createBacteriophageProjectile(Entity& bacteriophage)
 	Entity projectile = createProjectile(projectile_pos, { PROJECTILE_BB_WIDTH, PROJECTILE_BB_HEIGHT }, projectile_velocity);
 	registry.bacteriophageProjectiles.emplace(projectile);
 	return projectile;
+}
+
+Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& playerPosition) {
+	for (Entity& entity : registry.proceduralMaps.entities) {
+        registry.remove_all_components_of(entity);
+    }
+    for (Entity& entity : registry.portals.entities) {
+        registry.remove_all_components_of(entity);
+    }
+
+	auto entity = Entity();
+	ProceduralMap& map = registry.proceduralMaps.emplace(entity);
+
+	map.width = size.x;
+	map.height = size.y;
+	map.top = floor(WORLD_ORIGIN.y - size.y / 2);
+	map.left = floor(WORLD_ORIGIN.x - size.x / 2);
+	map.bottom = ceil(WORLD_ORIGIN.y + size.y / 2);
+	map.right = ceil(WORLD_ORIGIN.x + size.x / 2);
+	map.map.resize(map.height, std::vector<tileType>(map.width, tileType::EMPTY));
+
+	for (int x = 0; x < map.width; x ++) {
+		for (int y = 0; y < map.height; y++) {
+			map.map[y][x] = tileType::EMPTY;
+		}
+	}
+
+	playerPosition.first = 0;
+	playerPosition.second = 0;
+
+	return entity;
 }
 
 Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, std::pair<int, int>& playerPosition) {

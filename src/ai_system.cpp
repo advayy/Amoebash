@@ -177,6 +177,60 @@ BacteriophageState AISystem::handleBacteriophageBehavior(Entity& enemyEntity, Ba
 	return enemyBehavior.state;
 }
 
+BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavior, float dist, vec2 direction, bool playerDetected, float elapsed_ms)
+{
+	Motion &enemyMotion = registry.motions.get(enemyEntity);
+
+	switch (enemyBehavior.state)
+	{
+		case BossState::IDLE: 
+		{
+			enemyBehavior.cool_down -= elapsed_ms;
+			if(playerDetected && enemyBehavior.cool_down < 0.f)
+			{
+				enemyBehavior.state = BossState::SHOOT_PARADE;
+				enemyBehavior.shoot_cool_down = 0.f;
+				enemyBehavior.cool_down = 3000.f;
+			}		
+			break;
+		}
+
+		case BossState::SHOOT_PARADE:
+		{
+			enemyBehavior.cool_down -= elapsed_ms;
+			enemyBehavior.shoot_cool_down -= elapsed_ms;
+			
+			if (enemyBehavior.shoot_cool_down < 0.f) {
+				for (int angleDeg = 0; angleDeg < 360; angleDeg += 30)
+				{
+					float angleRad = glm::radians((float)angleDeg);
+					vec2 dir = { cosf(angleRad), sinf(angleRad) };
+					vec2 velocity = dir * PROJECTILE_SPEED * 5.f;
+					vec2 spawnPos = enemyMotion.position + dir * 500.f;
+
+					createProjectile(spawnPos, {PROJECTILE_BB_WIDTH, PROJECTILE_BB_HEIGHT}, velocity);
+				}
+
+				enemyBehavior.shoot_cool_down = 500.f;	
+			}
+
+			if (enemyBehavior.cool_down < 0.f) {
+				enemyBehavior.state = BossState::IDLE;
+				enemyBehavior.cool_down = 10000.f;
+			}	
+
+			break;
+		}
+
+		default:
+			break;
+	}
+
+	std::cout << static_cast<int>(enemyBehavior.state) << std::endl;
+	
+	return enemyBehavior.state;
+}
+
 void AISystem::step(float elapsed_ms)
 {
 
@@ -227,5 +281,17 @@ void AISystem::step(float elapsed_ms)
 		vec2 positionToReach = playerMotion.position + vec2(cosf(circleAngle) * BACTERIOPHAGE_ENEMY_KEEP_AWAY_RADIUS, sinf(circleAngle) * SPIKE_ENEMY_DETECTION_RADIUS);
 
 		enemyBehavior.state = handleBacteriophageBehavior(enemyEntity, enemyBehavior, direction, playerDetected, elapsed_ms, positionToReach, directionToPlayer);
+	}
+
+	for (auto& enemyEntity : registry.bossAIs.entities)
+	{
+		BossAI& enemyBehavior = registry.bossAIs.get(enemyEntity);
+		Motion& enemyMotion = registry.motions.get(enemyEntity);
+
+		vec2 direction;
+		float dist = 0;
+		bool playerDetected = isPlayerInRadius(playerMotion.position, enemyMotion.position, dist, direction, enemyBehavior.detectionRadius);
+
+		enemyBehavior.state = handleBossBehaviour(enemyEntity, enemyBehavior, dist, direction, playerDetected, elapsed_ms);
 	}
 }

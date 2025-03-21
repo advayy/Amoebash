@@ -521,9 +521,20 @@ void WorldSystem::restart_game()
     
 	// std::cout << "Creating Procedural Map, tutorial mode status :" << tutorial_mode << std::endl;
 
-    std::pair<int, int> playerPosition;
-	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
 
+	
+    std::pair<int, int> playerPosition;
+	
+	if (stage_num < 5) {
+		createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
+	} else {
+		createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
+		createBoss(renderer, gridCellToPosition({10, 10}));
+		std::cout << "Boss created" << std::endl;
+	}
+	
+	
+	
 	if (tutorial_mode) {
 		createPlayer(renderer, gridCellToPosition({0, 10}));
 		createSpikeEnemy(renderer, gridCellToPosition({12, 10}));
@@ -532,7 +543,8 @@ void WorldSystem::restart_game()
 	} else {
 		createPlayer(renderer, gridCellToPosition(vec2(playerPosition.second, playerPosition.first)));
 	}
-	
+
+
 	createMiniMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
 
 	createCamera();
@@ -635,6 +647,12 @@ void WorldSystem::handle_collisions()
 		}
 		else if (registry.enemies.has(entity2))
 		{
+
+			if (registry.bossAIs.has(entity2)) {
+				Enemy& ae = registry.enemies.get(entity2);
+				std::cout << ae.health << std::endl;
+			}
+
 			Enemy& enemy = registry.enemies.get(entity2);
 			if (registry.projectiles.has(entity))
 			{

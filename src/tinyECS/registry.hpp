@@ -71,6 +71,7 @@ public:
 	ComponentContainer<SpikeEnemyAI> spikeEnemyAIs;
 	ComponentContainer<RBCEnemyAI> rbcEnemyAIs;
 	ComponentContainer<BacteriophageAI> bacteriophageAIs;
+	ComponentContainer<BossAI> bossAIs;
 
 	// particle
 	ComponentContainer<Particle> particles;
@@ -126,6 +127,7 @@ public:
 		registry_list.push_back(&rbcEnemyAIs);
 		registry_list.push_back(&bacteriophageAIs);
 		registry_list.push_back(&particles);
+		registry_list.push_back(&bossAIs);
 	}
 
 	void clear_all_components()
