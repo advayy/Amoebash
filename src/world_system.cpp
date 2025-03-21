@@ -813,7 +813,7 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 		if (action == GLFW_RELEASE)
 		{
 			restart_game();
-			current_state = GameState::START_SCREEN;
+			current_state = GameState::START_SCREEN_ANIMATION;
 		}
 	}
 }

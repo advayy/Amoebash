@@ -505,16 +505,13 @@ struct SpikeEnemyAI : EnemyAI
 
 enum class RBCEnemyState
 {
-	CHASING = 0,
-	PATROLLING = CHASING + 1,
-	DASHING = PATROLLING + 1,
-	RUNAWAY = DASHING + 1,
-	FLOATING = RUNAWAY + 1
+	FLOATING = 0,
+	RUNAWAY = FLOATING + 1
 };
 
 struct RBCEnemyAI : EnemyAI
 {
-	RBCEnemyState state;
+	RBCEnemyState state = RBCEnemyState::FLOATING;
 };
 
 enum class BacteriophageState

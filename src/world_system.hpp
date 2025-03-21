@@ -70,7 +70,7 @@ public:
 	void collectBuff(Entity player_entity, Entity buff_entity);
 
 	void handlePlayerHealth(float elapsed_ms);
-	bool tutorial_mode = true;
+	bool tutorial_mode = false; // can change, just for debugging purposes
 
     void initiatePlayerDash();
     bool canDash();
