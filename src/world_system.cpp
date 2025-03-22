@@ -394,7 +394,6 @@ void WorldSystem::handlePlayerHealth(float elapsed_ms)
 		// save buffs to progression
 		Progression& p = registry.progressions.get(registry.progressions.entities[0]);
 		p.buffsFromLastRun = player.buffsCollected;
-
 		previous_state = current_state;
 		current_state = GameState::GAME_OVER;
 		createGameOverScreen();
@@ -465,8 +464,13 @@ void WorldSystem::goToNextLevel()
 
 	Player &player = registry.players.get(registry.players.entities[0]);
 	Motion &playerMotion = registry.motions.get(registry.players.entities[0]);
-	
+	Progression &prog = registry.progressions.get(registry.progressions.entities[0]);
+
 	playerMotion.position = gridCellToPosition(vec2(playerPosition.second, playerPosition.first));
+
+	for(int i = 0; i < prog.pickedInNucleus.size(); i++) {
+		applyBuff(player, prog.pickedInNucleus[i]);
+	}
 
     // print exiting
     // std::cout << "Exiting createProceduralMap" << std::endl;
@@ -947,8 +951,9 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				///---------------------------------------------
 				///---------------------------------------------
 				///---------------------------------------------
-				///---------------------------------------------
-
+				///--------------------------------------------- Iterate through each clickable buff that is puiked and add it to the array of player things...
+				
+				moveSelectedBuffsToProgression();
 				removeGameOverScreen();
 				restart_game();
 			} 
@@ -958,6 +963,21 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		}
 	}
 }
+
+void WorldSystem::moveSelectedBuffsToProgression(){
+	Progression& p = registry.progressions.get(registry.progressions.entities[0]);
+	p.pickedInNucleus.clear();
+	p.buffsFromLastRun.clear();
+
+	for(int i = 0; i < registry.clickableBuffs.entities.size(); i++) {
+		ClickableBuff& c = registry.clickableBuffs.get(registry.clickableBuffs.entities[i]);
+		if(c.picked == true) {
+			p.pickedInNucleus.push_back(c.type);
+		}
+	}
+
+}
+
 
 bool WorldSystem::isClickableBuffClicked(Entity* return_e) {
 	std::vector<Entity> clickables = registry.clickableBuffs.entities;
@@ -1094,8 +1114,13 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 	buff.collected = true;
 
 	registry.remove_all_components_of(buff_entity);
+	applyBuff(player, buff.type);
+}
 
-	switch (buff.type)
+void WorldSystem::applyBuff(Player& player, int buff_type)
+{
+
+	switch (buff_type)
 	{
 	case 0: // Tail
 		player.speed *= 1.05f;
@@ -1121,12 +1146,13 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 	std::cout << "Collected Chloroplast: Healing increased by 5% " << std::endl;
 		break;
 	default:
-		std::cerr << "Unknown buff type: " << buff.type << std::endl;
+		std::cerr << "Unknown buff type: " << buff_type << std::endl;
 		break;
 	}
 
-	renderCollectedBuff(renderer, buff.type);
+	renderCollectedBuff(renderer, buff_type);
 }
+
 
 void WorldSystem::initiatePlayerDash()
 {

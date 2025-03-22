@@ -160,4 +160,6 @@ private:
 	void handleClickableBuff(Entity e);
 	Entity getFreeSlot();
 	bool isFreeSlot();
+	void moveSelectedBuffsToProgression();
+	void applyBuff(Player& player, int buff_type);
 };
