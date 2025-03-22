@@ -28,6 +28,8 @@ struct Player
 	// Detection range for enemies
 	float detection_range = 1.0f;
 
+	float knockback_duration = 0.0f;
+
 	vec2 grid_position = {0, 0};
 };
 

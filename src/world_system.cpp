@@ -452,25 +452,30 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 	// if the player is not dashing, then have its velocity be base speed * by direction to mouse, if the mouse is outside deadzone
 	
 	Player &player = registry.players.get(registry.players.entities[0]);
+
+	if (player.knockback_duration > 0.0f) {
+		return;
+	}
+
 	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
 	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x) * 180.0f / M_PI + 90.0f;
 
-			if(registry.dashes.size() == 0) {
-			Motion &player_motion = registry.motions.get(registry.players.entities[0]);
-	
-			vec2 direction = vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position;
-			direction = normalize(direction);
-	
-			// If the mouse is outside the deadzone, move the player
-			if(length(vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position) > MOUSE_TRACKING_DEADZONE) 
-			{
-				player_motion.velocity = {direction.x * player.speed, direction.y * player.speed};
-			} 
-			else
-			{
-				player_motion.velocity = {0, 0};
-			}
+	if(registry.dashes.size() == 0) {
+		Motion &player_motion = registry.motions.get(registry.players.entities[0]);
+
+		vec2 direction = vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position;
+		direction = normalize(direction);
+
+		// If the mouse is outside the deadzone, move the player
+		if(length(vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position) > MOUSE_TRACKING_DEADZONE) 
+		{
+			player_motion.velocity = {direction.x * player.speed, direction.y * player.speed};
+		} 
+		else
+		{
+			player_motion.velocity = {0, 0};
 		}
+	}
 	}
 
 void WorldSystem::goToNextLevel()
@@ -645,7 +650,6 @@ void WorldSystem::handle_collisions()
 				registry.remove_all_components_of(entity2);
 			}
 		}
-
 		else if (registry.keys.has(entity2))
 		{
 			if (registry.players.has(entity))
@@ -739,6 +743,8 @@ void WorldSystem::handle_collisions()
 
 					if (enemy.health <= 0)
 					{
+						std::cout << "You DASHED and KILLED an enemy!" << std::endl;
+						
 						if (registry.bacteriophageAIs.has(entity2))
 						{
 							bacteriophage_idx.erase(registry.bacteriophageAIs.get(entity2).placement_index);
@@ -747,6 +753,8 @@ void WorldSystem::handle_collisions()
 						vec2 enemy_position = registry.motions.get(entity2).position;
 						points += 1;
 						registry.remove_all_components_of(entity2);
+						
+						std::cout << "Buff Spawn Position: " << enemy_position.x << ", " << enemy_position.y << std::endl;
 
 						createBuff(vec2(enemy_position.x, enemy_position.y));
 						particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
@@ -780,6 +788,27 @@ void WorldSystem::handle_collisions()
 						}
 					}
 				}
+
+				if (registry.bossAIs.has(entity2)) 
+				{
+					BossAI& bossAI = registry.bossAIs.get(entity2);
+
+					if (bossAI.state == BossState::RUMBLE && registry.players.has(entity))
+					{
+						Motion& bossMotion = registry.motions.get(entity2);
+						Motion& playerMotion = registry.motions.get(entity);
+
+						Player& player = registry.players.get(entity);
+
+						if (player.knockback_duration > 0.f && glm::length(bossMotion.velocity) > 0.1f)
+						{
+							vec2 bossDirection = glm::normalize(bossMotion.velocity);
+							vec2 knockBackDirection = vec2(-bossDirection.y, bossDirection.x);
+							playerMotion.velocity = knockBackDirection * 1000.f;
+						}
+					}
+				}
+			
 			}
 		}
 		else if (registry.buffs.has(entity2) && registry.players.has(entity))

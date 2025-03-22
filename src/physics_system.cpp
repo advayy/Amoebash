@@ -34,6 +34,7 @@ void PhysicsSystem::step(float elapsed_ms)
 	// having entities move at different speed based on the machine.
 
 	float step_seconds = elapsed_ms / 1000.f;
+
 	// precompute boundaries for player motion
 	float leftBound = MAP_LEFT * GRID_CELL_WIDTH_PX;
 	float rightBound = MAP_RIGHT * GRID_CELL_WIDTH_PX - 1;
@@ -43,7 +44,7 @@ void PhysicsSystem::step(float elapsed_ms)
 	Entity& player_entity = registry.players.entities[0];
 	Motion& player_motion = registry.motions.get(player_entity);
 	Player& player = registry.players.get(player_entity);
-
+	
 	// Handle player dashing
 	// this needs to be done first since the collision resolution updates the player dash angle
 	// so we need the updated velocities before we update player position
@@ -77,6 +78,8 @@ void PhysicsSystem::step(float elapsed_ms)
 		Entity entity = motion_registry.entities[i];
 		Motion &motion = motion_registry.components[i];
 
+
+		// std::cout << "Player Velocity " << motion.velocity.x << " " << motion.velocity.y << std::endl;
 		motion.position += motion.velocity * step_seconds;
 
 		if (registry.keys.has(entity)) {
@@ -88,9 +91,6 @@ void PhysicsSystem::step(float elapsed_ms)
 			if (motion.position.x >= rightBound + 1 || motion.position.x <= leftBound ||
 				motion.position.y <= topBound || motion.position.y >= bottomBound + 1)  {
 					// temporary hexagon motion
-					
-					
-					
 					motion.position.x = glm::clamp(motion.position.x, leftBound, rightBound);
 					motion.position.y = glm::clamp(motion.position.y, topBound, bottomBound);
 					
@@ -100,28 +100,18 @@ void PhysicsSystem::step(float elapsed_ms)
 				}
 		}
 
-		if (registry.keys.has(entity)) 
-		{
-			float dampingFactor = 0.8f;
-			motion.velocity *= dampingFactor;
-			if (glm::length(motion.velocity) < 0.01f) {
+		// knockback
+		if (registry.players.has(entity)) {
+			Player& player = registry.players.get(entity);
+			player.knockback_duration -= elapsed_ms;
+
+			if (player.knockback_duration < 0.f) {
 				motion.velocity = vec2(0.0f, 0.0f);
+				player.knockback_duration = 0.f;
 			}
-			if (motion.position.x >= rightBound + 1 || motion.position.x <= leftBound ||
-				motion.position.y <= topBound || motion.position.y >= bottomBound + 1)  {
-					// temporary hexagon motion
-					
-					
-					
-					motion.position.x = glm::clamp(motion.position.x, leftBound, rightBound);
-					motion.position.y = glm::clamp(motion.position.y, topBound, bottomBound);
-					
-					if (motion.velocity != vec2(0.0f, 0.0f)) {
-						motion.velocity = -1.f * motion.velocity;
-					}
-				}
 		}
 
+		// map boundary checking
 		if (registry.players.has(entity) || registry.enemies.has(entity))
 		{
 			if (motion.position.x >= rightBound + 1 || motion.position.x <= leftBound ||
@@ -232,6 +222,11 @@ void PhysicsSystem::step(float elapsed_ms)
 		
 		for (auto& proj_entity : registry.projectiles.entities)
 		{
+			Projectile& projectile = registry.projectiles.get(proj_entity);
+			
+			// to prevent projectile (from enemy) to enemy collision
+			if (projectile.from_enemy) continue;
+
 			Motion& proj_motion = registry.motions.get(proj_entity);
 
 			// ensure the projectile is the "first" entity
@@ -244,6 +239,10 @@ void PhysicsSystem::step(float elapsed_ms)
 		// ensure the player is the "first" entity
 		if (detector.hasCollided(player_motion, e_motion))
 		{
+			// to make sure the player doesn't get locked to the enemy 
+			if (registry.bossAIs.has(e_entity) && glm::length(e_motion.velocity) > 0.1f) {
+				player.knockback_duration = 500.f;
+			}
 			registry.collisions.emplace_with_duplicates(player_entity, e_entity);
 		}
 
