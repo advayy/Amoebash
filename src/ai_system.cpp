@@ -323,7 +323,7 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 				enemyBehavior.flee_timer -= elapsed_ms;
 
 				vec2 flee_dir = -glm::normalize(direction);
-				enemyMotion.velocity = flee_dir * ENEMY_SPEED;
+				enemyMotion.velocity = flee_dir * ENEMY_SPEED * 5.f;
 
 				if (enemyBehavior.flee_timer < 0.f) {
 					enemyMotion.velocity = { 0.f, 0.f };
@@ -338,8 +338,6 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 		default:
 			break;
 	}
-
-	std::cout << static_cast<int>(enemyBehavior.state) << std::endl;
 	
 	return enemyBehavior.state;
 }

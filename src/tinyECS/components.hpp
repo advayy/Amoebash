@@ -555,7 +555,7 @@ struct BossAI : EnemyAI
 	float rumble_duration = 1000.f;     // time spent rushing
 	bool is_charging = true;
 	vec2 projectile_size = BOSS_PROJECTILE;
-	
+
 	float flee_duration = 1000.f;    // Arbitrary duration in ms
 	float flee_timer = 0.f;
 	bool is_fleeing = false;

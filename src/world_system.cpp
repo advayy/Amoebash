@@ -455,23 +455,23 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
 	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x) * 180.0f / M_PI + 90.0f;
 
-	if(registry.dashes.size() == 0) {
-		Motion &player_motion = registry.motions.get(registry.players.entities[0]);
-
-		vec2 direction = vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position;
-		direction = normalize(direction);
-
-		// If the mouse is outside the deadzone, move the player
-		if(length(vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position) > MOUSE_TRACKING_DEADZONE) 
-		{
-			player_motion.velocity = {direction.x * player.speed, direction.y * player.speed};
-		} 
-		else
-		{
-			player_motion.velocity = {0, 0};
+			if(registry.dashes.size() == 0) {
+			Motion &player_motion = registry.motions.get(registry.players.entities[0]);
+	
+			vec2 direction = vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position;
+			direction = normalize(direction);
+	
+			// If the mouse is outside the deadzone, move the player
+			if(length(vec2(game_mouse_pos_x, game_mouse_pos_y) - player_motion.position) > MOUSE_TRACKING_DEADZONE) 
+			{
+				player_motion.velocity = {direction.x * player.speed, direction.y * player.speed};
+			} 
+			else
+			{
+				player_motion.velocity = {0, 0};
+			}
 		}
 	}
-}
 
 void WorldSystem::goToNextLevel()
 {
