@@ -108,6 +108,7 @@ struct Portal {
 };
 
 struct MiniMap {
+	std::vector<std::vector<int>> visited;
 };
 
 struct Camera

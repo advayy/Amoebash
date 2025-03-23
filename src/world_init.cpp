@@ -341,6 +341,23 @@ Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& pla
 	return entity;
 }
 
+void updateMiniMap(vec2 playerPos) {
+	int minimapViewRange = 2;
+	MiniMap& m = registry.miniMaps.get(registry.miniMaps.entities[0]);
+
+	for(int i = playerPos.x - minimapViewRange; i < playerPos.x + minimapViewRange; i++) {
+		for(int j = playerPos.y - minimapViewRange; j < playerPos.y + minimapViewRange; j++) {
+			m.visited[i][j] = 1;
+		}
+	}
+}
+
+void createEmptyMiniMap() {
+	MiniMap& m = registry.miniMaps.get(registry.miniMaps.entities[0]);
+	Map& map = registry.maps.get(registry.maps.entities[0]);
+	m.visited.resize(map.width, std::vector<int>(map.height, 0));
+}
+
 Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, std::pair<int, int>& playerPosition) {
     // print entering map
     // std::cout << "Entering createProceduralMap" << std::endl;
