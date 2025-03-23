@@ -78,6 +78,7 @@ public:
 	// particle
 	ComponentContainer<Particle> particles;
 
+    ComponentContainer<Gun> guns;
 	// NUCLEUS MENU SLOT
 	ComponentContainer<Slot> slots;
 
@@ -133,6 +134,7 @@ public:
 		registry_list.push_back(&rbcEnemyAIs);
 		registry_list.push_back(&bacteriophageAIs);
 		registry_list.push_back(&particles);
+        registry_list.push_back(&guns);
 		registry_list.push_back(&slots);
         registry_list.push_back(&clickableBuffs);
 	}

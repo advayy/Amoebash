@@ -333,6 +333,11 @@ struct BuffUI
 struct InfoBox
 {
 };
+
+struct Gun {
+    float cooldown_timer_ms = 0.0f;
+};
+
 /**
  * The following enumerators represent global identifiers refering to graphic
  * assets. For example TEXTURE_ASSET_ID are the identifiers of each texture
@@ -398,7 +403,8 @@ enum class TEXTURE_ASSET_ID
 	LEAVE_TUTORIAL = RESTART_INFO + 1,
 	CHEST = LEAVE_TUTORIAL + 1,
 	PARTICLE = CHEST + 1,
-	NUCLEUS_MENU = PARTICLE + 1,
+    GUN = PARTICLE + 1,
+	NUCLEUS_MENU = GUN + 1,
 	NUCLEUS_MENU_SLOT = NUCLEUS_MENU + 1,
 	TEXTURE_COUNT = NUCLEUS_MENU_SLOT + 1
 };
