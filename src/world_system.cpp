@@ -661,7 +661,7 @@ void WorldSystem::handle_collisions()
 					// level += 1;
 					Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS
 
-					createBuff(vec2(enemy_position.x + 60, enemy_position.y + 60));
+					createBuff(vec2(enemy_position.x, enemy_position.y));
 					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
 				}
 			}
@@ -682,7 +682,7 @@ void WorldSystem::handle_collisions()
 						points += 1;
 						registry.remove_all_components_of(entity2);
 
-						createBuff(vec2(enemy_position.x + 60, enemy_position.y + 60));
+						createBuff(vec2(enemy_position.x, enemy_position.y));
 						particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
 					}
 				}
