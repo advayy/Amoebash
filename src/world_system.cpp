@@ -32,10 +32,16 @@ WorldSystem::~WorldSystem()
 	// Destroy music components
 	if (background_music != nullptr)
 		Mix_FreeMusic(background_music);
-	if (dash_sound_1 != nullptr)
-		Mix_FreeChunk(dash_sound_1);
-	if (dash_sound_2 != nullptr)
-		Mix_FreeChunk(dash_sound_2);
+	if (dash_sound != nullptr)
+		Mix_FreeChunk(dash_sound);
+	if (damage_sound != nullptr)
+		Mix_FreeChunk(damage_sound);
+	if (enemy_death_sound != nullptr)
+		Mix_FreeChunk(enemy_death_sound);
+	if (enemy_shoot_sound != nullptr)
+		Mix_FreeChunk(enemy_shoot_sound);
+	if (click_sound != nullptr)
+		Mix_FreeChunk(click_sound);
 	Mix_CloseAudio();
 
 	// Destroy all created components
@@ -140,10 +146,14 @@ bool WorldSystem::start_and_load_sounds()
 	}
 
 	background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
-	dash_sound_1 = Mix_LoadWAV(audio_path("dash_1.wav").c_str());
-	dash_sound_2 = Mix_LoadWAV(audio_path("dash_2.wav").c_str());
+	dash_sound = Mix_LoadWAV(audio_path("dash_woosh.wav").c_str());
+	damage_sound = Mix_LoadWAV(audio_path("damage.wav").c_str());
+	enemy_shoot_sound = Mix_LoadWAV(audio_path("enemy_shoot.wav").c_str());
+	enemy_death_sound = Mix_LoadWAV(audio_path("enemy_death.wav").c_str());
+	click_sound = Mix_LoadWAV(audio_path("click.wav").c_str());
 
-	if (background_music == nullptr || dash_sound_1 == nullptr || dash_sound_2 == nullptr)
+
+	if (background_music == nullptr || dash_sound == nullptr)
 	{
 		fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
 				audio_path("music.wav").c_str(),
@@ -308,6 +318,7 @@ void WorldSystem::handleProjectiles(float elapsed_ms_since_last_update)
 
 		if (shooting_enemy < registry.bacteriophageAIs.entities.size())
 		{
+			Mix_PlayChannel(-1, enemy_shoot_sound, 0);
 			createBacteriophageProjectile(registry.bacteriophageAIs.entities[shooting_enemy]);
 		}
 	}
@@ -699,7 +710,7 @@ void WorldSystem::handle_collisions()
 					vec2 enemy_position = registry.motions.get(entity2).position;
 					registry.remove_all_components_of(entity2);
 					// level += 1;
-					Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS
+					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
 
 					createBuff(vec2(enemy_position.x, enemy_position.y));
 					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
@@ -721,6 +732,7 @@ void WorldSystem::handle_collisions()
 						vec2 enemy_position = registry.motions.get(entity2).position;
 						points += 1;
 						registry.remove_all_components_of(entity2);
+                        Mix_PlayChannel(-1, enemy_death_sound, 0);
 
 						createBuff(vec2(enemy_position.x, enemy_position.y));
 						particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
@@ -739,7 +751,7 @@ void WorldSystem::handle_collisions()
 
 						Player& player = registry.players.get(entity);
 						player.current_health -= 1; // FLAG this is not the right kind of damage...
-						Mix_PlayChannel(-1, dash_sound_2, 0);
+						Mix_PlayChannel(-1, damage_sound, 0);
 					}
 					else
 					{
@@ -750,7 +762,7 @@ void WorldSystem::handle_collisions()
 							dc.last_damage_time = current_time;
 							Player& player = registry.players.get(entity);
 							player.current_health -= 1;
-							Mix_PlayChannel(-1, dash_sound_2, 0);
+							Mix_PlayChannel(-1, damage_sound, 0);
 						}
 					}
 				}
@@ -897,12 +909,13 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				if (canDash())
 				{
 					initiatePlayerDash();
-					Mix_PlayChannel(-1, dash_sound_1, 0);
+					Mix_PlayChannel(-1, dash_sound, 0);
 				}
 			}
 		}
 		else if (current_state == GameState::START_SCREEN && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
+			Mix_PlayChannel(-1, click_sound, 0);
 			ButtonType clickedButton = getClickedButton();
 
 			if (clickedButton == ButtonType::SHOPBUTTON) 
@@ -940,6 +953,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		}
 		else if (current_state == GameState::INFO && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
+			Mix_PlayChannel(-1, click_sound, 0);
 			if (getClickedButton() == ButtonType::BACKBUTTON)
 			{
 				removeInfoScreen();

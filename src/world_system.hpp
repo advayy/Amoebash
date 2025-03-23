@@ -138,8 +138,11 @@ private:
 
 	// music references
 	Mix_Music *background_music;
-	Mix_Chunk *dash_sound_1;
-	Mix_Chunk *dash_sound_2;
+	Mix_Chunk *dash_sound;
+	Mix_Chunk *damage_sound;
+	Mix_Chunk *enemy_shoot_sound;
+	Mix_Chunk *enemy_death_sound;
+	Mix_Chunk *click_sound;
 
 	// debugging (fps etc..)
 	void toggleFPSDisplay();
