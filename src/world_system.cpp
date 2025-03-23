@@ -686,6 +686,7 @@ void WorldSystem::handle_collisions()
 		else if (registry.enemies.has(entity2))
 		{
 			Enemy& enemy = registry.enemies.get(entity2);
+            Motion &enemy_motion = registry.motions.get(entity2);
 			if (registry.projectiles.has(entity))
 			{
 				Projectile& projectile = registry.projectiles.get(entity);
@@ -706,8 +707,7 @@ void WorldSystem::handle_collisions()
 						bacteriophage_idx.erase(registry.bacteriophageAIs.get(entity2).placement_index);
 					}
 
-					vec2 enemy_position = registry.motions.get(entity2).position;
-					// registry.remove_all_components_of(entity2);
+					vec2 enemy_position = enemy_motion.position;
                     removals.push_back(entity2);
 					// level += 1;
 					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
@@ -718,26 +718,32 @@ void WorldSystem::handle_collisions()
 			}
 			else if (registry.players.has(entity))
 			{
-				if (isDashing())
+                if (isDashing())
 				{
-					enemy.health -= PLAYER_DASH_DAMAGE;
-
-					if (enemy.health <= 0)
-					{
-						if (registry.bacteriophageAIs.has(entity2))
-						{
-							bacteriophage_idx.erase(registry.bacteriophageAIs.get(entity2).placement_index);
-						}
-
-						vec2 enemy_position = registry.motions.get(entity2).position;
-						points += 1;
-						// registry.remove_all_components_of(entity2);
-                        removals.push_back(entity2);
-                        Mix_PlayChannel(-1, enemy_death_sound, 0);
-
-						createBuff(vec2(enemy_position.x, enemy_position.y));
-						particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
-					}
+                    if (registry.spikeEnemyAIs.has(entity2) && registry.spikeEnemyAIs.get(entity2).state != SpikeEnemyState::KNOCKBACK) {
+                        Motion &player_motion = registry.motions.get(entity);
+                        
+                        vec2 direction_to_enemy = normalize(enemy_motion.position - player_motion.position);
+                        
+                        float player_angle_radians = glm::radians(player_motion.angle - 90.0f);
+                        vec2 player_facing_direction = {cos(player_angle_radians), sin(player_angle_radians)};
+                        
+                        float dot_product = glm::dot(player_facing_direction, direction_to_enemy);
+                        
+                        if (dot_product > 0.001f) {
+                            enemy.health -= PLAYER_DASH_DAMAGE;
+                            
+                            SpikeEnemyAI &enemy_ai = registry.spikeEnemyAIs.get(entity2);
+                            
+                            enemy_ai.state = SpikeEnemyState::KNOCKBACK;
+                            enemy_ai.knockbackTimer = SPIKE_ENEMY_KNOCKBACK_TIMER;
+                            
+                            vec2 knockback_direction = normalize(enemy_motion.position - player_motion.position);
+                            enemy_motion.velocity = knockback_direction * SPIKE_ENEMY_KNOCKBACK_STRENGTH;
+                        }
+                    } else {
+                        enemy.health -= PLAYER_DASH_DAMAGE;
+                    }
 				}
 				else
 				{
@@ -767,6 +773,21 @@ void WorldSystem::handle_collisions()
 						}
 					}
 				}
+                if (enemy.health <= 0)
+                {
+                    if (registry.bacteriophageAIs.has(entity2))
+                    {
+                        bacteriophage_idx.erase(registry.bacteriophageAIs.get(entity2).placement_index);
+                    }
+                    
+                    vec2 enemy_position = enemy_motion.position;
+                    points += 1;
+                    removals.push_back(entity2);
+                    Mix_PlayChannel(-1, enemy_death_sound, 0);
+                    
+                    createBuff(vec2(enemy_position.x, enemy_position.y));
+                    particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
+                } 
 			}
 		}
 		else if (registry.buffs.has(entity2) && registry.players.has(entity))
