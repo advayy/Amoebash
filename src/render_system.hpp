@@ -70,7 +70,8 @@ class RenderSystem
 		textures_path("tutorial/restart_info.png"),
 		textures_path("tutorial/leave.png"),
 		textures_path("projectiles/chest.png"),
-		textures_path("effects/germoney.png")};
+		textures_path("effects/germoney.png"),
+		textures_path("effects/pixel_particle.png")};
 
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.
@@ -157,6 +158,8 @@ public:
 
 	// INSTANCING: instanced particle drawing
 	void drawInstancedParticles();
+	void drawParticlesByTexture(TEXTURE_ASSET_ID texture_id);
+
 
 private:
 	// Internal drawing functions for each entity type

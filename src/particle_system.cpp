@@ -77,6 +77,27 @@ void ParticleSystem::step(float elapsed_ms)
                         color = color * life_ratio * 2.0f;
                     }
                 }
+                break; 
+            }
+            case PARTICLE_TYPE::RIPPLE_PARTICLE:
+            {
+                Motion& motion = registry.motions.get(entity);
+                
+                motion.position += motion.velocity * (elapsed_ms / 1000.f);
+                
+                float life_ratio = particle.lifetime_ms / particle.max_lifetime_ms;
+                float start_size = 2.0f;
+                float end_size = 4.0f;
+                float current_size = start_size + (end_size - start_size) * (1.0f - life_ratio);
+                motion.scale = {current_size, current_size};
+                
+                if (registry.colors.has(entity))
+                {
+                    vec3& color = registry.colors.get(entity);
+                    color = color * life_ratio;
+                }
+                motion.velocity *= 0.97f;
+                
                 break;
             }
             default:
@@ -161,21 +182,16 @@ Entity ParticleSystem::createRippleParticle(vec2 position)
     Entity entity = Entity();
     Motion& motion = registry.motions.emplace(entity);
     motion.position = position;
-    motion.angle = 0.0f;
 
-    float size_factor = 4.0f + uniform_dist(rng) * 2.0f;
-    motion.scale = {size_factor, size_factor};
-    registry.colors.emplace(entity, vec3(1.0f, 1.0f, 1.0f));
-    
     Particle& particle = registry.particles.emplace(entity);
     particle.type = PARTICLE_TYPE::RIPPLE_PARTICLE;
-    particle.lifetime_ms = 800.0f + uniform_dist(rng) * 200.0f;
+    particle.lifetime_ms = 200.0f + uniform_dist(rng) * 200.0f;
     particle.max_lifetime_ms = particle.lifetime_ms;
     particle.state = PARTICLE_STATE::BURST;
 
     registry.renderRequests.insert(
         entity,
-        {TEXTURE_ASSET_ID::PARTICLE,
+        {TEXTURE_ASSET_ID::PIXEL_PARTICLE,
          EFFECT_ASSET_ID::TEXTURED,
          GEOMETRY_BUFFER_ID::SPRITE});
 
@@ -193,10 +209,10 @@ void ParticleSystem::createPlayerRipples(Entity player_entity)
         return;
         
     vec2 perpendicular = vec2(-velocity_direction.y, velocity_direction.x);
-    float offset_distance = player_motion.scale.x * 0.6f;
+    float offset_distance = player_motion.scale.x * 0.2f;
     vec2 left_position = player_motion.position - perpendicular * offset_distance;
     vec2 right_position = player_motion.position + perpendicular * offset_distance;
-    float tail_offset = player_motion.scale.y * 0.5f;
+    float tail_offset = player_motion.scale.y * 0.8f;
     left_position -= velocity_direction * tail_offset;
     right_position -= velocity_direction * tail_offset;
     

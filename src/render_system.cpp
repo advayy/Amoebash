@@ -838,6 +838,12 @@ void RenderSystem::drawBuffUI()
 // INSTANCING: Draw instanced particles
 void RenderSystem::drawInstancedParticles()
 {
+    drawParticlesByTexture(TEXTURE_ASSET_ID::PARTICLE);
+    drawParticlesByTexture(TEXTURE_ASSET_ID::PIXEL_PARTICLE);
+}
+
+void RenderSystem::drawParticlesByTexture(TEXTURE_ASSET_ID texture_id)
+{
     // for debugging purposes, check for errors
     while (glGetError() != GL_NO_ERROR) { /* clear errors */ }
 
@@ -845,15 +851,36 @@ void RenderSystem::drawInstancedParticles()
         return;
     
     std::vector<mat3> instanceTransforms;
+	std::vector<float> instanceAlphas;
+	
     for (uint i = 0; i < registry.particles.size(); i++)
     {
         Entity entity = registry.particles.entities[i];
+		
+		if (registry.renderRequests.has(entity)) {
+            RenderRequest& request = registry.renderRequests.get(entity);
+            if (request.used_texture != texture_id) {
+                continue;
+            }
+        } else {
+            continue; 
+        }
+
         Motion &motion = registry.motions.get(entity);
         Transform transform;
         transform.translate(motion.position);
         transform.scale(motion.scale);
         transform.rotate(radians(motion.angle));
         instanceTransforms.push_back(transform.mat);
+
+		float alpha = 1.0f;
+        if (registry.particles.has(entity)) {
+            Particle& particle = registry.particles.get(entity);
+            if (particle.type == PARTICLE_TYPE::RIPPLE_PARTICLE) {
+                alpha = particle.lifetime_ms / particle.max_lifetime_ms;
+            }
+        }
+        instanceAlphas.push_back(alpha);
     }
     
 	// for debugging purposes
@@ -887,10 +914,19 @@ void RenderSystem::drawInstancedParticles()
                               sizeof(mat3), (void*)(sizeof(vec3) * i));
         glVertexAttribDivisor(attrib_location, 1); // advance once per instance (super IMPORTANTT)
     }
+
+    GLuint alpha_vbo;
+    glGenBuffers(1, &alpha_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, alpha_vbo);
+    glBufferData(GL_ARRAY_BUFFER, instanceAlphas.size() * sizeof(float),
+                 instanceAlphas.data(), GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(5);
+    glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
+    glVertexAttribDivisor(5, 1); 
     
     glActiveTexture(GL_TEXTURE0);
-    GLuint texture_id = texture_gl_handles[(uint)TEXTURE_ASSET_ID::PARTICLE];
-    glBindTexture(GL_TEXTURE_2D, texture_id);
+	GLuint gl_texture_id = texture_gl_handles[(uint)texture_id];
+    glBindTexture(GL_TEXTURE_2D, gl_texture_id);
     
     // use the particle shader
     glUseProgram(effects[(uint)EFFECT_ASSET_ID::PARTICLE_EFFECT]);
