@@ -32,10 +32,16 @@ WorldSystem::~WorldSystem()
 	// Destroy music components
 	if (background_music != nullptr)
 		Mix_FreeMusic(background_music);
-	if (dash_sound_1 != nullptr)
-		Mix_FreeChunk(dash_sound_1);
-	if (dash_sound_2 != nullptr)
-		Mix_FreeChunk(dash_sound_2);
+	if (dash_sound != nullptr)
+		Mix_FreeChunk(dash_sound);
+	if (damage_sound != nullptr)
+		Mix_FreeChunk(damage_sound);
+	if (enemy_death_sound != nullptr)
+		Mix_FreeChunk(enemy_death_sound);
+	if (enemy_shoot_sound != nullptr)
+		Mix_FreeChunk(enemy_shoot_sound);
+	if (click_sound != nullptr)
+		Mix_FreeChunk(click_sound);
 	Mix_CloseAudio();
 
 	// Destroy all created components
@@ -140,10 +146,14 @@ bool WorldSystem::start_and_load_sounds()
 	}
 
 	background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
-	dash_sound_1 = Mix_LoadWAV(audio_path("dash_1.wav").c_str());
-	dash_sound_2 = Mix_LoadWAV(audio_path("dash_2.wav").c_str());
+	dash_sound = Mix_LoadWAV(audio_path("dash_woosh.wav").c_str());
+	damage_sound = Mix_LoadWAV(audio_path("damage.wav").c_str());
+	enemy_shoot_sound = Mix_LoadWAV(audio_path("enemy_shoot.wav").c_str());
+	enemy_death_sound = Mix_LoadWAV(audio_path("enemy_death.wav").c_str());
+	click_sound = Mix_LoadWAV(audio_path("click.wav").c_str());
 
-	if (background_music == nullptr || dash_sound_1 == nullptr || dash_sound_2 == nullptr)
+
+	if (background_music == nullptr || dash_sound == nullptr)
 	{
 		fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
 				audio_path("music.wav").c_str(),
@@ -155,15 +165,17 @@ bool WorldSystem::start_and_load_sounds()
 	return true;
 }
 
+
 void WorldSystem::init(RenderSystem *renderer_arg)
 {
+	// Either load progression or create a progression entity
+	initializeProgression();
 
 	this->renderer = renderer_arg;
 
-	// start playing background music indefinitely
-
-	// std::cout << "Starting music..." << std::endl;
-	Mix_PlayMusic(background_music, -1);
+	// // start playing background music indefinitely
+	// // std::cout << "Starting music..." << std::endl;
+	// Mix_PlayMusic(background_music, -1);
 
 	// Set all states to default
 	restart_game();
@@ -213,46 +225,59 @@ void WorldSystem::updateMouseCoords()
 
 void WorldSystem::spawnEnemies(float elapsed_ms_since_last_update)
 {
+	// std::cout << "WS:spawn - f1" << std::endl;
+
 	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
 	if (!tutorial_mode)
 	{
+		// std::cout << "WS:spawn - f2" << std::endl;
+
 		// spawn new invaders
 		next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
 		if (next_enemy_spawn < 0.f && !gameOver)
 		{
+			// std::cout << "WS:spawn - f3" << std::endl;
 			if (registry.enemies.entities.size() < MAX_ENEMIES_COUNT)
 			{
+				// std::cout << "WS:spawn - f4" << std::endl;
 				// reset timer
 				next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
 
 				// randomize position
 				// randomize empty tile on mpa
 				std::pair<int, int> enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
-	
+				// std::cout << "WS:spawn - f5" << std::endl;
+
 				int random_num = rand();
 				if (random_num % 3 == 0)
 				{
+					// std::cout << "WS:spawn - f6" << std::endl;
 					createSpikeEnemy(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }));
 				}
 				else if (random_num % 3 == 1)
 				{
+					// std::cout << "WS:spawn - f7" << std::endl;
 					createRBCEnemy(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }));
 				}
 				else if (registry.bacteriophageAIs.entities.size() < MAX_BACTERIOPHAGE_COUNT)
 				{
+					// std::cout << "WS:spawn - f8" << std::endl;
 					while (glm::distance(player_motion.position, gridCellToPosition({ enemyPosition.second, enemyPosition.first })) < SPIKE_ENEMY_DETECTION_RADIUS)
 					{
+						// std::cout << "WS:spawn - f9" << std::endl;
 						// randomize empty tile on mpa
 						enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
 					}
 
+					// std::cout << "WS:spawn - f10" << std::endl;
 					int index = (int)(uniform_dist(rng) * MAX_BACTERIOPHAGE_COUNT);
 					while (bacteriophage_idx.find(index) != bacteriophage_idx.end())
 					{
+						// std::cout << "WS:spawn - f11" << std::endl;
 						index = (int)(uniform_dist(rng) * MAX_BACTERIOPHAGE_COUNT);
 					}
 					bacteriophage_idx[index] = 1;
-
+					// std::cout << "WS:spawn - f12" << std::endl;
 					createBacteriophage(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }), index);
 				}
 			}
@@ -262,14 +287,15 @@ void WorldSystem::spawnEnemies(float elapsed_ms_since_last_update)
 
 void WorldSystem::handleProjectiles(float elapsed_ms_since_last_update)
 {
-	for (auto& projectile_e : registry.projectiles.entities)
+	for (int i = 0; i < registry.projectiles.entities.size(); i++)
 	{
-		Projectile& projectile = registry.projectiles.get(projectile_e);
+		Projectile& projectile = registry.projectiles.get(registry.projectiles.entities[i]);
 		projectile.ms_until_despawn -= elapsed_ms_since_last_update * current_speed;
 
 		if (projectile.ms_until_despawn < 0.0f)
 		{
-			registry.remove_all_components_of(projectile_e);
+			
+			registry.remove_all_components_of(registry.projectiles.entities[i]);
 		}
 	}
 
@@ -294,12 +320,13 @@ void WorldSystem::handleProjectiles(float elapsed_ms_since_last_update)
 
 		if (shooting_enemy < registry.bacteriophageAIs.entities.size())
 		{
+			Mix_PlayChannel(-1, enemy_shoot_sound, 0);
 			createBacteriophageProjectile(registry.bacteriophageAIs.entities[shooting_enemy]);
 		}
 	}
 }
 
-void WorldSystem::checkPortalCollision(){
+bool WorldSystem::checkPortalCollision(){
 	// Point the player to the mouse
 	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
     // check if player in portal tile
@@ -312,45 +339,41 @@ void WorldSystem::checkPortalCollision(){
 
         if (distance < portal_radius) {
             // go to black screen
-            Entity screen_state_entity = renderer->get_screen_state_entity();
-            ScreenState &screen = registry.screenStates.get(screen_state_entity);
-            screen.darken_screen_factor = 1;
-            darken_screen_timer = 0.0f;
-
-            current_state = GameState::NEXT_LEVEL;
-			
-			// goToNextLevel();
-
-            restart_game();
-            removeStartScreen(); // removing buttons that are added again
-
+			return true;
         }
     }
+	return false;
 }
 
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
-
-	// M1 Feature - Camera controls
 	updateCamera(elapsed_ms_since_last_update);
 
 	if (tutorial_mode && registry.infoBoxes.size() == 0) {
 		createInfoBoxes();
 	}
-
-	updateMouseCoords();
+	
+    updateMouseCoords(); 
 	updateHuds();
+
 	handlePlayerMovement(elapsed_ms_since_last_update);
 	handlePlayerHealth(elapsed_ms_since_last_update);
-
 	spawnEnemies(elapsed_ms_since_last_update);
 	handleProjectiles(elapsed_ms_since_last_update);
 
     tileProceduralMap();
-	checkPortalCollision();
 
-    // Update the darken screen timer
+	if (checkPortalCollision()) {
+        Entity screen_state_entity = renderer->get_screen_state_entity();
+        ScreenState &screen = registry.screenStates.get(screen_state_entity);
+        screen.darken_screen_factor = 1;
+       	darken_screen_timer = 0.0f;
+        current_state = GameState::NEXT_LEVEL;
+		goToNextLevel();
+		return true;
+	}
+
     if (darken_screen_timer >= 0.0f) {
         darken_screen_timer += elapsed_ms_since_last_update;
         if (darken_screen_timer >= 1000.0f) {
@@ -360,7 +383,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
             darken_screen_timer = -1.0f; // Stop the timer
         }
     }
-	
+
 	// step the particle system only when its needed
 	// for optimaztion, we could only step the particles that are on screen
 	particle_system.step(elapsed_ms_since_last_update);
@@ -389,6 +412,9 @@ void WorldSystem::handlePlayerHealth(float elapsed_ms)
 
 	if (player.current_health <= 0 && current_state != GameState::GAME_OVER)
 	{
+		// save buffs to progression
+		Progression& p = registry.progressions.get(registry.progressions.entities[0]);
+		p.buffsFromLastRun = player.buffsCollected;
 		previous_state = current_state;
 		current_state = GameState::GAME_OVER;
 		createGameOverScreen();
@@ -435,33 +461,41 @@ void WorldSystem::goToNextLevel()
 	initializedMap = false;
 	currentTiles.clear();
 
-    // int buffSize = registry.buffs.entities.size();
-    // for (int i = 0; i < buffSize; i++) {
-    //     registry.remove_all_components_of(registry.buffs.entities.back());
-    // }
+    int enemySize = registry.enemies.entities.size();
+    for (int i = 0; i < enemySize; i++) {
+        registry.remove_all_components_of(registry.enemies.entities.back());
+    }
 
-    // int enemySize = registry.enemies.entities.size();
-    // for (int i = 0; i < enemySize; i++) {
-    //     registry.remove_all_components_of(registry.enemies.entities.back());
-    // }
+    // remove all tiles
+    int tile_size = registry.tiles.entities.size();
+    for (int i = 0; i < tile_size; i++) {
+        registry.remove_all_components_of(registry.tiles.entities.back());
+    }
 
-	// while(registry.buffUIs.entities.size() > 0)
-	// 	registry.remove_all_components_of(registry.buffs.entities.back());
+    // remove all buffs
+    int buff_size = registry.buffs.entities.size();
+    for (int i = 0; i < buff_size; i++) {
+        registry.remove_all_components_of(registry.buffs.entities.back());
+    }
 
-	// while(registry.enemies.entities.size() > 0)
-	// 	registry.remove_all_components_of(registry.enemies.entities.back());
 	gameOver = false;
 
 	std::pair<int, int> playerPosition;
-    // print entering
-    // std::cout << "Entering createProceduralMap" << std::endl;
+
 	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
 
 	Player &player = registry.players.get(registry.players.entities[0]);
 	Motion &playerMotion = registry.motions.get(registry.players.entities[0]);
-	
+	// Progression &prog = registry.progressions.get(registry.progressions.entities[0]);
+
 	playerMotion.position = gridCellToPosition(vec2(playerPosition.second, playerPosition.first));
 
+	// for(int i = 0; i < prog.pickedInNucleus.size(); i++) {
+	// 	applyBuff(player, prog.pickedInNucleus[i]);
+	// }
+	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+	camera.position = playerMotion.position;
+	bacteriophage_idx.clear();
     // print exiting
     // std::cout << "Exiting createProceduralMap" << std::endl;
 	return;
@@ -516,6 +550,10 @@ void WorldSystem::restart_game()
 	while (registry.buttons.entities.size() > 0)
 		registry.remove_all_components_of(registry.buttons.entities.back());
 
+    // remove all tiles
+    while (registry.tiles.entities.size() > 0)
+        registry.remove_all_components_of(registry.tiles.entities.back());
+
 	// debugging for memory/component leaks
 	registry.list_all_components();
     
@@ -558,19 +596,28 @@ void WorldSystem::restart_game()
 					vec2(WEAPON_PILL_UI_WIDTH, WEAPON_PILL_UI_HEIGHT),
 					TEXTURE_ASSET_ID::WEAPON_PILL_UI,
 					EFFECT_ASSET_ID::UI);
+
+    Player &player = registry.players.get(registry.players.entities[0]);
+    Progression &prog = registry.progressions.get(registry.progressions.entities[0]);
+	for(int i = 0; i < prog.pickedInNucleus.size(); i++) {
+		applyBuff(player, prog.pickedInNucleus[i]);
+	}
+    prog.pickedInNucleus.clear();
 }
 
 // Compute collisions between entities. Collisions are always in this order: (Player | Projectiles, Enemy | Wall | Buff)
 void WorldSystem::handle_collisions()
 {
+    std::vector<Entity> removals;
+
 	for (auto& entity : registry.collisions.entities)
 	{
 		Collision& collision = registry.collisions.get(entity);
-		Entity& entity2 = collision.other;
+		Entity entity2 = collision.other;
 
 		if (registry.bacteriophageProjectiles.has(entity2))
 		{
-			if (registry.players.has(entity))
+			if (registry.players.has(entity)) // HANDLE PROJECTILE/PLAYER COLLISION
 			{
 				Player& player = registry.players.get(entity);
 				Projectile& projectile = registry.projectiles.get(entity2);
@@ -579,7 +626,8 @@ void WorldSystem::handle_collisions()
 				player.current_health -= projectile.damage;
 
 				// remove projectile
-				registry.remove_all_components_of(entity2);
+                removals.push_back(entity2);
+				// registry.remove_all_components_of(entity2);
 			}
 		}
 		else if (registry.keys.has(entity2))
@@ -620,15 +668,17 @@ void WorldSystem::handle_collisions()
 				if (physics_system.pointInPolygon(keyMotion.position, chestWorldVertices))
 				{
 					// remove chest
-					registry.remove_all_components_of(entity);
-					registry.remove_all_components_of(entity2);
+					// registry.remove_all_components_of(entity);
+					// registry.remove_all_components_of(entity2);
 
+                    removals.push_back(entity);
+                    removals.push_back(entity2);
+                
 					if (tutorial_mode) {
 						current_state = GameState::NEXT_LEVEL;
 						tutorial_mode = false;
 						removeInfoBoxes();
-						restart_game();
-						removeStartScreen();
+						goToNextLevel();
 					}
 				}
 			}
@@ -644,8 +694,8 @@ void WorldSystem::handle_collisions()
 				enemy.health -= projectile.damage;
 
 				// remove projectile
-				registry.remove_all_components_of(entity);
-
+				// registry.remove_all_components_of(entity);
+                removals.push_back(entity);
 				// if invader health is below 0
 				// remove invader and increase points
 				// buff created
@@ -657,9 +707,10 @@ void WorldSystem::handle_collisions()
 					}
 
 					vec2 enemy_position = registry.motions.get(entity2).position;
-					registry.remove_all_components_of(entity2);
+					// registry.remove_all_components_of(entity2);
+                    removals.push_back(entity2);
 					// level += 1;
-					Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS
+					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
 
 					createBuff(vec2(enemy_position.x, enemy_position.y));
 					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
@@ -680,7 +731,9 @@ void WorldSystem::handle_collisions()
 
 						vec2 enemy_position = registry.motions.get(entity2).position;
 						points += 1;
-						registry.remove_all_components_of(entity2);
+						// registry.remove_all_components_of(entity2);
+                        removals.push_back(entity2);
+                        Mix_PlayChannel(-1, enemy_death_sound, 0);
 
 						createBuff(vec2(enemy_position.x, enemy_position.y));
 						particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
@@ -699,7 +752,7 @@ void WorldSystem::handle_collisions()
 
 						Player& player = registry.players.get(entity);
 						player.current_health -= 1; // FLAG this is not the right kind of damage...
-						Mix_PlayChannel(-1, dash_sound_2, 0);
+						Mix_PlayChannel(-1, damage_sound, 0);
 					}
 					else
 					{
@@ -710,7 +763,7 @@ void WorldSystem::handle_collisions()
 							dc.last_damage_time = current_time;
 							Player& player = registry.players.get(entity);
 							player.current_health -= 1;
-							Mix_PlayChannel(-1, dash_sound_2, 0);
+							Mix_PlayChannel(-1, damage_sound, 0);
 						}
 					}
 				}
@@ -719,9 +772,16 @@ void WorldSystem::handle_collisions()
 		else if (registry.buffs.has(entity2) && registry.players.has(entity))
 		{
 			collectBuff(entity, entity2);
+            removals.push_back(entity2);
 		}
 	}
 
+    int size = removals.size();
+
+    for (int i = 0; i < size; i ++) {
+        registry.remove_all_components_of(removals[i]);
+    }
+    
 	// Remove all collisions from this simulation step
 	registry.collisions.clear();
 }
@@ -800,6 +860,9 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 		{
 			if (current_state == GameState::GAME_PLAY)
 			{
+				Progression& p = registry.progressions.get(registry.progressions.entities[0]);
+
+				p.buffsFromLastRun = registry.players.get(registry.players.entities[0]).buffsCollected;		
 				previous_state = GameState::GAME_PLAY;
 				current_state = GameState::GAME_OVER;
 				createGameOverScreen();
@@ -824,6 +887,8 @@ void WorldSystem::on_mouse_move(vec2 mouse_position)
 	// record the current mouse position
 	device_mouse_pos_x = mouse_position.x;
 	device_mouse_pos_y = mouse_position.y;
+	
+	updateMouseCoords();
 }
 
 ButtonType WorldSystem::getClickedButton()
@@ -854,27 +919,16 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		{
 			if (button == GLFW_MOUSE_BUTTON_LEFT)
 			{
-				ButtonType clickedButton = getClickedButton();
-
-				if (clickedButton == ButtonType::SHOPBUTTON)
-				{
-					previous_state = current_state;
-					current_state = GameState::SHOP;
-				}
-				else if (clickedButton == ButtonType::INFOBUTTON)
-				{
-					previous_state = current_state;
-					current_state = GameState::INFO;
-				}
-				else if (canDash())
+				if (canDash())
 				{
 					initiatePlayerDash();
-					Mix_PlayChannel(-1, dash_sound_1, 0);
+					Mix_PlayChannel(-1, dash_sound, 0);
 				}
 			}
 		}
 		else if (current_state == GameState::START_SCREEN && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
+			Mix_PlayChannel(-1, click_sound, 0);
 			ButtonType clickedButton = getClickedButton();
 
 			if (clickedButton == ButtonType::SHOPBUTTON) 
@@ -895,7 +949,6 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			{
 				previous_state = current_state;
 				current_state = GameState::GAMEPLAY_CUTSCENE;
-				// need to add render request for cutscene animations
 				removeStartScreen();
 				createGameplayCutScene();
 			}
@@ -913,6 +966,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		}
 		else if (current_state == GameState::INFO && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
+			Mix_PlayChannel(-1, click_sound, 0);
 			if (getClickedButton() == ButtonType::BACKBUTTON)
 			{
 				removeInfoScreen();
@@ -922,35 +976,172 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				previous_state = temp;
 			}
 		}
-		// gameover state -> start screen state
+		// gameover state -> start screen state // FLAG this should be done with the button on the screen
 		else if (current_state == GameState::GAME_OVER && button == GLFW_MOUSE_BUTTON_LEFT) 
 		{
-			previous_state = current_state;
-			current_state = GameState::START_SCREEN_ANIMATION;
+			Entity e;
 
-			removeGameOverScreen();
-			restart_game();
+			if (getClickedButton() == ButtonType::PROCEED_BUTTON)
+			{
+				previous_state = current_state;
+				current_state = GameState::START_SCREEN_ANIMATION;
+
+				// PUT SELECTED BUFFS ONTO THE PLAYER? // FLAGGG
+				///---------------------------------------------
+				///---------------------------------------------
+				///---------------------------------------------
+				///--------------------------------------------- Iterate through each clickable buff that is puiked and add it to the array of player things...
+				
+				moveSelectedBuffsToProgression();
+				removeGameOverScreen();
+				restart_game();
+			} 
+			else if (isClickableBuffClicked(&e)) {
+				handleClickableBuff(e);
+			}
 		}
 	}
 }
 
+void WorldSystem::moveSelectedBuffsToProgression(){
+	Progression& p = registry.progressions.get(registry.progressions.entities[0]);
+	p.pickedInNucleus.clear();
+	p.buffsFromLastRun.clear();
+
+	for(int i = 0; i < registry.clickableBuffs.entities.size(); i++) {
+		ClickableBuff& c = registry.clickableBuffs.get(registry.clickableBuffs.entities[i]);
+		if(c.picked == true) {
+			p.pickedInNucleus.push_back(c.type);
+		}
+	}
+
+}
+
+
+bool WorldSystem::isClickableBuffClicked(Entity* return_e) {
+	float mouse_x = game_mouse_pos_x; 
+    float mouse_y = game_mouse_pos_y;
+
+	Camera& camera = registry.cameras.components[0];
+	vec2 camera_pos = camera.position;	
+	vec2 m_pos = {mouse_x, mouse_y};
+	
+
+	for(int i = 0; i < registry.clickableBuffs.entities.size(); i++) {
+		ClickableBuff& c = registry.clickableBuffs.get(registry.clickableBuffs.entities[i]);
+		
+		std::cout << "buff entity -----------" << registry.clickableBuffs.entities[i] << std::endl;
+		std::cout << "buff" << c.type << std::endl;
+		std::cout << "flag 1" << std::endl;
+		Motion& c_motion = registry.motions.get(registry.clickableBuffs.entities[i]); // GUARANTEED TO HAVE A POSITION
+		std::cout << "flag 2" << std::endl;
+
+		vec2 c_pos = c_motion.position;
+
+		if(mouseBuffIntersect(m_pos , c_pos)) {
+			*return_e = registry.clickableBuffs.entities[i];
+			return true;
+		}
+	}
+	return false;
+}
+
+void WorldSystem::handleClickableBuff(Entity e) {
+	// Find a free slot if there is one availibe
+	// move buff to slot if its not already in a slot, if it is move it to return position
+	Entity s;
+
+	ClickableBuff& c = registry.clickableBuffs.get(e);
+	Motion& c_m = registry.motions.get(e);
+	
+	if(c.picked) {
+		// move it back
+		std::cout << "c current pos" << c_m.position.x << ", " << c_m.position.y << std::endl;
+		std::cout << "c return pos" << c.returnPosition.x << ", " << c.returnPosition.y << std::endl;
+
+
+		c_m.position = c.returnPosition;
+		c.picked = false;
+		
+		// UNFILL THE RESPECTIVE SLOT...
+		Entity slot_to_remove = c.slotEntity;
+		Slot& slot = registry.slots.get(slot_to_remove);
+		slot.filled = false;
+
+	} else {
+		if(isFreeSlot()) {
+			s = getFreeSlot();
+		} else {
+			// no free slots so do nothing
+			return;
+		}
+	
+		Motion& s_pos = registry.motions.get(s);	
+		Slot& slot = registry.slots.get(s);
+		c.slotEntity = s;
+		c_m.position = s_pos.position;
+		c.picked = true;
+		slot.filled = true;
+	}
+}
+
+bool WorldSystem::isFreeSlot(){
+	
+	for(int i = 0; i < registry.slots.size(); i++) {
+		if(registry.slots.get(registry.slots.entities[i]).filled == false) {
+			return true;
+		}
+	}
+	return false;
+}
+
+Entity WorldSystem::getFreeSlot(){
+	for(int i = 0; i < registry.slots.size(); i++) {
+		if(registry.slots.get(registry.slots.entities[i]).filled == false) {
+			return registry.slots.entities[i];
+		}
+	}
+}
+
+bool WorldSystem::mouseBuffIntersect(vec2 mouse_pos, vec2 c_pos) {
+	float c_top = c_pos.y - BUFF_HEIGHT/2;
+	float c_bottom = c_pos.y + BUFF_HEIGHT/2;
+
+	if (mouse_pos.y >= c_top && mouse_pos.y <= c_bottom){ // Y match
+		float c_l = c_pos.x - BUFF_WIDTH/2;
+		float c_r = c_pos.x + BUFF_WIDTH/2;
+		if(mouse_pos.x >= c_l && mouse_pos.x <= c_r) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool WorldSystem::isButtonClicked(screenButton &button)
 {
-	float button_x = button.center[0];
-	float button_y = button.center[1];
+    float button_x = button.center[0];
+    float button_y = button.center[1];
 
-	float x_distance = std::abs(button_x - device_mouse_pos_x);
-	float y_distance = std::abs(button_y - device_mouse_pos_y);
+    float prenormalized_x = button_x - device_mouse_pos_x;
+    float prenormalized_y = button_y - device_mouse_pos_y;
 
-	bool res = (x_distance < button.w / 2.f) && (y_distance < button.h / 2.f);
+    if (current_state == GameState::GAME_PLAY || current_state == GameState::PAUSE || current_state == GameState::GAME_OVER) {
+        Camera& camera = registry.cameras.components[0];
+        vec2 camera_pos = camera.position;
 
-	// std::cout << device_mouse_pos_x << " " << device_mouse_pos_y << std::endl;
-	// std::cout << game_mouse_pos_x << " " << game_mouse_pos_y << std::endl;
-	// std::cout << button_x << " " << button_y << std::endl;
-	// std::cout << "button: " << res << std::endl;
+        prenormalized_x -= camera_pos.x;
+        prenormalized_y -= camera_pos.y;
+    }
 
-	return res;
+    float x_distance = std::abs(prenormalized_x);
+    float y_distance = std::abs(prenormalized_y);
+    
+    bool res = (x_distance < button.w / 2.f) && (y_distance < button.h / 2.f);
+
+    return res;
 }
+
 
 void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 {
@@ -964,9 +1155,13 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 	Buff &buff = registry.buffs.get(buff_entity);
 	buff.collected = true;
 
-	registry.remove_all_components_of(buff_entity);
+	applyBuff(player, buff.type);
+}
 
-	switch (buff.type)
+void WorldSystem::applyBuff(Player& player, int buff_type)
+{
+
+	switch (buff_type)
 	{
 	case 0: // Tail
 		player.speed *= 1.05f;
@@ -984,7 +1179,6 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 		break;
 
 	case 3: // Golgi Apparatus Buff (need to be implemented)
-		
 		std::cout << "Collected Golgi Body: need to be implemented" << std::endl;
 		break;
 
@@ -993,12 +1187,14 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 	std::cout << "Collected Chloroplast: Healing increased by 5% " << std::endl;
 		break;
 	default:
-		std::cerr << "Unknown buff type: " << buff.type << std::endl;
+		std::cerr << "Unknown buff type: " << buff_type << std::endl;
 		break;
 	}
-
-	renderCollectedBuff(renderer, buff.type);
+    
+    player.buffsCollected.push_back(buff_type);
+	renderCollectedBuff(renderer, buff_type);
 }
+
 
 void WorldSystem::initiatePlayerDash()
 {

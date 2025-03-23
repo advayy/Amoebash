@@ -6,6 +6,8 @@
 #include "tinyECS/tiny_ecs.hpp"
 #include "render_system.hpp"
 
+void initializeProgression();
+
 Entity createEnemy(RenderSystem* renderer, vec2 position);
 Entity createSpikeEnemy(RenderSystem* renderer, vec2 position);
 Entity createRBCEnemy(RenderSystem* renderer, vec2 position);

@@ -438,8 +438,8 @@ void RenderSystem::drawInfoScreen()
 void RenderSystem::drawGameOverScreen()
 {
 	std::vector<ButtonType> buttons = {
-
-	};
+		ButtonType::PROCEED_BUTTON
+	}; // ACTS as a next button
 
 	drawScreenAndButtons(ScreenType::GAMEOVER, buttons);
 }
@@ -479,18 +479,18 @@ void RenderSystem::drawScreenAndButtons(
 	// draw logo 
 	// draw buttons
 
-	for (uint i = 0; i < registry.gameScreens.size(); i++)
-	{
-		const auto &screenComp = registry.gameScreens.components[i];
-		if (screenComp.type == screenType)
-		{
-			Entity screenEntity = registry.gameScreens.entities[i];
-			drawTexturedMesh(screenEntity, projection_matrix);
-		}
-	}
 
 	if (screenType == ScreenType::START)
 	{
+		for (uint i = 0; i < registry.gameScreens.size(); i++)
+		{
+			const auto &screenComp = registry.gameScreens.components[i];
+			if (screenComp.type == screenType)
+			{
+				Entity screenEntity = registry.gameScreens.entities[i];
+				drawTexturedMesh(screenEntity, projection_matrix);
+			}
+		} 
 		for (uint i = 0; i < registry.starts.size(); i++)
 		{
 			Start &start = registry.starts.components[i];
@@ -501,14 +501,26 @@ void RenderSystem::drawScreenAndButtons(
 		}
 	}
 
+	if (screenType == ScreenType::GAMEOVER) {
+		for (uint i = 0; i < registry.overs.entities.size(); i++)
+		{
+			Entity e = registry.overs.entities[i];
+			if(registry.renderRequests.has(e)) {
+				drawTexturedMesh(e, projection_matrix);
+			}
+		}
+	}
+
 	if (buttonTypes.size() != 0)
 	{
+
 		for (uint i = 0; i < registry.buttons.components.size(); i++)
 		{
 			const screenButton &buttonComp = registry.buttons.components[i];
 
 			for (auto bt : buttonTypes)
 			{
+
 				if (buttonComp.type == bt)
 				{
 					Entity buttonEntity = registry.buttons.entities[i];

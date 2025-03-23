@@ -6,6 +6,12 @@
 #include <queue>
 #include "animation_system.hpp"
 
+
+void initializeProgression(){
+	auto entity = Entity();
+	Progression& progressionState = registry.progressions.emplace(entity);
+}
+
 Entity createEnemy(RenderSystem* renderer, vec2 position)
 {
 	// reserve an entity
