@@ -63,6 +63,14 @@ public:
 	// should the game be over ?
 	bool is_over() const;
 
+	// for game saving / loading
+	void saveGame();
+	void loadGame();
+	void saveProgress();
+	void loadProgress();
+
+	bool checkLoadFileExists();
+
 	GameState current_state = GameState::START_SCREEN_ANIMATION;
 	GameState previous_state = GameState::START_SCREEN_ANIMATION;
 
@@ -70,7 +78,10 @@ public:
 	void collectBuff(Entity player_entity, Entity buff_entity);
 
 	void handlePlayerHealth(float elapsed_ms);
-	bool tutorial_mode = true; // can change, just for debugging purposes
+
+	std::map<std::string, bool> progress_map = {
+		{"tutorial_mode", true}
+	};
 
     void initiatePlayerDash();
     bool canDash();

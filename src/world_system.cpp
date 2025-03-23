@@ -3,6 +3,9 @@
 #include "world_init.hpp"
 #include "common.hpp"
 
+// json library
+#include "../ext/json/json.hpp"
+
 // stlib
 #include <cassert>
 #include <sstream>
@@ -16,7 +19,9 @@
 #include "animation_system.hpp"
 #include "ui_system.hpp"
 
-bool tutorial_mode = true;
+
+// json object from json library
+using json = nlohmann::json;
 
 // create the world
 WorldSystem::WorldSystem() : level(0),
@@ -178,7 +183,6 @@ void WorldSystem::init(RenderSystem *renderer_arg)
 
 	// // start playing background music indefinitely
 	// // std::cout << "Starting music..." << std::endl;
-	// Mix_PlayMusic(background_music, -1);
 
 	// Set all states to default
 	restart_game();
@@ -266,6 +270,7 @@ void WorldSystem::updateBoss()
         registry.remove_all_components_of(bosses_to_remove[i]);
     }
 }
+
 
 void WorldSystem::spawnEnemies(float elapsed_ms_since_last_update)
 {
@@ -382,7 +387,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
 	updateCamera(elapsed_ms_since_last_update);
 
-	if (tutorial_mode && registry.infoBoxes.size() == 0) {
+	if (progress_map["tutorial_mode"] && registry.infoBoxes.size() == 0) {
 		createInfoBoxes();
 	}
 	
@@ -392,7 +397,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	handlePlayerMovement(elapsed_ms_since_last_update);
 	handlePlayerHealth(elapsed_ms_since_last_update);
 
-	if (!tutorial_mode && level != 5) {
+	if (!progress_map["tutorial_mode"] && level != BOSS_LEVEL) {
 		spawnEnemies(elapsed_ms_since_last_update);
 	} else {
 		updateBoss();
@@ -540,8 +545,8 @@ void WorldSystem::goToNextLevel()
 	gameOver = false;
 	std::pair<int, int> playerPosition;
 
-	if (level < 5) {
-		createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
+	if (level < BOSS_LEVEL) {
+		createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
 	} else {
 		createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
 		createBoss(renderer, gridCellToPosition({10, 10}));
@@ -624,21 +629,9 @@ void WorldSystem::restart_game()
 	// std::cout << "Creating Procedural Map, tutorial mode status :" << tutorial_mode << std::endl;
 
 	std::pair<int, int> playerPosition;
-	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
-	
-    // std::pair<int, int> playerPosition;
-	
-	// if (level < 5) {
-	// 	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
-	// } else {
-	// 	createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
-	// 	createBoss(renderer, gridCellToPosition({10, 10}));
-	// 	std::cout << "Boss created" << std::endl;
-	// }
-	
-	
-	
-	if (tutorial_mode) {
+	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
+		
+	if (progress_map["tutorial_mode"]) {
 		createPlayer(renderer, gridCellToPosition({0, 10}));
 		createSpikeEnemy(renderer, gridCellToPosition({12, 10}));
 		createKey(renderer, gridCellToPosition({16, 10}));
@@ -675,7 +668,7 @@ void WorldSystem::restart_game()
 					EFFECT_ASSET_ID::UI);
     createUIElement(GUN_UI_POS,
                     vec2(GUN_UI_SIZE, GUN_UI_SIZE),
-                    TEXTURE_ASSET_ID::GUN,
+                    TEXTURE_ASSET_ID::GUN_STILL,
                     EFFECT_ASSET_ID::UI);
 
     Player &player = registry.players.get(registry.players.entities[0]);
@@ -755,9 +748,9 @@ void WorldSystem::handle_collisions()
                     removals.push_back(entity);
                     removals.push_back(entity2);
                 
-					if (tutorial_mode) {
+					if (progress_map["tutorial_mode"]) {
 						current_state = GameState::NEXT_LEVEL;
-						tutorial_mode = false;
+						progress_map["tutorial_mode"] = false;
 						removeInfoBoxes();
 						goToNextLevel();
 					}
@@ -1027,6 +1020,14 @@ void WorldSystem::on_key(int key, int, int action, int mod)
             shootGun();
         }
     }
+
+	if (key == GLFW_KEY_L && action == GLFW_RELEASE && current_state == GameState::START_SCREEN)
+	{
+		if (checkLoadFileExists()) {
+			loadGame();
+			loadProgress();
+		}
+	}
 }
 
 void WorldSystem::on_mouse_move(vec2 mouse_position)
@@ -1089,11 +1090,12 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		}
 		else if (current_state == GameState::START_SCREEN && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
-			Mix_PlayChannel(-1, click_sound, 0);
+			
 			ButtonType clickedButton = getClickedButton();
 
 			if (clickedButton == ButtonType::SHOPBUTTON) 
 			{
+				Mix_PlayChannel(-1, click_sound, 0);
 				previous_state = current_state;
 				current_state = GameState::SHOP;
 				removeStartScreen();
@@ -1101,6 +1103,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			}
 			else if (clickedButton == ButtonType::INFOBUTTON) 
 			{
+				Mix_PlayChannel(-1, click_sound, 0);
 				previous_state = current_state;
 				current_state = GameState::INFO;
 				removeStartScreen();
@@ -1108,6 +1111,8 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			}
 			else if (clickedButton == ButtonType::STARTBUTTON) 
 			{
+				Mix_PlayChannel(-1, click_sound, 0);
+				Mix_PlayMusic(background_music, -1);
 				previous_state = current_state;
 				current_state = GameState::GAMEPLAY_CUTSCENE;
 				removeStartScreen();
@@ -1146,23 +1151,28 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			{
 				previous_state = current_state;
 				current_state = GameState::START_SCREEN_ANIMATION;
-
-				// PUT SELECTED BUFFS ONTO THE PLAYER? // FLAGGG
-				///---------------------------------------------
-				///---------------------------------------------
-				///---------------------------------------------
-				///--------------------------------------------- Iterate through each clickable buff that is puiked and add it to the array of player things...
-				
 				moveSelectedBuffsToProgression();
 				removeGameOverScreen();
 				restart_game();
-			} 
+
+			}
 			else if (isClickableBuffClicked(&e)) {
 				handleClickableBuff(e);
 			}
 		}
+		else if (current_state == GameState::PAUSE && button == GLFW_MOUSE_BUTTON_LEFT)
+		{
+			if (level < BOSS_LEVEL && !progress_map["tutorial_mode"]) {
+				if (getClickedButton() == ButtonType::SAVEBUTTON)
+				{
+					saveGame();
+					saveProgress();
+				}
+			}
+		}
 	}
 }
+
 
 void WorldSystem::shootGun() {
     Gun &gun = registry.guns.get(registry.guns.entities[0]);
@@ -1176,6 +1186,10 @@ void WorldSystem::shootGun() {
         velocity = {velocity.y, -velocity.x};
 
         Entity projectiles = createProjectile(gun_motion.position, {PROJECTILE_SIZE, PROJECTILE_SIZE}, velocity, GUN_PROJECTILE_DAMAGE);
+
+		RenderRequest& render_request = registry.renderRequests.get(projectiles);
+		render_request.used_texture = TEXTURE_ASSET_ID::GUN_PROJECTILE;
+
 		Projectile &projectile = registry.projectiles.get(projectiles);
 		projectile.from_enemy = false;
 	}
@@ -1524,5 +1538,190 @@ void WorldSystem::tileProceduralMap() {
 		}
 	}
 
-	initializedMap=true;
+	initializedMap = true;
+}
+
+void WorldSystem::saveGame() {
+	std::cout << "Saving Game!" << std::endl;
+	
+	json gameData;
+	
+	// save map data
+	Entity proceduralMapEntity = registry.proceduralMaps.entities[0];
+	ProceduralMap& map = registry.proceduralMaps.get(proceduralMapEntity);
+	
+	gameData["map"] = json(map);
+
+	// save player status + position
+	Entity playerEntity = registry.players.entities[0];
+	Player& player = registry.players.get(playerEntity);
+	Motion& playerMotion = registry.motions.get(playerEntity);
+	
+	gameData["player"]["playerStatus"] = json(player);
+	gameData["player"]["motion"] = json(playerMotion);
+
+	// save buff status
+	std::vector<BuffUI> buffs = registry.buffUIs.components;
+
+	gameData["buffs"] = json(buffs);
+
+	// save progress
+	Entity progressEntity = registry.progressions.entities[0];
+	Progression& prog = registry.progressions.get(progressEntity);
+	gameData["progress"] = json(prog);
+
+	// save projectiles
+	std::vector<Entity> projectileEntities = registry.projectiles.entities;
+	
+	json motionsArray = json::array();
+	// make json array to contain motions for projectiles
+	for (auto e : projectileEntities) {
+		Motion& projectileMotion = registry.motions.get(e);
+		
+		json motionJson = json(projectileMotion);
+
+		motionsArray.push_back(motionJson);
+	}
+
+	gameData["projectiles"] = motionsArray;
+
+	std::string filename = std::string(PROJECT_SOURCE_DIR) + "/data/save/world_status.json";
+
+	std::ofstream o(filename);
+
+	if (!o.is_open()) {
+		std::cerr << "Could not open file for writing JSON" << std::endl;
+		return;
+	}	
+
+	o << gameData.dump(4) << std::endl;
+
+	std::cout << "Done Saving!" << std::endl;
+}
+
+bool WorldSystem::checkLoadFileExists() {
+	std::string filename = std::string(PROJECT_SOURCE_DIR) + "/data/save/world_status.json";
+	std::ifstream f(filename.c_str());
+	return f.good();
+}
+
+void WorldSystem::loadGame() {
+	std::cout << "Loading Game!" << std::endl;
+
+	std::string filename = std::string(PROJECT_SOURCE_DIR) + "/data/save/world_status.json";
+	std::ifstream i(filename);
+
+	if (!i.is_open()) {
+		std::cerr << "Could not open file for reading JSON" << std::endl;
+		return;
+	}
+
+	json gameData;
+
+	i >> gameData;
+
+
+	if (registry.players.entities.size() > 0) {
+		std::cout << "Player Exists Fine" << std::endl;
+	}
+	
+	// get player
+	Entity playerEntity = registry.players.entities[0];
+	Player& player = registry.players.get(playerEntity);
+
+	if (registry.motions.has(playerEntity)) {
+		std::cout << "Player Motion Exists Fine" << std::endl;
+	}
+
+	// load player motion & status
+	Motion& playerMotion = registry.motions.get(playerEntity);
+	player = gameData["player"]["playerStatus"].get<Player>();
+	playerMotion = gameData["player"]["motion"].get<Motion>();
+
+	if (registry.proceduralMaps.entities.size() > 0) {
+		std::cout << "Procedural Map Exists Fine" << std::endl;
+	}
+
+	// load map
+	Entity mapEntity = registry.proceduralMaps.entities[0];
+	ProceduralMap& map = registry.proceduralMaps.get(mapEntity);
+	map = gameData["map"].get<ProceduralMap>();
+
+	if (registry.buffUIs.entities.size() == 0) {
+		std::cout << "Buff UI should be empty" << std::endl;
+	}
+
+	// load buffs 
+	std::vector<BuffUI> buffs = gameData["buffs"].get<std::vector<BuffUI>>();
+
+	for (auto buff : buffs) {
+		renderCollectedBuff(renderer, buff.buffType);
+	}
+
+	// load projectiles
+	std::vector<Motion> projectiles = gameData["projectiles"].get<std::vector<Motion>>();
+
+	for (auto projectile : projectiles) {
+		createProjectile(projectile.position, projectile.scale ,projectile.velocity);
+	}
+
+	// check progression exists
+	if (registry.progressions.entities.size() > 0) {
+		std::cout << "Progression Exists Fine" << std::endl;
+	}
+
+	// load progression
+	Entity progressEntity = registry.progressions.entities[0];
+	Progression& prog = registry.progressions.get(progressEntity);
+	prog = gameData["progress"].get<Progression>();
+	std::cout << "Done Loading!" << std::endl;
+}
+
+void WorldSystem::saveProgress() {
+	std::string progress_filename = std::string(PROJECT_SOURCE_DIR) + "/data/save/progress.json";
+
+	std::ofstream p(progress_filename);
+
+	if (!p.is_open()) {
+		std::cerr << "Could not open file for writing JSON (Progress)" << std::endl;
+		return;
+	}
+
+	json progressData;
+
+	progressData["progress"] = json(progress_map);
+	progressData["levels"] = json(level);
+
+	p << progressData.dump(4) << std::endl;
+
+	std::cout << "Done Saving Progress!" << std::endl;
+}
+
+void WorldSystem::loadProgress() {
+	std::string progress_filename = std::string(PROJECT_SOURCE_DIR) + "/data/save/progress.json";
+
+	std::ifstream p(progress_filename);
+
+	removeInfoBoxes();
+
+	if (registry.keys.size() != 0) {
+		registry.remove_all_components_of(registry.keys.entities[0]);
+	}
+
+	if (registry.chests.size() != 0) {
+		registry.remove_all_components_of(registry.chests.entities[0]);
+	}
+
+	if (!p.is_open()) {
+		std::cerr << "Could not open file for reaidng JSON (Progress)" << std::endl;
+		return;
+	}
+
+	json progressData;
+
+	p >> progressData;
+
+	progress_map = progressData["progress"].get<std::map<std::string, bool>>();
+
+	level = progressData["levels"].get<int>();
 }
