@@ -44,9 +44,10 @@ void removeInfoBoxes() {
 		entityList.push_back(e);
 	}
 
-	for (auto e : entityList) {
-		registry.remove_all_components_of(e);
-	}
+    int size = entityList.size();
+    for(int i = 0; i < size; i++) {
+        registry.remove_all_components_of(entityList[i]);
+    }
 	return;
 }
 
@@ -429,12 +430,12 @@ void removeStartScreen()
 	std::vector<Entity> buttons_to_remove = start.buttons;
 	Entity logo = start.logo;
 
-	std::cout << "Button Size" << std::endl;
-	std::cout << buttons_to_remove.size() << std::endl;
-	for (auto &entity : buttons_to_remove)
-	{
-		registry.remove_all_components_of(entity);
-	}
+    int size = buttons_to_remove.size();
+
+    for (int i = 0; i < size; i++) {
+        registry.remove_all_components_of(buttons_to_remove[i]);
+    }
+
 	registry.remove_all_components_of(logo);
 	registry.remove_all_components_of(start_entity);
 }
@@ -447,12 +448,12 @@ void removeShopScreen()
 	Entity shop_entity = registry.shops.entities[0];
 	Shop &shop = registry.shops.components[0];
 	std::vector<Entity> buttons_to_remove = shop.buttons;
-	// std::cout << "Buttons: " << buttons_to_remove.size() << std::endl;
-	for (auto &entity : buttons_to_remove)
-	{
-		registry.remove_all_components_of(entity);
-	}
+	
+    int size = buttons_to_remove.size();
 
+    for (int i = 0; i < size; i++) {
+        registry.remove_all_components_of(buttons_to_remove[i]);
+    }
 	registry.remove_all_components_of(shop_entity);
 }
 
@@ -464,12 +465,13 @@ void removeInfoScreen()
 	Entity info_entity = registry.infos.entities[0];
 	Info &info = registry.infos.components[0];
 	std::vector<Entity> buttons_to_remove = info.buttons;
-	// std::cout << "Buttons: " << buttons_to_remove.size() << std::endl;
-	for (auto &entity : buttons_to_remove)
-	{
-		registry.remove_all_components_of(entity);
-	}
+	
+    int size = buttons_to_remove.size();
 
+    for (int i = 0; i < size; i++) {
+        registry.remove_all_components_of(buttons_to_remove[i]);
+    }
+    
 	registry.remove_all_components_of(info_entity);
 }
 

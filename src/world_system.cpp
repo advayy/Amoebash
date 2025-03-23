@@ -615,6 +615,8 @@ void WorldSystem::restart_game()
 // Compute collisions between entities. Collisions are always in this order: (Player | Projectiles, Enemy | Wall | Buff)
 void WorldSystem::handle_collisions()
 {
+    std::vector<Entity> removals;
+
 	for (auto& entity : registry.collisions.entities)
 	{
 		Collision& collision = registry.collisions.get(entity);
@@ -631,7 +633,8 @@ void WorldSystem::handle_collisions()
 				player.current_health -= projectile.damage;
 
 				// remove projectile
-				registry.remove_all_components_of(entity2);
+                removals.push_back(entity2);
+				// registry.remove_all_components_of(entity2);
 			}
 		}
 		else if (registry.keys.has(entity2))
@@ -672,9 +675,12 @@ void WorldSystem::handle_collisions()
 				if (physics_system.pointInPolygon(keyMotion.position, chestWorldVertices))
 				{
 					// remove chest
-					registry.remove_all_components_of(entity);
-					registry.remove_all_components_of(entity2);
+					// registry.remove_all_components_of(entity);
+					// registry.remove_all_components_of(entity2);
 
+                    removals.push_back(entity);
+                    removals.push_back(entity2);
+                
 					if (tutorial_mode) {
 						current_state = GameState::NEXT_LEVEL;
 						tutorial_mode = false;
@@ -695,8 +701,8 @@ void WorldSystem::handle_collisions()
 				enemy.health -= projectile.damage;
 
 				// remove projectile
-				registry.remove_all_components_of(entity);
-
+				// registry.remove_all_components_of(entity);
+                removals.push_back(entity);
 				// if invader health is below 0
 				// remove invader and increase points
 				// buff created
@@ -708,7 +714,8 @@ void WorldSystem::handle_collisions()
 					}
 
 					vec2 enemy_position = registry.motions.get(entity2).position;
-					registry.remove_all_components_of(entity2);
+					// registry.remove_all_components_of(entity2);
+                    removals.push_back(entity2);
 					// level += 1;
 					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
 
@@ -731,7 +738,8 @@ void WorldSystem::handle_collisions()
 
 						vec2 enemy_position = registry.motions.get(entity2).position;
 						points += 1;
-						registry.remove_all_components_of(entity2);
+						// registry.remove_all_components_of(entity2);
+                        removals.push_back(entity2);
                         Mix_PlayChannel(-1, enemy_death_sound, 0);
 
 						createBuff(vec2(enemy_position.x, enemy_position.y));
@@ -774,6 +782,12 @@ void WorldSystem::handle_collisions()
 		}
 	}
 
+    int size = removals.size();
+
+    for (int i = 0; i < size; i ++) {
+        registry.remove_all_components_of(removals[i]);
+    }
+    
 	// Remove all collisions from this simulation step
 	registry.collisions.clear();
 }
