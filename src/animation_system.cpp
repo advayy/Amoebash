@@ -3,6 +3,7 @@
 void AnimationSystem::step(float elapsed_ms)
 {
 	// TODO: add conditional for game over -> game state?
+    std::vector<Entity> removals;
 
 	for (auto& entity : registry.animations.entities)
 	{
@@ -18,8 +19,9 @@ void AnimationSystem::step(float elapsed_ms)
 				if (animation.loop == ANIM_LOOP_TYPES::NO_LOOP)
 				{
 					// animation is over since no loop, remove the entity from game
-					registry.remove_all_components_of(entity);
-				}
+					// registry.remove_all_components_of(entity);
+                    removals.push_back(entity);
+                }
 				else if (animation.loop == ANIM_LOOP_TYPES::PING_PONG)
 				{
 					// go backwards through the frames
@@ -36,8 +38,9 @@ void AnimationSystem::step(float elapsed_ms)
 			{
 				if (!animation.forwards && animation.loop == ANIM_LOOP_TYPES::NO_LOOP)
 				{
-					registry.remove_all_components_of(entity);
-				}
+					// registry.remove_all_components_of(entity);
+                    removals.push_back(entity);
+                }
 				else if (animation.loop == ANIM_LOOP_TYPES::PING_PONG)
 				{
 					// go forwards through the frames
@@ -65,6 +68,11 @@ void AnimationSystem::step(float elapsed_ms)
 			animation.time_since_last_frame += elapsed_ms;
 		}
 	}
+
+    int size = removals.size();
+    for(int i = 0; i < size; i++) {
+        registry.remove_all_components_of(removals[i]);
+    }
 }
 
 void changeAnimationFrames(Entity entity, int start_frame, int end_frame)

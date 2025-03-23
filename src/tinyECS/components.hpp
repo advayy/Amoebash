@@ -6,6 +6,26 @@
 
 extern bool tutorial_mode;
 
+struct Progression {
+	std::vector<int> buffsFromLastRun;
+	std::vector<int> pickedInNucleus;
+	int slots_unlocked = 1;
+};
+
+
+struct Slot {
+	int number = 0;
+	bool filled = false;
+};
+
+struct ClickableBuff {
+	int type;
+	bool picked = false;
+	vec2 returnPosition = {0, 0};
+	Entity slotEntity;
+};
+
+
 struct Player
 {
 	int current_health = PLAYER_DEFAULT_HEALTH;
@@ -31,6 +51,7 @@ struct Player
 	float knockback_duration = 0.0f;
 
 	vec2 grid_position = {0, 0};
+	std::vector<int> buffsCollected;
 };
 
 struct Dashing
@@ -217,7 +238,8 @@ enum ButtonType
 	SHOPBUTTON = STARTBUTTON + 1,
 	INFOBUTTON = SHOPBUTTON + 1,
 	BACKBUTTON = INFOBUTTON,
-	NONE = BACKBUTTON + 1
+	PROCEED_BUTTON = BACKBUTTON + 1,
+	NONE = PROCEED_BUTTON + 1
 };
 
 // Coordinates and bounding box of start button on start screen
@@ -259,6 +281,7 @@ struct Pause
 
 struct Over
 {
+	std::vector<Entity> buttons;
 };
 
 struct Start
@@ -317,6 +340,11 @@ struct BuffUI
 struct InfoBox
 {
 };
+
+struct Gun {
+    float cooldown_timer_ms = 0.0f;
+};
+
 /**
  * The following enumerators represent global identifiers refering to graphic
  * assets. For example TEXTURE_ASSET_ID are the identifiers of each texture
@@ -382,7 +410,10 @@ enum class TEXTURE_ASSET_ID
 	LEAVE_TUTORIAL = RESTART_INFO + 1,
 	CHEST = LEAVE_TUTORIAL + 1,
 	PARTICLE = CHEST + 1,
-	BOSS_STAGE_1 = PARTICLE + 1,
+	GUN = PARTICLE + 1,
+	NUCLEUS_MENU = GUN + 1,
+	NUCLEUS_MENU_SLOT = NUCLEUS_MENU + 1,
+	BOSS_STAGE_1 = NUCLEUS_MENU_SLOT + 1,
 	BOSS_STAGE_2 = BOSS_STAGE_1 + 1,
 	BOSS_STAGE_3 = BOSS_STAGE_2 + 1,
 	BOSS_STAGE_4 = BOSS_STAGE_3 + 1,
@@ -499,13 +530,16 @@ struct EnemyAI
 	vec2 patrolOrigin = { 0, 0 };     // origin of patrol
 	float patrolRange = SPIKE_ENEMY_PATROL_RANGE;     // range of patrol
 	float patrolTime = ENEMY_PATROL_TIME_MS / 2;
+    float knockbackTimer = 0.f;
+    float bombTimer = SPIKE_ENEMY_BOMB_TIMER;
 };
 
 enum class SpikeEnemyState
 {
 	CHASING = 0,
 	PATROLLING = CHASING + 1,
-	DASHING = PATROLLING + 1
+	DASHING = PATROLLING + 1,
+    KNOCKBACK = DASHING + 1
 };
 
 struct SpikeEnemyAI : EnemyAI

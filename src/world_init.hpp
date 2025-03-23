@@ -6,6 +6,8 @@
 #include "tinyECS/tiny_ecs.hpp"
 #include "render_system.hpp"
 
+void initializeProgression();
+
 Entity createEnemy(RenderSystem* renderer, vec2 position);
 Entity createSpikeEnemy(RenderSystem* renderer, vec2 position);
 Entity createRBCEnemy(RenderSystem* renderer, vec2 position);
@@ -13,11 +15,12 @@ Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_
 Entity createBoss(RenderSystem* renderer, vec2 position, BossState state = BossState::INITIAL, int bossStage = 0);
 
 Entity createPlayer(RenderSystem *renderer, vec2 position);
+Entity createGun(RenderSystem *renderer, vec2 position);
 Entity createKey(RenderSystem *renderer, vec2 position);
 Entity createChest(RenderSystem *renderer, vec2 position);
 
 // projectile
-Entity createProjectile(vec2 pos, vec2 size, vec2 velocity);
+Entity createProjectile(vec2 pos, vec2 size, vec2 velocity, float damage = PROJECTILE_DAMAGE);
 Entity createBacteriophageProjectile(Entity& bacteriophage);
 Entity createBossProjectile(vec2 position, vec2 size, vec2 velocity);
 
