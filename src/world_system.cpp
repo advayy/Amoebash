@@ -217,8 +217,9 @@ void WorldSystem::updateBoss()
 	for (auto boss : registry.bossAIs.entities) 
 	{
 		Enemy& enemy = registry.enemies.get(boss);
+		BossAI& bossAI = registry.bossAIs.get(boss);
 
-		if (enemy.total_health < 125.f) continue;
+		if (bossAI.stage == 3) continue; // SMALLEST BOSS SIZE
 
 		if (enemy.health < enemy.total_health / 2.f) {
 			bosses_to_split.push_back(boss);
@@ -229,33 +230,18 @@ void WorldSystem::updateBoss()
 	{
 		Motion& originalMotion = registry.motions.get(boss);
 		BossAI& originalAI = registry.bossAIs.get(boss);
-		Enemy& originalEnemy = registry.enemies.get(boss);
 
 		vec2 smallScale = originalMotion.scale * 0.5f;
-		float smallHealth = originalEnemy.total_health * 0.5f;
 
 		vec2 offset = vec2(smallScale.x * 1.2f, 0.f);
 		vec2 pos1 = originalMotion.position - offset;
 		vec2 pos2 = originalMotion.position + offset;
 
-		Entity smallBoss1 = createBoss(nullptr, pos1, BossState::IDLE);
-		Entity smallBoss2 = createBoss(nullptr, pos2, BossState::IDLE);
-
-		for (Entity e : {smallBoss1, smallBoss2}) {
-			Motion& m = registry.motions.get(e);
-			BossAI& ai = registry.bossAIs.get(e);
-			Enemy& en = registry.enemies.get(e);
-
-			m.scale = smallScale;
-			ai.detectionRadius = originalAI.detectionRadius * 0.75f;
-			en.health = smallHealth;
-			en.total_health = smallHealth;
-			ai.projectile_size /= 2.f;
-		}
+		Entity smallBoss1 = createBoss(nullptr, pos1, BossState::IDLE, originalAI.stage + 1);
+		Entity smallBoss2 = createBoss(nullptr, pos2, BossState::IDLE, originalAI.stage + 1);
 
 		registry.remove_all_components_of(boss);
 	}
-
 
 }
 
@@ -476,7 +462,7 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 			player_motion.velocity = {0, 0};
 		}
 	}
-	}
+}
 
 void WorldSystem::goToNextLevel()
 {

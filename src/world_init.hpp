@@ -10,7 +10,7 @@ Entity createEnemy(RenderSystem* renderer, vec2 position);
 Entity createSpikeEnemy(RenderSystem* renderer, vec2 position);
 Entity createRBCEnemy(RenderSystem* renderer, vec2 position);
 Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_index);
-Entity createBoss(RenderSystem* renderer, vec2 position, BossState state = BossState::INITIAL);
+Entity createBoss(RenderSystem* renderer, vec2 position, BossState state = BossState::INITIAL, int bossStage = 0);
 
 Entity createPlayer(RenderSystem *renderer, vec2 position);
 Entity createKey(RenderSystem *renderer, vec2 position);

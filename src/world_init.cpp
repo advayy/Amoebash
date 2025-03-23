@@ -133,27 +133,38 @@ Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_
 	return entity;
 }
 
-Entity createBoss(RenderSystem* renderer, vec2 position, BossState state)
+Entity createBoss(RenderSystem* renderer, vec2 position, BossState state, int bossStage)
 {
 	Entity entity = createEnemy(renderer, position);
 
 	Motion& motion = registry.motions.get(entity);
-	motion.scale *= 5.f;
+	motion.scale = {BOSS_BB_WIDTH, BOSS_BB_HEIGHT};
 
 	BossAI& enemy_ai = registry.bossAIs.emplace(entity);
 	enemy_ai.state = state;
 	enemy_ai.cool_down = 2000.f;
-	enemy_ai.detectionRadius = SPIKE_ENEMY_DETECTION_RADIUS * 1.5f;
+	enemy_ai.detectionRadius = BOSS_DETECTION_RADIUS;
 	enemy_ai.projectile_size = BOSS_PROJECTILE;
+	enemy_ai.stage = bossStage;
 
 	Enemy& enemy = registry.enemies.get(entity);
 	enemy.health = BOSS_HEALTH;
 	enemy.total_health = BOSS_HEALTH;
 
+	if (bossStage > 0) {
+		motion.scale /= (2 * bossStage);
+		enemy.health /= 2 * bossStage;
+		enemy.total_health /= 2 * bossStage;
+		enemy_ai.projectile_size /= 2 * bossStage;
+		enemy_ai.detectionRadius = enemy_ai.detectionRadius * std::pow(0.75f, bossStage);
+	}
+
+	TEXTURE_ASSET_ID texture = static_cast<TEXTURE_ASSET_ID>(static_cast<int>(TEXTURE_ASSET_ID::BOSS_STAGE_1) + bossStage);
+
 	registry.renderRequests.insert(
 		entity,
 		{
-			TEXTURE_ASSET_ID::SPIKE_ENEMY,
+			texture,
 			EFFECT_ASSET_ID::SPRITE_SHEET,
 			GEOMETRY_BUFFER_ID::SPRITE
 		}
@@ -161,17 +172,17 @@ Entity createBoss(RenderSystem* renderer, vec2 position, BossState state)
 
 	Animation& a = registry.animations.emplace(entity);
 	a.start_frame = 0;
-	a.end_frame = 6;
+	a.end_frame = bossStage == 0 ? 7 : (bossStage == 1 ? 9 : 8);
 	a.time_per_frame = 100.0f;
-	a.loop = ANIM_LOOP_TYPES::PING_PONG;
+	a.loop = (bossStage <= 1) ? ANIM_LOOP_TYPES::LOOP : ANIM_LOOP_TYPES::PING_PONG;
 
 	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
-	spriteSheet.total_frames = 13;
+	spriteSheet.total_frames = bossStage == 0 ? 7 : (bossStage == 1 ? 9 : 8);
 	spriteSheet.current_frame = 0;
 
 	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
-	sprite.width = 32;
-	sprite.height = 32;
+	sprite.width = motion.scale.x;
+	sprite.height = motion.scale.y;
 
 	return entity;
 }

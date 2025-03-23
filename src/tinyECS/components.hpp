@@ -382,7 +382,11 @@ enum class TEXTURE_ASSET_ID
 	LEAVE_TUTORIAL = RESTART_INFO + 1,
 	CHEST = LEAVE_TUTORIAL + 1,
 	PARTICLE = CHEST + 1,
-	TEXTURE_COUNT = PARTICLE + 1
+	BOSS_STAGE_1 = PARTICLE + 1,
+	BOSS_STAGE_2 = BOSS_STAGE_1 + 1,
+	BOSS_STAGE_3 = BOSS_STAGE_2 + 1,
+	BOSS_STAGE_4 = BOSS_STAGE_3 + 1,
+	TEXTURE_COUNT = BOSS_STAGE_4 + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -549,6 +553,7 @@ enum class BossState
 struct BossAI : EnemyAI
 {
 	BossState state = BossState::INITIAL;
+	int stage = 0;
 	float cool_down;
 	float shoot_cool_down;
 
