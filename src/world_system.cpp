@@ -1562,6 +1562,10 @@ void WorldSystem::saveGame() {
 
 	gameData["buffs"] = json(buffs);
 
+	// save progress
+	Entity progressEntity = registry.progressions.entities[0];
+	Progression& prog = registry.progressions.get(progressEntity);
+	gameData["progress"] = json(prog);
 
 	// save projectiles
 	std::vector<Entity> projectileEntities = registry.projectiles.entities;
@@ -1658,8 +1662,15 @@ void WorldSystem::loadGame() {
 		createProjectile(projectile.position, projectile.scale ,projectile.velocity);
 	}
 
-	// load enemies ()
+	// check progression exists
+	if (registry.progressions.entities.size() > 0) {
+		std::cout << "Progression Exists Fine" << std::endl;
+	}
 
+	// load progression
+	Entity progressEntity = registry.progressions.entities[0];
+	Progression& prog = registry.progressions.get(progressEntity);
+	prog = gameData["progress"].get<Progression>();
 	std::cout << "Done Loading!" << std::endl;
 }
 

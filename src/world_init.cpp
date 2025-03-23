@@ -321,7 +321,7 @@ Entity createBossProjectile(vec2 position, vec2 size, vec2 velocity)
 	RenderRequest& render_request = registry.renderRequests.get(projectile);
 	render_request.used_texture = TEXTURE_ASSET_ID::BOSS_PROJECTILE;
 	Projectile& p = registry.projectiles.get(projectile);
-	p.damage /= 3.f;
+	p.damage = BOSS_PROJECTILE_DAMAGE;
 	registry.bossProjectiles.emplace(projectile);
 
 	return projectile;
@@ -352,8 +352,8 @@ Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& pla
 		}
 	}
 
-	playerPosition.first = 0;
-	playerPosition.second = 0;
+	playerPosition.first = 19;
+	playerPosition.second = 10;
 
 	return entity;
 }

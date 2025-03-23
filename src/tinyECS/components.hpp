@@ -28,7 +28,7 @@ namespace nlohmann {
 struct Progression {
 	std::vector<int> buffsFromLastRun;
 	std::vector<int> pickedInNucleus;
-	int slots_unlocked = 1;
+	int slots_unlocked = 9;
 };
 
 
@@ -681,7 +681,9 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Player,
 	dash_speed,
 	dash_range,
 	detection_range,
-	grid_position
+	knockback_duration,
+	grid_position,
+	buffsCollected
 )
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Dashing,
@@ -945,4 +947,10 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Particle,
 	max_lifetime_ms,
 	state_timer_ms,
 	speed_factor
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Progression,
+	buffsFromLastRun,
+	pickedInNucleus,
+	slots_unlocked
 )
