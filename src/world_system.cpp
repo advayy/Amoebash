@@ -213,46 +213,59 @@ void WorldSystem::updateMouseCoords()
 
 void WorldSystem::spawnEnemies(float elapsed_ms_since_last_update)
 {
+	// std::cout << "WS:spawn - f1" << std::endl;
+
 	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
 	if (!tutorial_mode)
 	{
+		// std::cout << "WS:spawn - f2" << std::endl;
+
 		// spawn new invaders
 		next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
 		if (next_enemy_spawn < 0.f && !gameOver)
 		{
+			// std::cout << "WS:spawn - f3" << std::endl;
 			if (registry.enemies.entities.size() < MAX_ENEMIES_COUNT)
 			{
+				// std::cout << "WS:spawn - f4" << std::endl;
 				// reset timer
 				next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
 
 				// randomize position
 				// randomize empty tile on mpa
 				std::pair<int, int> enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
-	
+				// std::cout << "WS:spawn - f5" << std::endl;
+
 				int random_num = rand();
 				if (random_num % 3 == 0)
 				{
+					// std::cout << "WS:spawn - f6" << std::endl;
 					createSpikeEnemy(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }));
 				}
 				else if (random_num % 3 == 1)
 				{
+					// std::cout << "WS:spawn - f7" << std::endl;
 					createRBCEnemy(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }));
 				}
 				else if (registry.bacteriophageAIs.entities.size() < MAX_BACTERIOPHAGE_COUNT)
 				{
+					// std::cout << "WS:spawn - f8" << std::endl;
 					while (glm::distance(player_motion.position, gridCellToPosition({ enemyPosition.second, enemyPosition.first })) < SPIKE_ENEMY_DETECTION_RADIUS)
 					{
+						// std::cout << "WS:spawn - f9" << std::endl;
 						// randomize empty tile on mpa
 						enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
 					}
 
+					// std::cout << "WS:spawn - f10" << std::endl;
 					int index = (int)(uniform_dist(rng) * MAX_BACTERIOPHAGE_COUNT);
 					while (bacteriophage_idx.find(index) != bacteriophage_idx.end())
 					{
+						// std::cout << "WS:spawn - f11" << std::endl;
 						index = (int)(uniform_dist(rng) * MAX_BACTERIOPHAGE_COUNT);
 					}
 					bacteriophage_idx[index] = 1;
-
+					// std::cout << "WS:spawn - f12" << std::endl;
 					createBacteriophage(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }), index);
 				}
 			}
@@ -262,14 +275,15 @@ void WorldSystem::spawnEnemies(float elapsed_ms_since_last_update)
 
 void WorldSystem::handleProjectiles(float elapsed_ms_since_last_update)
 {
-	for (auto& projectile_e : registry.projectiles.entities)
+	for (int i = 0; i < registry.projectiles.entities.size(); i++)
 	{
-		Projectile& projectile = registry.projectiles.get(projectile_e);
+		Projectile& projectile = registry.projectiles.get(registry.projectiles.entities[i]);
 		projectile.ms_until_despawn -= elapsed_ms_since_last_update * current_speed;
 
 		if (projectile.ms_until_despawn < 0.0f)
 		{
-			registry.remove_all_components_of(projectile_e);
+			
+			registry.remove_all_components_of(registry.projectiles.entities[i]);
 		}
 	}
 
@@ -299,7 +313,7 @@ void WorldSystem::handleProjectiles(float elapsed_ms_since_last_update)
 	}
 }
 
-void WorldSystem::checkPortalCollision(){
+bool WorldSystem::checkPortalCollision(){
 	// Point the player to the mouse
 	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
     // check if player in portal tile
@@ -312,20 +326,10 @@ void WorldSystem::checkPortalCollision(){
 
         if (distance < portal_radius) {
             // go to black screen
-            Entity screen_state_entity = renderer->get_screen_state_entity();
-            ScreenState &screen = registry.screenStates.get(screen_state_entity);
-            screen.darken_screen_factor = 1;
-            darken_screen_timer = 0.0f;
-
-            current_state = GameState::NEXT_LEVEL;
-			
-			// goToNextLevel();
-
-            restart_game();
-            removeStartScreen(); // removing buttons that are added again
-
+			return true;
         }
     }
+	return false;
 }
 
 // Update our game world
@@ -333,22 +337,51 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
 
 	// M1 Feature - Camera controls
+	std::cout << "WS:step - f1" << std::endl;
+
 	updateCamera(elapsed_ms_since_last_update);
+	std::cout << "WS:step - f2" << std::endl;
 
 	if (tutorial_mode && registry.infoBoxes.size() == 0) {
 		createInfoBoxes();
 	}
+	std::cout << "WS:step - f3" << std::endl;
 
 	updateMouseCoords();
+	std::cout << "WS:step - f4" << std::endl;
+
 	updateHuds();
+	std::cout << "WS:step - f5" << std::endl;
+
 	handlePlayerMovement(elapsed_ms_since_last_update);
+	std::cout << "WS:step - f6" << std::endl;
+
 	handlePlayerHealth(elapsed_ms_since_last_update);
+	std::cout << "WS:step - f7" << std::endl;
 
 	spawnEnemies(elapsed_ms_since_last_update);
+	std::cout << "WS:step - f8" << std::endl;
+
 	handleProjectiles(elapsed_ms_since_last_update);
+	std::cout << "WS:step - f9" << std::endl;
 
     tileProceduralMap();
-	checkPortalCollision();
+	
+	std::cout << "WS:step - f10" << std::endl;
+
+	if (checkPortalCollision()) {
+        Entity screen_state_entity = renderer->get_screen_state_entity();
+        ScreenState &screen = registry.screenStates.get(screen_state_entity);
+        screen.darken_screen_factor = 1;
+       	darken_screen_timer = 0.0f;
+        current_state = GameState::NEXT_LEVEL;
+		goToNextLevel();
+		return true;
+	}
+
+	// IF PORTAL COLLISION THEN GO TO NEXT LEVEL...
+
+	std::cout << "WS:step - f11" << std::endl;
 
     // Update the darken screen timer
     if (darken_screen_timer >= 0.0f) {
@@ -360,10 +393,12 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
             darken_screen_timer = -1.0f; // Stop the timer
         }
     }
-	
+	std::cout << "WS:step - f12" << std::endl;
+
 	// step the particle system only when its needed
 	// for optimaztion, we could only step the particles that are on screen
 	particle_system.step(elapsed_ms_since_last_update);
+	std::cout << "WS:step - f13" << std::endl;
 
 	return true;
 }
@@ -435,33 +470,23 @@ void WorldSystem::goToNextLevel()
 	initializedMap = false;
 	currentTiles.clear();
 
-    // int buffSize = registry.buffs.entities.size();
-    // for (int i = 0; i < buffSize; i++) {
-    //     registry.remove_all_components_of(registry.buffs.entities.back());
-    // }
+    int enemySize = registry.enemies.entities.size();
+    for (int i = 0; i < enemySize; i++) {
+        registry.remove_all_components_of(registry.enemies.entities.back());
+    }
 
-    // int enemySize = registry.enemies.entities.size();
-    // for (int i = 0; i < enemySize; i++) {
-    //     registry.remove_all_components_of(registry.enemies.entities.back());
-    // }
-
-	// while(registry.buffUIs.entities.size() > 0)
-	// 	registry.remove_all_components_of(registry.buffs.entities.back());
-
-	// while(registry.enemies.entities.size() > 0)
-	// 	registry.remove_all_components_of(registry.enemies.entities.back());
 	gameOver = false;
 
 	std::pair<int, int> playerPosition;
-    // print entering
-    // std::cout << "Entering createProceduralMap" << std::endl;
+
 	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
 
 	Player &player = registry.players.get(registry.players.entities[0]);
 	Motion &playerMotion = registry.motions.get(registry.players.entities[0]);
-	
 	playerMotion.position = gridCellToPosition(vec2(playerPosition.second, playerPosition.first));
-
+	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+	camera.position = playerMotion.position;
+	bacteriophage_idx.clear();
     // print exiting
     // std::cout << "Exiting createProceduralMap" << std::endl;
 	return;
@@ -566,11 +591,11 @@ void WorldSystem::handle_collisions()
 	for (auto& entity : registry.collisions.entities)
 	{
 		Collision& collision = registry.collisions.get(entity);
-		Entity& entity2 = collision.other;
+		Entity entity2 = collision.other;
 
 		if (registry.bacteriophageProjectiles.has(entity2))
 		{
-			if (registry.players.has(entity))
+			if (registry.players.has(entity)) // HANDLE PROJECTILE/PLAYER COLLISION
 			{
 				Player& player = registry.players.get(entity);
 				Projectile& projectile = registry.projectiles.get(entity2);
@@ -627,8 +652,7 @@ void WorldSystem::handle_collisions()
 						current_state = GameState::NEXT_LEVEL;
 						tutorial_mode = false;
 						removeInfoBoxes();
-						restart_game();
-						removeStartScreen();
+						goToNextLevel();
 					}
 				}
 			}
@@ -854,19 +878,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		{
 			if (button == GLFW_MOUSE_BUTTON_LEFT)
 			{
-				ButtonType clickedButton = getClickedButton();
-
-				if (clickedButton == ButtonType::SHOPBUTTON)
-				{
-					previous_state = current_state;
-					current_state = GameState::SHOP;
-				}
-				else if (clickedButton == ButtonType::INFOBUTTON)
-				{
-					previous_state = current_state;
-					current_state = GameState::INFO;
-				}
-				else if (canDash())
+				if (canDash())
 				{
 					initiatePlayerDash();
 					Mix_PlayChannel(-1, dash_sound_1, 0);
@@ -895,7 +907,6 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			{
 				previous_state = current_state;
 				current_state = GameState::GAMEPLAY_CUTSCENE;
-				// need to add render request for cutscene animations
 				removeStartScreen();
 				createGameplayCutScene();
 			}
@@ -962,9 +973,6 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 	}
 
 	Buff &buff = registry.buffs.get(buff_entity);
-	buff.collected = true;
-
-	registry.remove_all_components_of(buff_entity);
 
 	switch (buff.type)
 	{
@@ -997,7 +1005,10 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 		break;
 	}
 
+	buff.collected = true;
 	renderCollectedBuff(renderer, buff.type);
+	registry.remove_all_components_of(buff_entity);
+
 }
 
 void WorldSystem::initiatePlayerDash()
