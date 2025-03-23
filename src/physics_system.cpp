@@ -247,7 +247,7 @@ void PhysicsSystem::step(float elapsed_ms)
 			registry.collisions.emplace_with_duplicates(player_entity, e_entity);
 		}
 
-		// handleWallCollision(e_entity);
+		 handleWallCollision(e_entity);
 	}
 
 	for (auto& proj_entity : registry.bacteriophageProjectiles.entities)
@@ -270,7 +270,7 @@ void PhysicsSystem::step(float elapsed_ms)
 			registry.collisions.emplace_with_duplicates(player_entity, buff_entity);
 		}
 
-		// handleWallCollision(buff_entity);
+		handleWallCollision(buff_entity);
 	}
 
 	for (auto& key_entity : registry.keys.entities)
@@ -294,10 +294,10 @@ void PhysicsSystem::step(float elapsed_ms)
 			}
 		}
 
-		// handleWallCollision(key_entity);
+		 handleWallCollision(key_entity);
 	}
-	
-	// handleWallCollision(player_entity);
+
+	handleWallCollision(player_entity);
 }
 
 void PhysicsSystem::handleWallCollision(Entity& entity)
@@ -319,22 +319,12 @@ void PhysicsSystem::handleWallCollision(Entity& entity)
 
 	for (auto& wall_entity : nearby_walls)
 	{
-		if (registry.players.has(entity))
+		auto edge_of_collision = detector.checkAndHandleWallCollision(motion, wall_entity);
+		if (registry.players.has(entity) && registry.dashes.components.size() > 0 && edge_of_collision != EDGE_TYPE::NONE)
 		{
-			if (registry.dashes.components.size() > 0)
-			{
-				Dashing& dash = registry.dashes.components[0];
-				auto collided = detector.checkAndHandlePlayerWallCollision(motion, dash.angle_deg, wall_entity);
-				if (collided.first) detector.handleDashOnWallEdge(collided.second, dash);
-			}
-			else
-			{
-				detector.checkAndHandlePlayerWallCollision(motion, motion.angle, wall_entity);
-			}
-		}
-		else
-		{
-			detector.checkAndHandleGeneralWallCollision(motion, wall_entity);
+			// if player is dashing, modify the dash to have a sliding effect along the wall
+			Dashing& dash = registry.dashes.components[0];
+			detector.handleDashOnWallEdge(edge_of_collision, dash);
 		}
 	}
 }
