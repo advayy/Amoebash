@@ -820,12 +820,12 @@ void createDashRecharge()
 	}
 }
 
-Entity createBuffUI(vec2 position, int buffType)
+Entity createBuffUI(vec2 position, int type)
 {
 	Entity buffUI = Entity();
 
 	BuffUI &buff = registry.buffUIs.emplace(buffUI);
-	buff.buffType = buffType;
+	buff.buffType = type;
 
 	Motion &motion = registry.motions.emplace(buffUI);
 	motion.position = position;
@@ -838,7 +838,7 @@ Entity createBuffUI(vec2 position, int buffType)
 
 	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(buffUI);
 	spriteSheet.total_frames = 20;	 
-	spriteSheet.current_frame = buff.buffType;
+	spriteSheet.current_frame = type;
 								
 	SpriteSize &sprite = registry.spritesSizes.emplace(buffUI);
 	sprite.width = BUFF_UI_WIDTH;
