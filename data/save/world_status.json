@@ -8,6 +8,9 @@
         },
         {
             "buffType": 1
+        },
+        {
+            "buffType": 3
         }
     ],
     "map": {
@@ -462,35 +465,35 @@
     },
     "player": {
         "motion": {
-            "angle": 157.2093505859375,
+            "angle": 88.11341857910156,
             "position": {
-                "x": 4282.72802734375,
-                "y": 3185.32861328125
+                "x": 2936.15625,
+                "y": 83.14579772949219
             },
             "scale": {
                 "x": 64.0,
                 "y": 64.0
             },
             "velocity": {
-                "x": 0.0,
-                "y": 0.0
+                "x": 199.89158630371094,
+                "y": -6.584226131439209
             }
         },
         "playerStatus": {
             "current_health": 100,
             "dash_cooldown_ms": 902,
-            "dash_cooldown_timer_ms": 530,
-            "dash_count": 2,
+            "dash_cooldown_timer_ms": -525,
+            "dash_count": 3,
             "dash_damage": 20,
             "dash_range": 200.0,
             "dash_speed": 500.0,
             "detection_range": 1.0,
             "grid_position": {
-                "x": 16.0,
-                "y": 12.0
+                "x": 11.0,
+                "y": 0.0
             },
             "healing_rate": 0.05000000074505806,
-            "healing_timer_ms": -6165.111328125,
+            "healing_timer_ms": -2997.22900390625,
             "max_dash_count": 3,
             "max_health": 100,
             "speed": 200
