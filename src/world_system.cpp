@@ -183,7 +183,7 @@ void WorldSystem::init(RenderSystem *renderer_arg)
 
 	// // start playing background music indefinitely
 	// // std::cout << "Starting music..." << std::endl;
-	// Mix_PlayMusic(background_music, -1);
+	Mix_PlayMusic(background_music, -1);
 
 	// Set all states to default
 	restart_game();
@@ -398,7 +398,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	handlePlayerMovement(elapsed_ms_since_last_update);
 	handlePlayerHealth(elapsed_ms_since_last_update);
 
-	if (!progress_map["tutorial_mode"] && level != 5) {
+	if (!progress_map["tutorial_mode"] && level != BOSS_LEVEL) {
 		spawnEnemies(elapsed_ms_since_last_update);
 	} else {
 		updateBoss();
@@ -546,7 +546,7 @@ void WorldSystem::goToNextLevel()
 	gameOver = false;
 	std::pair<int, int> playerPosition;
 
-	if (level < 5) {
+	if (level < BOSS_LEVEL) {
 		createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
 	} else {
 		createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
@@ -1091,11 +1091,12 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		}
 		else if (current_state == GameState::START_SCREEN && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
-			Mix_PlayChannel(-1, click_sound, 0);
+			
 			ButtonType clickedButton = getClickedButton();
 
 			if (clickedButton == ButtonType::SHOPBUTTON) 
 			{
+				Mix_PlayChannel(-1, click_sound, 0);
 				previous_state = current_state;
 				current_state = GameState::SHOP;
 				removeStartScreen();
@@ -1103,6 +1104,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			}
 			else if (clickedButton == ButtonType::INFOBUTTON) 
 			{
+				Mix_PlayChannel(-1, click_sound, 0);
 				previous_state = current_state;
 				current_state = GameState::INFO;
 				removeStartScreen();
@@ -1110,8 +1112,10 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			}
 			else if (clickedButton == ButtonType::STARTBUTTON) 
 			{
+				Mix_PlayChannel(-1, click_sound, 0);
 				previous_state = current_state;
 				current_state = GameState::GAMEPLAY_CUTSCENE;
+				Mix_FadeOutMusic(GAMEPLAY_CUTSCENE_DURATION_MS);
 				removeStartScreen();
 				createGameplayCutScene();
 			}
@@ -1159,7 +1163,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		}
 		else if (current_state == GameState::PAUSE && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
-			if (level < 5 && !progress_map["tutorial_mode"]) {
+			if (level < BOSS_LEVEL && !progress_map["tutorial_mode"]) {
 				if (getClickedButton() == ButtonType::SAVEBUTTON)
 				{
 					saveGame();

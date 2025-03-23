@@ -164,6 +164,7 @@ const float BOSS_BB_HEIGHT = 128 * WORK_SCALE_FACTOR;
 const float BOSS_DETECTION_RADIUS = SPIKE_ENEMY_DETECTION_RADIUS * 1.5f;
 const float BOSS_RUMBLE_DAMAGE = 10.f * 2.f;
 const float BOSS_PROJECTILE_DAMAGE = 5.f;
+const unsigned int BOSS_LEVEL = 3;
 
 // OTHER CONSTANTS
 const float DASH_DURATION_MS = 500.0f;
