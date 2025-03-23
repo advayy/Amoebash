@@ -38,7 +38,13 @@ void createInfoBoxes() {
 }
 
 void removeInfoBoxes() {
+	std::vector<Entity> entityList;
+
 	for (auto e : registry.infoBoxes.entities) {
+		entityList.push_back(e);
+	}
+
+	for (auto e : entityList) {
 		registry.remove_all_components_of(e);
 	}
 	return;
@@ -240,7 +246,13 @@ void createGameplayCutScene()
 
 void removeCutScene()
 {
+	std::vector<Entity> entityList;
 	for (auto &e : registry.cutscenes.entities)
+	{
+		entityList.push_back(e);
+	}
+
+	for (auto &e : entityList)
 	{
 		registry.remove_all_components_of(e);
 	}
