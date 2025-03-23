@@ -225,6 +225,7 @@ void WorldSystem::updateMouseCoords()
 void WorldSystem::updateBoss()
 {
 	std::vector<Entity> bosses_to_split;
+    std::vector<Entity> bosses_to_remove;
 
 	for (auto boss : registry.bossAIs.entities) 
 	{
@@ -238,10 +239,12 @@ void WorldSystem::updateBoss()
 		}
 	}
 
-	for (auto boss :bosses_to_split) 
+	for (auto boss : bosses_to_split) 
 	{
 		Motion& originalMotion = registry.motions.get(boss);
 		BossAI& originalAI = registry.bossAIs.get(boss);
+
+        int stage = originalAI.stage;
 
 		vec2 smallScale = originalMotion.scale * 0.5f;
 
@@ -249,12 +252,16 @@ void WorldSystem::updateBoss()
 		vec2 pos1 = originalMotion.position - offset;
 		vec2 pos2 = originalMotion.position + offset;
 
-		Entity smallBoss1 = createBoss(nullptr, pos1, BossState::IDLE, originalAI.stage + 1);
-		Entity smallBoss2 = createBoss(nullptr, pos2, BossState::IDLE, originalAI.stage + 1);
+		Entity smallBoss1 = createBoss(renderer, pos1, BossState::IDLE, stage + 1);
+		Entity smallBoss2 = createBoss(renderer, pos2, BossState::IDLE, stage + 1);
 
-		registry.remove_all_components_of(boss);
+        bosses_to_remove.push_back(boss);
 	}
 
+    int size = bosses_to_remove.size();
+    for(int i = 0; i < size; i++) {
+        registry.remove_all_components_of(bosses_to_remove[i]);
+    }
 }
 
 void WorldSystem::spawnEnemies(float elapsed_ms_since_last_update)
@@ -561,7 +568,7 @@ void WorldSystem::restart_game()
 {
 
 	// std::cout << "Restarting..." << std::endl;
-    // std::cout << "Level: " << level + 1 << std::endl;
+    // std::cout << "Leve fl: " << level + 1 << std::endl;
     
 	// Debugging for memory/component leaks
 	registry.list_all_components();
@@ -569,7 +576,7 @@ void WorldSystem::restart_game()
 	// Reset the game speed
 	current_speed = 1.f;
     
-	level += 1;
+	level = 1;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
 
@@ -816,6 +823,18 @@ void WorldSystem::handle_collisions()
                         }
                     } else {
                         enemy.health -= PLAYER_DASH_DAMAGE;
+
+                        if (registry.bossAIs.has(entity2)) {
+                        Player& player = registry.players.get(entity);
+                        Motion& playerMotion = registry.motions.get(entity);
+                        
+                        for (auto e : registry.dashes.entities) {
+                            removals.push_back(e);
+                        }
+                        playerMotion.velocity = -1.f * glm::normalize(playerMotion.velocity) * PLAYER_DASH_SPEED;
+
+                        player.knockback_duration = 500.f;
+                    }
                     }
 				}
 				else
