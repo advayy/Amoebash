@@ -337,37 +337,37 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
 
 	// M1 Feature - Camera controls
-	std::cout << "WS:step - f1" << std::endl;
+	// std::cout << "WS:step - f1" << std::endl;
 
 	updateCamera(elapsed_ms_since_last_update);
-	std::cout << "WS:step - f2" << std::endl;
+	// std::cout << "WS:step - f2" << std::endl;
 
 	if (tutorial_mode && registry.infoBoxes.size() == 0) {
 		createInfoBoxes();
 	}
-	std::cout << "WS:step - f3" << std::endl;
+	// std::cout << "WS:step - f3" << std::endl;
 
 	updateMouseCoords();
-	std::cout << "WS:step - f4" << std::endl;
+	// std::cout << "WS:step - f4" << std::endl;
 
 	updateHuds();
-	std::cout << "WS:step - f5" << std::endl;
+	// std::cout << "WS:step - f5" << std::endl;
 
 	handlePlayerMovement(elapsed_ms_since_last_update);
-	std::cout << "WS:step - f6" << std::endl;
+	// std::cout << "WS:step - f6" << std::endl;
 
 	handlePlayerHealth(elapsed_ms_since_last_update);
-	std::cout << "WS:step - f7" << std::endl;
+	// std::cout << "WS:step - f7" << std::endl;
 
 	spawnEnemies(elapsed_ms_since_last_update);
-	std::cout << "WS:step - f8" << std::endl;
+	// std::cout << "WS:step - f8" << std::endl;
 
 	handleProjectiles(elapsed_ms_since_last_update);
-	std::cout << "WS:step - f9" << std::endl;
+	// std::cout << "WS:step - f9" << std::endl;
 
     tileProceduralMap();
 	
-	std::cout << "WS:step - f10" << std::endl;
+	// std::cout << "WS:step - f10" << std::endl;
 
 	if (checkPortalCollision()) {
         Entity screen_state_entity = renderer->get_screen_state_entity();
@@ -381,7 +381,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
 	// IF PORTAL COLLISION THEN GO TO NEXT LEVEL...
 
-	std::cout << "WS:step - f11" << std::endl;
+	// std::cout << "WS:step - f11" << std::endl;
 
     // Update the darken screen timer
     if (darken_screen_timer >= 0.0f) {
@@ -393,12 +393,12 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
             darken_screen_timer = -1.0f; // Stop the timer
         }
     }
-	std::cout << "WS:step - f12" << std::endl;
+	// std::cout << "WS:step - f12" << std::endl;
 
 	// step the particle system only when its needed
 	// for optimaztion, we could only step the particles that are on screen
 	particle_system.step(elapsed_ms_since_last_update);
-	std::cout << "WS:step - f13" << std::endl;
+	// std::cout << "WS:step - f13" << std::endl;
 
 	return true;
 }
