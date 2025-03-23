@@ -103,10 +103,11 @@ void PhysicsSystem::step(float elapsed_ms)
 		// knockback
 		if (registry.players.has(entity)) {
 			Player& player = registry.players.get(entity);
-			player.knockback_duration -= elapsed_ms;
-
-			std::cout << "Knock back duration " << player.knockback_duration << std::endl;
-			std::cout << "Velocity " << motion.velocity.x << " " << motion.velocity.y << std::endl; 
+            if (player.knockback_duration > 0.0f) {
+			    player.knockback_duration -= elapsed_ms;
+            }
+			// std::cout << "Knock back duration " << player.knockback_duration << std::endl;
+			// std::cout << "Velocity " << motion.velocity.x << " " << motion.velocity.y << std::endl; 
  
 			if (player.knockback_duration < 0.f) {
 				motion.velocity = vec2(0.0f, 0.0f);

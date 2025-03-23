@@ -71,7 +71,7 @@ public:
 
 	void handlePlayerHealth(float elapsed_ms);
 	bool tutorial_mode = false; // can change, just for debugging purposes
-	int stage_num = 5; // placeholder for keeping how many stages, we want stage 5 to be boss stage
+	int stage_num = 1; // placeholder for keeping how many stages, we want stage 5 to be boss stage
 
     void initiatePlayerDash();
     bool canDash();

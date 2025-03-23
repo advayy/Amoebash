@@ -182,10 +182,7 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 {
 	Motion &enemyMotion = registry.motions.get(enemyEntity);
 
-	
 	Enemy& enemy = registry.enemies.get(enemyEntity);
-	if (enemyBehavior.state != BossState::INITIAL)
-		enemy.health *= 0.9999999f;
 
 	switch (enemyBehavior.state)
 	{

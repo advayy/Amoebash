@@ -718,7 +718,7 @@ void WorldSystem::handle_collisions()
 					Mix_PlayChannel(-1, dash_sound_2, 0); // FLAG MORE SOUNDS
 
 					createBuff(vec2(enemy_position.x, enemy_position.y));
-					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
+					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15); 
 				}
 			}
 			else if (registry.players.has(entity))
@@ -726,6 +726,19 @@ void WorldSystem::handle_collisions()
 				if (isDashing())
 				{
 					enemy.health -= PLAYER_DASH_DAMAGE;
+                        
+                    if (registry.bossAIs.has(entity2)) {
+                        Player& player = registry.players.get(entity);
+                        Motion& playerMotion = registry.motions.get(entity);
+    
+                        while (registry.dashes.entities.size() > 0)
+                        registry.remove_all_components_of(registry.dashes.entities.back());
+                        
+                        playerMotion.velocity = -1.f * glm::normalize(playerMotion.velocity) * PLAYER_DASH_SPEED;
+    
+                        player.knockback_duration = 500.f;
+                    }
+
 
 					if (enemy.health <= 0)
 					{
@@ -785,12 +798,14 @@ void WorldSystem::handle_collisions()
 						Motion& playerMotion = registry.motions.get(entity);
 
 						Player& player = registry.players.get(entity);
+                        player.current_health -= BOSS_RUMBLE_DAMAGE;
 
 						if (player.knockback_duration > 0.f && glm::length(bossMotion.velocity) > 0.1f)
 						{
 							vec2 bossDirection = glm::normalize(bossMotion.velocity);
-							vec2 knockBackDirection = vec2(-bossDirection.y, bossDirection.x);
+							vec2 knockBackDirection = bossDirection;
 							playerMotion.velocity = knockBackDirection * 1000.f;
+                            bossMotion.velocity = {0.f, 0.f};
 						}
 					}
 				}
