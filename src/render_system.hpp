@@ -70,7 +70,10 @@ class RenderSystem
 		textures_path("tutorial/restart_info.png"),
 		textures_path("tutorial/leave.png"),
 		textures_path("projectiles/chest.png"),
-		textures_path("effects/germoney.png")};
+		textures_path("effects/germoney.png"),
+		textures_path("nucleus_menu/nucleus_menu_nucleus.png"),
+		textures_path("nucleus_menu/nucleus_menu_slot_34x34.png")
+	};
 
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.

@@ -6,6 +6,26 @@
 
 extern bool tutorial_mode;
 
+struct Progression {
+	std::vector<int> buffsFromLastRun;
+	std::vector<int> pickedInNucleus;
+	int slots_unlocked = 1;
+};
+
+
+struct Slot {
+	int number = 0;
+	bool filled = false;
+};
+
+struct ClickableBuff {
+	int type;
+	bool picked = false;
+	vec2 returnPosition = {0, 0};
+	Entity slotEntity;
+};
+
+
 struct Player
 {
 	int current_health = PLAYER_DEFAULT_HEALTH;
@@ -27,8 +47,8 @@ struct Player
 
 	// Detection range for enemies
 	float detection_range = 1.0f;
-
 	vec2 grid_position = {0, 0};
+	std::vector<int> buffsCollected;
 };
 
 struct Dashing
@@ -211,7 +231,8 @@ enum ButtonType
 	SHOPBUTTON = STARTBUTTON + 1,
 	INFOBUTTON = SHOPBUTTON + 1,
 	BACKBUTTON = INFOBUTTON,
-	NONE = BACKBUTTON + 1
+	PROCEED_BUTTON = BACKBUTTON + 1,
+	NONE = PROCEED_BUTTON + 1
 };
 
 // Coordinates and bounding box of start button on start screen
@@ -253,6 +274,7 @@ struct Pause
 
 struct Over
 {
+	std::vector<Entity> buttons;
 };
 
 struct Start
@@ -376,7 +398,9 @@ enum class TEXTURE_ASSET_ID
 	LEAVE_TUTORIAL = RESTART_INFO + 1,
 	CHEST = LEAVE_TUTORIAL + 1,
 	PARTICLE = CHEST + 1,
-	TEXTURE_COUNT = PARTICLE + 1
+	NUCLEUS_MENU = PARTICLE + 1,
+	NUCLEUS_MENU_SLOT = NUCLEUS_MENU + 1,
+	TEXTURE_COUNT = NUCLEUS_MENU_SLOT + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;

@@ -10,6 +10,8 @@ class ECSRegistry
 	std::vector<ContainerInterface *> registry_list;
 
 public:
+	ComponentContainer<Progression> progressions;
+
 	// Manually created list of all components this game has
 	// TODO: A1 add a LightUp component
 	ComponentContainer<DeathTimer> deathTimers;
@@ -66,6 +68,7 @@ public:
 	ComponentContainer<HealthBar> healthBars;
 	ComponentContainer<DashRecharge> dashRecharges;
 	ComponentContainer<BuffUI> buffUIs;
+	ComponentContainer<ClickableBuff> clickableBuffs;
 
 	// enemy behaviors
 	ComponentContainer<SpikeEnemyAI> spikeEnemyAIs;
@@ -75,10 +78,14 @@ public:
 	// particle
 	ComponentContainer<Particle> particles;
 
+	// NUCLEUS MENU SLOT
+	ComponentContainer<Slot> slots;
+
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
 	{
 		// TODO: A1 add a LightUp component
+		registry_list.push_back(&progressions);
 		registry_list.push_back(&deathTimers);
 		registry_list.push_back(&motions);
 		registry_list.push_back(&collisions);
@@ -126,6 +133,8 @@ public:
 		registry_list.push_back(&rbcEnemyAIs);
 		registry_list.push_back(&bacteriophageAIs);
 		registry_list.push_back(&particles);
+		registry_list.push_back(&slots);
+        registry_list.push_back(&clickableBuffs);
 	}
 
 	void clear_all_components()
