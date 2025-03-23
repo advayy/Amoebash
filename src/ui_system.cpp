@@ -559,7 +559,7 @@ void removeGameOverScreen()
 	std::vector<Entity> toRemove;
 
 	for(int i = 0; i < registry.overs.size(); i++) {
-		toRemove.push_back(registry.overs.entities[0]);
+		toRemove.push_back(registry.overs.entities[i]);
 	}
 
 	for(int i = 0;  i < toRemove.size(); i++) {
