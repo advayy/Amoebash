@@ -70,7 +70,7 @@ public:
 	void collectBuff(Entity player_entity, Entity buff_entity);
 
 	void handlePlayerHealth(float elapsed_ms);
-	bool tutorial_mode = true;
+	bool tutorial_mode = true; // can change, just for debugging purposes
 
     void initiatePlayerDash();
     bool canDash();
@@ -107,6 +107,7 @@ private:
 
 	void updateCamera(float elapsed_ms);
 	void updateMouseCoords();
+	void updateBoss();	
 
 	void handlePlayerMovement(float elapsed_ms_since_last_update);
 	

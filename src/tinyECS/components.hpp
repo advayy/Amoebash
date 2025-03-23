@@ -47,6 +47,9 @@ struct Player
 
 	// Detection range for enemies
 	float detection_range = 1.0f;
+
+	float knockback_duration = 0.0f;
+
 	vec2 grid_position = {0, 0};
 	std::vector<int> buffsCollected;
 };
@@ -118,6 +121,7 @@ struct Camera
 struct Enemy
 {
 	int health;
+	int total_health;
 };
 
 // Projectile
@@ -125,9 +129,12 @@ struct Projectile
 {
 	int damage;
 	float ms_until_despawn = PROJECTILE_TTL_MS;
+	bool from_enemy = true;
 };
 
 struct BacteriophageProjectile {};
+
+struct BossProjectile {};
 
 // used for Entities that cause damage
 struct Deadly
@@ -403,10 +410,14 @@ enum class TEXTURE_ASSET_ID
 	LEAVE_TUTORIAL = RESTART_INFO + 1,
 	CHEST = LEAVE_TUTORIAL + 1,
 	PARTICLE = CHEST + 1,
-    GUN = PARTICLE + 1,
+	GUN = PARTICLE + 1,
 	NUCLEUS_MENU = GUN + 1,
 	NUCLEUS_MENU_SLOT = NUCLEUS_MENU + 1,
-	TEXTURE_COUNT = NUCLEUS_MENU_SLOT + 1
+	BOSS_STAGE_1 = NUCLEUS_MENU_SLOT + 1,
+	BOSS_STAGE_2 = BOSS_STAGE_1 + 1,
+	BOSS_STAGE_3 = BOSS_STAGE_2 + 1,
+	BOSS_STAGE_4 = BOSS_STAGE_3 + 1,
+	TEXTURE_COUNT = BOSS_STAGE_4 + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -538,16 +549,13 @@ struct SpikeEnemyAI : EnemyAI
 
 enum class RBCEnemyState
 {
-	CHASING = 0,
-	PATROLLING = CHASING + 1,
-	DASHING = PATROLLING + 1,
-	RUNAWAY = DASHING + 1,
-	FLOATING = RUNAWAY + 1
+	FLOATING = 0,
+	RUNAWAY = FLOATING + 1
 };
 
 struct RBCEnemyAI : EnemyAI
 {
-	RBCEnemyState state;
+	RBCEnemyState state = RBCEnemyState::FLOATING;
 };
 
 enum class BacteriophageState
@@ -564,6 +572,34 @@ struct BacteriophageAI
 	float time_since_shoot_ms = 0.0f;
 	bool can_shoot = false;
 	int placement_index = 0;
+};
+
+enum class BossState
+{
+	INITIAL = 0,
+	IDLE = INITIAL + 1,
+	SHOOT_PARADE = IDLE + 1,
+	RUMBLE = SHOOT_PARADE + 1,
+	FLEE = RUMBLE + 1,
+	NUM_STATES = FLEE + 1
+};
+
+struct BossAI : EnemyAI
+{
+	BossState state = BossState::INITIAL;
+	int stage = 0;
+	float cool_down;
+	float shoot_cool_down;
+
+	// RUMBLE-specific state
+	float rumble_charge_time = 1500.f;  // time before rushing
+	float rumble_duration = 1000.f;     // time spent rushing
+	bool is_charging = true;
+	vec2 projectile_size = BOSS_PROJECTILE;
+
+	float flee_duration = 1000.f;    // Arbitrary duration in ms
+	float flee_timer = 0.f;
+	bool is_fleeing = false;
 };
 
 enum class PARTICLE_TYPE 

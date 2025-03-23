@@ -225,67 +225,96 @@ void WorldSystem::updateMouseCoords()
 	game_mouse_pos_y = device_mouse_pos_y + camera.position.y - WINDOW_HEIGHT_PX * 0.5f;
 }
 
+void WorldSystem::updateBoss()
+{
+	std::vector<Entity> bosses_to_split;
+    std::vector<Entity> bosses_to_remove;
+
+	for (auto boss : registry.bossAIs.entities) 
+	{
+		Enemy& enemy = registry.enemies.get(boss);
+		BossAI& bossAI = registry.bossAIs.get(boss);
+
+		if (bossAI.stage == 3) continue; // SMALLEST BOSS SIZE
+
+		if (enemy.health < enemy.total_health / 2.f) {
+			bosses_to_split.push_back(boss);
+		}
+	}
+
+	for (auto boss : bosses_to_split) 
+	{
+		Motion& originalMotion = registry.motions.get(boss);
+		BossAI& originalAI = registry.bossAIs.get(boss);
+
+        int stage = originalAI.stage;
+
+		vec2 smallScale = originalMotion.scale * 0.5f;
+
+		vec2 offset = vec2(smallScale.x * 1.2f, 0.f);
+		vec2 pos1 = originalMotion.position - offset;
+		vec2 pos2 = originalMotion.position + offset;
+
+		Entity smallBoss1 = createBoss(renderer, pos1, BossState::IDLE, stage + 1);
+		Entity smallBoss2 = createBoss(renderer, pos2, BossState::IDLE, stage + 1);
+
+        bosses_to_remove.push_back(boss);
+	}
+
+    int size = bosses_to_remove.size();
+    for(int i = 0; i < size; i++) {
+        registry.remove_all_components_of(bosses_to_remove[i]);
+    }
+}
 
 void WorldSystem::spawnEnemies(float elapsed_ms_since_last_update)
 {
 	// std::cout << "WS:spawn - f1" << std::endl;
 
 	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
-	if (!tutorial_mode)
+
+	// spawn new invaders
+	next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
+	if (next_enemy_spawn < 0.f && !gameOver)
 	{
-		// std::cout << "WS:spawn - f2" << std::endl;
-
-		// spawn new invaders
-		next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
-		if (next_enemy_spawn < 0.f && !gameOver)
+		if (registry.enemies.entities.size() < MAX_ENEMIES_COUNT)
 		{
-			// std::cout << "WS:spawn - f3" << std::endl;
-			if (registry.enemies.entities.size() < MAX_ENEMIES_COUNT)
+			// reset timer
+			next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
+
+			// randomize position
+			// randomize empty tile on mpa
+			std::pair<int, int> enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
+
+			int random_num = rand();
+			if (random_num % 3 == 0)
 			{
-				// std::cout << "WS:spawn - f4" << std::endl;
-				// reset timer
-				next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
-
-				// randomize position
-				// randomize empty tile on mpa
-				std::pair<int, int> enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
-				// std::cout << "WS:spawn - f5" << std::endl;
-
-				int random_num = rand();
-				if (random_num % 3 == 0)
+				createSpikeEnemy(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }));
+			}
+			else if (random_num % 3 == 1)
+			{
+				createRBCEnemy(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }));
+			}
+			else if (registry.bacteriophageAIs.entities.size() < MAX_BACTERIOPHAGE_COUNT)
+			{
+				while (glm::distance(player_motion.position, gridCellToPosition({ enemyPosition.second, enemyPosition.first })) < SPIKE_ENEMY_DETECTION_RADIUS)
 				{
-					// std::cout << "WS:spawn - f6" << std::endl;
-					createSpikeEnemy(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }));
+					// randomize empty tile on mpa
+					enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
 				}
-				else if (random_num % 3 == 1)
-				{
-					// std::cout << "WS:spawn - f7" << std::endl;
-					createRBCEnemy(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }));
-				}
-				else if (registry.bacteriophageAIs.entities.size() < MAX_BACTERIOPHAGE_COUNT)
-				{
-					// std::cout << "WS:spawn - f8" << std::endl;
-					while (glm::distance(player_motion.position, gridCellToPosition({ enemyPosition.second, enemyPosition.first })) < SPIKE_ENEMY_DETECTION_RADIUS)
-					{
-						// std::cout << "WS:spawn - f9" << std::endl;
-						// randomize empty tile on mpa
-						enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
-					}
 
-					// std::cout << "WS:spawn - f10" << std::endl;
-					int index = (int)(uniform_dist(rng) * MAX_BACTERIOPHAGE_COUNT);
-					while (bacteriophage_idx.find(index) != bacteriophage_idx.end())
-					{
-						// std::cout << "WS:spawn - f11" << std::endl;
-						index = (int)(uniform_dist(rng) * MAX_BACTERIOPHAGE_COUNT);
-					}
-					bacteriophage_idx[index] = 1;
-					// std::cout << "WS:spawn - f12" << std::endl;
-					createBacteriophage(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }), index);
+				int index = (int)(uniform_dist(rng) * MAX_BACTERIOPHAGE_COUNT);
+				while (bacteriophage_idx.find(index) != bacteriophage_idx.end())
+				{
+					index = (int)(uniform_dist(rng) * MAX_BACTERIOPHAGE_COUNT);
 				}
+				bacteriophage_idx[index] = 1;
+
+				createBacteriophage(renderer, gridCellToPosition({ enemyPosition.second, enemyPosition.first }), index);
 			}
 		}
 	}
+	
 }
 
 void WorldSystem::handleProjectiles(float elapsed_ms_since_last_update)
@@ -362,7 +391,12 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
 	handlePlayerMovement(elapsed_ms_since_last_update);
 	handlePlayerHealth(elapsed_ms_since_last_update);
-	spawnEnemies(elapsed_ms_since_last_update);
+
+	if (!tutorial_mode && level != 5) {
+		spawnEnemies(elapsed_ms_since_last_update);
+	} else {
+		updateBoss();
+	}
 	handleProjectiles(elapsed_ms_since_last_update);
 
     tileProceduralMap();
@@ -447,6 +481,11 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 	// if the player is not dashing, then have its velocity be base speed * by direction to mouse, if the mouse is outside deadzone
 	
 	Player &player = registry.players.get(registry.players.entities[0]);
+
+	if (player.knockback_duration > 0.0f) {
+		return;
+	}
+
 	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
 	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x) * 180.0f / M_PI + 90.0f;
 
@@ -499,10 +538,15 @@ void WorldSystem::goToNextLevel()
     }
 
 	gameOver = false;
-
 	std::pair<int, int> playerPosition;
 
-	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
+	if (level < 5) {
+		createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
+	} else {
+		createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
+		createBoss(renderer, gridCellToPosition({10, 10}));
+		std::cout << "Boss created" << std::endl;
+	}
 
 	Player &player = registry.players.get(registry.players.entities[0]);
 	Motion &playerMotion = registry.motions.get(registry.players.entities[0]);
@@ -527,7 +571,7 @@ void WorldSystem::restart_game()
 {
 
 	// std::cout << "Restarting..." << std::endl;
-    // std::cout << "Level: " << level + 1 << std::endl;
+    // std::cout << "Leve fl: " << level + 1 << std::endl;
     
 	// Debugging for memory/component leaks
 	registry.list_all_components();
@@ -535,7 +579,7 @@ void WorldSystem::restart_game()
 	// Reset the game speed
 	current_speed = 1.f;
     
-	level += 1;
+	level = 1;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
 
@@ -579,9 +623,21 @@ void WorldSystem::restart_game()
     
 	// std::cout << "Creating Procedural Map, tutorial mode status :" << tutorial_mode << std::endl;
 
-    std::pair<int, int> playerPosition;
+	std::pair<int, int> playerPosition;
 	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
-
+	
+    // std::pair<int, int> playerPosition;
+	
+	// if (level < 5) {
+	// 	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
+	// } else {
+	// 	createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
+	// 	createBoss(renderer, gridCellToPosition({10, 10}));
+	// 	std::cout << "Boss created" << std::endl;
+	// }
+	
+	
+	
 	if (tutorial_mode) {
 		createPlayer(renderer, gridCellToPosition({0, 10}));
 		createSpikeEnemy(renderer, gridCellToPosition({12, 10}));
@@ -590,7 +646,8 @@ void WorldSystem::restart_game()
 	} else {
 		createPlayer(renderer, gridCellToPosition(vec2(playerPosition.second, playerPosition.first)));
 	}
-	
+
+
 	createMiniMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
 
 	createCamera();
@@ -639,7 +696,7 @@ void WorldSystem::handle_collisions()
 		Collision& collision = registry.collisions.get(entity);
 		Entity entity2 = collision.other;
 
-		if (registry.bacteriophageProjectiles.has(entity2))
+		if (registry.bacteriophageProjectiles.has(entity2) || registry.bossProjectiles.has(entity2))
 		{
 			if (registry.players.has(entity)) // HANDLE PROJECTILE/PLAYER COLLISION
 			{
@@ -715,6 +772,8 @@ void WorldSystem::handle_collisions()
 			{
 				Projectile& projectile = registry.projectiles.get(entity);
 
+				if (projectile.from_enemy) continue;
+
 				// Invader takes damage
 				enemy.health -= projectile.damage;
 
@@ -737,7 +796,7 @@ void WorldSystem::handle_collisions()
 					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
 
 					createBuff(vec2(enemy_position.x, enemy_position.y));
-					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
+					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15); 
 				}
 			}
 			else if (registry.players.has(entity))
@@ -767,6 +826,18 @@ void WorldSystem::handle_collisions()
                         }
                     } else {
                         enemy.health -= PLAYER_DASH_DAMAGE;
+
+                        if (registry.bossAIs.has(entity2)) {
+                        Player& player = registry.players.get(entity);
+                        Motion& playerMotion = registry.motions.get(entity);
+                        
+                        for (auto e : registry.dashes.entities) {
+                            removals.push_back(e);
+                        }
+                        playerMotion.velocity = -1.f * glm::normalize(playerMotion.velocity) * PLAYER_DASH_SPEED;
+
+                        player.knockback_duration = 500.f;
+                    }
                     }
 				}
 				else
@@ -812,6 +883,29 @@ void WorldSystem::handle_collisions()
                     createBuff(vec2(enemy_position.x, enemy_position.y));
                     particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
                 } 
+
+				if (registry.bossAIs.has(entity2)) 
+				{
+					BossAI& bossAI = registry.bossAIs.get(entity2);
+
+					if (bossAI.state == BossState::RUMBLE && registry.players.has(entity))
+					{
+						Motion& bossMotion = registry.motions.get(entity2);
+						Motion& playerMotion = registry.motions.get(entity);
+
+						Player& player = registry.players.get(entity);
+                        player.current_health -= BOSS_RUMBLE_DAMAGE;
+
+						if (player.knockback_duration > 0.f && glm::length(bossMotion.velocity) > 0.1f)
+						{
+							vec2 bossDirection = glm::normalize(bossMotion.velocity);
+							vec2 knockBackDirection = bossDirection;
+							playerMotion.velocity = knockBackDirection * 1000.f;
+                            bossMotion.velocity = {0.f, 0.f};
+						}
+					}
+				}
+			
 			}
 		}
 		else if (registry.buffs.has(entity2) && registry.players.has(entity))
@@ -921,7 +1015,7 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 		if (action == GLFW_RELEASE)
 		{
 			restart_game();
-			current_state = GameState::START_SCREEN;
+			current_state = GameState::START_SCREEN_ANIMATION;
 		}
 	}
 
@@ -1081,8 +1175,10 @@ void WorldSystem::shootGun() {
 
         velocity = {velocity.y, -velocity.x};
 
-        createProjectile(gun_motion.position, {PROJECTILE_SIZE, PROJECTILE_SIZE}, velocity, GUN_PROJECTILE_DAMAGE);
-    }
+        Entity projectiles = createProjectile(gun_motion.position, {PROJECTILE_SIZE, PROJECTILE_SIZE}, velocity, GUN_PROJECTILE_DAMAGE);
+		Projectile &projectile = registry.projectiles.get(projectiles);
+		projectile.from_enemy = false;
+	}
 }
 
 void WorldSystem::moveSelectedBuffsToProgression() {
