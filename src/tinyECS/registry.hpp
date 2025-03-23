@@ -134,6 +134,7 @@ public:
 		registry_list.push_back(&bacteriophageAIs);
 		registry_list.push_back(&particles);
 		registry_list.push_back(&slots);
+        registry_list.push_back(&clickableBuffs);
 	}
 
 	void clear_all_components()
