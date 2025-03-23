@@ -140,7 +140,8 @@ private:
 
 	// music references
 	Mix_Music *background_music;
-	Mix_Chunk *dash_sound;
+	Mix_Chunk *dash_sound_a;
+	Mix_Chunk *dash_sound_b;
 	Mix_Chunk *damage_sound;
 	Mix_Chunk *enemy_shoot_sound;
 	Mix_Chunk *enemy_death_sound;
