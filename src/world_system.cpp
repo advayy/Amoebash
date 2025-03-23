@@ -980,8 +980,6 @@ void WorldSystem::moveSelectedBuffsToProgression(){
 
 
 bool WorldSystem::isClickableBuffClicked(Entity* return_e) {
-	std::vector<Entity> clickables = registry.clickableBuffs.entities;
-
 	float mouse_x = game_mouse_pos_x; 
     float mouse_y = game_mouse_pos_y;
 
@@ -990,9 +988,15 @@ bool WorldSystem::isClickableBuffClicked(Entity* return_e) {
 	vec2 m_pos = {mouse_x, mouse_y};
 	
 
-	for(int i = 0; i < clickables.size(); i++) {
-		ClickableBuff& c = registry.clickableBuffs.get(clickables[i]);
-		Motion& c_motion = registry.motions.get(clickables[i]); // GUARANTEED TO HAVE A POSITION
+	for(int i = 0; i < registry.clickableBuffs.entities.size(); i++) {
+		ClickableBuff& c = registry.clickableBuffs.get(registry.clickableBuffs.entities[i]);
+		
+		std::cout << "buff entity -----------" << registry.clickableBuffs.entities[i] << std::endl;
+		std::cout << "buff" << c.type << std::endl;
+		std::cout << "flag 1" << std::endl;
+		Motion& c_motion = registry.motions.get(registry.clickableBuffs.entities[i]); // GUARANTEED TO HAVE A POSITION
+		std::cout << "flag 2" << std::endl;
+
 		vec2 c_pos = c_motion.position;
 
 		if(mouseBuffIntersect(m_pos , c_pos)) {

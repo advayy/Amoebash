@@ -327,7 +327,7 @@ Entity createClickableBuffUI(vec2 position, int buffType)
 	clickable.returnPosition = position;
 	clickable.type = buffType;
 
-	
+
 	Motion &motion = registry.motions.emplace(buff);
 	motion.position = position;
 
@@ -346,6 +346,8 @@ Entity createClickableBuffUI(vec2 position, int buffType)
 	sprite.width = BUFF_WIDTH;
 	sprite.height = BUFF_HEIGHT;
 	
+	std::cout << "created clickable buff ui for " << buff << std::endl;
+
 	return buff;
 }
 
@@ -553,18 +555,25 @@ void removePauseScreen()
 
 void removeGameOverScreen()
 {
+	//
+	std::cout << "----------------removeGameOverScreen()" << std::endl;
+	std::cout << "--------------------------------registry.overs.size() BEFORE" << registry.overs.size()<< std::endl;
+
 	if (registry.overs.size() == 0)
 		return;
 
-	std::vector<Entity> toRemove;
 
+	std::vector<Entity> toRemove;
 	for(int i = 0; i < registry.overs.size(); i++) {
 		toRemove.push_back(registry.overs.entities[i]);
 	}
 
 	for(int i = 0;  i < toRemove.size(); i++) {
+		std::cout << "----------------removing game screen components of " << toRemove[i] << std::endl;
 		registry.remove_all_components_of(toRemove[i]);
 	}
+
+	std::cout << "--------------------------------registry.overs.size() After" << registry.overs.size()<< std::endl;
 
 }
 
