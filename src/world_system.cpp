@@ -377,7 +377,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	handlePlayerMovement(elapsed_ms_since_last_update);
 	handlePlayerHealth(elapsed_ms_since_last_update);
 
-	if (!tutorial_mode && stage_num != 5) {
+	if (!tutorial_mode && level != 5) {
 		spawnEnemies(elapsed_ms_since_last_update);
 	} else {
 		updateBoss();
@@ -567,7 +567,7 @@ void WorldSystem::restart_game()
 	
     std::pair<int, int> playerPosition;
 	
-	if (stage_num < 5) {
+	if (level < 5) {
 		createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), tutorial_mode, playerPosition);
 	} else {
 		createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
