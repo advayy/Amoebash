@@ -365,6 +365,9 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	handleProjectiles(elapsed_ms_since_last_update);
 	// std::cout << "WS:step - f9" << std::endl;
 
+	handleDashRippleEffect(elapsed_ms_since_last_update);
+
+
     tileProceduralMap();
 	
 	// std::cout << "WS:step - f10" << std::endl;
@@ -1055,6 +1058,8 @@ void WorldSystem::initiatePlayerDash()
 
 	// Change animation frames
 	toggleDashAnimation(player_e, true);
+
+	particle_system.createParticles(PARTICLE_TYPE::RIPPLE_PARTICLE, player_motion.position, 4);
 }
 
 bool WorldSystem::canDash()
@@ -1130,4 +1135,21 @@ void WorldSystem::tileProceduralMap() {
 	}
 
 	initializedMap=true;
+}
+
+void WorldSystem::handleDashRippleEffect(float elapsed_ms)
+{
+    if (!isDashing() || registry.players.entities.empty())
+        return;
+        
+    Entity player_entity = registry.players.entities[0];
+    Motion& player_motion = registry.motions.get(player_entity);
+    
+    static float dash_ripple_timer = 0.0f;
+    dash_ripple_timer += elapsed_ms;
+    
+    if (dash_ripple_timer >= 25.0f) {
+        particle_system.createPlayerRipples(player_entity);
+        dash_ripple_timer = 0.0f;
+    }
 }

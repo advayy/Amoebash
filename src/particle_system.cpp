@@ -98,6 +98,14 @@ void ParticleSystem::createParticles(PARTICLE_TYPE type, vec2 position, int coun
             break;
             /// add more particles type heree
 
+        case PARTICLE_TYPE::RIPPLE_PARTICLE:
+        for (int i = 0; i < count; i++)
+        {
+            Entity particle = createRippleParticle(position);
+            particlesByType[type].push_back(particle);
+        }
+        break;
+
         default:
             break;
     }
@@ -146,4 +154,61 @@ Entity ParticleSystem::createDeathParticle(vec2 position)
          GEOMETRY_BUFFER_ID::SPRITE});
 
     return entity;
+}
+
+Entity ParticleSystem::createRippleParticle(vec2 position)
+{
+    Entity entity = Entity();
+    Motion& motion = registry.motions.emplace(entity);
+    motion.position = position;
+    motion.angle = 0.0f;
+
+    float size_factor = 4.0f + uniform_dist(rng) * 2.0f;
+    motion.scale = {size_factor, size_factor};
+    registry.colors.emplace(entity, vec3(1.0f, 1.0f, 1.0f));
+    
+    Particle& particle = registry.particles.emplace(entity);
+    particle.type = PARTICLE_TYPE::RIPPLE_PARTICLE;
+    particle.lifetime_ms = 800.0f + uniform_dist(rng) * 200.0f;
+    particle.max_lifetime_ms = particle.lifetime_ms;
+    particle.state = PARTICLE_STATE::BURST;
+
+    registry.renderRequests.insert(
+        entity,
+        {TEXTURE_ASSET_ID::PARTICLE,
+         EFFECT_ASSET_ID::TEXTURED,
+         GEOMETRY_BUFFER_ID::SPRITE});
+
+    return entity;
+}
+
+void ParticleSystem::createPlayerRipples(Entity player_entity)
+{
+    if (!registry.motions.has(player_entity))
+        return;
+        
+    Motion& player_motion = registry.motions.get(player_entity);
+    vec2 velocity_direction = glm::normalize(player_motion.velocity);
+    if (glm::length(velocity_direction) < 0.01f)
+        return;
+        
+    vec2 perpendicular = vec2(-velocity_direction.y, velocity_direction.x);
+    float offset_distance = player_motion.scale.x * 0.6f;
+    vec2 left_position = player_motion.position - perpendicular * offset_distance;
+    vec2 right_position = player_motion.position + perpendicular * offset_distance;
+    float tail_offset = player_motion.scale.y * 0.5f;
+    left_position -= velocity_direction * tail_offset;
+    right_position -= velocity_direction * tail_offset;
+    
+    Entity left_particle = createRippleParticle(left_position);
+    Entity right_particle = createRippleParticle(right_position);
+    
+    Motion& left_motion = registry.motions.get(left_particle);
+    Motion& right_motion = registry.motions.get(right_particle);
+    float ripple_speed = 50.0f + uniform_dist(rng) * 30.0f;
+    left_motion.velocity = -perpendicular * ripple_speed;
+    right_motion.velocity = perpendicular * ripple_speed;
+    
+    particlesByType[PARTICLE_TYPE::RIPPLE_PARTICLE].push_back(left_particle);
+    particlesByType[PARTICLE_TYPE::RIPPLE_PARTICLE].push_back(right_particle);
 }

@@ -537,6 +537,7 @@ enum class PARTICLE_TYPE
 {
     DEATH_PARTICLE = 0,
     // add more particle types here
+	RIPPLE_PARTICLE = 1,
     PARTICLE_TYPE_COUNT
 };
 

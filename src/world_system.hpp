@@ -107,6 +107,8 @@ private:
 	void updateMouseCoords();
 
 	void handlePlayerMovement(float elapsed_ms_since_last_update);
+	void handleDashRippleEffect(float elapsed_ms_since_last_update);
+
 	
 	// OpenGL window handle
 	GLFWwindow *window;

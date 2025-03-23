@@ -20,6 +20,9 @@ public:
     // create different types of particles
     void createParticles(PARTICLE_TYPE type, vec2 position, int count);
 
+    Entity createRippleParticle(vec2 position);
+    void createPlayerRipples(Entity player_entity);
+
 private:
     // helper function to create a death particle
     Entity createDeathParticle(vec2 position);
