@@ -25,6 +25,26 @@ namespace nlohmann {
     };
 }
 
+struct Progression {
+	std::vector<int> buffsFromLastRun;
+	std::vector<int> pickedInNucleus;
+	int slots_unlocked = 1;
+};
+
+
+struct Slot {
+	int number = 0;
+	bool filled = false;
+};
+
+struct ClickableBuff {
+	int type;
+	bool picked = false;
+	vec2 returnPosition = {0, 0};
+	Entity slotEntity;
+};
+
+
 struct Player
 {
 	int current_health = PLAYER_DEFAULT_HEALTH;
@@ -47,7 +67,10 @@ struct Player
 	// Detection range for enemies
 	float detection_range = 1.0f;
 
+	float knockback_duration = 0.0f;
+
 	vec2 grid_position = {0, 0};
+	std::vector<int> buffsCollected;
 };
 
 struct Dashing
@@ -118,6 +141,7 @@ struct Camera
 struct Enemy
 {
 	int health;
+	int total_health;
 };
 
 // Projectile
@@ -125,11 +149,14 @@ struct Projectile
 {
 	int damage;
 	float ms_until_despawn = PROJECTILE_TTL_MS;
+	bool from_enemy = true;
 };
 
 struct BacteriophageProjectile {
 	int dummy = 0;
 };
+
+struct BossProjectile {};
 
 // used for Entities that cause damage
 struct Deadly
@@ -236,9 +263,10 @@ enum ButtonType
 	STARTBUTTON = 0,
 	SHOPBUTTON = STARTBUTTON + 1,
 	INFOBUTTON = SHOPBUTTON + 1,
-	BACKBUTTON = INFOBUTTON + 1,
+	BACKBUTTON = INFOBUTTON,
 	SAVEBUTTON = BACKBUTTON + 1,
-	NONE = SAVEBUTTON + 1
+	PROCEED_BUTTON = SAVEBUTTON + 1,
+	NONE = PROCEED_BUTTON + 1
 };
 
 // Coordinates and bounding box of start button on start screen
@@ -282,6 +310,7 @@ struct Pause
 struct Over
 {
 	int dummy = 0;
+	std::vector<Entity> buttons;
 };
 
 struct Start
@@ -339,10 +368,16 @@ struct BuffUI
 {
 	int buffType;
 };
+
 struct InfoBox
 {
 	int dummy = 0;
 };
+
+struct Gun {
+    float cooldown_timer_ms = 0.0f;
+};
+
 /**
  * The following enumerators represent global identifiers refering to graphic
  * assets. For example TEXTURE_ASSET_ID are the identifiers of each texture
@@ -408,7 +443,14 @@ enum class TEXTURE_ASSET_ID
 	LEAVE_TUTORIAL = RESTART_INFO + 1,
 	CHEST = LEAVE_TUTORIAL + 1,
 	PARTICLE = CHEST + 1,
-	TEXTURE_COUNT = PARTICLE + 1
+	GUN = PARTICLE + 1,
+	NUCLEUS_MENU = GUN + 1,
+	NUCLEUS_MENU_SLOT = NUCLEUS_MENU + 1,
+	BOSS_STAGE_1 = NUCLEUS_MENU_SLOT + 1,
+	BOSS_STAGE_2 = BOSS_STAGE_1 + 1,
+	BOSS_STAGE_3 = BOSS_STAGE_2 + 1,
+	BOSS_STAGE_4 = BOSS_STAGE_3 + 1,
+	TEXTURE_COUNT = BOSS_STAGE_4 + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -521,13 +563,16 @@ struct EnemyAI
 	vec2 patrolOrigin = { 0, 0 };     // origin of patrol
 	float patrolRange = SPIKE_ENEMY_PATROL_RANGE;     // range of patrol
 	float patrolTime = ENEMY_PATROL_TIME_MS / 2;
+    float knockbackTimer = 0.f;
+    float bombTimer = SPIKE_ENEMY_BOMB_TIMER;
 };
 
 enum class SpikeEnemyState
 {
 	CHASING = 0,
 	PATROLLING = CHASING + 1,
-	DASHING = PATROLLING + 1
+	DASHING = PATROLLING + 1,
+    KNOCKBACK = DASHING + 1
 };
 
 struct SpikeEnemyAI : EnemyAI
@@ -537,16 +582,13 @@ struct SpikeEnemyAI : EnemyAI
 
 enum class RBCEnemyState
 {
-	CHASING = 0,
-	PATROLLING = CHASING + 1,
-	DASHING = PATROLLING + 1,
-	RUNAWAY = DASHING + 1,
-	FLOATING = RUNAWAY + 1
+	FLOATING = 0,
+	RUNAWAY = FLOATING + 1
 };
 
 struct RBCEnemyAI : EnemyAI
 {
-	RBCEnemyState state;
+	RBCEnemyState state = RBCEnemyState::FLOATING;
 };
 
 enum class BacteriophageState
@@ -563,6 +605,34 @@ struct BacteriophageAI
 	float time_since_shoot_ms = 0.0f;
 	bool can_shoot = false;
 	int placement_index = 0;
+};
+
+enum class BossState
+{
+	INITIAL = 0,
+	IDLE = INITIAL + 1,
+	SHOOT_PARADE = IDLE + 1,
+	RUMBLE = SHOOT_PARADE + 1,
+	FLEE = RUMBLE + 1,
+	NUM_STATES = FLEE + 1
+};
+
+struct BossAI : EnemyAI
+{
+	BossState state = BossState::INITIAL;
+	int stage = 0;
+	float cool_down;
+	float shoot_cool_down;
+
+	// RUMBLE-specific state
+	float rumble_charge_time = 1500.f;  // time before rushing
+	float rumble_duration = 1000.f;     // time spent rushing
+	bool is_charging = true;
+	vec2 projectile_size = BOSS_PROJECTILE;
+
+	float flee_duration = 1000.f;    // Arbitrary duration in ms
+	float flee_timer = 0.f;
+	bool is_fleeing = false;
 };
 
 enum class PARTICLE_TYPE 

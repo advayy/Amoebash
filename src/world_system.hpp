@@ -87,6 +87,10 @@ public:
     bool canDash();
     bool isDashing();
 
+	void spawnEnemies(float elapsed_ms_since_last_update);
+	void handleProjectiles(float elapsed_ms_since_last_update);
+	bool checkPortalCollision();
+
 private:
 	bool gameOver = false;
 
@@ -101,6 +105,8 @@ private:
 	void on_mouse_move(vec2 pos);
 	void on_mouse_button_pressed(int button, int action, int mods);
 
+    void shootGun();
+
 	// to get the clicked button
 	ButtonType getClickedButton();
 	// to check if button was clicked
@@ -112,6 +118,7 @@ private:
 
 	void updateCamera(float elapsed_ms);
 	void updateMouseCoords();
+	void updateBoss();	
 
 	void handlePlayerMovement(float elapsed_ms_since_last_update);
 	
@@ -145,8 +152,12 @@ private:
 
 	// music references
 	Mix_Music *background_music;
-	Mix_Chunk *dash_sound_1;
-	Mix_Chunk *dash_sound_2;
+	Mix_Chunk *dash_sound_a;
+	Mix_Chunk *dash_sound_b;
+	Mix_Chunk *damage_sound;
+	Mix_Chunk *enemy_shoot_sound;
+	Mix_Chunk *enemy_death_sound;
+	Mix_Chunk *click_sound;
 
 	// debugging (fps etc..)
 	void toggleFPSDisplay();
@@ -158,5 +169,15 @@ private:
 
     CollisionSystem detector;
 
+	std::map<int, std::map<int, int>> currentTiles;
+	bool initializedMap = false;
     void tileProceduralMap();
+
+	bool isClickableBuffClicked(Entity* return_e);
+	bool mouseBuffIntersect(vec2 mouse_pos, vec2 c_pos);
+	void handleClickableBuff(Entity e);
+	Entity getFreeSlot();
+	bool isFreeSlot();
+	void moveSelectedBuffsToProgression();
+	void applyBuff(Player& player, int buff_type);
 };

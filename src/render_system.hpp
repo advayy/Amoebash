@@ -70,8 +70,14 @@ class RenderSystem
 		textures_path("tutorial/restart_info.png"),
 		textures_path("tutorial/leave.png"),
 		textures_path("projectiles/chest.png"),
-		textures_path("effects/germoney.png")};
-
+		textures_path("effects/germoney.png"),
+		textures_path("weapons/gun.png"),
+		textures_path("nucleus_menu/nucleus_menu_nucleus.png"),
+		textures_path("nucleus_menu/nucleus_menu_slot_34x34.png"),
+		textures_path("enemies/boss/mitosis_boss_128.png"),
+		textures_path("enemies/boss/mitosis_boss_64.png"),
+		textures_path("enemies/boss/mitosis_boss_32.png"),
+		textures_path("enemies/boss/mitosis_boss_16.png")};
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.
 	const std::array<std::string, effect_count> effect_paths = {
