@@ -669,7 +669,7 @@ void WorldSystem::restart_game()
 					EFFECT_ASSET_ID::UI);
     createUIElement(GUN_UI_POS,
                     vec2(GUN_UI_SIZE, GUN_UI_SIZE),
-                    TEXTURE_ASSET_ID::GUN,
+                    TEXTURE_ASSET_ID::GUN_STILL,
                     EFFECT_ASSET_ID::UI);
 
     Player &player = registry.players.get(registry.players.entities[0]);
@@ -1159,10 +1159,12 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		}
 		else if (current_state == GameState::PAUSE && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
-			if (getClickedButton() == ButtonType::SAVEBUTTON)
-			{
-				saveGame();
-				saveProgress();
+			if (level < 5 && !progress_map["tutorial_mode"]) {
+				if (getClickedButton() == ButtonType::SAVEBUTTON)
+				{
+					saveGame();
+					saveProgress();
+				}
 			}
 		}
 	}
@@ -1181,6 +1183,10 @@ void WorldSystem::shootGun() {
         velocity = {velocity.y, -velocity.x};
 
         Entity projectiles = createProjectile(gun_motion.position, {PROJECTILE_SIZE, PROJECTILE_SIZE}, velocity, GUN_PROJECTILE_DAMAGE);
+
+		RenderRequest& render_request = registry.renderRequests.get(projectiles);
+		render_request.used_texture = TEXTURE_ASSET_ID::GUN_PROJECTILE;
+
 		Projectile &projectile = registry.projectiles.get(projectiles);
 		projectile.from_enemy = false;
 	}
@@ -1621,6 +1627,7 @@ void WorldSystem::saveProgress() {
 	json progressData;
 
 	progressData["progress"] = json(progress_map);
+	progressData["levels"] = json(level);
 
 	p << progressData.dump(4) << std::endl;
 
@@ -1634,6 +1641,14 @@ void WorldSystem::loadProgress() {
 
 	removeInfoBoxes();
 
+	if (registry.keys.size() != 0) {
+		registry.remove_all_components_of(registry.keys.entities[0]);
+	}
+
+	if (registry.chests.size() != 0) {
+		registry.remove_all_components_of(registry.chests.entities[0]);
+	}
+
 	if (!p.is_open()) {
 		std::cerr << "Could not open file for reaidng JSON (Progress)" << std::endl;
 		return;
@@ -1644,4 +1659,6 @@ void WorldSystem::loadProgress() {
 	p >> progressData;
 
 	progress_map = progressData["progress"].get<std::map<std::string, bool>>();
+
+	level = progressData["levels"].get<int>();
 }
