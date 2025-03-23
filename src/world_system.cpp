@@ -1341,29 +1341,78 @@ void WorldSystem::applyBuff(Player& player, int buff_type)
 	switch (buff_type)
 	{
 	case 0: // Tail
-		player.speed *= 1.05f;
-		std::cout << "Collected Tail: Player Speed increased by 5%" << std::endl;
+		player.speed += player.speed * 0.05f;
+		// std::cout << "Collected Tail: Player Speed increased by 5%" << std::endl;
 		break;
 
 	case 1: // Mitochondria
-		player.dash_cooldown_ms *= 0.95f;
-		std::cout << "Collected Mitochondria: Dash cooldown decreased by 5%" << std::endl;
+		player.dash_cooldown_ms -= player.dash_cooldown_ms * 0.05f;
+		// std::cout << "Collected Mitochondria: Dash cooldown decreased by 5%" << std::endl;
 		break;
 
 	case 2: // Hemoglobin
-		player.detection_range *= 0.95f;
+		player.detection_range -= player.dash_cooldown_ms * 0.05f;
 		std::cout << "Collected Hemoglobin: Enemies Detection range decreased by 5%" << std::endl;
 		break;
 
 	case 3: // Golgi Apparatus Buff (need to be implemented)
-		std::cout << "Collected Golgi Body: need to be implemented" << std::endl;
+		player.current_health += 10;
+		// std::cout << "Collected Golgi Body: need to be implemented" << std::endl;
 		break;
 
 	case 4: // Chloroplast
 		player.healing_rate += 0.05;
-	std::cout << "Collected Chloroplast: Healing increased by 5% " << std::endl;
+		std::cout << "Collected Chloroplast: Healing increased by 5% " << std::endl;
 		break;
-	default:
+	case 5: // Cell Wall
+		//	Defend next damage, remove cell wall on damage ... - sheild
+		break;
+	case 6: // Amino Acid
+		//	Increase Player Damage
+		player.dash_damage += 0.05;
+		break;
+	case 7: // Lysosyme
+		//	Ammo has +1 piercing ...
+		break;
+	case 8: // CytoPlasm
+		player.max_health += 10;
+		break;
+	case 9: // Pilli
+		//	Dash decay drop - turns off drift
+		break;
+	case 10: // Spare Nucleus
+		//	Adds +1 lives this run
+		break;
+	case 11: // Vacuole
+		//	Should roughly do what golgi does...
+		break;
+	case 12: // Endoplasmic Reticulum
+		//	IDK what it neess to do
+		break;
+	case 13: // Ovoid cell?
+		//	Eye ?
+		break;
+	case 14: // Secretor cell
+		//	reduces decauy for dash - more drift
+		break;
+	case 15: // IDK
+		//	Adds +1 lives this run
+		break;
+	case 16: // Peroxisomes
+		//	Removes a nerf
+		break;
+	case 17: // Mutation
+		//	Some nerf?
+		break;
+	case 18: // Facehugger
+		//	Some Poison?
+		break;
+	case 19: // Black Goo  - temp turn screen dark?
+		//	Some nerf?
+		break;
+
+
+		default:
 		std::cerr << "Unknown buff type: " << buff_type << std::endl;
 		break;
 	}
