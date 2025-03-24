@@ -66,7 +66,7 @@ Basic Features
 
 ### **M3**
 Advanced Features
-- Instanced Rendering
+- Particle Systems with Instanced Rendering
   - Every entity has a RenderRequest, but particles are skipped in the normal `RenderSystem::draw()` loop—they’re drawn separately via instancing.
   - Each particle’s transformation (position, rotation, scale) is computed and stored in an instance VBO.
   - A single `glDrawElementsInstanced` call renders all particles in one batch, reducing overhead. Please see `RenderSystem::drawInstancedParticles()`
