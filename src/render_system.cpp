@@ -85,7 +85,6 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 
 		// get player position
 		Player &player = registry.players.get(registry.players.entities[0]);
-
 		glUniform2fv(player_grid_position_uloc, 1, (float *)&player.grid_position);
 
 
@@ -102,8 +101,21 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 			}
 		}
 	    glUniform1iv(map_array_uloc, MAP_WIDTH * MAP_HEIGHT, flat_array.data());
-
 		glUniform2fv(player_grid_position_uloc, 1, (float*)&player.grid_position);
+
+		// PASS IN MINIMAP VISITED
+		GLint map_visited_array_uloc = glGetUniformLocation(program, "map_visited_array");
+		std::vector<std::vector<int>> map_visited_array = registry.miniMaps.get(registry.miniMaps.entities[0]).visited;
+		std::vector<int> flat_visited_array;
+		flat_visited_array.reserve(MAP_WIDTH * MAP_HEIGHT);
+		
+		for (const auto& row : map_visited_array) {
+			for (const auto& visited : row) {
+				flat_visited_array.push_back(static_cast<int>(visited));
+			}
+		}
+
+		glUniform1iv(map_visited_array_uloc, MAP_WIDTH * MAP_HEIGHT, flat_visited_array.data());
 	}
 
 	// Getting uniform locations for glUniform* calls

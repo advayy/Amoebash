@@ -40,3 +40,7 @@ std::pair<int, int> getRandomEmptyTile(const std::vector<std::vector<tileType>>&
 int getDistance(const std::vector<std::vector<tileType>>& grid, std::pair<int,int> start, std::pair<int,int> end);
 
 Entity createBuff(vec2 position);
+
+void updateMiniMap(vec2 playerPos);
+void emptyMiniMap();
+    

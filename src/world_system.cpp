@@ -447,6 +447,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
     gun_motion.position = {player_motion.position[0] - offset.x, player_motion.position[1] - offset.y};
     gun_motion.velocity = player_motion.velocity;
 
+	updateMiniMap(registry.players.get(registry.players.entities[0]).grid_position);
 	return true;
 }
 
@@ -550,7 +551,7 @@ void WorldSystem::goToNextLevel()
 	} else {
 		createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
 		createBoss(renderer, gridCellToPosition({10, 10}));
-		std::cout << "Boss created" << std::endl;
+		// std::cout << "Boss created" << std::endl;
 	}
 
 	Player &player = registry.players.get(registry.players.entities[0]);
@@ -567,6 +568,7 @@ void WorldSystem::goToNextLevel()
 	bacteriophage_idx.clear();
     // print exiting
     // std::cout << "Exiting createProceduralMap" << std::endl;
+	emptyMiniMap();
 	return;
 }
 
@@ -640,9 +642,6 @@ void WorldSystem::restart_game()
 		createPlayer(renderer, gridCellToPosition(vec2(playerPosition.second, playerPosition.first)));
 	}
 
-
-	createMiniMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
-
 	createCamera();
 
 
@@ -677,6 +676,10 @@ void WorldSystem::restart_game()
 		applyBuff(player, prog.pickedInNucleus[i]);
 	}
     prog.pickedInNucleus.clear();
+
+	
+	createMiniMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
+	emptyMiniMap();
 }
 
 // Compute collisions between entities. Collisions are always in this order: (Player | Projectiles, Enemy | Wall | Buff)
@@ -753,6 +756,8 @@ void WorldSystem::handle_collisions()
 						progress_map["tutorial_mode"] = false;
 						removeInfoBoxes();
 						goToNextLevel();
+						current_state = GameState::NEXT_LEVEL;
+						emptyMiniMap();
 					}
 				}
 			}
@@ -1220,12 +1225,7 @@ bool WorldSystem::isClickableBuffClicked(Entity* return_e) {
 
 	for(int i = 0; i < registry.clickableBuffs.entities.size(); i++) {
 		ClickableBuff& c = registry.clickableBuffs.get(registry.clickableBuffs.entities[i]);
-		
-		std::cout << "buff entity -----------" << registry.clickableBuffs.entities[i] << std::endl;
-		std::cout << "buff" << c.type << std::endl;
-		std::cout << "flag 1" << std::endl;
 		Motion& c_motion = registry.motions.get(registry.clickableBuffs.entities[i]); // GUARANTEED TO HAVE A POSITION
-		std::cout << "flag 2" << std::endl;
 
 		vec2 c_pos = c_motion.position;
 
@@ -1247,8 +1247,8 @@ void WorldSystem::handleClickableBuff(Entity e) {
 	
 	if(c.picked) {
 		// move it back
-		std::cout << "c current pos" << c_m.position.x << ", " << c_m.position.y << std::endl;
-		std::cout << "c return pos" << c.returnPosition.x << ", " << c.returnPosition.y << std::endl;
+		// std::cout << "c current pos" << c_m.position.x << ", " << c_m.position.y << std::endl;
+		// std::cout << "c return pos" << c.returnPosition.x << ", " << c.returnPosition.y << std::endl;
 
 
 		c_m.position = c.returnPosition;
@@ -1366,7 +1366,7 @@ void WorldSystem::applyBuff(Player& player, int buff_type)
 
 	case 2: // Hemoglobin
 		player.detection_range -= player.dash_cooldown_ms * 0.05f;
-		std::cout << "Collected Hemoglobin: Enemies Detection range decreased by 5%" << std::endl;
+		// std::cout << "Collected Hemoglobin: Enemies Detection range decreased by 5%" << std::endl;
 		break;
 
 	case 3: // Golgi Apparatus Buff (need to be implemented)
@@ -1375,8 +1375,8 @@ void WorldSystem::applyBuff(Player& player, int buff_type)
 		break;
 
 	case 4: // Chloroplast
-		player.healing_rate += 0.05;
-		std::cout << "Collected Chloroplast: Healing increased by 5% " << std::endl;
+		player.healing_rate += 0.03;
+		// std::cout << "Collected Chloroplast: Healing increased by 5% " << std::endl;
 		break;
 	case 5: // Cell Wall
 		//	Defend next damage, remove cell wall on damage ... - sheild

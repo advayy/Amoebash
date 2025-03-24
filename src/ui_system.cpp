@@ -71,7 +71,8 @@ Entity createMiniMap(RenderSystem *renderer, vec2 size)
 		 GEOMETRY_BUFFER_ID::SPRITE});
 
 	// add entity to minimaps
-	registry.miniMaps.emplace(entity);
+	MiniMap& m = registry.miniMaps.emplace(entity);
+	m.visited = std::vector<std::vector<int>>(MAP_HEIGHT, std::vector<int>(MAP_WIDTH, 0));
 
 	return entity;
 }
@@ -353,7 +354,7 @@ Entity createClickableBuffUI(vec2 position, int buffType)
 	sprite.width = BUFF_WIDTH;
 	sprite.height = BUFF_HEIGHT;
 	
-	std::cout << "created clickable buff ui for " << buff << std::endl;
+	// std::cout << "created clickable buff ui for " << buff << std::endl;
 
 	return buff;
 }
@@ -592,8 +593,8 @@ void removePauseScreen()
 void removeGameOverScreen()
 {
 	//
-	std::cout << "----------------removeGameOverScreen()" << std::endl;
-	std::cout << "--------------------------------registry.overs.size() BEFORE" << registry.overs.size()<< std::endl;
+	// std::cout << "----------------removeGameOverScreen()" << std::endl;
+	// std::cout << "--------------------------------registry.overs.size() BEFORE" << registry.overs.size()<< std::endl;
 
 	if (registry.overs.size() == 0)
 		return;
@@ -605,11 +606,11 @@ void removeGameOverScreen()
 	}
 
 	for(int i = 0;  i < toRemove.size(); i++) {
-		std::cout << "----------------removing game screen components of " << toRemove[i] << std::endl;
+		// std::cout << "----------------removing game screen components of " << toRemove[i] << std::endl;
 		registry.remove_all_components_of(toRemove[i]);
 	}
 
-	std::cout << "--------------------------------registry.overs.size() After" << registry.overs.size()<< std::endl;
+	// std::cout << "--------------------------------registry.overs.size() After" << registry.overs.size()<< std::endl;
 
 }
 
