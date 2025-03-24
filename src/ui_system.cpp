@@ -4,15 +4,13 @@
 #include <random>
 #include <iostream>
 
+// create info boxes in tutorial mode
 void createInfoBoxes() {
 
 	TEXTURE_ASSET_ID baseTexture = TEXTURE_ASSET_ID::MOUSE_CONTROL_INFO;
 
 	for (int i = 0; i < 6; i ++) {
 		auto entity1 = Entity();
-	
-		// Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
-		// Player &player = registry.players.get(registry.players.entities[0]);
 		int x = (3  *  i)  + 1;
 		int y = (i % 2 == 0) ? 11 : 8;
 		vec2 infoPosition = gridCellToPosition({x, y});
@@ -37,6 +35,7 @@ void createInfoBoxes() {
 	}
 }
 
+// remove info boxes in tutorial mode
 void removeInfoBoxes() {
 	std::vector<Entity> entityList;
 
@@ -76,6 +75,7 @@ Entity createMiniMap(RenderSystem *renderer, vec2 size)
 	return entity;
 }
 
+// create start screen and buttons
 Entity createStartScreen(vec2 position)
 {
 	Entity startScreenEntity = Entity();
@@ -124,6 +124,7 @@ Entity createStartScreen(vec2 position)
 	return startScreenEntity;
 }
 
+// create shop screen and buttons
 Entity createShopScreen()
 {
 	Entity shopScreenEntity = Entity();
@@ -153,6 +154,7 @@ Entity createShopScreen()
 	return shopScreenEntity;
 }
 
+// create info screen and buttons
 Entity createInfoScreen()
 {
 	Entity infoScreenEntity = Entity();
@@ -182,11 +184,13 @@ Entity createInfoScreen()
 	return infoScreenEntity;
 }
 
+// create game over screen with nucleus menu
 Entity createGameOverScreen()
 {
 	return createNucleusMenuScreen();
 }
 
+// create nucleus menu nucleus
 Entity createNucleusMenuNucleus() {
 	Entity e = Entity();
 
@@ -207,6 +211,7 @@ Entity createNucleusMenuNucleus() {
 	return e;
 }
 
+// create nucleus menu slot for buff carry on
 Entity createNucleusMenuSlot(vec2 position, int slotNumber){
 	Entity e = Entity();
 
@@ -228,7 +233,7 @@ Entity createNucleusMenuSlot(vec2 position, int slotNumber){
 	return e;
 }
 
-
+// create nucleus menu screen with slots and menu
 Entity createNucleusMenuScreen() {
 	// Add all buffs collected to the screen,
 	// Add the number of cups
@@ -323,7 +328,7 @@ Entity createNucleusMenuScreen() {
 	return nucleusMenuScreen;
 }
 
-
+// create the buff UI for carry on
 Entity createClickableBuffUI(vec2 position, int buffType)
 {
 	Entity buff = Entity();
@@ -358,9 +363,7 @@ Entity createClickableBuffUI(vec2 position, int buffType)
 	return buff;
 }
 
-
-
-
+// create pause screen and buttons
 Entity createPauseScreen()
 {
 	Entity pauseScreenEntity = Entity();
@@ -397,6 +400,7 @@ Entity createPauseScreen()
 	return pauseScreenEntity;
 }
 
+// add components for cut scene animation
 void createGameplayCutScene()
 {
 	Entity backGround = createCutSceneBackGround();
@@ -410,6 +414,7 @@ void createGameplayCutScene()
 	registry.cutscenes.emplace(nucleus);
 }
 
+// removing all cutscrene components
 void removeCutScene()
 {
     std::vector<Entity> cutSceneList;
@@ -568,6 +573,7 @@ Entity createEnteringNucleus()
 	return nucleusEntity;
 }
 
+// remove Pause Screen and buttons
 void removePauseScreen()
 {
 	if (registry.pauses.size() == 0)
@@ -589,12 +595,9 @@ void removePauseScreen()
 
 }
 
+// remove game over screen and related UI
 void removeGameOverScreen()
 {
-	//
-	std::cout << "----------------removeGameOverScreen()" << std::endl;
-	std::cout << "--------------------------------registry.overs.size() BEFORE" << registry.overs.size()<< std::endl;
-
 	if (registry.overs.size() == 0)
 		return;
 
@@ -605,14 +608,11 @@ void removeGameOverScreen()
 	}
 
 	for(int i = 0;  i < toRemove.size(); i++) {
-		std::cout << "----------------removing game screen components of " << toRemove[i] << std::endl;
 		registry.remove_all_components_of(toRemove[i]);
 	}
-
-	std::cout << "--------------------------------registry.overs.size() After" << registry.overs.size()<< std::endl;
-
 }
 
+// remove start screen and related UI
 void removeStartScreen()
 {
 	if (registry.starts.size() == 0)
@@ -633,6 +633,7 @@ void removeStartScreen()
 	registry.remove_all_components_of(start_entity);
 }
 
+// remove shop screen and related UI
 void removeShopScreen()
 {
 	if (registry.shops.size() == 0)
@@ -650,6 +651,7 @@ void removeShopScreen()
 	registry.remove_all_components_of(shop_entity);
 }
 
+// remove info screen and related UI
 void removeInfoScreen()
 {
 	if (registry.infos.size() == 0)
@@ -668,6 +670,7 @@ void removeInfoScreen()
 	registry.remove_all_components_of(info_entity);
 }
 
+// Button Creater
 Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID texture)
 {
 	Entity buttonEntity = Entity();
@@ -849,6 +852,7 @@ Entity createBuffUI(vec2 position, int type)
 	return buffUI;
 }
 
+// Render collected buffs a certain amount per row that stacks
 void renderCollectedBuff(RenderSystem *renderer, int buffType)
 {
 	int numCollectedBuffs = registry.buffUIs.size();
@@ -867,9 +871,9 @@ void renderCollectedBuff(RenderSystem *renderer, int buffType)
 	}
 }
 
+// HUD element update such has health etc.
 void updateHuds()
 {
-
 	vec2 offset = {WINDOW_WIDTH_PX / 2 - 100, -WINDOW_HEIGHT_PX / 2 + 100};
 
 	Entity minimapEntity = registry.miniMaps.entities[0];

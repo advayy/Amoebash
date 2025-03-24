@@ -9,6 +9,7 @@
 
 bool AISystem::isPlayerInRadius(vec2 player, vec2 enemy, float& distance, vec2& direction, float detectionRadius)
 {
+	/* Measure distance to player and check if within detection radius */
 	vec2 diff = player - enemy;
 	distance = glm::length(diff);
 	direction = glm::normalize(diff);
@@ -23,6 +24,7 @@ SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity& enemyEntity, SpikeEne
 	{
 		case SpikeEnemyState::CHASING:
 		{
+			// adjust velocity towards player
 			if (dist > 0.001f)
 			{
 				enemyMotion.velocity = direction * ENEMY_SPEED;
@@ -65,6 +67,7 @@ SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity& enemyEntity, SpikeEne
 				enemyMotion.velocity = direction * ENEMY_SPEED;
 	            if (dist <= 25.f)
             {
+				// if overlapping with player deal damage
                 enemyBehavior.bombTimer -= elapsed_ms;
                 if (enemyBehavior.bombTimer <= 0)
                 {
@@ -77,6 +80,7 @@ SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity& enemyEntity, SpikeEne
 		}
 			else
 			{
+				// change animation frames and reset patrol state
 				changeAnimationFrames(enemyEntity, 0, 6);
 				enemyBehavior.patrolOrigin = enemyMotion.position;
 				enemyBehavior.patrolTime = 0.0f;
@@ -89,6 +93,7 @@ SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity& enemyEntity, SpikeEne
 	}
     case SpikeEnemyState::KNOCKBACK:
     {
+		// apply knockback velocity
         enemyBehavior.knockbackTimer -= elapsed_ms;
         if (enemyBehavior.knockbackTimer <= 0)
         {
@@ -98,6 +103,7 @@ SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity& enemyEntity, SpikeEne
             enemyMotion.velocity = { 0, 0 };
             return SpikeEnemyState::DASHING;
         } else {
+			// decay knockback velocity
             enemyMotion.velocity *= SPIKE_ENEMY_KNOCKBACK_DECAY;
         }
 	        break;
@@ -114,6 +120,8 @@ RBCEnemyState AISystem::handleRBCBehavior(Entity& enemyEntity, RBCEnemyAI& enemy
 	switch(enemyBehavior.state) 
 	{
 		case RBCEnemyState::FLOATING: {
+	
+			// while patrolling randomly flip direction
 			enemyBehavior.patrolTime += elapsed_ms;
 			if (enemyBehavior.patrolTime >= 3000.f) {
 				std::random_device rd;
@@ -127,7 +135,7 @@ RBCEnemyState AISystem::handleRBCBehavior(Entity& enemyEntity, RBCEnemyAI& enemy
 				enemyMotion.velocity.y = ENEMY_SPEED * sin(enemyMotion.angle) / 4;
 			}
 
-
+			// if player is detected, transition to chasing state
 			if (playerDetected) {
 				enemyBehavior.state = RBCEnemyState::RUNAWAY;
 			}
@@ -137,7 +145,7 @@ RBCEnemyState AISystem::handleRBCBehavior(Entity& enemyEntity, RBCEnemyAI& enemy
 
 		case RBCEnemyState::RUNAWAY: {
 			if (dist > 0.001f && playerDetected) {
-				// run away from character
+				// run away from character by adjusting direction directly opposite from player
 				float new_angle = atan2(direction.y, direction.x);
 				new_angle *= (360.f / (2 * M_PI)) + 90.f;
 				if (new_angle < 0) {
@@ -147,6 +155,7 @@ RBCEnemyState AISystem::handleRBCBehavior(Entity& enemyEntity, RBCEnemyAI& enemy
 				enemyMotion.velocity = -direction * ENEMY_SPEED;
 			}
 			else {
+				// if player is no longer detected, transition back to floating state
 				enemyBehavior.patrolOrigin = enemyMotion.position;
 				enemyBehavior.state = RBCEnemyState::FLOATING;
 				enemyBehavior.patrolTime = ENEMY_PATROL_TIME_MS / 2;
@@ -170,6 +179,7 @@ BacteriophageState AISystem::handleBacteriophageBehavior(Entity& enemyEntity, Ba
 	{
 	case BacteriophageState::PATROLLING:
 	{
+		// if player is detected, transition to chasing state
 		if (playerDetected)
 		{
 			enemyBehavior.state = BacteriophageState::CHASING;
@@ -178,24 +188,30 @@ BacteriophageState AISystem::handleBacteriophageBehavior(Entity& enemyEntity, Ba
 			enemyMotion.velocity = direction * ENEMY_SPEED;
 		}
 		else
-		{
+		{	// else it stays still
 			enemyMotion.velocity = { 0, 0 };
 		}
 		break;
 	}
 	case BacteriophageState::CHASING:
+
+		// if player is no longer detected, transition back to patrolling state
 		if (!playerDetected)
 		{
 			enemyBehavior.state = BacteriophageState::PATROLLING;
 			enemyMotion.angle = 0.0f;
 			enemyMotion.velocity = { 0, 0 };
 		}
+		
+		// if player is detected, chase player and maintain distance
 		else if (glm::distance(enemyMotion.position, positionToReach) > 1)
 		{
 			vec2 direction = glm::normalize(positionToReach - enemyMotion.position);
 			enemyMotion.angle = atan2(directionToPlayer.y, directionToPlayer.x) * (180.0f / M_PI) + 90;
 			enemyMotion.velocity = direction * ENEMY_SPEED;
 		}
+
+		// adjust angle
 		else
 		{
 			enemyMotion.velocity = { 0, 0 };
@@ -214,6 +230,7 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 
 	switch (enemyBehavior.state)
 	{
+		// initaially do noting, if player detected go to any random state and set cool_down
 		case BossState::INITIAL:
 		{
 			if(playerDetected)
@@ -237,9 +254,11 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 			}
 			break;
 		}
+		// basically initial, but with the option of running way when health is low and doesn't need to wait for player to be detected
 		case BossState::IDLE: 
 		{
 
+			// reset angle to 0
 			if (enemyMotion.angle != 0.f) {
 				const float smoothing_factor = 0.1f;
 
@@ -250,6 +269,7 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 				}
 			}
 
+			// when cool_down reaches < 0, go to a random state
 			enemyBehavior.cool_down -= elapsed_ms;
 			if(enemyBehavior.cool_down < 0.f)
 			{
@@ -285,6 +305,7 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 
 		case BossState::SHOOT_PARADE:
 		{
+			// shoot for a small duration and go to cool_down
 			enemyBehavior.cool_down -= elapsed_ms;
 			enemyBehavior.shoot_cool_down -= elapsed_ms;
 			
@@ -313,6 +334,7 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 
 		case BossState::RUMBLE:
 		{
+			// charge dash and rotate towards player to dash
 			if (enemyBehavior.is_charging) {
 				enemyBehavior.rumble_charge_time -= elapsed_ms;
 				enemyMotion.velocity = { 0.f, 0.f };
@@ -342,6 +364,7 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 			break;
 		}
 
+		// run away from player in the opposite direction
 		case BossState::FLEE :
 		{
 			if (enemyBehavior.is_fleeing) {
@@ -367,6 +390,7 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 	return enemyBehavior.state;
 }
 
+// handle AI behavior for all enemies with according parameters
 void AISystem::step(float elapsed_ms)
 {
 

@@ -852,6 +852,8 @@ void RenderSystem::drawBuffUI()
 	drawToScreen();
 	glfwSwapBuffers(window);
 }
+
+// M3 Feature : Instance Rendering on Particles
 // INSTANCING: Draw instanced particles
 void RenderSystem::drawInstancedParticles()
 {
