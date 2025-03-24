@@ -342,20 +342,30 @@ Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& pla
 }
 
 void updateMiniMap(vec2 playerPos) {
-	int minimapViewRange = 2;
-	MiniMap& m = registry.miniMaps.get(registry.miniMaps.entities[0]);
 
-	for(int i = playerPos.x - minimapViewRange; i < playerPos.x + minimapViewRange; i++) {
-		for(int j = playerPos.y - minimapViewRange; j < playerPos.y + minimapViewRange; j++) {
+	float minimapViewRange = 3.0;
+	Entity e = registry.miniMaps.entities[0];
+	MiniMap& m = registry.miniMaps.get(e);
+
+	int top = std::max(0.f, playerPos.y - minimapViewRange);
+	int bottom = std::min(20.f, playerPos.y + minimapViewRange);
+	int left = std::max(0.f, playerPos.x - minimapViewRange);
+	int right = std::min(20.f, playerPos.x + minimapViewRange);
+
+	for(int i = left; i < right; i++) {
+		for(int j = top; j < bottom; j++) {
 			m.visited[i][j] = 1;
 		}
 	}
 }
 
-void createEmptyMiniMap() {
+void emptyMiniMap() {
 	MiniMap& m = registry.miniMaps.get(registry.miniMaps.entities[0]);
-	Map& map = registry.maps.get(registry.maps.entities[0]);
-	m.visited.resize(map.width, std::vector<int>(map.height, 0));
+	for (int y = 0; y < MAP_HEIGHT; y++) {
+		for(int x = 0; x< MAP_WIDTH; x++) {
+			m.visited[y][x] = 0;
+		}
+	}
 }
 
 Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, std::pair<int, int>& playerPosition) {
@@ -453,7 +463,6 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
             return entity;
         } while (true);
 	}
-
     return entity;
 }
 
@@ -584,7 +593,14 @@ Entity addTile(vec2 gridCoord, TEXTURE_ASSET_ID texture_id, int total_frames)
 Entity createCamera()
 {
 	// Remove all cameras
+	std::vector<Entity> camerasToRemove;
+
 	for (Entity &entity : registry.cameras.entities)
+	{
+		camerasToRemove.push_back(entity);
+	}
+
+	for (Entity &entity : camerasToRemove)
 	{
 		registry.remove_all_components_of(entity);
 	}

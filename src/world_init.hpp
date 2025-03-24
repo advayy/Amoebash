@@ -42,5 +42,5 @@ int getDistance(const std::vector<std::vector<tileType>>& grid, std::pair<int,in
 Entity createBuff(vec2 position);
 
 void updateMiniMap(vec2 playerPos);
-void createEmptyMiniMap();
+void emptyMiniMap();
     
