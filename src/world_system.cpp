@@ -135,6 +135,7 @@ GLFWwindow *WorldSystem::create_window()
 	return window;
 }
 
+// M3 Feature : Sound affects (at least 3)
 bool WorldSystem::start_and_load_sounds()
 {
 
@@ -1178,7 +1179,6 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 	}
 }
 
-
 void WorldSystem::shootGun() {
     Gun &gun = registry.guns.get(registry.guns.entities[0]);
     Motion &gun_motion = registry.motions.get(registry.guns.entities[0]);
@@ -1541,6 +1541,10 @@ void WorldSystem::tileProceduralMap() {
 	initializedMap = true;
 }
 
+// M3 Feature JSON Saving and Loading
+// On click of the save button in Pause Screen we save the progress so far.
+// Such as Player Status, Position and Map along with the buffs and projectiles
+
 void WorldSystem::saveGame() {
 	std::cout << "Saving Game!" << std::endl;
 	
@@ -1599,12 +1603,15 @@ void WorldSystem::saveGame() {
 	std::cout << "Done Saving!" << std::endl;
 }
 
+// checker to see if the file exists
 bool WorldSystem::checkLoadFileExists() {
 	std::string filename = std::string(PROJECT_SOURCE_DIR) + "/data/save/world_status.json";
 	std::ifstream f(filename.c_str());
 	return f.good();
 }
 
+// load the game from the file, after initialization we over-write the info we want to load to the game
+// happens on press L in the game start screen
 void WorldSystem::loadGame() {
 	std::cout << "Loading Game!" << std::endl;
 
@@ -1677,6 +1684,9 @@ void WorldSystem::loadGame() {
 	std::cout << "Done Loading!" << std::endl;
 }
 
+// save progress along with the status
+// we keep track of the current level + if tutorial is done
+// cannot be saved for boss stage
 void WorldSystem::saveProgress() {
 	std::string progress_filename = std::string(PROJECT_SOURCE_DIR) + "/data/save/progress.json";
 
@@ -1697,6 +1707,7 @@ void WorldSystem::saveProgress() {
 	std::cout << "Done Saving Progress!" << std::endl;
 }
 
+// load the json and overwrite the saved variables
 void WorldSystem::loadProgress() {
 	std::string progress_filename = std::string(PROJECT_SOURCE_DIR) + "/data/save/progress.json";
 

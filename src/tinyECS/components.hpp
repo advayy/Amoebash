@@ -664,7 +664,7 @@ struct Particle
     float speed_factor = 100.0f;
 };
 
-// for to_json and from_json
+// MACROS for "to_json" and "from_json" on user-defined structs
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(vec2, x, y)
 
