@@ -33,13 +33,14 @@ Each enemy can also give you “Germoney”, which you can use in the Shop to bu
 
 ### 🖱️ **Mouse Controls**
 
-- **Menu Navigation:** Click on buttons to access the **Shop**, **Information Screens**, or **Start the Game**.
+- **Menu Navigation:** Click on buttons to access the **Shop**, **Information Screens**, **Start the Game**, **Save the game** or **Collect Buffs from previous runs**.
 - **In-Game Actions:** Click anywhere during gameplay to make the **Amoeba** dash in the chosen direction. **Attacks** will automatically trigger during the dash.
 
 ---
 
 ### ⌨️ **Keyboard Controls**
 
+- **S:** Shoot with the pet bacteriophage
 - **R:** Restart the game.
 - **Space:** Pause or resume gameplay.
 - **O:** Instantly trigger the **Game Over** screen.
@@ -70,3 +71,15 @@ Advanced Features
   - Each particle’s transformation (position, rotation, scale) is computed and stored in an instance VBO.
   - A single `glDrawElementsInstanced` call renders all particles in one batch, reducing overhead. Please see `RenderSystem::drawInstancedParticles()`
   - The `ParticleSystem` handles particle simulation, spawning, and lifecycle management, while `RenderSystem` efficiently batches their rendering.
+
+Basic Features
+- Reloadability
+  - On any stage except for tutorial / boss stage, progress can be saved by clicking on the button when the game is paused.
+  - If wanted to load the save progress, you can press "L" in the start screen to load the JSON and continue gameplay.
+  - Functions `loadgame, savegame, loadprogress, saveprogress` do this by writing / reading JSON files (progress.json, world_status.json) from the save directory.
+  - In `components.hpp`, we have MACROS defined to allow `to_json, from_json` for user-defined structures.
+
+- Audio feedback
+  - In `world_system.cpp`, we load audio files that we have been provided from a music artist.
+  - For interactions such as "button click", "taking damage from enemy", "projectiles shot from enemies", "enemy dying" we trigger different audio files to indicate.
+  - On clicking start and progressing into the game, we also have background music playing.
