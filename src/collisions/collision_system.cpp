@@ -177,34 +177,34 @@ EDGE_TYPE CollisionSystem::getEdgeOfCollisionAndResolve(Motion& motion, Entity& 
 	// if no vertices are in the wall, skip 
 	// technically an edge case, but quite rare and hard to deal with
 	if (points_inside_idx.empty()) return edge_of_collision;
-
+	float quadrant_threshold = 45.0f;
 	if (points_inside_idx.size() > 1)
 	{
 		// 2 or more points inside the wall 
 		// (we only consider the 2 vertices case, as the collision is almost always detected before more vertices intersect)
 		// depending on which 2 vertices are in the wall and the angle, we determine the collision edge
-		if (abs(angle) < 25.0f || abs(angle - 360) < 25.0f)
+		if (abs(angle) < quadrant_threshold || abs(angle - 360) < quadrant_threshold )
 		{
 			if (points_inside_idx[0] == 0 && points_inside_idx[1] == 1) edge_of_collision = EDGE_TYPE::HORIZONTAL_BOTTOM;
 			if (points_inside_idx[0] == 1 && points_inside_idx[1] == 2) edge_of_collision = EDGE_TYPE::VERTICAL_LEFT;
 			if (points_inside_idx[0] == 2 && points_inside_idx[1] == 3) edge_of_collision = EDGE_TYPE::HORIZONTAL_TOP;
 			if (points_inside_idx[0] == 0 && points_inside_idx[1] == 3) edge_of_collision = EDGE_TYPE::VERTICAL_RIGHT;
 		}
-		else if (abs(angle - 90) < 25.0f)
+		else if (abs(angle - 90) < quadrant_threshold)
 		{
 			if (points_inside_idx[0] == 0 && points_inside_idx[1] == 1) edge_of_collision = EDGE_TYPE::VERTICAL_LEFT;
 			if (points_inside_idx[0] == 1 && points_inside_idx[1] == 2) edge_of_collision = EDGE_TYPE::HORIZONTAL_TOP;
 			if (points_inside_idx[0] == 2 && points_inside_idx[1] == 3) edge_of_collision = EDGE_TYPE::VERTICAL_RIGHT;
 			if (points_inside_idx[0] == 0 && points_inside_idx[1] == 3) edge_of_collision = EDGE_TYPE::HORIZONTAL_BOTTOM;
 		}
-		else if (abs(angle - 180) < 25.0f)
+		else if (abs(angle - 180) < quadrant_threshold)
 		{
 			if (points_inside_idx[0] == 0 && points_inside_idx[1] == 1) edge_of_collision = EDGE_TYPE::HORIZONTAL_TOP;
 			if (points_inside_idx[0] == 1 && points_inside_idx[1] == 2) edge_of_collision = EDGE_TYPE::VERTICAL_RIGHT;
 			if (points_inside_idx[0] == 2 && points_inside_idx[1] == 3) edge_of_collision = EDGE_TYPE::HORIZONTAL_BOTTOM;
 			if (points_inside_idx[0] == 0 && points_inside_idx[1] == 3) edge_of_collision = EDGE_TYPE::VERTICAL_LEFT;
 		}
-		else if (abs(angle - 270) < 25.0f)
+		else if (abs(angle - 270) < quadrant_threshold)
 		{
 			if (points_inside_idx[0] == 0 && points_inside_idx[1] == 1) edge_of_collision = EDGE_TYPE::VERTICAL_RIGHT;
 			if (points_inside_idx[0] == 1 && points_inside_idx[1] == 2) edge_of_collision = EDGE_TYPE::HORIZONTAL_BOTTOM;

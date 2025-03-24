@@ -384,6 +384,17 @@ Entity createPauseScreen()
 	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
 	motion.position = camera.position;
 	motion.scale = scale;
+
+	vec2 buttonPosition = camera.position + vec2(0, 100.f);
+
+	
+
+	Entity saveButtonEntity = createButton(ButtonType::SAVEBUTTON, buttonPosition, BACK_BUTTON_SCALE, TEXTURE_ASSET_ID::BACK_BUTTON);
+	
+	ButtonType type = registry.buttons.get(saveButtonEntity).type;
+
+	Pause &saveButton = registry.pauses.emplace(saveButtonEntity);
+
 	return pauseScreenEntity;
 }
 
@@ -563,8 +574,20 @@ void removePauseScreen()
 	if (registry.pauses.size() == 0)
 		return;
 
-	Entity pause = registry.pauses.entities[0];
-	registry.remove_all_components_of(pause);
+	std::vector<Entity> removals;
+
+	for (auto e : registry.pauses.entities) {
+		removals.push_back(e);
+	}
+
+	int size = removals.size();
+
+	for (int i = 0; i < size; i++) {
+		registry.remove_all_components_of(removals[i]);
+	}
+
+	return;
+
 }
 
 void removeGameOverScreen()

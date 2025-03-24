@@ -253,10 +253,25 @@ Entity createGun(RenderSystem *renderer, vec2 position) {
     registry.renderRequests.insert(
         entity,
         {TEXTURE_ASSET_ID::GUN,
-         EFFECT_ASSET_ID::TEXTURED,
+         EFFECT_ASSET_ID::SPRITE_SHEET,
          GEOMETRY_BUFFER_ID::SPRITE
         }
     );
+
+	Animation& a = registry.animations.emplace(entity);
+	a.start_frame = 0;
+	a.end_frame = 9;
+	a.time_per_frame = 100.0f;
+	a.loop = ANIM_LOOP_TYPES::LOOP;
+
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 9;
+	spriteSheet.current_frame = 0;
+
+	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
+	sprite.width = motion.scale.x;
+	sprite.height = motion.scale.y;
+
 
     return entity;
 }
@@ -303,8 +318,10 @@ Entity createBacteriophageProjectile(Entity& bacteriophage)
 Entity createBossProjectile(vec2 position, vec2 size, vec2 velocity)
 {
 	Entity projectile = createProjectile(position, size, velocity);
+	RenderRequest& render_request = registry.renderRequests.get(projectile);
+	render_request.used_texture = TEXTURE_ASSET_ID::BOSS_PROJECTILE;
 	Projectile& p = registry.projectiles.get(projectile);
-	p.damage /= 3.f;
+	p.damage = BOSS_PROJECTILE_DAMAGE;
 	registry.bossProjectiles.emplace(projectile);
 
 	return projectile;
@@ -335,8 +352,8 @@ Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& pla
 		}
 	}
 
-	playerPosition.first = 0;
-	playerPosition.second = 0;
+	playerPosition.first = 19;
+	playerPosition.second = 10;
 
 	return entity;
 }
@@ -408,11 +425,7 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 				}
 			}
 		}
-		// std::cout << "Created InfoBoxes" << std::endl;
-
 	} else {
-		// std::cout << "Should randomize map" << std::endl;
-	
 		// Initialize map to random walls / floors
         std::random_device rd;
 		std::default_random_engine rng(rd());
