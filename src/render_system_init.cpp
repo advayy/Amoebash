@@ -93,7 +93,7 @@ void RenderSystem::initializeGlEffects()
 	{
 		const std::string vertex_shader_name = effect_paths[i] + ".vs.glsl";
 		const std::string fragment_shader_name = effect_paths[i] + ".fs.glsl";
-	
+
 		std::cout << "Loading shaders: " << vertex_shader_name << " and " << fragment_shader_name << std::endl;
 
 		bool is_valid = loadEffectFromFile(vertex_shader_name, fragment_shader_name, effects[i]);
@@ -107,12 +107,12 @@ void RenderSystem::bindVBOandIBO(GEOMETRY_BUFFER_ID gid, std::vector<T> vertices
 {
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffers[(uint)gid]);
 	glBufferData(GL_ARRAY_BUFFER,
-				 sizeof(vertices[0]) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
+							 sizeof(vertices[0]) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
 	gl_has_errors();
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffers[(uint)gid]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-				 sizeof(indices[0]) * indices.size(), indices.data(), GL_STATIC_DRAW);
+							 sizeof(indices[0]) * indices.size(), indices.data(), GL_STATIC_DRAW);
 	gl_has_errors();
 }
 
@@ -135,7 +135,8 @@ void RenderSystem::initializeGlMeshes()
 	// }
 }
 
-std::vector<TexturedVertex> RenderSystem::loadMeshVertices(const std::string &filename) {
+std::vector<TexturedVertex> RenderSystem::loadMeshVertices(const std::string &filename)
+{
 	// std::ifstream file(filename);
 	// std::vector<TexturedVertex> meshVertices;
 	// std::string line;
@@ -148,46 +149,50 @@ std::vector<TexturedVertex> RenderSystem::loadMeshVertices(const std::string &fi
 
 	// 	ss >> vertex.position.x >> vertex.position.y >> vertex.position.z
 	// 		>> vertex.texcoord.x >> vertex.texcoord.y;
-		
+
 	// 	meshVertices.push_back(vertex);
 	// }
 
 	// return meshVertices;
 	std::ifstream file(filename);
-    std::vector<TexturedVertex> vertices;
-    std::string line;
+	std::vector<TexturedVertex> vertices;
+	std::string line;
 
-    if (!file.is_open()) {
-        std::cerr << "Error: Cannot open mesh file " << filename << std::endl;
-        return vertices; // Return empty if file cannot be opened
-    }
+	if (!file.is_open())
+	{
+		std::cerr << "Error: Cannot open mesh file " << filename << std::endl;
+		return vertices; // Return empty if file cannot be opened
+	}
 
-    bool reading_vertices = true; // Read vertices first
+	bool reading_vertices = true; // Read vertices first
 
-    while (std::getline(file, line)) {
-        // If we hit the index section, stop reading vertices
-        if (line.find("# Triangulation indices") != std::string::npos) {
-            break;
-        }
+	while (std::getline(file, line))
+	{
+		// If we hit the index section, stop reading vertices
+		if (line.find("# Triangulation indices") != std::string::npos)
+		{
+			break;
+		}
 
-        // Ignore empty lines or headers
-        if (line.empty() || line.find("x y z u v") != std::string::npos) {
-            continue;
-        }
+		// Ignore empty lines or headers
+		if (line.empty() || line.find("x y z u v") != std::string::npos)
+		{
+			continue;
+		}
 
-        std::istringstream ss(line);
-        TexturedVertex vertex;
-        
-        // Read vertex position (x, y, z) and UV coordinates (u, v)
-        if (ss >> vertex.position.x >> vertex.position.y >> vertex.position.z 
-               >> vertex.texcoord.x >> vertex.texcoord.y) {
-            vertices.push_back(vertex);
-        }
-    }
+		std::istringstream ss(line);
+		TexturedVertex vertex;
 
-    file.close();
-    std::cout << "Loaded " << vertices.size() << " vertices from " << filename << std::endl;
-    return vertices;
+		// Read vertex position (x, y, z) and UV coordinates (u, v)
+		if (ss >> vertex.position.x >> vertex.position.y >> vertex.position.z >> vertex.texcoord.x >> vertex.texcoord.y)
+		{
+			vertices.push_back(vertex);
+		}
+	}
+
+	file.close();
+	std::cout << "Loaded " << vertices.size() << " vertices from " << filename << std::endl;
+	return vertices;
 }
 
 void RenderSystem::initializeGlGeometryBuffers()
@@ -196,9 +201,11 @@ void RenderSystem::initializeGlGeometryBuffers()
 	glGenBuffers((GLsizei)vertex_buffers.size(), vertex_buffers.data());
 	// Index Buffer creation.
 	glGenBuffers((GLsizei)index_buffers.size(), index_buffers.data());
-	
+
 	// INSTANCING: generate the particle instance VBO for instanced rendering.
 	glGenBuffers(1, &particle_instance_vbo);
+	// NEW: generate VBO for tile instancing
+	glGenBuffers(1, &tile_instance_vbo);
 
 	// Index and Vertex buffer data initialization.
 	initializeGlMeshes();
@@ -220,7 +227,7 @@ void RenderSystem::initializeGlGeometryBuffers()
 	const std::vector<uint16_t> textured_indices = {0, 3, 1, 1, 3, 2};
 	bindVBOandIBO(GEOMETRY_BUFFER_ID::SPRITE, textured_vertices, textured_indices);
 	// NEW: Save the index count for instancing particles later.
-    sprite_index_count = (GLsizei)textured_indices.size();
+	sprite_index_count = (GLsizei)textured_indices.size();
 
 	/* LEGACY - not used, but code below still relies on it...*/
 	////////////////////////
@@ -262,10 +269,10 @@ void RenderSystem::initializeGlGeometryBuffers()
 
 	// Corner points
 	debug_line_vertices = {
-		{{-0.5, -0.5, depth}, red},
-		{{-0.5, 0.5, depth}, red},
-		{{0.5, 0.5, depth}, red},
-		{{0.5, -0.5, depth}, red},
+			{{-0.5, -0.5, depth}, red},
+			{{-0.5, 0.5, depth}, red},
+			{{0.5, 0.5, depth}, red},
+			{{0.5, -0.5, depth}, red},
 	};
 
 	// Two triangles
@@ -290,7 +297,6 @@ void RenderSystem::initializeGlGeometryBuffers()
 	// std::string mesh_file_name = "data/textures/meshes/key.txt";
 	std::vector<TexturedVertex> img_textured_vertices = loadMeshVertices(std::string(PROJECT_SOURCE_DIR) + mesh_file_name);
 
-
 	std::vector<uint16_t> img_indices; // Store indices
 	std::cout << img_textured_vertices.size() << std::endl;
 	std::cout << "Should be loaded let the vertices" << std::endl;
@@ -300,16 +306,20 @@ void RenderSystem::initializeGlGeometryBuffers()
 	std::string line;
 	bool reading_indices = false;
 
-	while (std::getline(file, line)) {
-		if (line.find("# Triangulation indices") != std::string::npos) {
+	while (std::getline(file, line))
+	{
+		if (line.find("# Triangulation indices") != std::string::npos)
+		{
 			reading_indices = true;
 			continue; // Skip this line
 		}
 
-		if (reading_indices) {
+		if (reading_indices)
+		{
 			std::istringstream ss(line);
 			uint16_t i1, i2, i3;
-			if (ss >> i1 >> i2 >> i3) {
+			if (ss >> i1 >> i2 >> i3)
+			{
 				img_indices.push_back(i1);
 				img_indices.push_back(i2);
 				img_indices.push_back(i3);
@@ -335,7 +345,6 @@ void RenderSystem::initializeGlGeometryBuffers()
 	// for (size_t i = 0; i < std::min(img_indices.size(), size_t(15)); i += 3) {
 	// 	std::cout << img_indices[i] << ", " << img_indices[i + 1] << ", " << img_indices[i + 2] << "\n";
 	// }
-
 
 	// Assign the loaded data to the mesh
 	int img_geom_index = (int)GEOMETRY_BUFFER_ID::HEXAGON;
@@ -397,7 +406,7 @@ bool RenderSystem::initScreenTexture()
 	gl_has_errors();
 
 	// To fix the white lines that appear
-	glEnable(GL_BLEND); 
+	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
@@ -429,7 +438,7 @@ bool gl_compile_shader(GLuint shader)
 }
 
 bool loadEffectFromFile(
-	const std::string &vs_path, const std::string &fs_path, GLuint &out_program)
+		const std::string &vs_path, const std::string &fs_path, GLuint &out_program)
 {
 	// Opening files
 	std::ifstream vs_is(vs_path);
