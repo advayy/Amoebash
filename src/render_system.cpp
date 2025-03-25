@@ -2,7 +2,8 @@
 #include <glm/trigonometric.hpp>
 #include <iostream>
 #include <iomanip>
-#include <unordered_map> // ensure this is included
+#include <unordered_map>
+
 // internal
 #include "render_system.hpp"
 #include "tinyECS/registry.hpp"
@@ -960,7 +961,7 @@ void RenderSystem::drawInstancedParticles()
 	}
 }
 
-// NEW: Structure for tile instance data
+// Structure for tile instance data (put here so it is visible to the shader for later changes)
 struct TileInstance
 {
 	mat3 transform;
@@ -970,8 +971,9 @@ struct TileInstance
 void RenderSystem::drawInstancedTiles(const mat3 &projection)
 {
 
-	// Group tile instances by texture used.
+	// group tile instances by texture used.
 	std::unordered_map<GLuint, std::vector<TileInstance>> groups;
+
 	for (Entity entity : registry.tiles.entities)
 	{
 		if (!registry.motions.has(entity) ||
@@ -982,7 +984,7 @@ void RenderSystem::drawInstancedTiles(const mat3 &projection)
 		RenderRequest &req = registry.renderRequests.get(entity);
 		if (req.used_effect != EFFECT_ASSET_ID::TILE)
 			continue;
-		// Build instance transform from motion.
+		//build instance transform from motion.
 		Motion &motion = registry.motions.get(entity);
 		Transform transform;
 		transform.translate(motion.position);
@@ -1002,7 +1004,7 @@ void RenderSystem::drawInstancedTiles(const mat3 &projection)
 		groups[texture].push_back(instance);
 	}
 
-	// For each texture group, render the batch using instancing.
+	// for each texture group, render the batch 
 	for (auto &group : groups)
 	{
 		GLuint texture = group.first;
@@ -1014,13 +1016,13 @@ void RenderSystem::drawInstancedTiles(const mat3 &projection)
 		glUseProgram(program);
 		gl_has_errors();
 
-		// Bind common geometry buffers.
+		// bind common geometry buffer
 		GLuint vbo = vertex_buffers[(uint)GEOMETRY_BUFFER_ID::SPRITE];
 		GLuint ibo = index_buffers[(uint)GEOMETRY_BUFFER_ID::SPRITE];
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
-		// Set up base vertex attribute pointers.
+		// aet up base vertex attribute pointers
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
 		glEnableVertexAttribArray(in_position_loc);
@@ -1028,11 +1030,11 @@ void RenderSystem::drawInstancedTiles(const mat3 &projection)
 		glEnableVertexAttribArray(in_texcoord_loc);
 		glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)sizeof(vec3));
 
-		// Bind and update tile instance VBO.
+		// bindd and update tile instance VB
 		glBindBuffer(GL_ARRAY_BUFFER, tile_instance_vbo);
 		glBufferData(GL_ARRAY_BUFFER, instances.size() * sizeof(TileInstance), instances.data(), GL_DYNAMIC_DRAW);
 
-		// Setup instance attributes for the matrix (locations 2, 3, 4).
+		// aetup instance attributes for the matrix (locations 2, 3, 4)
 		for (int i = 0; i < 3; i++)
 		{
 			GLuint attrib_location = 2 + i;
@@ -1040,13 +1042,13 @@ void RenderSystem::drawInstancedTiles(const mat3 &projection)
 			glVertexAttribPointer(attrib_location, 3, GL_FLOAT, GL_FALSE, sizeof(TileInstance), (void *)(sizeof(vec3) * i));
 			glVertexAttribDivisor(attrib_location, 1); // one per instance
 		}
-		// Setup instance attribute for tile parameters at location 5.
+		// aetup instance attribute for tile parameters at location 5
 		GLuint tile_params_loc = 5;
 		glEnableVertexAttribArray(tile_params_loc);
 		glVertexAttribPointer(tile_params_loc, 4, GL_FLOAT, GL_FALSE, sizeof(TileInstance), (void *)sizeof(mat3));
 		glVertexAttribDivisor(tile_params_loc, 1);
 
-		// Set shader uniforms.
+		// set shader uniforms.
 		glUniformMatrix3fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, (float *)&projection);
 		Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
 		glUniform2fv(glGetUniformLocation(program, "camera_position"), 1, (float *)&camera.position);
@@ -1055,19 +1057,17 @@ void RenderSystem::drawInstancedTiles(const mat3 &projection)
 		glBindTexture(GL_TEXTURE_2D, texture);
 		glUniform1i(glGetUniformLocation(program, "sampler0"), 0);
 
-		// Draw instanced.
+		// draw instanced
 		GLint iboSize = 0;
 		glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &iboSize);
 		GLsizei num_indices = iboSize / sizeof(uint16_t);
 		glDrawElementsInstanced(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr, instances.size());
 		gl_has_errors();
 
-		// Disable instanced attributes.
+		// dsable instanced attributes
 		for (int i = 2; i <= 5; i++)
 		{
 			glDisableVertexAttribArray(i);
 		}
-
-
 	}
 }

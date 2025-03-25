@@ -3,7 +3,7 @@
 // From vertex shader
 in vec2 texcoord;
 in vec3 position;
-flat in vec4 instanceTileParams;  // NEW: now contains per–tile data
+flat in vec4 instanceTileParams;  // contains per–tile data
 
 // Application data
 uniform sampler2D sampler0;

@@ -3,9 +3,9 @@
 // Input attributes
 in vec3 in_position;
 in vec2 in_texcoord;
-layout(location = 2) in vec3 instance_row0;  // NEW: instance transform row 0
-layout(location = 3) in vec3 instance_row1;  // NEW: instance transform row 1
-layout(location = 4) in vec3 instance_row2;  // NEW: instance transform row 2
+layout(location = 2) in vec3 instance_row0;  // instance transform row 0
+layout(location = 3) in vec3 instance_row1;  // instance transform row 1
+layout(location = 4) in vec3 instance_row2;  // instance transform row 2
 layout(location = 5) in vec4 tile_params;      // per-instance tile parameters
 
 // Passed to fragment shader

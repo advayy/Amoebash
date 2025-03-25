@@ -172,7 +172,7 @@ public:
 	// INSTANCING: instanced particle drawing
 	void drawInstancedParticles();
 
-	// NEW: instanced tile drawing
+	// INSTANCING: instanced tile drawing
 	void drawInstancedTiles(const mat3 &projection);
 
 private:
@@ -202,19 +202,19 @@ private:
 	float current_fps = 0.0f;
 	bool show_fps = true; // Start with FPS display enabled
 
-	// New: Particle effect shader
+	// INSTANCING: Particle effect shader
 	GLuint particle_effect;
 
-	// New instance buffer to hold per-particle transform matrices
+	// INSTANCING instance buffer to hold per-particle transform matrices
 	GLuint particle_instance_vbo;
 
-	// NEW: Default VAO for rendering
+	// INSTANCING: Default VAO for rendering
 	GLuint default_vao;
 
-	// NEW: Store the sprite index count
+	// INSTANCING: Store the sprite index count
 	GLsizei sprite_index_count;
 
-	// NEW: Instance VBO for tiles
+	// INSTANCING: Instance VBO for tiles
 	GLuint tile_instance_vbo;
 };
 

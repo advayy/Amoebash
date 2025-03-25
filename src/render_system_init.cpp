@@ -204,7 +204,7 @@ void RenderSystem::initializeGlGeometryBuffers()
 
 	// INSTANCING: generate the particle instance VBO for instanced rendering.
 	glGenBuffers(1, &particle_instance_vbo);
-	// NEW: generate VBO for tile instancing
+	// INSTANCING: generate VBO for tile instancing
 	glGenBuffers(1, &tile_instance_vbo);
 
 	// Index and Vertex buffer data initialization.
