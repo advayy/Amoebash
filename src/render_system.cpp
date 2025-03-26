@@ -2,6 +2,8 @@
 #include <glm/trigonometric.hpp>
 #include <iostream>
 #include <iomanip>
+#include <unordered_map>
+
 // internal
 #include "render_system.hpp"
 #include "tinyECS/registry.hpp"
@@ -54,7 +56,7 @@ void RenderSystem::drawFPS()
 }
 
 void RenderSystem::drawTexturedMesh(Entity entity,
-									const mat3 &projection)
+																		const mat3 &projection)
 {
 	assert(registry.renderRequests.has(entity));
 	const RenderRequest &render_request = registry.renderRequests.get(entity);
@@ -64,13 +66,13 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 	const GLuint program = (GLuint)effects[used_effect_enum];
 
 	assert((render_request.used_effect == EFFECT_ASSET_ID::TEXTURED ||
-			render_request.used_effect == EFFECT_ASSET_ID::SPRITE_SHEET ||
-			render_request.used_effect == EFFECT_ASSET_ID::MINI_MAP ||
-			render_request.used_effect == EFFECT_ASSET_ID::TILE ||
-			render_request.used_effect == EFFECT_ASSET_ID::UI ||
-			render_request.used_effect == EFFECT_ASSET_ID::HEALTH_BAR ||
-			render_request.used_effect == EFFECT_ASSET_ID::DASH_UI) &&
-		   "Type of render request not supported");
+					render_request.used_effect == EFFECT_ASSET_ID::SPRITE_SHEET ||
+					render_request.used_effect == EFFECT_ASSET_ID::MINI_MAP ||
+					render_request.used_effect == EFFECT_ASSET_ID::TILE ||
+					render_request.used_effect == EFFECT_ASSET_ID::UI ||
+					render_request.used_effect == EFFECT_ASSET_ID::HEALTH_BAR ||
+					render_request.used_effect == EFFECT_ASSET_ID::DASH_UI) &&
+				 "Type of render request not supported");
 
 	setUpDefaultProgram(entity, render_request, program);
 
@@ -87,30 +89,32 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		Player &player = registry.players.get(registry.players.entities[0]);
 		glUniform2fv(player_grid_position_uloc, 1, (float *)&player.grid_position);
 
-
-
 		// map array logic
 		GLint map_array_uloc = glGetUniformLocation(program, "map_array");
 		std::vector<std::vector<tileType>> map_array = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map;
 		std::vector<int> flat_array;
 		flat_array.reserve(MAP_WIDTH * MAP_HEIGHT);
 
-		for (const auto& row : map_array) {
-			for (const auto& tile : row) {
+		for (const auto &row : map_array)
+		{
+			for (const auto &tile : row)
+			{
 				flat_array.push_back(static_cast<int>(tile));
 			}
 		}
-	    glUniform1iv(map_array_uloc, MAP_WIDTH * MAP_HEIGHT, flat_array.data());
-		glUniform2fv(player_grid_position_uloc, 1, (float*)&player.grid_position);
+		glUniform1iv(map_array_uloc, MAP_WIDTH * MAP_HEIGHT, flat_array.data());
+		glUniform2fv(player_grid_position_uloc, 1, (float *)&player.grid_position);
 
 		// PASS IN MINIMAP VISITED
 		GLint map_visited_array_uloc = glGetUniformLocation(program, "map_visited_array");
 		std::vector<std::vector<int>> map_visited_array = registry.miniMaps.get(registry.miniMaps.entities[0]).visited;
 		std::vector<int> flat_visited_array;
 		flat_visited_array.reserve(MAP_WIDTH * MAP_HEIGHT);
-		
-		for (const auto& row : map_visited_array) {
-			for (const auto& visited : row) {
+
+		for (const auto &row : map_visited_array)
+		{
+			for (const auto &visited : row)
+			{
 				flat_visited_array.push_back(static_cast<int>(visited));
 			}
 		}
@@ -215,14 +219,14 @@ void RenderSystem::setUpDefaultProgram(Entity &entity, const RenderRequest &rend
 
 	glEnableVertexAttribArray(in_position_loc);
 	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
-						  sizeof(TexturedVertex), (void *)0);
+												sizeof(TexturedVertex), (void *)0);
 	gl_has_errors();
 
 	glEnableVertexAttribArray(in_texcoord_loc);
 	glVertexAttribPointer(
-		in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
-		(void *)sizeof(
-			vec3)); // note the stride to skip the preceeding vertex position
+			in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
+			(void *)sizeof(
+					vec3)); // note the stride to skip the preceeding vertex position
 
 	// Enabling and binding texture to slot 0
 	glActiveTexture(GL_TEXTURE0);
@@ -230,7 +234,7 @@ void RenderSystem::setUpDefaultProgram(Entity &entity, const RenderRequest &rend
 
 	assert(registry.renderRequests.has(entity));
 	GLuint texture_id =
-		texture_gl_handles[(GLuint)registry.renderRequests.get(entity).used_texture];
+			texture_gl_handles[(GLuint)registry.renderRequests.get(entity).used_texture];
 
 	glBindTexture(GL_TEXTURE_2D, texture_id);
 	gl_has_errors();
@@ -264,9 +268,9 @@ void RenderSystem::drawToScreen()
 	// Draw the screen texture on the quad geometry
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffers[(GLuint)GEOMETRY_BUFFER_ID::SCREEN_TRIANGLE]);
 	glBindBuffer(
-		GL_ELEMENT_ARRAY_BUFFER,
-		index_buffers[(GLuint)GEOMETRY_BUFFER_ID::SCREEN_TRIANGLE]); // Note, GL_ELEMENT_ARRAY_BUFFER associates
-																	 // indices to the bound GL_ARRAY_BUFFER
+			GL_ELEMENT_ARRAY_BUFFER,
+			index_buffers[(GLuint)GEOMETRY_BUFFER_ID::SCREEN_TRIANGLE]); // Note, GL_ELEMENT_ARRAY_BUFFER associates
+																																	 // indices to the bound GL_ARRAY_BUFFER
 	gl_has_errors();
 
 	// add the "vignette" effect
@@ -300,9 +304,9 @@ void RenderSystem::drawToScreen()
 
 	// Draw
 	glDrawElements(
-		GL_TRIANGLES, 3, GL_UNSIGNED_SHORT,
-		nullptr); // one triangle = 3 vertices; nullptr indicates that there is
-				  // no offset from the bound index buffer
+			GL_TRIANGLES, 3, GL_UNSIGNED_SHORT,
+			nullptr); // one triangle = 3 vertices; nullptr indicates that there is
+								// no offset from the bound index buffer
 	gl_has_errors();
 }
 
@@ -330,41 +334,47 @@ void RenderSystem::draw()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_DEPTH_TEST); // native OpenGL does not work with a depth buffer
-							  // and alpha blending, one would have to sort
-							  // sprites back to front
+														// and alpha blending, one would have to sort
+														// sprites back to front
 	gl_has_errors();
 
 	mat3 projection_2D = createProjectionMatrix();
 
 	// Draw all tiles first
-	for (Entity entity : registry.tiles.entities)
-	{
-		drawTexturedMesh(entity, projection_2D);
-	}
+	drawInstancedTiles(projection_2D);
 
-    // draw portal
-    for (Entity entity : registry.portals.entities) {
-        if (registry.renderRequests.has(entity)) drawTexturedMesh(entity, projection_2D);
-    }
+	// draw portal
+	for (Entity entity : registry.portals.entities)
+	{
+		if (registry.renderRequests.has(entity))
+			drawTexturedMesh(entity, projection_2D);
+	}
 
 	for (Entity entity : registry.renderRequests.entities)
 	{
 		// Skip entities that have a Particle component, Particles are drawn using instancing
-        if (registry.particles.has(entity))
-            continue;
-            
-		if (registry.keys.has(entity) || registry.chests.has(entity)) {
+		if (registry.particles.has(entity))
+			continue;
+
+		if (registry.tiles.has(entity))
+			continue;
+
+		if (registry.keys.has(entity) || registry.chests.has(entity))
+		{
 			drawHexagon(entity, projection_2D);
-		} else if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity) && !registry.portals.has(entity) && !registry.guns.has(entity))
+		}
+		else if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity) && !registry.portals.has(entity) && !registry.guns.has(entity))
 		{
 			drawTexturedMesh(entity, projection_2D);
 		}
 	}
 
-    // draw gun
-    for (Entity entity : registry.guns.entities) {
-        if (registry.renderRequests.has(entity)) drawTexturedMesh(entity, projection_2D);
-    }
+	// draw gun
+	for (Entity entity : registry.guns.entities)
+	{
+		if (registry.renderRequests.has(entity))
+			drawTexturedMesh(entity, projection_2D);
+	}
 
 	// draw the mini map
 	drawTexturedMesh(registry.miniMaps.entities[0], projection_2D);
@@ -391,7 +401,7 @@ void RenderSystem::draw()
 	}
 
 	// INSTANCING: Draw instanced particles
-    drawInstancedParticles();
+	drawInstancedParticles();
 
 	// draw framebuffer to screen
 	// adding "vignette" effect when applied
@@ -418,18 +428,18 @@ mat3 RenderSystem::createProjectionMatrix()
 	float ty = -(top + bottom) / (top - bottom);
 
 	return {
-		{sx, 0.f, 0.f},
-		{0.f, sy, 0.f},
-		{tx, ty, 1.f}};
+			{sx, 0.f, 0.f},
+			{0.f, sy, 0.f},
+			{tx, ty, 1.f}};
 }
 
 void RenderSystem::drawStartScreen()
 {
 
 	std::vector<ButtonType> buttons = {
-		ButtonType::STARTBUTTON,
-		ButtonType::SHOPBUTTON,
-		ButtonType::INFOBUTTON};
+			ButtonType::STARTBUTTON,
+			ButtonType::SHOPBUTTON,
+			ButtonType::INFOBUTTON};
 
 	drawScreenAndButtons(ScreenType::START, buttons);
 }
@@ -438,7 +448,7 @@ void RenderSystem::drawShopScreen()
 {
 
 	std::vector<ButtonType> buttons = {
-		ButtonType::BACKBUTTON};
+			ButtonType::BACKBUTTON};
 
 	drawScreenAndButtons(ScreenType::SHOP, buttons);
 }
@@ -447,7 +457,7 @@ void RenderSystem::drawInfoScreen()
 {
 
 	std::vector<ButtonType> buttons = {
-		ButtonType::BACKBUTTON};
+			ButtonType::BACKBUTTON};
 
 	drawScreenAndButtons(ScreenType::INFO, buttons);
 }
@@ -455,21 +465,21 @@ void RenderSystem::drawInfoScreen()
 void RenderSystem::drawGameOverScreen()
 {
 	std::vector<ButtonType> buttons = {
-		ButtonType::PROCEED_BUTTON
-	}; // ACTS as a next button
+			ButtonType::PROCEED_BUTTON}; // ACTS as a next button
 
 	drawScreenAndButtons(ScreenType::GAMEOVER, buttons);
 }
 
-void RenderSystem::drawNextLevelScreen() {
-	std::vector<ButtonType> buttons = { };
-    
+void RenderSystem::drawNextLevelScreen()
+{
+	std::vector<ButtonType> buttons = {};
+
 	drawScreenAndButtons(ScreenType::NEXT_LEVEL, buttons);
 }
 
 void RenderSystem::drawScreenAndButtons(
-	ScreenType screenType,
-	const std::vector<ButtonType> &buttonTypes)
+		ScreenType screenType,
+		const std::vector<ButtonType> &buttonTypes)
 {
 
 	int w, h;
@@ -493,9 +503,8 @@ void RenderSystem::drawScreenAndButtons(
 	mat3 projection_matrix = createProjectionMatrix();
 
 	// draw background
-	// draw logo 
+	// draw logo
 	// draw buttons
-
 
 	if (screenType == ScreenType::START)
 	{
@@ -507,7 +516,7 @@ void RenderSystem::drawScreenAndButtons(
 				Entity screenEntity = registry.gameScreens.entities[i];
 				drawTexturedMesh(screenEntity, projection_matrix);
 			}
-		} 
+		}
 		for (uint i = 0; i < registry.starts.size(); i++)
 		{
 			Start &start = registry.starts.components[i];
@@ -518,11 +527,13 @@ void RenderSystem::drawScreenAndButtons(
 		}
 	}
 
-	if (screenType == ScreenType::GAMEOVER) {
+	if (screenType == ScreenType::GAMEOVER)
+	{
 		for (uint i = 0; i < registry.overs.entities.size(); i++)
 		{
 			Entity e = registry.overs.entities[i];
-			if(registry.renderRequests.has(e)) {
+			if (registry.renderRequests.has(e))
+			{
 				drawTexturedMesh(e, projection_matrix);
 			}
 		}
@@ -650,19 +661,19 @@ void RenderSystem::drawUIElements()
 	glfwSwapBuffers(window);
 }
 
-void RenderSystem::drawHexagon(Entity entity, const mat3 &projection) 
+void RenderSystem::drawHexagon(Entity entity, const mat3 &projection)
 {
-	if(!registry.keys.has(entity) && !registry.chests.has(entity)) 
+	if (!registry.keys.has(entity) && !registry.chests.has(entity))
 	{
 		return;
 	}
 
-	if(!registry.renderRequests.has(entity)) 
+	if (!registry.renderRequests.has(entity))
 	{
 		return;
 	}
 
-	RenderRequest& render_request = registry.renderRequests.get(entity);
+	RenderRequest &render_request = registry.renderRequests.get(entity);
 	GLuint program = effects[(GLuint)render_request.used_effect];
 	glUseProgram(program);
 	gl_has_errors();
@@ -678,41 +689,40 @@ void RenderSystem::drawHexagon(Entity entity, const mat3 &projection)
 	GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
 
 	glEnableVertexAttribArray(in_position_loc);
-	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void*)0);
-	
+	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)0);
+
 	glEnableVertexAttribArray(in_texcoord_loc);
-	glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void*)sizeof(vec3));
-	gl_has_errors();	
+	glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)sizeof(vec3));
+	gl_has_errors();
 
 	glActiveTexture(GL_TEXTURE0);
 	GLuint texture_id = texture_gl_handles[(GLuint)render_request.used_texture];
 	glBindTexture(GL_TEXTURE_2D, texture_id);
 	gl_has_errors();
 
-	if(!registry.motions.has(entity)) 
+	if (!registry.motions.has(entity))
 	{
 		return;
 	}
 
-	Motion& motion = registry.motions.get(entity);
+	Motion &motion = registry.motions.get(entity);
 
 	Transform transform;
 	transform.translate(motion.position);
 	transform.scale(motion.scale);
 
 	GLuint transform_loc = glGetUniformLocation(program, "transform");
-	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float*)&transform.mat);
+	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float *)&transform.mat);
 	gl_has_errors();
 
 	GLuint projection_loc = glGetUniformLocation(program, "projection");
-	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float*)&projection);
+	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
 	gl_has_errors();
 
 	GLint size = 0;
 	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
 	GLsizei num_indices = size / sizeof(uint16_t);
 	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
-
 }
 
 void RenderSystem::drawHealthBar(Entity entity, const mat3 &projection)
@@ -762,7 +772,6 @@ void RenderSystem::drawHealthBar(Entity entity, const mat3 &projection)
 	GLint health_loc = glGetUniformLocation(program, "current_health");
 	glUniform1f(health_loc, player.current_health);
 	gl_has_errors();
-
 
 	GLint health_texture_loc = glGetUniformLocation(program, "health_texture");
 	glUniform1i(health_texture_loc, 0);
@@ -869,79 +878,196 @@ void RenderSystem::drawBuffUI()
 // INSTANCING: Draw instanced particles
 void RenderSystem::drawInstancedParticles()
 {
-    // for debugging purposes, check for errors
-    while (glGetError() != GL_NO_ERROR) { /* clear errors */ }
+	// for debugging purposes, check for errors
+	while (glGetError() != GL_NO_ERROR)
+	{ /* clear errors */
+	}
 
-    if (registry.particles.size() == 0)
-        return;
-    
-    std::vector<mat3> instanceTransforms;
-    for (uint i = 0; i < registry.particles.size(); i++)
-    {
-        Entity entity = registry.particles.entities[i];
-        Motion &motion = registry.motions.get(entity);
-        Transform transform;
-        transform.translate(motion.position);
-        transform.scale(motion.scale);
-        transform.rotate(radians(motion.angle));
-        instanceTransforms.push_back(transform.mat);
-    }
-    
+	if (registry.particles.size() == 0)
+		return;
+
+	std::vector<mat3> instanceTransforms;
+	for (uint i = 0; i < registry.particles.size(); i++)
+	{
+		Entity entity = registry.particles.entities[i];
+		Motion &motion = registry.motions.get(entity);
+		Transform transform;
+		transform.translate(motion.position);
+		transform.scale(motion.scale);
+		transform.rotate(radians(motion.angle));
+		instanceTransforms.push_back(transform.mat);
+	}
+
 	// for debugging purposes
-    // std::cout << "[Particle Debug] Instance transforms count: " << instanceTransforms.size() << std::endl;
-		
-    if (instanceTransforms.empty())
-        return;
-    
-    // bind the default VAO
-    glBindVertexArray(default_vao);
-    
-    // bind the sprite geometry (base VBO) for particles
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffers[(uint)GEOMETRY_BUFFER_ID::SPRITE]);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffers[(uint)GEOMETRY_BUFFER_ID::SPRITE]);
-    // set base vertex attrib pointers expected by particle_textured.vs.glsl:
-    glEnableVertexAttribArray(0); // in_position
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void*)0);
-    glEnableVertexAttribArray(1); // in_texcoord
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void*)sizeof(vec3));
-    
-    //  bind the instance VBO and update it
-    glBindBuffer(GL_ARRAY_BUFFER, particle_instance_vbo);
-    glBufferData(GL_ARRAY_BUFFER, instanceTransforms.size() * sizeof(mat3),
-                 instanceTransforms.data(), GL_DYNAMIC_DRAW);
-    
-    // setup instanced vertex attrib pointers for the mat3 (at locations 2, 3, and 4.)
-    for (int i = 0; i < 3; i++) {
-        GLuint attrib_location = 2 + i;
-        glEnableVertexAttribArray(attrib_location);
-        glVertexAttribPointer(attrib_location, 3, GL_FLOAT, GL_FALSE,
-                              sizeof(mat3), (void*)(sizeof(vec3) * i));
-        glVertexAttribDivisor(attrib_location, 1); // advance once per instance (super IMPORTANTT)
-    }
-    
-    glActiveTexture(GL_TEXTURE0);
-    GLuint texture_id = texture_gl_handles[(uint)TEXTURE_ASSET_ID::PARTICLE];
-    glBindTexture(GL_TEXTURE_2D, texture_id);
-    
-    // use the particle shader
-    glUseProgram(effects[(uint)EFFECT_ASSET_ID::PARTICLE_EFFECT]);
-    
-    mat3 projection = createProjectionMatrix();
-    GLuint proj_loc = glGetUniformLocation(effects[(uint)EFFECT_ASSET_ID::PARTICLE_EFFECT], "projection");
-    glUniformMatrix3fv(proj_loc, 1, GL_FALSE, (float *)&projection);
-    
-    // ise the stored sprite_index_count
-    GLsizei num_indices = sprite_index_count;
-    
+	// std::cout << "[Particle Debug] Instance transforms count: " << instanceTransforms.size() << std::endl;
+
+	if (instanceTransforms.empty())
+		return;
+
+	// bind the default VAO
+	glBindVertexArray(default_vao);
+
+	// bind the sprite geometry (base VBO) for particles
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffers[(uint)GEOMETRY_BUFFER_ID::SPRITE]);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffers[(uint)GEOMETRY_BUFFER_ID::SPRITE]);
+	// set base vertex attrib pointers expected by particle_textured.vs.glsl:
+	glEnableVertexAttribArray(0); // in_position
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)0);
+	glEnableVertexAttribArray(1); // in_texcoord
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)sizeof(vec3));
+
+	//  bind the instance VBO and update it
+	glBindBuffer(GL_ARRAY_BUFFER, particle_instance_vbo);
+	glBufferData(GL_ARRAY_BUFFER, instanceTransforms.size() * sizeof(mat3),
+							 instanceTransforms.data(), GL_DYNAMIC_DRAW);
+
+	// setup instanced vertex attrib pointers for the mat3 (at locations 2, 3, and 4.)
+	for (int i = 0; i < 3; i++)
+	{
+		GLuint attrib_location = 2 + i;
+		glEnableVertexAttribArray(attrib_location);
+		glVertexAttribPointer(attrib_location, 3, GL_FLOAT, GL_FALSE,
+													sizeof(mat3), (void *)(sizeof(vec3) * i));
+		glVertexAttribDivisor(attrib_location, 1); // advance once per instance (super IMPORTANTT)
+	}
+
+	glActiveTexture(GL_TEXTURE0);
+	GLuint texture_id = texture_gl_handles[(uint)TEXTURE_ASSET_ID::PARTICLE];
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+
+	// use the particle shader
+	glUseProgram(effects[(uint)EFFECT_ASSET_ID::PARTICLE_EFFECT]);
+
+	mat3 projection = createProjectionMatrix();
+	GLuint proj_loc = glGetUniformLocation(effects[(uint)EFFECT_ASSET_ID::PARTICLE_EFFECT], "projection");
+	glUniformMatrix3fv(proj_loc, 1, GL_FALSE, (float *)&projection);
+
+	// ise the stored sprite_index_count
+	GLsizei num_indices = sprite_index_count;
+
 	// draw the instanced particles as a set
-    glDrawElementsInstanced(GL_TRIANGLES, num_indices,
-                            GL_UNSIGNED_SHORT, nullptr, instanceTransforms.size());
-    
-    // disable instanced attributes
-    for (int i = 0; i < 3; i++) {
-        glDisableVertexAttribArray(2 + i);
-    }
-    
-    // for debugging purposes, check for errors
-    while (glGetError() != GL_NO_ERROR) { /* clear any errors */ }
+	glDrawElementsInstanced(GL_TRIANGLES, num_indices,
+													GL_UNSIGNED_SHORT, nullptr, instanceTransforms.size());
+
+	// disable instanced attributes
+	for (int i = 0; i < 3; i++)
+	{
+		glDisableVertexAttribArray(2 + i);
+	}
+
+	// for debugging purposes, check for errors
+	while (glGetError() != GL_NO_ERROR)
+	{ /* clear any errors */
+	}
+}
+
+// Structure for tile instance data (put here so it is visible to the shader for later changes)
+struct TileInstance
+{
+	mat3 transform;
+	vec4 params; // x: total_frames, y: current_frame, z: sprite_width, w: sprite_height
+};
+
+void RenderSystem::drawInstancedTiles(const mat3 &projection)
+{
+
+	// group tile instances by texture used.
+	std::unordered_map<GLuint, std::vector<TileInstance>> groups;
+
+	for (Entity entity : registry.tiles.entities)
+	{
+		if (!registry.motions.has(entity) ||
+				!registry.renderRequests.has(entity) ||
+				!registry.spriteSheetImages.has(entity) ||
+				!registry.spritesSizes.has(entity))
+			continue;
+		RenderRequest &req = registry.renderRequests.get(entity);
+		if (req.used_effect != EFFECT_ASSET_ID::TILE)
+			continue;
+		//build instance transform from motion.
+		Motion &motion = registry.motions.get(entity);
+		Transform transform;
+		transform.translate(motion.position);
+		transform.scale(motion.scale);
+		transform.rotate(radians(motion.angle));
+
+		SpriteSheetImage &spriteSheet = registry.spriteSheetImages.get(entity);
+		SpriteSize &sprite = registry.spritesSizes.get(entity);
+
+		TileInstance instance;
+		instance.transform = transform.mat;
+		instance.params = {float(spriteSheet.total_frames),
+											 float(spriteSheet.current_frame),
+											 float(sprite.width),
+											 float(sprite.height)};
+		GLuint texture = texture_gl_handles[(uint)req.used_texture];
+		groups[texture].push_back(instance);
+	}
+
+	// for each texture group, render the batch 
+	for (auto &group : groups)
+	{
+		GLuint texture = group.first;
+		std::vector<TileInstance> &instances = group.second;
+		if (instances.empty())
+			continue;
+
+		GLuint program = effects[(uint)EFFECT_ASSET_ID::TILE];
+		glUseProgram(program);
+		gl_has_errors();
+
+		// bind common geometry buffer
+		GLuint vbo = vertex_buffers[(uint)GEOMETRY_BUFFER_ID::SPRITE];
+		GLuint ibo = index_buffers[(uint)GEOMETRY_BUFFER_ID::SPRITE];
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+
+		// aet up base vertex attribute pointers
+		GLint in_position_loc = glGetAttribLocation(program, "in_position");
+		GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+		glEnableVertexAttribArray(in_position_loc);
+		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)0);
+		glEnableVertexAttribArray(in_texcoord_loc);
+		glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)sizeof(vec3));
+
+		// bindd and update tile instance VB
+		glBindBuffer(GL_ARRAY_BUFFER, tile_instance_vbo);
+		glBufferData(GL_ARRAY_BUFFER, instances.size() * sizeof(TileInstance), instances.data(), GL_DYNAMIC_DRAW);
+
+		// aetup instance attributes for the matrix (locations 2, 3, 4)
+		for (int i = 0; i < 3; i++)
+		{
+			GLuint attrib_location = 2 + i;
+			glEnableVertexAttribArray(attrib_location);
+			glVertexAttribPointer(attrib_location, 3, GL_FLOAT, GL_FALSE, sizeof(TileInstance), (void *)(sizeof(vec3) * i));
+			glVertexAttribDivisor(attrib_location, 1); // one per instance
+		}
+		// aetup instance attribute for tile parameters at location 5
+		GLuint tile_params_loc = 5;
+		glEnableVertexAttribArray(tile_params_loc);
+		glVertexAttribPointer(tile_params_loc, 4, GL_FLOAT, GL_FALSE, sizeof(TileInstance), (void *)sizeof(mat3));
+		glVertexAttribDivisor(tile_params_loc, 1);
+
+		// set shader uniforms.
+		glUniformMatrix3fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, (float *)&projection);
+		Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+		glUniform2fv(glGetUniformLocation(program, "camera_position"), 1, (float *)&camera.position);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glUniform1i(glGetUniformLocation(program, "sampler0"), 0);
+
+		// draw instanced
+		GLint iboSize = 0;
+		glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &iboSize);
+		GLsizei num_indices = iboSize / sizeof(uint16_t);
+		glDrawElementsInstanced(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr, instances.size());
+		gl_has_errors();
+
+		// dsable instanced attributes
+		for (int i = 2; i <= 5; i++)
+		{
+			glDisableVertexAttribArray(i);
+		}
+	}
 }
