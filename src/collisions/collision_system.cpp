@@ -133,16 +133,7 @@ bool CollisionSystem::hasCollided(const Motion& motion1, const Motion& motion2)
 	return checkPolygonCollisionWithVertices(getRectVertices(motion1), getRectVertices(motion2));
 }
 
-vec2 CollisionSystem::getPointOnPlayer(std::vector<vec2> player_vertices, float player_angle, vec2 wall_edge)
-{
-	float clamped_angle = clampNegativeAngle(player_angle);
-	bool top_left = isQuadrant1Or3(clamped_angle);
-	top_left = abs(wall_edge.x) <= 0.01f ? !top_left : top_left;
-
-	return top_left ? player_vertices[0] : player_vertices[1];
-}
-
-std::optional<std::pair<std::vector<vec2>, std::vector<vec2>>> CollisionSystem::checkWallCollision(Motion& motion, Entity& wall)
+bool CollisionSystem::checkWallCollision(Motion& motion, Entity& wall)
 {
 	std::vector<vec2> vertices = getRectVertices(motion);
 	std::vector<vec2> edges = getEdges(vertices);
@@ -154,193 +145,130 @@ std::optional<std::pair<std::vector<vec2>, std::vector<vec2>>> CollisionSystem::
 	auto wall_vertices = wall_info.first;
 	auto wall_edges = wall_info.second;
 
-	if (checkPolygonCollision(vertices, edges, wall_vertices, wall_edges))
+	return checkPolygonCollision(vertices, edges, wall_vertices, wall_edges);
+}
+
+EDGE_TYPE CollisionSystem::getEdgeOfCollisionAndResolve(Motion& motion, Entity& wall)
+{
+	// get direction vector of object movement
+	float angle = clampAngle(motion.angle);
+	
+	// cached wall info from before
+	Motion wall_motion = registry.motions.get(wall);
+	vec2 wall_center = wall_motion.position;
+	auto wall_info = wall_cache.at(wall.id());
+	auto wall_vertices = wall_info.first;
+
+	auto motion_vertices = getRectVertices(motion);
+	float min_dist = std::numeric_limits<float>::max();
+	std::vector<int> points_inside_idx;
+
+	// find out which vertices of the motion are currently inside the wall
+	for (int i = 0; i < motion_vertices.size(); i++)
 	{
-		return { wall_info };
+		if (isPointInRectangle(motion_vertices[i], wall_vertices))
+		{
+			points_inside_idx.push_back(i);
+		}
+	}
+
+	EDGE_TYPE edge_of_collision = EDGE_TYPE::NONE;;
+
+	// if no vertices are in the wall, skip 
+	// technically an edge case, but quite rare and hard to deal with
+	if (points_inside_idx.empty()) return edge_of_collision;
+	float quadrant_threshold = 45.0f;
+	if (points_inside_idx.size() > 1)
+	{
+		// 2 or more points inside the wall 
+		// (we only consider the 2 vertices case, as the collision is almost always detected before more vertices intersect)
+		// depending on which 2 vertices are in the wall and the angle, we determine the collision edge
+		if (abs(angle) < quadrant_threshold || abs(angle - 360) < quadrant_threshold )
+		{
+			if (points_inside_idx[0] == 0 && points_inside_idx[1] == 1) edge_of_collision = EDGE_TYPE::HORIZONTAL_BOTTOM;
+			if (points_inside_idx[0] == 1 && points_inside_idx[1] == 2) edge_of_collision = EDGE_TYPE::VERTICAL_LEFT;
+			if (points_inside_idx[0] == 2 && points_inside_idx[1] == 3) edge_of_collision = EDGE_TYPE::HORIZONTAL_TOP;
+			if (points_inside_idx[0] == 0 && points_inside_idx[1] == 3) edge_of_collision = EDGE_TYPE::VERTICAL_RIGHT;
+		}
+		else if (abs(angle - 90) < quadrant_threshold)
+		{
+			if (points_inside_idx[0] == 0 && points_inside_idx[1] == 1) edge_of_collision = EDGE_TYPE::VERTICAL_LEFT;
+			if (points_inside_idx[0] == 1 && points_inside_idx[1] == 2) edge_of_collision = EDGE_TYPE::HORIZONTAL_TOP;
+			if (points_inside_idx[0] == 2 && points_inside_idx[1] == 3) edge_of_collision = EDGE_TYPE::VERTICAL_RIGHT;
+			if (points_inside_idx[0] == 0 && points_inside_idx[1] == 3) edge_of_collision = EDGE_TYPE::HORIZONTAL_BOTTOM;
+		}
+		else if (abs(angle - 180) < quadrant_threshold)
+		{
+			if (points_inside_idx[0] == 0 && points_inside_idx[1] == 1) edge_of_collision = EDGE_TYPE::HORIZONTAL_TOP;
+			if (points_inside_idx[0] == 1 && points_inside_idx[1] == 2) edge_of_collision = EDGE_TYPE::VERTICAL_RIGHT;
+			if (points_inside_idx[0] == 2 && points_inside_idx[1] == 3) edge_of_collision = EDGE_TYPE::HORIZONTAL_BOTTOM;
+			if (points_inside_idx[0] == 0 && points_inside_idx[1] == 3) edge_of_collision = EDGE_TYPE::VERTICAL_LEFT;
+		}
+		else if (abs(angle - 270) < quadrant_threshold)
+		{
+			if (points_inside_idx[0] == 0 && points_inside_idx[1] == 1) edge_of_collision = EDGE_TYPE::VERTICAL_RIGHT;
+			if (points_inside_idx[0] == 1 && points_inside_idx[1] == 2) edge_of_collision = EDGE_TYPE::HORIZONTAL_BOTTOM;
+			if (points_inside_idx[0] == 2 && points_inside_idx[1] == 3) edge_of_collision = EDGE_TYPE::VERTICAL_LEFT;
+			if (points_inside_idx[0] == 0 && points_inside_idx[1] == 3) edge_of_collision = EDGE_TYPE::HORIZONTAL_TOP;
+		}
 	}
 	else
 	{
-		return std::nullopt;
+		// only 1 point is in the wall, so use the predefine map to figure out the collision edge
+		edge_of_collision = COLLISION_TO_EDGE[(int)getAngleQuadrant(angle)][points_inside_idx[0]];
 	}
+
+	// if a collision edge is found, resolve the collision
+	if (edge_of_collision != EDGE_TYPE::NONE) resolveWallCollision(motion, edge_of_collision, wall_vertices[(int)edge_of_collision]);
+
+	return edge_of_collision;
 }
 
-float CollisionSystem::getIntersectionDist(vec2 point, vec2 direction, vec2 point2, vec2 direction2)
+void CollisionSystem::resolveWallCollision(Motion& motion, EDGE_TYPE edge_of_collision, vec2 wall_vertex)
 {
-	float multiplier;
+	float angle = clampAngle(motion.angle);
+	float angle_rad = angle * (180.0f / M_PI);
 
-	// vertical edge that player is not parallel to
-	if (abs(direction2.x) < 0.01f && abs(direction.x) >= 0.01f)
-	{
-		multiplier = (point2.x - point.x) / direction.x;
-	}
-	// horizontal edge that player is not parallel to
-	else if (abs(direction2.y) < 0.01f && abs(direction.y) >= 0.01f)
-	{
-		multiplier = (point2.y - point.y) / direction.y;
-	}
-	// player is parallel to edge, skip
-	else return -1;
+	// this is the length from the center to any vertex. this is the maximum a motion has to be shifted to resolve a collision (45 deg angle of collision)
+	// can technically be made more accurate to the current angle, but a constant distance looks smooth and works well enough
+	float dist = sqrt(pow(motion.scale.x / 2, 2) + (motion.scale.y, 2));
 
-	vec2 intersection = point + (direction * multiplier);
-
-	return glm::distance(point, intersection);
-}
-
-void CollisionSystem::resolveWallCollision(Motion& motion, vec2 intersection_edge, vec2 intersection_edge_vertex, float movement_angle, float object_angle_rad)
-{
-	// if its a vertical edge
-	if (abs(intersection_edge.x) < 0.01f)
+	switch (edge_of_collision)
 	{
-		float dist = (abs(cosf(object_angle_rad)) * (motion.scale.y / 2)) + (abs(sinf(object_angle_rad)) * (motion.scale.x / 2));
-		// determine if the player was moving to the right or left when colliding
-		if (isRightQuadrant(movement_angle))
-		{
-			// moving to the right, so we have to reduce player x coord
-			motion.position.x = std::min(motion.position.x, intersection_edge_vertex.x - dist - 2);
-		}
-		else
-		{
-			// moving to the left, so we have to increase player x coord
-			motion.position.x = std::max(motion.position.x, intersection_edge_vertex.x + dist + 2);
-		}
-	}
-	// if its a horizontal edge
-	else
-	{
-		float dist = abs(cosf(object_angle_rad)) * (motion.scale.x / 2) + abs(sinf(object_angle_rad)) * (motion.scale.y / 2);
-		// determine if the player was moving up or down when colliding
-		if (isTopQuadrant(movement_angle))
-		{
-			// moving up, so we have to increase player y coord
-			motion.position.y = std::max(motion.position.y, intersection_edge_vertex.y + dist + 2);
-		}
-		else
-		{
-			// moving to down, so we have to reduce player y coord
-			motion.position.y = std::min(motion.position.y, intersection_edge_vertex.y - dist - 2);
-		}
+	case EDGE_TYPE::HORIZONTAL_TOP:
+		motion.position.y = std::min(motion.position.y, wall_vertex.y - dist);
+		break;
+	case EDGE_TYPE::VERTICAL_RIGHT:
+		motion.position.x = std::max(motion.position.x, wall_vertex.x + dist);
+		break;
+	case EDGE_TYPE::HORIZONTAL_BOTTOM:
+		motion.position.y = std::max(motion.position.y, wall_vertex.y + dist);
+		break;
+	case EDGE_TYPE::VERTICAL_LEFT:
+		motion.position.x = std::min(motion.position.x, wall_vertex.x - dist);
+		break;
 	}
 }
 
-void CollisionSystem::checkAndHandleGeneralWallCollision(Motion& motion, Entity& wall)
+EDGE_TYPE CollisionSystem::checkAndHandleWallCollision(Motion& motion, Entity& wall)
 {
 	auto collision = checkWallCollision(motion, wall);
 
-	if (collision.has_value())
-	{
-		auto wall_vertices = collision.value().first;
-		auto wall_edges = collision.value().second;
-
-		// get direction vector of object movement
-		vec2 direction_vector = glm::normalize(motion.velocity);
-
-		vec2 closest_intersection_edge;
-		vec2 closest_intersection_edge_vertex;
-		float closest_intersection_dist = std::numeric_limits<float>::max();
-		bool edge_found = false;
-
-		// find which of the 4 wall edges the object collided with
-		// find the intersection of the vector from object center (in the direction of object movement) to every edge
-		// use the closest intersection
-		for (int i = 0; i < wall_vertices.size(); i++)
-		{
-			vec2 edge_start = wall_vertices[i];
-			vec2 edge_vector = wall_edges[i];
-			vec2 edge_end = edge_start + edge_vector;
-
-			float dist_to_intersection = getIntersectionDist(motion.position, direction_vector, edge_start, edge_vector);
-
-			if (dist_to_intersection >= 0 && dist_to_intersection < closest_intersection_dist)
-			{
-				edge_found = true;
-				closest_intersection_dist = dist_to_intersection;
-				closest_intersection_edge = edge_vector;
-				closest_intersection_edge_vertex = edge_start;
-			}
-		}
-
-		if (!edge_found) return;
-
-		float velocity_angle = acosf(glm::dot({ 0, -1 }, direction_vector)) * (180.0f / M_PI);
-		if (direction_vector.x < 0) velocity_angle = 360.0f - velocity_angle;
-
-		resolveWallCollision(motion, closest_intersection_edge, closest_intersection_edge_vertex, velocity_angle);
-	}
-}
-
-std::pair<bool, vec2> CollisionSystem::checkAndHandlePlayerWallCollision(Motion& player_motion, float movement_angle, Entity& wall)
-{
-	auto collision = checkWallCollision(player_motion, wall);
-
 	vec2 edge_of_collision;
 
-	if (collision.has_value())
+	if (collision)
 	{
-		auto wall_vertices = collision.value().first;
-		auto wall_edges = collision.value().second;
-
-		// collision detected. we now have to deal with moving the player out of the wall
-		vec2 direction_vector = getDirectionVecFromAngle(player_motion.angle);
-		vec2 player_center = player_motion.position;
-		vec2 player_top_middle = player_center + (direction_vector * (PLAYER_BB_WIDTH / 2));
-		vec2 player_bottom_middle = player_center - (direction_vector * (PLAYER_BB_WIDTH / 2));
-	
-		vec2 closest_intersection_edge;
-		vec2 closest_intersection_edge_vertex;
-		float closest_intersection_dist = std::numeric_limits<float>::max();
-		bool edge_found = false;
-
-		// find which of the 4 wall edges the player collided with
-		// find the intersection of the vector from player center (in the direction of player movement) to every edge
-		// use the closest intersection
-		for (int i = 0; i < wall_vertices.size(); i++)
-		{
-			vec2 edge_start = wall_vertices[i];
-			vec2 edge_vector = wall_edges[i];
-
-			// explained in method docs
-			vec2 point_on_player = getPointOnPlayer(getRectVertices(player_motion), player_motion.angle, edge_vector);
-
-			if (!isPointInRectangle(point_on_player, wall_vertices)) continue;
-
-			vec2 point_on_player_center = point_on_player + (direction_vector * (player_motion.scale.x / 2));
-			vec2 point_on_player_back = point_on_player_center + (direction_vector * (player_motion.scale.x / 2));
-			// use points on the center line of the player if possible. however, this point can sometime be inside the wall already when the collision is detected
-			// this messes up getting the right edge. if so, we use points on the bottom edge. 
-			// basically, the more the player is within the wall, we choose a point further back 
-			point_on_player = !isPointInRectangle(point_on_player_center, wall_vertices) ? point_on_player_center : point_on_player_back;
-
-			float dist_to_intersection = getIntersectionDist(point_on_player, direction_vector, edge_start, edge_vector);
-
-			if (dist_to_intersection >= 0 && dist_to_intersection < closest_intersection_dist)
-			{
-				edge_found = true;
-				closest_intersection_dist = dist_to_intersection;
-				closest_intersection_edge = edge_vector;
-				closest_intersection_edge_vertex = edge_start;
-			}
-		}
-
-		if (!edge_found) return { false, {0, 0} };
-		
-		float player_angle_rad = clampNegativeAngle(player_motion.angle) * (M_PI / 180.0f);
-		float clamped_movement_angle = clampNegativeAngle(movement_angle);
-		float player_width = player_motion.scale.x;
-		float player_height = player_motion.scale.y;
-
-		resolveWallCollision(player_motion, closest_intersection_edge, closest_intersection_edge_vertex, clamped_movement_angle, player_angle_rad);
-
-		edge_of_collision = closest_intersection_edge;
+		return getEdgeOfCollisionAndResolve(motion, wall);
 	}
 
-	return { collision.has_value(), edge_of_collision};
+	return EDGE_TYPE::NONE;
 }
 
-void CollisionSystem::handleDashOnWallEdge(vec2 wall_edge, Dashing& dash)
+void CollisionSystem::handleDashOnWallEdge(EDGE_TYPE wall_edge, Dashing& dash)
 {
 	float dash_angle = dash.angle_deg < 0 ? 360.0f + dash.angle_deg : dash.angle_deg;
 	// if its a vertical edge
-	if (abs(wall_edge.x) < 0.01f)
+	if (wall_edge == EDGE_TYPE::VERTICAL_RIGHT || wall_edge == EDGE_TYPE::VERTICAL_LEFT)
 	{
 		dash.velocity = { 0, dash.velocity.y };
 		dash.angle_deg = dash_angle == 90.0f || dash_angle == 270.0f ? dash_angle : isTopQuadrant(dash_angle) ? 0.0f : 180.0f;
@@ -354,8 +282,25 @@ void CollisionSystem::handleDashOnWallEdge(vec2 wall_edge, Dashing& dash)
 
 void CollisionSystem::addWallToCache(Entity& wall, const Motion& wall_motion)
 {
-	auto vertices = getRectVertices(wall_motion);
+	Motion wall_motion_with_buffer = wall_motion;
+	wall_motion_with_buffer.scale.x *= 1.01;
+	wall_motion_with_buffer.scale.y *= 1.01;
+	auto vertices = getRectVertices(wall_motion_with_buffer);
 	wall_cache.insert({ wall.id(), std::make_pair(vertices, getEdges(vertices)) });
+}
+
+QUADRANT CollisionSystem::getAngleQuadrant(float angle)
+{
+	if (angle >= 0 && angle < 90) return QUADRANT::QUADRANT_1;
+	if (angle >= 90 && angle < 180) return QUADRANT::QUADRANT_2;
+	if (angle >= 180 && angle < 270) return QUADRANT::QUADRANT_3;
+	if (angle >= 270 && angle < 360) return QUADRANT::QUADRANT_4;
+	else return QUADRANT::QUADRANT_1;
+}
+
+float CollisionSystem::clampAngle(float angle)
+{
+	return angle < 0 ? 360.0f + angle : angle >= 360 ? angle - 360 : angle;
 }
 
 bool CollisionSystem::isTopQuadrant(float angle)
@@ -367,14 +312,3 @@ bool CollisionSystem::isRightQuadrant(float angle)
 {
 	return angle >= 0 && angle <= 180;
 }
-
-bool CollisionSystem::isQuadrant1Or3(float angle)
-{
-	return (angle >= 0 && angle <= 90) || (angle >= 180 && angle <= 270);
-}
-
-float CollisionSystem::clampNegativeAngle(float angle)
-{
-	return angle < 0 ? 360.0f + angle : angle;
-}
-

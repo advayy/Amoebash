@@ -36,7 +36,7 @@ class RenderSystem
 		textures_path("enemies/rbc.png"),
 		textures_path("enemies/bacteriophage.png"),
 		textures_path("amoeba/player_dash.png"),
-		textures_path("projectiles/gold_bubble.png"),
+		textures_path("projectiles/bacteriophage_projectile.png"),
 		textures_path("tiles/test_tile.png"),
 		textures_path("tiles/parallax_tile_1_128x.png"),
 		textures_path("ui_art/amoebash_logo.png"),
@@ -149,7 +149,7 @@ public:
 	void drawShopScreen();
 	void drawInfoScreen();
 	void drawCutScreneAnimation();
-    void drawNextLevelScreen();
+	void drawNextLevelScreen();
 
 	mat3 createProjectionMatrix();
 
@@ -167,13 +167,16 @@ public:
 	void drawUIElements();
 	void drawHealthBar(Entity entity, const mat3 &projection);
 	void drawDashRecharge(const mat3 &projection);
-	void drawHexagon(Entity entity, const mat3 &projection);	
+	void drawHexagon(Entity entity, const mat3 &projection);
 	void drawBuffUI();
 
 	// INSTANCING: instanced particle drawing
 	void drawInstancedParticles();
 	void drawParticlesByTexture(TEXTURE_ASSET_ID texture_id);
 
+
+	// INSTANCING: instanced tile drawing
+	void drawInstancedTiles(const mat3 &projection);
 
 private:
 	// Internal drawing functions for each entity type
@@ -202,18 +205,21 @@ private:
 	float current_fps = 0.0f;
 	bool show_fps = true; // Start with FPS display enabled
 
-	// New: Particle effect shader
+	// INSTANCING: Particle effect shader
 	GLuint particle_effect;
 
-	// New instance buffer to hold per-particle transform matrices
+	// INSTANCING instance buffer to hold per-particle transform matrices
 	GLuint particle_instance_vbo;
 
-	// NEW: Default VAO for rendering
+	// INSTANCING: Default VAO for rendering
 	GLuint default_vao;
 
-	// NEW: Store the sprite index count
+	// INSTANCING: Store the sprite index count
 	GLsizei sprite_index_count;
+
+	// INSTANCING: Instance VBO for tiles
+	GLuint tile_instance_vbo;
 };
 
 bool loadEffectFromFile(
-	const std::string &vs_path, const std::string &fs_path, GLuint &out_program);
+		const std::string &vs_path, const std::string &fs_path, GLuint &out_program);

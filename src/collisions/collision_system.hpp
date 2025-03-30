@@ -4,6 +4,41 @@
 #include <map>
 #include <optional>
 
+// enum for the 4 types of wall edges
+//
+//         ------- Horizontal Top -------
+//        |                             |
+//        |                             |
+//    Vertical Left                Vertical Right
+//        |                             |
+//        |                             |
+//        |_____ Horizontal Bottom _____|
+enum class EDGE_TYPE
+{
+	HORIZONTAL_TOP = 0,
+	VERTICAL_RIGHT = HORIZONTAL_TOP + 1,
+	HORIZONTAL_BOTTOM = VERTICAL_RIGHT + 1,
+	VERTICAL_LEFT = HORIZONTAL_BOTTOM + 1,
+	NONE = VERTICAL_LEFT + 1
+};
+
+// enum for the different quadrants an angle can be in
+enum class QUADRANT
+{
+	QUADRANT_1 = 0,
+	QUADRANT_2 = QUADRANT_1 + 1,
+	QUADRANT_3 = QUADRANT_2 + 1,
+	QUADRANT_4 = QUADRANT_3 + 1
+};
+
+// Map of [Angle Quadrant][Index of Vertex inside a wall] to the edge of collision
+const EDGE_TYPE COLLISION_TO_EDGE[4][4] = {
+	{EDGE_TYPE::HORIZONTAL_BOTTOM, EDGE_TYPE::VERTICAL_LEFT, EDGE_TYPE::HORIZONTAL_TOP, EDGE_TYPE::VERTICAL_RIGHT},
+	{EDGE_TYPE::VERTICAL_LEFT, EDGE_TYPE::HORIZONTAL_TOP, EDGE_TYPE::VERTICAL_RIGHT, EDGE_TYPE::HORIZONTAL_BOTTOM},
+	{EDGE_TYPE::HORIZONTAL_TOP, EDGE_TYPE::VERTICAL_RIGHT, EDGE_TYPE::HORIZONTAL_BOTTOM, EDGE_TYPE::VERTICAL_LEFT},
+	{EDGE_TYPE::VERTICAL_RIGHT, EDGE_TYPE::HORIZONTAL_BOTTOM, EDGE_TYPE::VERTICAL_LEFT, EDGE_TYPE::HORIZONTAL_TOP}
+};
+
 class CollisionSystem
 {
 private:
@@ -67,57 +102,45 @@ private:
 	*/
 	bool isRightQuadrant(float angle);
 	/*
+		Returns the quadrant that the given angle is in
+	*/
+	QUADRANT getAngleQuadrant(float angle);
+	/*
 		Gets the direction vector for the given angle
 	*/
 	vec2 getDirectionVecFromAngle(float angle);
 	/*
-		Returns true if the given angle is in Quadrant 1 (+x, +y) or Quadrant 3 (-x, -y)
-	*/
-	bool isQuadrant1Or3(float angle);
-	/*
 		Clamps the given angle to between 0 and 360, so adds 360 to negative angles
 	*/
-	float clampNegativeAngle(float angle);
-	/*
-		For the given wall edge, gets the point from the player vertices that would've intersected that edge
-		For every angle of approach, there is one point out of the 4 player vertices that necessarily has to touch the given edge first
-		With this, we can verify if the player did actually intersect that edge
-
-		param player_vertices: the 4 vertices of the player rectangle, in this order:
-								Top Left, Top Right, Bottom Right, Bottom Left
-		param player_angle: angle in degrees that the player is facing
-		param direction: the edge we want to test for
-	*/
-	vec2 getPointOnPlayer(std::vector<vec2> player_vertices, float player_angle, vec2 wall_edge);
+	float clampAngle(float angle);
 	/*
 		Check collisions between the given motion and wall
 
 		param motion: the motion component which may be colliding
 		param wall: the entity of the wall to check
 
-		Returns a pair containing the vertices and edges of the wall that the motion collided with, if there is a collision
-		If not, returns nullopt
+		Returns True if there is a collision, False if not
 	*/
-	std::optional<std::pair<std::vector<vec2>, std::vector<vec2>>> checkWallCollision(Motion& motion, Entity& wall);
+	bool checkWallCollision(Motion& motion, Entity& wall);
 	/*
-		Get the distance to the point of intersection between the 2 lines defined by:
-			- Starting at point, and going in direction
-			- Starting at point2, and going in direction2
+		Assuming a collision has been detected between a motion component and a wall, gets the edge of collision as an enum type
+		Also resolves the collision using a helper
 
-		Returns the absolute distance from the first point to the intersection
+		param motion: the motion component which has collided
+		param wall: the entity of the wall that it collided with
+
+		returns the edge of collision as an enum type
 	*/
-	float getIntersectionDist(vec2 point, vec2 direction, vec2 point2, vec2 direction2);
+	EDGE_TYPE getEdgeOfCollisionAndResolve(Motion& motion, Entity& wall);
 	/*
-		Resolve a collision between a Motion component and a wall. Modifies the motion component to move it out of the wall
+		Resolves a collision after it has been detected
+		Uses the edge of collision to determine how to move the given motion so that it is no longer colliding
 
-		param motion: the motion component which has collided, which should be modified
-		param closest_intersection_edge: the direction vector of the edge that the motion intersected with
-		param intersection_edge_vertex: the starting vertex of the edge that the motion intersected with
-		param movement_angle: the angle that the motion was moving in, relative to the vertical
-		param object_angle: the angle that the motion was pointing in, relative to the vertical
-
+		param motion: the motion that has collided, which should be moved
+		param edge_of_collision: the type of edge that the motion collided on
+		param wall_vertex: the position of one of the vertices of the edge of collision
 	*/
-	void resolveWallCollision(Motion& motion, vec2 intersection_edge, vec2 intersection_edge_vertex, float movement_angle, float object_angle_rad = 0);
+	void resolveWallCollision(Motion& motion, EDGE_TYPE edge_of_collision, vec2 wall_vertex);
 
 	// since walls are static, cache the ones we've already calculated vertices / edges for
 	std::map<unsigned int, std::pair<std::vector<vec2>, std::vector<vec2>>> wall_cache;
@@ -140,15 +163,13 @@ public:
 
 		return: True + wall edge of collision if collided, False + empty edge if not
 	*/
-	std::pair<bool, vec2> checkAndHandlePlayerWallCollision(Motion& player_motion, float movement_angle, Entity& wall);
-
-	void checkAndHandleGeneralWallCollision(Motion& motion, Entity& wall);
+	EDGE_TYPE checkAndHandleWallCollision(Motion& player_motion, Entity& wall);
 	/*
 		Modifies the given dash so that it doesn't collide into the given wall edge
 
-		param direction2: the edge of a wall that the player is dashing into
+		param wall_edge: the type of edge of a wall that the player is dashing into
 		param dash: the dash to modify
 	*/
-	void handleDashOnWallEdge(vec2 wall_edge, Dashing& dash);
+	void handleDashOnWallEdge(EDGE_TYPE wall_edge, Dashing& dash);
 
 };

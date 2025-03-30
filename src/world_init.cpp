@@ -6,6 +6,12 @@
 #include <queue>
 #include "animation_system.hpp"
 
+
+void initializeProgression(){
+	auto entity = Entity();
+	Progression& progressionState = registry.progressions.emplace(entity);
+}
+
 Entity createEnemy(RenderSystem* renderer, vec2 position)
 {
 	// reserve an entity
@@ -14,6 +20,7 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 	// invader
 	Enemy& enemy = registry.enemies.emplace(entity);
 	enemy.health = ENEMY_HEALTH;
+	enemy.total_health = ENEMY_HEALTH;
 
 	// store a reference to the potentially re-used mesh object
 	Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
@@ -132,6 +139,60 @@ Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_
 	return entity;
 }
 
+Entity createBoss(RenderSystem* renderer, vec2 position, BossState state, int bossStage)
+{
+	Entity entity = createEnemy(renderer, position);
+
+	Motion& motion = registry.motions.get(entity);
+	motion.scale = {BOSS_BB_WIDTH, BOSS_BB_HEIGHT};
+
+	BossAI& enemy_ai = registry.bossAIs.emplace(entity);
+	enemy_ai.state = state;
+	enemy_ai.cool_down = 2000.f;
+	enemy_ai.detectionRadius = BOSS_DETECTION_RADIUS;
+	enemy_ai.projectile_size = BOSS_PROJECTILE;
+	enemy_ai.stage = bossStage;
+
+	Enemy& enemy = registry.enemies.get(entity);
+	enemy.health = BOSS_HEALTH;
+	enemy.total_health = BOSS_HEALTH;
+
+	if (bossStage > 0) {
+		motion.scale /= (2 * bossStage);
+		enemy.health /= 2 * bossStage;
+		enemy.total_health /= 2 * bossStage;
+		enemy_ai.projectile_size /= 2 * bossStage;
+		enemy_ai.detectionRadius = enemy_ai.detectionRadius * std::pow(0.75f, bossStage);
+	}
+
+	TEXTURE_ASSET_ID texture = static_cast<TEXTURE_ASSET_ID>(static_cast<int>(TEXTURE_ASSET_ID::BOSS_STAGE_1) + bossStage);
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			texture,
+			EFFECT_ASSET_ID::SPRITE_SHEET,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	Animation& a = registry.animations.emplace(entity);
+	a.start_frame = 0;
+	a.end_frame = bossStage == 0 ? 7 : (bossStage == 1 ? 9 : 8);
+	a.time_per_frame = 100.0f;
+	a.loop = (bossStage <= 1) ? ANIM_LOOP_TYPES::LOOP : ANIM_LOOP_TYPES::PING_PONG;
+
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = bossStage == 0 ? 7 : (bossStage == 1 ? 9 : 8);
+	spriteSheet.current_frame = 0;
+
+	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
+	sprite.width = motion.scale.x;
+	sprite.height = motion.scale.y;
+
+	return entity;
+}
+
 Entity createPlayer(RenderSystem *renderer, vec2 position)
 {
 	auto entity = Entity();
@@ -171,14 +232,55 @@ Entity createPlayer(RenderSystem *renderer, vec2 position)
 	sprite.width = 32;
 	sprite.height = 32;
 
+    createGun(renderer, position);
+
 	return entity;
 }
 
-Entity createProjectile(vec2 pos, vec2 size, vec2 velocity)
+Entity createGun(RenderSystem *renderer, vec2 position) {
+    auto entity = Entity();
+
+    registry.guns.emplace(entity);
+
+    // Initialize the motion
+    auto &motion = registry.motions.emplace(entity);
+    motion.angle = 0.0f;
+    motion.velocity = {0.0f, 0.0f};
+    motion.position = position;
+
+    motion.scale = vec2({GUN_SIZE, GUN_SIZE});
+
+    registry.renderRequests.insert(
+        entity,
+        {TEXTURE_ASSET_ID::GUN,
+         EFFECT_ASSET_ID::SPRITE_SHEET,
+         GEOMETRY_BUFFER_ID::SPRITE
+        }
+    );
+
+	Animation& a = registry.animations.emplace(entity);
+	a.start_frame = 0;
+	a.end_frame = 9;
+	a.time_per_frame = 100.0f;
+	a.loop = ANIM_LOOP_TYPES::LOOP;
+
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 9;
+	spriteSheet.current_frame = 0;
+
+	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
+	sprite.width = motion.scale.x;
+	sprite.height = motion.scale.y;
+
+
+    return entity;
+}
+
+Entity createProjectile(vec2 pos, vec2 size, vec2 velocity, float damage)
 {
 	auto entity = Entity();
 	auto &p = registry.projectiles.emplace(entity);
-	p.damage = PROJECTILE_DAMAGE;
+	p.damage = damage;
 
 	// Mesh& mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::SPRITE);
 	// registry.meshPtrs.emplace(entity, &mesh);
@@ -204,13 +306,83 @@ Entity createProjectile(vec2 pos, vec2 size, vec2 velocity)
 
 Entity createBacteriophageProjectile(Entity& bacteriophage)
 {
-	Motion motion = registry.motions.get(bacteriophage);
+	Motion& motion = registry.motions.get(bacteriophage);
 	vec2 direction = vec2(cosf((motion.angle - 90) * (M_PI / 180)), sinf((motion.angle - 90) * (M_PI / 180)));
 	vec2 projectile_pos = motion.position + (motion.scale * direction);
 	vec2 projectile_velocity = direction * PROJECTILE_SPEED;
-	Entity projectile = createProjectile(projectile_pos, { PROJECTILE_BB_WIDTH, PROJECTILE_BB_HEIGHT }, projectile_velocity);
+	Entity projectile = createProjectile(projectile_pos, { PROJECTILE_BB_WIDTH, PROJECTILE_BB_HEIGHT }, projectile_velocity, PROJECTILE_DAMAGE);;
 	registry.bacteriophageProjectiles.emplace(projectile);
 	return projectile;
+}
+
+Entity createBossProjectile(vec2 position, vec2 size, vec2 velocity)
+{
+	Entity projectile = createProjectile(position, size, velocity);
+	RenderRequest& render_request = registry.renderRequests.get(projectile);
+	render_request.used_texture = TEXTURE_ASSET_ID::BOSS_PROJECTILE;
+	Projectile& p = registry.projectiles.get(projectile);
+	p.damage = BOSS_PROJECTILE_DAMAGE;
+	registry.bossProjectiles.emplace(projectile);
+
+	return projectile;
+}
+
+Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& playerPosition) {
+	for (Entity& entity : registry.proceduralMaps.entities) {
+        registry.remove_all_components_of(entity);
+    }
+    for (Entity& entity : registry.portals.entities) {
+        registry.remove_all_components_of(entity);
+    }
+
+	auto entity = Entity();
+	ProceduralMap& map = registry.proceduralMaps.emplace(entity);
+
+	map.width = size.x;
+	map.height = size.y;
+	map.top = floor(WORLD_ORIGIN.y - size.y / 2);
+	map.left = floor(WORLD_ORIGIN.x - size.x / 2);
+	map.bottom = ceil(WORLD_ORIGIN.y + size.y / 2);
+	map.right = ceil(WORLD_ORIGIN.x + size.x / 2);
+	map.map.resize(map.height, std::vector<tileType>(map.width, tileType::EMPTY));
+
+	for (int x = 0; x < map.width; x ++) {
+		for (int y = 0; y < map.height; y++) {
+			map.map[y][x] = tileType::EMPTY;
+		}
+	}
+
+	playerPosition.first = 19;
+	playerPosition.second = 10;
+
+	return entity;
+}
+
+void updateMiniMap(vec2 playerPos) {
+
+	float minimapViewRange = 3.0;
+	Entity e = registry.miniMaps.entities[0];
+	MiniMap& m = registry.miniMaps.get(e);
+
+	int top = std::max(0.f, playerPos.y - minimapViewRange);
+	int bottom = std::min(20.f, playerPos.y + minimapViewRange);
+	int left = std::max(0.f, playerPos.x - minimapViewRange);
+	int right = std::min(20.f, playerPos.x + minimapViewRange);
+
+	for(int i = left; i < right; i++) {
+		for(int j = top; j < bottom; j++) {
+			m.visited[i][j] = 1;
+		}
+	}
+}
+
+void emptyMiniMap() {
+	MiniMap& m = registry.miniMaps.get(registry.miniMaps.entities[0]);
+	for (int y = 0; y < MAP_HEIGHT; y++) {
+		for(int x = 0; x< MAP_WIDTH; x++) {
+			m.visited[y][x] = 0;
+		}
+	}
 }
 
 Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, std::pair<int, int>& playerPosition) {
@@ -253,11 +425,7 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 				}
 			}
 		}
-		// std::cout << "Created InfoBoxes" << std::endl;
-
 	} else {
-		// std::cout << "Should randomize map" << std::endl;
-	
 		// Initialize map to random walls / floors
         std::random_device rd;
 		std::default_random_engine rng(rd());
@@ -308,7 +476,6 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
             return entity;
         } while (true);
 	}
-
     return entity;
 }
 
@@ -439,7 +606,14 @@ Entity addTile(vec2 gridCoord, TEXTURE_ASSET_ID texture_id, int total_frames)
 Entity createCamera()
 {
 	// Remove all cameras
+	std::vector<Entity> camerasToRemove;
+
 	for (Entity &entity : registry.cameras.entities)
+	{
+		camerasToRemove.push_back(entity);
+	}
+
+	for (Entity &entity : camerasToRemove)
 	{
 		registry.remove_all_components_of(entity);
 	}
@@ -568,22 +742,28 @@ Entity createBuff(vec2 position)
 	motion.scale = {BUFF_WIDTH, BUFF_HEIGHT};
 
 	Entity player_entity = registry.players.entities[0];
-    	Motion &player_motion = registry.motions.get(player_entity);
-    
+
+    Motion &player_motion = registry.motions.get(player_entity);
+
+	vec2 player_direction = (glm::length(player_motion.velocity) > 0.0f) 
+	? glm::normalize(player_motion.velocity) 
+	: vec2(1.0f, 0.0f); 
+
 	// Assign buff a random throwing direction perpendicular to the player's direction within +/-30 deg
-    	vec2 player_direction =  glm::normalize(player_motion.velocity);
-    	vec2 perp_right = vec2(-player_direction.y, player_direction.x);
-    	vec2 perp_left = vec2(player_direction.y, -player_direction.x);
-    	vec2 perp_base = (rand() % 2 == 0) ? perp_right : perp_left;
+    vec2 perp_right = vec2(-player_direction.y, player_direction.x);
+    vec2 perp_left = vec2(player_direction.y, -player_direction.x);
+    vec2 perp_base = (rand() % 2 == 0) ? perp_right : perp_left;
 	float random_angle_offset = ((rand() % 60) - 30) * (M_PI / 180.0f);
-    	float rotation_cos = cos(random_angle_offset);
-    	float rotation_sin = sin(random_angle_offset);
-    	vec2 angle = vec2(
+    float rotation_cos = cos(random_angle_offset);
+    float rotation_sin = sin(random_angle_offset);
+    vec2 angle = vec2(
         perp_base.x * rotation_cos - perp_base.y * rotation_sin,
         perp_base.x * rotation_sin + perp_base.y * rotation_cos
     );
 
+
 	motion.position = vec2(position.x + angle.x * 80.0f, position.y + angle.y * 80.0f);
+
 	float speed = 100.0f + (rand() % 50);
 	motion.velocity = angle * speed;
 

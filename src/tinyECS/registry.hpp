@@ -10,6 +10,8 @@ class ECSRegistry
 	std::vector<ContainerInterface *> registry_list;
 
 public:
+	ComponentContainer<Progression> progressions;
+
 	// Manually created list of all components this game has
 	// TODO: A1 add a LightUp component
 	ComponentContainer<DeathTimer> deathTimers;
@@ -27,6 +29,7 @@ public:
 	ComponentContainer<Enemy> enemies;
 	ComponentContainer<Projectile> projectiles;
 	ComponentContainer<BacteriophageProjectile> bacteriophageProjectiles;
+	ComponentContainer<BossProjectile> bossProjectiles;
     ComponentContainer<Portal> portals;
 
 	// mine
@@ -66,19 +69,26 @@ public:
 	ComponentContainer<HealthBar> healthBars;
 	ComponentContainer<DashRecharge> dashRecharges;
 	ComponentContainer<BuffUI> buffUIs;
+	ComponentContainer<ClickableBuff> clickableBuffs;
 
 	// enemy behaviors
 	ComponentContainer<SpikeEnemyAI> spikeEnemyAIs;
 	ComponentContainer<RBCEnemyAI> rbcEnemyAIs;
 	ComponentContainer<BacteriophageAI> bacteriophageAIs;
+	ComponentContainer<BossAI> bossAIs;
 
 	// particle
 	ComponentContainer<Particle> particles;
+
+    ComponentContainer<Gun> guns;
+	// NUCLEUS MENU SLOT
+	ComponentContainer<Slot> slots;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
 	{
 		// TODO: A1 add a LightUp component
+		registry_list.push_back(&progressions);
 		registry_list.push_back(&deathTimers);
 		registry_list.push_back(&motions);
 		registry_list.push_back(&collisions);
@@ -126,6 +136,11 @@ public:
 		registry_list.push_back(&rbcEnemyAIs);
 		registry_list.push_back(&bacteriophageAIs);
 		registry_list.push_back(&particles);
+		registry_list.push_back(&bossAIs);
+		registry_list.push_back(&bossProjectiles);
+        registry_list.push_back(&guns);
+		registry_list.push_back(&slots);
+        registry_list.push_back(&clickableBuffs);
 	}
 
 	void clear_all_components()

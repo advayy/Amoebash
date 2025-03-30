@@ -10,8 +10,13 @@ Entity createMiniMap(RenderSystem *renderer, vec2 size);
 Entity createStartScreen(vec2 position = LOGO_POSITION_INITIAL);
 Entity createShopScreen();
 Entity createInfoScreen();
+Entity createNextButton(vec2 position);
 Entity createGameOverScreen();
+Entity createNucleusMenuNucleus();
+Entity createNucleusMenuSlot(vec2 position, int slotNumber);
+Entity createNucleusMenuScreen();
 Entity createPauseScreen();
+Entity createClickableBuffUI(vec2 position, int buffType);
 
 void createGameplayCutScene();
 Entity createNose();
@@ -36,7 +41,7 @@ Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, E
 Entity createHealthBar();
 void createDashRecharge();
 
-Entity createBuffUI(vec2 position, int buffType);
+Entity createBuffUI(vec2 position, int type);
 void renderCollectedBuff(RenderSystem *renderer, int buffType);
 
 void updateHuds();

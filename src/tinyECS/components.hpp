@@ -3,8 +3,47 @@
 #include <vector>
 #include <unordered_map>
 #include "../ext/stb_image/stb_image.h"
+#include "../ext/json/json.hpp"
 
 extern bool tutorial_mode;
+
+using json = nlohmann::json;
+
+// asked gpt for this
+namespace nlohmann {
+    template <>
+    struct adl_serializer<glm::vec2>
+    {
+        static void to_json(json& j, const glm::vec2& v) {
+            j = json{{"x", v.x}, {"y", v.y}};
+        }
+
+        static void from_json(const json& j, glm::vec2& v) {
+            j.at("x").get_to(v.x);
+            j.at("y").get_to(v.y);
+        }
+    };
+}
+
+struct Progression {
+	std::vector<int> buffsFromLastRun;
+	std::vector<int> pickedInNucleus;
+	int slots_unlocked = 9;
+};
+
+
+struct Slot {
+	int number = 0;
+	bool filled = false;
+};
+
+struct ClickableBuff {
+	int type;
+	bool picked = false;
+	vec2 returnPosition = {0, 0};
+	Entity slotEntity;
+};
+
 
 struct Player
 {
@@ -28,7 +67,10 @@ struct Player
 	// Detection range for enemies
 	float detection_range = 1.0f;
 
+	float knockback_duration = 0.0f;
+
 	vec2 grid_position = {0, 0};
+	std::vector<int> buffsCollected;
 };
 
 struct Dashing
@@ -85,6 +127,8 @@ struct Portal {
 };
 
 struct MiniMap {
+	std::vector<std::vector<int>> visited;
+	int dummy = 0;
 };
 
 struct Camera
@@ -98,6 +142,7 @@ struct Camera
 struct Enemy
 {
 	int health;
+	int total_health;
 };
 
 // Projectile
@@ -105,13 +150,19 @@ struct Projectile
 {
 	int damage;
 	float ms_until_despawn = PROJECTILE_TTL_MS;
+	bool from_enemy = true;
 };
 
-struct BacteriophageProjectile {};
+struct BacteriophageProjectile {
+	int dummy = 0;
+};
+
+struct BossProjectile {};
 
 // used for Entities that cause damage
 struct Deadly
 {
+	int dummy = 0;
 };
 
 // Buff
@@ -138,7 +189,9 @@ struct Collision
 	Collision(Entity &other) { this->other = other; };
 };
 
-struct Wall {};
+struct Wall {
+	int dummy = 0;
+};
 
 // Data structure for toggling debug mode
 struct Debug
@@ -159,6 +212,7 @@ struct ScreenState
 struct DebugComponent
 {
 	// Note, an empty struct has size 1
+	int dummy = 0;
 };
 
 // used to hold grid line start and end positions
@@ -211,7 +265,9 @@ enum ButtonType
 	SHOPBUTTON = STARTBUTTON + 1,
 	INFOBUTTON = SHOPBUTTON + 1,
 	BACKBUTTON = INFOBUTTON,
-	NONE = BACKBUTTON + 1
+	SAVEBUTTON = BACKBUTTON + 1,
+	PROCEED_BUTTON = SAVEBUTTON + 1,
+	NONE = PROCEED_BUTTON + 1
 };
 
 // Coordinates and bounding box of start button on start screen
@@ -225,7 +281,7 @@ struct screenButton
 
 struct Logo 
 {
-
+	int dummy = 0;
 };
 
 enum ScreenType
@@ -249,10 +305,13 @@ struct GameScreen
 
 struct Pause
 {
+	int dummy = 0;
 };
 
 struct Over
 {
+	int dummy = 0;
+	std::vector<Entity> buttons;
 };
 
 struct Start
@@ -273,6 +332,7 @@ struct Info
 
 struct GameplayCutScene
 {
+	int dummy = 0;
 };
 
 // UI Elements
@@ -291,6 +351,7 @@ struct HealthBar
 
 struct DashRecharge
 {
+	int dummy = 0;
 };
 
 struct Key
@@ -308,9 +369,16 @@ struct BuffUI
 {
 	int buffType;
 };
+
 struct InfoBox
 {
+	int dummy = 0;
 };
+
+struct Gun {
+    float cooldown_timer_ms = 0.0f;
+};
+
 /**
  * The following enumerators represent global identifiers refering to graphic
  * assets. For example TEXTURE_ASSET_ID are the identifiers of each texture
@@ -500,13 +568,16 @@ struct EnemyAI
 	vec2 patrolOrigin = { 0, 0 };     // origin of patrol
 	float patrolRange = SPIKE_ENEMY_PATROL_RANGE;     // range of patrol
 	float patrolTime = ENEMY_PATROL_TIME_MS / 2;
+    float knockbackTimer = 0.f;
+    float bombTimer = SPIKE_ENEMY_BOMB_TIMER;
 };
 
 enum class SpikeEnemyState
 {
 	CHASING = 0,
 	PATROLLING = CHASING + 1,
-	DASHING = PATROLLING + 1
+	DASHING = PATROLLING + 1,
+    KNOCKBACK = DASHING + 1
 };
 
 struct SpikeEnemyAI : EnemyAI
@@ -516,16 +587,13 @@ struct SpikeEnemyAI : EnemyAI
 
 enum class RBCEnemyState
 {
-	CHASING = 0,
-	PATROLLING = CHASING + 1,
-	DASHING = PATROLLING + 1,
-	RUNAWAY = DASHING + 1,
-	FLOATING = RUNAWAY + 1
+	FLOATING = 0,
+	RUNAWAY = FLOATING + 1
 };
 
 struct RBCEnemyAI : EnemyAI
 {
-	RBCEnemyState state;
+	RBCEnemyState state = RBCEnemyState::FLOATING;
 };
 
 enum class BacteriophageState
@@ -542,6 +610,34 @@ struct BacteriophageAI
 	float time_since_shoot_ms = 0.0f;
 	bool can_shoot = false;
 	int placement_index = 0;
+};
+
+enum class BossState
+{
+	INITIAL = 0,
+	IDLE = INITIAL + 1,
+	SHOOT_PARADE = IDLE + 1,
+	RUMBLE = SHOOT_PARADE + 1,
+	FLEE = RUMBLE + 1,
+	NUM_STATES = FLEE + 1
+};
+
+struct BossAI : EnemyAI
+{
+	BossState state = BossState::INITIAL;
+	int stage = 0;
+	float cool_down;
+	float shoot_cool_down;
+
+	// RUMBLE-specific state
+	float rumble_charge_time = 1500.f;  // time before rushing
+	float rumble_duration = 1000.f;     // time spent rushing
+	bool is_charging = true;
+	vec2 projectile_size = BOSS_PROJECTILE;
+
+	float flee_duration = 1000.f;    // Arbitrary duration in ms
+	float flee_timer = 0.f;
+	bool is_fleeing = false;
 };
 
 enum class PARTICLE_TYPE 
@@ -569,3 +665,295 @@ struct Particle
     float state_timer_ms = 0.0f;
     float speed_factor = 100.0f;
 };
+
+// MACROS for "to_json" and "from_json" on user-defined structs
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(vec2, x, y)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Player,
+	current_health,
+	max_health,
+	speed,
+	dash_damage,
+	healing_rate,
+	healing_timer_ms,
+	dash_count,
+	max_dash_count,
+	dash_cooldown_timer_ms,
+	dash_cooldown_ms,
+	dash_speed,
+	dash_range,
+	detection_range,
+	knockback_duration,
+	grid_position,
+	buffsCollected
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Dashing,
+	velocity,
+	angle_deg,
+	timer_ms
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SpriteSize,
+	width,
+	height
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Tile,
+	grid_x,
+	grid_y
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Map,
+	width,
+	height,
+	top,
+	left,
+	bottom,
+	right
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ProceduralMap,
+	map,
+	width,
+	height,
+	top,
+	left,
+	bottom,
+	right
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Portal,
+	grid_x,
+	grid_y
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MiniMap,
+	dummy
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Camera,
+	position,
+	initialized,
+	grid_position
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Enemy,
+	health
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Projectile,
+	damage,
+	ms_until_despawn
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(BacteriophageProjectile,
+	dummy
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Deadly,
+	dummy
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Buff,
+	type,
+	collected
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Motion,
+	position,
+	angle,
+	velocity,
+	scale
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Collision,
+	other
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Wall,
+	dummy
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Debug,
+	in_debug_mode,
+	in_freeze_mode
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ScreenState,
+	darken_screen_factor,
+	vignette_screen_factor
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(DebugComponent,
+	dummy
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(GridLine,
+	start_pos,
+	end_pos
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(DeathTimer,
+	counter_ms
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(VignetteTimer,
+	counter_ms
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ColoredVertex,
+	position,
+	color
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TexturedVertex,
+	position,
+	texcoord
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Mesh,
+	original_size,
+	vertices,
+	textured_vertices,
+	vertex_indices
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(screenButton,
+	w,
+	h,
+	center,
+	type
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Logo,
+	dummy
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(GameScreen,
+	type,
+	screenButtons,
+	logo
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Pause,
+	dummy
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Over,
+	dummy
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Start,
+	buttons,
+	logo
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Shop,
+	buttons
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Info,
+	buttons
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(GameplayCutScene,
+	dummy
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UIElement,
+	position,
+	scale
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(HealthBar,
+	position,
+	scale,
+	health
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(DashRecharge,
+	dummy
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Key,
+	inserted
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Chest,
+	gotKey
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(BuffUI,
+	buffType
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(InfoBox,
+	dummy
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RenderRequest,
+	used_texture,
+	used_effect,
+	used_geometry
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SpriteSheetImage,
+	total_frames,
+	current_frame
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Animation,
+	start_frame,
+	end_frame,
+	time_since_last_frame,
+	time_per_frame,
+	loop,
+	forwards
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(DamageCooldown,
+	last_damage_time
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(EnemyAI,
+	patrolForwards,
+	patrolSpeed,
+	detectionRadius,
+	patrolOrigin,
+	patrolRange,
+	patrolTime
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SpikeEnemyAI,
+	state
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RBCEnemyAI,
+	state
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(BacteriophageAI,
+	state,
+	speed,
+	detectionRadius,
+	time_since_shoot_ms,
+	can_shoot,
+	placement_index
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Particle,
+	type,
+	state,
+	lifetime_ms,
+	max_lifetime_ms,
+	state_timer_ms,
+	speed_factor
+)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Progression,
+	buffsFromLastRun,
+	pickedInNucleus,
+	slots_unlocked
+)
