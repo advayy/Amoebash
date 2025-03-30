@@ -388,15 +388,19 @@ Entity createPauseScreen()
 	motion.position = camera.position;
 	motion.scale = scale;
 
-	vec2 buttonPosition = camera.position + vec2(0, 100.f);
+	vec2 saveButtonPosition = camera.position + vec2(0, 120.f);
+	vec2 resumeButtonPosition = camera.position + vec2(0, 200.f);
 
-	
+	Entity saveButtonEntity = createButton(ButtonType::SAVEBUTTON, saveButtonPosition, BACK_BUTTON_SCALE, TEXTURE_ASSET_ID::SAVE_BUTTON);
+	Entity resumeButtonEntity = createButton(ButtonType::RESUMEBUTTON, resumeButtonPosition, BACK_BUTTON_SCALE, TEXTURE_ASSET_ID::RESUME_BUTTON);
 
-	Entity saveButtonEntity = createButton(ButtonType::SAVEBUTTON, buttonPosition, BACK_BUTTON_SCALE, TEXTURE_ASSET_ID::BACK_BUTTON);
 	
 	ButtonType type = registry.buttons.get(saveButtonEntity).type;
+	ButtonType resumeType = registry.buttons.get(resumeButtonEntity).type;
 
 	Pause &saveButton = registry.pauses.emplace(saveButtonEntity);
+	Pause &resumeButton = registry.pauses.emplace(resumeButtonEntity);
+	
 
 	return pauseScreenEntity;
 }
@@ -704,7 +708,7 @@ Entity createStartButton()
 	return createButton(ButtonType::STARTBUTTON,
 						position,
 						scale,
-						TEXTURE_ASSET_ID::BUTTON);
+						TEXTURE_ASSET_ID::START_BUTTON);
 }
 
 Entity createShopButton()

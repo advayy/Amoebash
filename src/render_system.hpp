@@ -44,6 +44,7 @@ class RenderSystem
 		textures_path("ui_art/start_button.png"),
 		textures_path("ui_art/pausescreen.png"),
 		textures_path("ui_art/shop_button.png"),
+		textures_path("ui_art/shop_button_on_hover.png"),
 		textures_path("ui_art/nucleus_full_size.png"),
 		textures_path("ui_art/shopscreen.png"),
 		textures_path("ui_art/infoscreen.png"),
@@ -58,6 +59,7 @@ class RenderSystem
 		textures_path("ui_art/HUD_germoney_hud.png"),
 		textures_path("ui_art/HUD_weapons_pill.png"),
 		textures_path("ui_art/info_button.png"),
+		textures_path("ui_art/info_button_on_hover.png"),
 		textures_path("ui_art/start_screen.png"),
 		textures_path("ui_art/button_outline.png"),
 		textures_path("projectiles/key.png"),
@@ -85,6 +87,13 @@ class RenderSystem
 		textures_path("enemies/boss/mitosis_boss_32_transparent.png"),
 		// textures_path("enemies/boss/mitosis_boss_16.png")
 		textures_path("enemies/boss/mitosis_boss_16_transparent.png"),
+		textures_path("ui_art/start_button.png"),
+		textures_path("ui_art/start_button_on_hover.png"),
+		textures_path("ui_art/back_button.png"),
+		textures_path("ui_art/resume_button.png"),
+		textures_path("ui_art/save_button.png"),
+
+
 	};
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.

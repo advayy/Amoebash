@@ -1042,9 +1042,36 @@ void WorldSystem::on_mouse_move(vec2 mouse_position)
 	// record the current mouse position
 	device_mouse_pos_x = mouse_position.x;
 	device_mouse_pos_y = mouse_position.y;
+
+	for (Entity button_entity : registry.buttons.entities) {
+	screenButton &button = registry.buttons.get(button_entity);
+
+	RenderRequest &request = registry.renderRequests.get(button_entity);
+	if (button.type == ButtonType::STARTBUTTON && registry.renderRequests.has(button_entity)) {
+
+		if (isButtonClicked(button)) {
+			request.used_texture = TEXTURE_ASSET_ID::START_BUTTON_ON_HOVER;
+		} else {
+			request.used_texture = TEXTURE_ASSET_ID::START_BUTTON;
+		}
+	} else if (button.type == ButtonType::SHOPBUTTON && registry.renderRequests.has(button_entity)) {
+		if (isButtonClicked(button)) {
+			request.used_texture = TEXTURE_ASSET_ID::SHOP_BUTTON_ON_HOVER;
+		} else {
+			request.used_texture = TEXTURE_ASSET_ID::SHOP_BUTTON;
+		}
+	} else if (button.type == ButtonType::INFOBUTTON && registry.renderRequests.has(button_entity)) {
+		if (isButtonClicked(button)) {
+			request.used_texture = TEXTURE_ASSET_ID::INFO_BUTTON_ON_HOVER;
+		} else {
+			request.used_texture = TEXTURE_ASSET_ID::INFO_BUTTON;
+		}
+	}
 	
 	updateMouseCoords();
+	}	
 }
+
 
 ButtonType WorldSystem::getClickedButton()
 {
@@ -1168,12 +1195,18 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		}
 		else if (current_state == GameState::PAUSE && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
-			if (level < BOSS_LEVEL && !progress_map["tutorial_mode"]) {
-				if (getClickedButton() == ButtonType::SAVEBUTTON)
-				{
+			if (getClickedButton() == ButtonType::SAVEBUTTON)
+			{
+				if (level < BOSS_LEVEL && !progress_map["tutorial_mode"]) {
 					saveGame();
 					saveProgress();
 				}
+			}
+			else if (getClickedButton() == ButtonType::RESUMEBUTTON){
+				std::cout << "Resuming game from pause" << std::endl;
+				current_state = GameState::GAME_PLAY;
+				std::cout << "Removing pause screen and resuming" << std::endl;
+				removePauseScreen();
 			}
 		}
 	}
