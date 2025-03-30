@@ -365,7 +365,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	handleProjectiles(elapsed_ms_since_last_update);
 	// std::cout << "WS:step - f9" << std::endl;
 
-	handleDashRippleEffect(elapsed_ms_since_last_update);
+	handleRippleEffect(elapsed_ms_since_last_update);
 
 
     tileProceduralMap();
@@ -1137,19 +1137,17 @@ void WorldSystem::tileProceduralMap() {
 	initializedMap=true;
 }
 
-void WorldSystem::handleDashRippleEffect(float elapsed_ms)
+void WorldSystem::handleRippleEffect(float elapsed_ms)
 {
-    if (!isDashing() || registry.players.entities.empty())
-        return;
         
     Entity player_entity = registry.players.entities[0];
     Motion& player_motion = registry.motions.get(player_entity);
     
-    static float dash_ripple_timer = 0.0f;
-    dash_ripple_timer += elapsed_ms;
+    static float ripple_timer = 0.0f;
+    ripple_timer += elapsed_ms;
     
-    if (dash_ripple_timer >= 25.0f) {
+    if (ripple_timer >= 30.0f) {
         particle_system.createPlayerRipples(player_entity);
-        dash_ripple_timer = 0.0f;
+        ripple_timer = 0.0f;
     }
 }

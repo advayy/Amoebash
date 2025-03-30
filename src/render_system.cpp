@@ -844,8 +844,10 @@ void RenderSystem::drawInstancedParticles()
 
 void RenderSystem::drawParticlesByTexture(TEXTURE_ASSET_ID texture_id)
 {
-    // for debugging purposes, check for errors
-    while (glGetError() != GL_NO_ERROR) { /* clear errors */ }
+	// for debugging purposes, check for errors
+	while (glGetError() != GL_NO_ERROR)
+	{ /* clear errors */
+	}
 
     if (registry.particles.size() == 0)
         return;

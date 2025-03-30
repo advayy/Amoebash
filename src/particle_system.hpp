@@ -20,7 +20,7 @@ public:
     // create different types of particles
     void createParticles(PARTICLE_TYPE type, vec2 position, int count);
 
-    Entity createRippleParticle(vec2 position);
+    Entity createRippleParticle(vec2 position, float lifetime_scale);
     void createPlayerRipples(Entity player_entity);
 
 private:
