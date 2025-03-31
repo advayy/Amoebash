@@ -1034,6 +1034,12 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 			loadProgress();
 		}
 	}
+
+		// Toggle fullscreen with P key
+		if (key == GLFW_KEY_P && action == GLFW_RELEASE)
+		{
+			toggleFullscreen();
+		}
 }
 
 void WorldSystem::on_mouse_move(vec2 mouse_position)
@@ -1735,4 +1741,31 @@ void WorldSystem::loadProgress() {
 	progress_map = progressData["progress"].get<std::map<std::string, bool>>();
 
 	level = progressData["levels"].get<int>();
+}
+
+
+void WorldSystem::toggleFullscreen()
+{
+    is_fullscreen = !is_fullscreen;
+    const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    if (is_fullscreen)
+    {
+        // Switch to fullscreen on primary monitor
+        glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
+        // Update viewport to use full screen dimensions
+        glViewport(0, 0, mode->width, mode->height);
+    }
+    else
+    {
+        // Switch back to windowed mode using default dimensions
+        int width = WINDOW_WIDTH_PX, height = WINDOW_HEIGHT_PX;
+        int xpos = (mode->width - width) / 2;
+        int ypos = (mode->height - height) / 2;
+				
+        glfwSetWindowMonitor(window, nullptr, xpos, ypos, width, height, 0);
+        // Update viewport to match window dimensions
+        glViewport(0, 0, width, height);
+    }
+    // Ensure the cursor behaves normally in both modes.
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }

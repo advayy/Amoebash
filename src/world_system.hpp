@@ -180,4 +180,7 @@ private:
 	bool isFreeSlot();
 	void moveSelectedBuffsToProgression();
 	void applyBuff(Player& player, int buff_type);
+
+	bool is_fullscreen = false;
+	void toggleFullscreen();
 };
