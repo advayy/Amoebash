@@ -1750,9 +1750,9 @@ void WorldSystem::toggleFullscreen()
     const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     if (is_fullscreen)
     {
-        // Switch to fullscreen on primary monitor
+        // switch to fullscreen on primary monitor
         glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
-        // Update viewport to use full screen dimensions
+        // update viewport
         glViewport(0, 0, mode->width, mode->height);
     }
     else
