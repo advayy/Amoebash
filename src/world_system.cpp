@@ -710,7 +710,11 @@ void WorldSystem::restart_game()
 					TEXTURE_ASSET_ID::NUCLEUS_UI,
 					EFFECT_ASSET_ID::UI);
 	createHealthBar();
-	createDashRecharge();
+
+	for (int i = 0; i < registry.players.get(registry.players.entities[0]).max_dash_count; i++) {
+		createDashRecharge();
+	}
+	
 	createUIElement(GERMONEY_UI_POS,
 					vec2(GERMONEY_UI_WIDTH, GERMONEY_UI_HEIGHT),
 					TEXTURE_ASSET_ID::GERMONEY_UI,
@@ -1415,8 +1419,9 @@ void WorldSystem::applyBuff(Player& player, int buff_type)
 		break;
 
 	case 1: // Mitochondria
-		player.dash_cooldown_ms -= player.dash_cooldown_ms * 0.05f;
-		// std::cout << "Collected Mitochondria: Dash cooldown decreased by 5%" << std::endl;
+		player.max_dash_count ++;
+		createDashRecharge();
+		// // std::cout << "Collected Mitochondria: Dash cooldown decreased by 5%" << std::endl;
 		break;
 
 	case 2: // Hemoglobin
@@ -1425,7 +1430,8 @@ void WorldSystem::applyBuff(Player& player, int buff_type)
 		break;
 
 	case 3: // Golgi Apparatus Buff (need to be implemented)
-		player.current_health += 10;
+		// player.current_health += 10;
+		player.dash_cooldown_ms = player.dash_cooldown_ms * 0.95;
 		// std::cout << "Collected Golgi Body: need to be implemented" << std::endl;
 		break;
 
@@ -1453,13 +1459,13 @@ void WorldSystem::applyBuff(Player& player, int buff_type)
 		//	Adds +1 lives this run
 		break;
 	case 11: // Vacuole
-		//	Should roughly do what golgi does...
+		//	 - doesnt render in the ui... - Heals hp
 		break;
 	case 12: // Endoplasmic Reticulum
-		//	IDK what it neess to do
+		//	
 		break;
-	case 13: // Ovoid cell?
-		//	Eye ?
+	case 13: // oceloid cell
+		//	 -> See more of the minimap
 		break;
 	case 14: // Secretor cell
 		//	reduces decauy for dash - more drift
@@ -1468,7 +1474,7 @@ void WorldSystem::applyBuff(Player& player, int buff_type)
 		//	Adds +1 lives this run
 		break;
 	case 16: // Peroxisomes
-		//	Removes a nerf
+		//	Removes a nerf ...?
 		break;
 	case 17: // Mutation
 		//	Some nerf?

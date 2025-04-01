@@ -791,11 +791,6 @@ Entity createHealthBar()
 
 void createDashRecharge()
 {
-	Player &player = registry.players.get(registry.players.entities[0]);
-	vec2 playerPos = registry.motions.get(registry.players.entities[0]).position;
-
-	for (int i = 0; i < DASH_RECHARGE_COUNT; i++)
-	{
 		Entity dash = Entity();
 
 		Animation &a = registry.animations.emplace(dash);
@@ -819,9 +814,8 @@ void createDashRecharge()
 			 GEOMETRY_BUFFER_ID::SPRITE});
 
 		
-		Motion &motion = registry.motions.emplace(dash);
-		registry.dashRecharges.emplace(dash);
-	}
+	Motion &motion = registry.motions.emplace(dash);
+	registry.dashRecharges.emplace(dash);
 }
 
 Entity createBuffUI(vec2 position, int type)
