@@ -392,7 +392,7 @@ Entity createPauseScreen()
 	vec2 resumeButtonPosition = camera.position + vec2(0, 200.f);
 
 	Entity saveButtonEntity = createButton(ButtonType::SAVEBUTTON, saveButtonPosition, BACK_BUTTON_SCALE, TEXTURE_ASSET_ID::SAVE_BUTTON);
-	Entity resumeButtonEntity = createButton(ButtonType::RESUMEBUTTON, resumeButtonPosition, BACK_BUTTON_SCALE, TEXTURE_ASSET_ID::RESUME_BUTTON);
+	Entity resumeButtonEntity = createButton(ButtonType::PROCEEDBUTTON, resumeButtonPosition, BACK_BUTTON_SCALE, TEXTURE_ASSET_ID::PROCEED_BUTTON);
 
 	
 	ButtonType type = registry.buttons.get(saveButtonEntity).type;

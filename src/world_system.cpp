@@ -1078,7 +1078,7 @@ void WorldSystem::on_mouse_move(vec2 mouse_position)
 		} else {
 			request.used_texture = TEXTURE_ASSET_ID::SAVE_BUTTON;
 		}
-	} else if (button.type == ButtonType::PROCEED_BUTTON && registry.renderRequests.has(button_entity)) {
+	} else if (button.type == ButtonType::PROCEEDBUTTON && registry.renderRequests.has(button_entity)) {
 		if (isButtonClicked(button)) {
 			request.used_texture = TEXTURE_ASSET_ID::PROCEED_BUTTON_ON_HOVER;
 		} else {

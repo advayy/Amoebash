@@ -465,7 +465,7 @@ void RenderSystem::drawInfoScreen()
 void RenderSystem::drawGameOverScreen()
 {
 	std::vector<ButtonType> buttons = {
-			ButtonType::PROCEED_BUTTON}; // ACTS as a next button
+			ButtonType::PROCEEDBUTTON}; // ACTS as a next button
 
 	drawScreenAndButtons(ScreenType::GAMEOVER, buttons);
 }
