@@ -75,6 +75,7 @@ SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity& enemyEntity, SpikeEne
                     enemy.health = 0;
                     Player &player = registry.players.get(registry.players.entities[0]);
                     player.current_health -= SPIKE_ENEMY_BOMB_DAMAGE;
+                    applyVignetteEffect();
                 }
             }
 		}

@@ -122,6 +122,8 @@ private:
 	void updateBossArrows();
 
 	void handlePlayerMovement(float elapsed_ms_since_last_update);
+
+    void handleVignetteEffect(float elapsed_ms_since_last_update);
 	
 	// OpenGL window handle
 	GLFWwindow *window;
