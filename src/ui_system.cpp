@@ -431,6 +431,33 @@ void removeCutScene()
     }
 }
 
+Entity createEndingWinScene() {
+	Entity winScreenEntity = Entity();
+
+	registry.renderRequests.insert(
+		winScreenEntity,
+		{TEXTURE_ASSET_ID::WINSCREEN,
+		 EFFECT_ASSET_ID::SPRITE_SHEET,
+		 GEOMETRY_BUFFER_ID::SPRITE}
+	);
+
+	Animation &animation = registry.animations.emplace(winScreenEntity);
+	animation.time_per_frame = WIN_CUTSCENE_DURATION_MS / 4;
+	animation.start_frame = 0;
+	animation.end_frame = 4;
+
+	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(winScreenEntity);
+	spriteSheet.total_frames = 4;
+
+	SpriteSize &sprite = registry.spritesSizes.emplace(winScreenEntity);
+	sprite.width = BACKGROUND_SCALE.x; 
+	sprite.height = BACKGROUND_SCALE.y;
+
+	registry.cutscenes.emplace(winScreenEntity);
+
+	return winScreenEntity;
+}
+
 Entity createCutSceneBackGround()
 {
 	Entity backGroundEntity = Entity();

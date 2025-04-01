@@ -230,7 +230,7 @@ void WorldSystem::updateMouseCoords()
 	game_mouse_pos_y = device_mouse_pos_y + camera.position.y - WINDOW_HEIGHT_PX * 0.5f;
 }
 
-void WorldSystem::updateBoss()
+bool WorldSystem::updateBoss()
 {
 	std::vector<Entity> bosses_to_split;
     std::vector<Entity> bosses_to_remove;
@@ -271,6 +271,9 @@ void WorldSystem::updateBoss()
     for(int i = 0; i < size; i++) {
         registry.remove_all_components_of(bosses_to_remove[i]);
     }
+
+	// terminal condition for the boss
+	return registry.bossAIs.size() == 0;
 }
 
 void WorldSystem::updateBossArrows() {
@@ -452,9 +455,15 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
 	if (!progress_map["tutorial_mode"] && level < BOSS_LEVEL) {
 		spawnEnemies(elapsed_ms_since_last_update);
-	} else {
-		updateBoss();
-		updateBossArrows();
+	} else if (level == BOSS_LEVEL) {
+		if (!updateBoss()) {
+			updateBossArrows();
+		} else { // WIN
+			previous_state = current_state;
+			current_state = GameState::VICTORY;
+			stateTimer = WIN_CUTSCENE_DURATION_MS;
+			createEndingWinScene();
+		}
 	}
 	handleProjectiles(elapsed_ms_since_last_update);
 
