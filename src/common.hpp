@@ -183,6 +183,7 @@ const float INTRO_CUTSCENE_DURATION_MS = 3 * MS_PER_S; // for animation after cl
 const float BOOT_CUTSCENE_DURATION_MS = 2 * MS_PER_S;  // for logo movement at boot
 const float GAMEPLAY_CUTSCENE_DURATION_MS = 3 * MS_PER_S;
 const float STATE_TIMER_DEFAULT = 3 * MS_PER_S;
+const float WIN_CUTSCENE_DURATION_MS = 3 * MS_PER_S;
 
 // button positions, scales
 const vec2 LOGO_POSITION_INITIAL = {-WINDOW_WIDTH_PX / 2.f, -WINDOW_HEIGHT_PX / 3.5f};
