@@ -135,7 +135,7 @@ void PhysicsSystem::step(float elapsed_ms)
 						motion.velocity *= -1;
 						motion.angle -= 180;
 					} else if (registry.bossAIs.has(entity)) {
-                        motion.velocity *= -1;
+                        motion.velocity = vec2(0.f, 0.f);
                     }
 				}
 			}
