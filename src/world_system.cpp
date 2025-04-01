@@ -1048,7 +1048,6 @@ void WorldSystem::on_mouse_move(vec2 mouse_position)
 
 	RenderRequest &request = registry.renderRequests.get(button_entity);
 	if (button.type == ButtonType::STARTBUTTON && registry.renderRequests.has(button_entity)) {
-
 		if (isButtonClicked(button)) {
 			request.used_texture = TEXTURE_ASSET_ID::START_BUTTON_ON_HOVER;
 		} else {
@@ -1065,6 +1064,25 @@ void WorldSystem::on_mouse_move(vec2 mouse_position)
 			request.used_texture = TEXTURE_ASSET_ID::INFO_BUTTON_ON_HOVER;
 		} else {
 			request.used_texture = TEXTURE_ASSET_ID::INFO_BUTTON;
+		}
+	} else if (button.type == ButtonType::BACKBUTTON && registry.renderRequests.has(button_entity)) {
+		if (isButtonClicked(button)) {
+			std::cout << "Hovering over button type: " << static_cast<int>(button.type) << std::endl; //debug
+			request.used_texture = TEXTURE_ASSET_ID::BACK_BUTTON_ON_HOVER;
+		} else {
+			request.used_texture = TEXTURE_ASSET_ID::BACK_BUTTON;
+		}
+	} else if (button.type == ButtonType::SAVEBUTTON && registry.renderRequests.has(button_entity)) {
+		if (isButtonClicked(button)) {
+			request.used_texture = TEXTURE_ASSET_ID::SAVE_BUTTON_ON_HOVER;
+		} else {
+			request.used_texture = TEXTURE_ASSET_ID::SAVE_BUTTON;
+		}
+	} else if (button.type == ButtonType::PROCEED_BUTTON && registry.renderRequests.has(button_entity)) {
+		if (isButtonClicked(button)) {
+			request.used_texture = TEXTURE_ASSET_ID::PROCEED_BUTTON_ON_HOVER;
+		} else {
+			request.used_texture = TEXTURE_ASSET_ID::PROCEED_BUTTON;
 		}
 	}
 	
@@ -1202,10 +1220,8 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 					saveProgress();
 				}
 			}
-			else if (getClickedButton() == ButtonType::RESUMEBUTTON){
-				std::cout << "Resuming game from pause" << std::endl;
+			else if (getClickedButton() == ButtonType::PROCEED_BUTTON){
 				current_state = GameState::GAME_PLAY;
-				std::cout << "Removing pause screen and resuming" << std::endl;
 				removePauseScreen();
 			}
 		}
