@@ -119,6 +119,7 @@ private:
 	void updateCamera(float elapsed_ms);
 	void updateMouseCoords();
 	void updateBoss();	
+	void updateBossArrows();
 
 	void handlePlayerMovement(float elapsed_ms_since_last_update);
 	

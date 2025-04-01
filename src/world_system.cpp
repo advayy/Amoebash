@@ -264,6 +264,7 @@ void WorldSystem::updateBoss()
 		Entity smallBoss2 = createBoss(renderer, pos2, BossState::IDLE, stage + 1);
 
         bosses_to_remove.push_back(boss);
+		bosses_to_remove.push_back(originalAI.associatedArrow);
 	}
 
     int size = bosses_to_remove.size();
@@ -272,6 +273,57 @@ void WorldSystem::updateBoss()
     }
 }
 
+void WorldSystem::updateBossArrows() {
+	std::vector<Entity> removals;
+
+	for (uint i = 0; i < registry.bossArrows.size(); i++) {
+		Entity arrow = registry.bossArrows.entities[i];
+		BossArrow& arrowComp = registry.bossArrows.get(arrow);
+
+		if (!registry.bossAIs.has(arrowComp.associatedBoss)) {
+			removals.push_back(arrow);
+			continue;
+		}
+
+		Entity associatedBoss = arrowComp.associatedBoss;
+		Motion& bossMotion = registry.motions.get(associatedBoss);
+
+		Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
+
+		vec2 bossPos = bossMotion.position;
+		vec2 cameraPos = camera.position;
+		vec2 direction = glm::normalize(bossPos - cameraPos);
+		float distance = glm::distance(bossPos, cameraPos);
+
+		if (distance > WINDOW_WIDTH_PX / 2.f && distance > WINDOW_HEIGHT_PX) {
+			
+			if (!registry.motions.has(arrow)) {
+				registry.motions.emplace(arrow);
+			}
+			Motion& arrowMotion = registry.motions.get(arrow);
+			vec2 center = {WINDOW_WIDTH_PX / 2.f, WINDOW_HEIGHT_PX / 2.f};
+			
+			float maxX = (WINDOW_WIDTH_PX / 2.f) - 20.f;
+			float maxY = (WINDOW_HEIGHT_PX / 2.f) - 20.f;
+			
+			vec2 arrowOffset = direction * glm::min(maxX / std::abs(direction.x), maxY / std::abs(direction.y));
+			
+			arrowMotion.angle = atan2(direction.y, direction.x) * 180.f / M_PI + 90.f;
+			arrowMotion.position = cameraPos + arrowOffset;
+			arrowMotion.scale = {ARROW_WIDTH, ARROW_HEIGHT};
+			arrowMotion.velocity = {0.f, 0.f};
+
+			arrowComp.draw = true;
+		} else {
+			arrowComp.draw = false;
+		}
+	}
+
+	uint size = removals.size();
+	for (uint i = 0; i < size; i++) {
+		registry.remove_all_components_of(removals[i]);
+	}
+}
 
 void WorldSystem::spawnEnemies(float elapsed_ms_since_last_update)
 {
@@ -398,10 +450,11 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	handlePlayerMovement(elapsed_ms_since_last_update);
 	handlePlayerHealth(elapsed_ms_since_last_update);
 
-	if (!progress_map["tutorial_mode"] && level != BOSS_LEVEL) {
+	if (!progress_map["tutorial_mode"] && level < BOSS_LEVEL) {
 		spawnEnemies(elapsed_ms_since_last_update);
 	} else {
 		updateBoss();
+		updateBossArrows();
 	}
 	handleProjectiles(elapsed_ms_since_last_update);
 
