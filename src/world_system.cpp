@@ -230,7 +230,7 @@ void WorldSystem::updateMouseCoords()
 	game_mouse_pos_y = device_mouse_pos_y + camera.position.y - WINDOW_HEIGHT_PX * 0.5f;
 }
 
-void WorldSystem::updateBoss()
+bool WorldSystem::updateBoss()
 {
 	std::vector<Entity> bosses_to_split;
     std::vector<Entity> bosses_to_remove;
@@ -271,6 +271,9 @@ void WorldSystem::updateBoss()
     for(int i = 0; i < size; i++) {
         registry.remove_all_components_of(bosses_to_remove[i]);
     }
+
+	// terminal condition for the boss
+	return registry.bossAIs.size() == 0;
 }
 
 void WorldSystem::updateBossArrows() {
@@ -438,6 +441,8 @@ bool WorldSystem::checkPortalCollision(){
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
+	std::cout << "Level : " << level << std::endl;
+
 	updateCamera(elapsed_ms_since_last_update);
 
 	if (progress_map["tutorial_mode"] && registry.infoBoxes.size() == 0) {
@@ -452,9 +457,16 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
 	if (!progress_map["tutorial_mode"] && level < BOSS_LEVEL) {
 		spawnEnemies(elapsed_ms_since_last_update);
-	} else {
-		updateBoss();
-		updateBossArrows();
+	} else if (level == BOSS_LEVEL) {
+		if (!updateBoss()) {
+			updateBossArrows();
+			std::cout << "apple pie" << std::endl;
+		} else { // WIN
+			previous_state = current_state;
+			current_state = GameState::VICTORY;
+			stateTimer = WIN_CUTSCENE_DURATION_MS;
+			createEndingWinScene();
+		}
 	}
 	handleProjectiles(elapsed_ms_since_last_update);
 
@@ -640,7 +652,7 @@ void WorldSystem::restart_game()
 	// Reset the game speed
 	current_speed = 1.f;
     
-	level = 1;
+	level = 0;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
 
@@ -1230,6 +1242,14 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 					saveProgress();
 				}
 			}
+		}
+
+		else if (current_state == GameState::VICTORY && button == GLFW_MOUSE_BUTTON_LEFT)
+		{
+			previous_state = current_state;
+			current_state = GameState::START_SCREEN_ANIMATION;
+			removeCutScene();
+			restart_game();
 		}
 	}
 }

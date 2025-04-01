@@ -29,7 +29,8 @@ enum class GameState
 	SHOP,
 	INFO,
 	GAMEPLAY_CUTSCENE,
-    NEXT_LEVEL
+    NEXT_LEVEL,
+	VICTORY
 };
 
 // Container for all our entities and game logic.
@@ -118,7 +119,7 @@ private:
 
 	void updateCamera(float elapsed_ms);
 	void updateMouseCoords();
-	void updateBoss();	
+	bool updateBoss();	
 	void updateBossArrows();
 
 	void handlePlayerMovement(float elapsed_ms_since_last_update);
@@ -133,7 +134,7 @@ private:
 
 	unsigned int points;
 
-	unsigned int level = 1;
+	unsigned int level = 0;
 
     // black screen for next level timer
     float darken_screen_timer = -1.0f;
