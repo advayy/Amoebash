@@ -13,6 +13,7 @@ Entity createSpikeEnemy(RenderSystem* renderer, vec2 position);
 Entity createRBCEnemy(RenderSystem* renderer, vec2 position);
 Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_index);
 Entity createBoss(RenderSystem* renderer, vec2 position, BossState state = BossState::INITIAL, int bossStage = 0);
+Entity createFinalBoss(RenderSystem* renderer, vec2 position);
 
 Entity createPlayer(RenderSystem *renderer, vec2 position);
 Entity createGun(RenderSystem *renderer, vec2 position);
@@ -29,6 +30,7 @@ Entity createCamera();
 
 Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, std::pair<int, int>& playerPosition);
 Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& playerPosition);
+Entity createFinalBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& playerPosition);
 
 Entity addTile(vec2 gridCoord, TEXTURE_ASSET_ID texture_id, int total_frames);
 Entity addParalaxTile(vec2 gridCoord);

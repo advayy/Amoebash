@@ -648,6 +648,11 @@ struct BossAI : EnemyAI
 	Entity associatedArrow;
 };
 
+struct FinalBossAI : EnemyAI
+{
+	Entity associatedArrow;
+};
+
 enum class PARTICLE_TYPE 
 {
     DEATH_PARTICLE = 0,

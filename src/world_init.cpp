@@ -378,6 +378,106 @@ Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& pla
 	return entity;
 }
 
+Entity createFinalBoss(RenderSystem* renderer, vec2 position) {
+	Entity entity = createEnemy(renderer, position);
+
+	Motion & motion = registry.motions.get(entity);
+	motion.scale = {FINAL_BOSS_BB_WIDTH, FINAL_BOSS_BB_HEIGHT};
+
+	FinalBossAI& enemy_ai = registry.finalBossAIs.emplace(entity);
+
+	Enemy& enemy = registry.enemies.get(entity);
+	enemy.health = FINAL_BOSS_HEALTH;
+	enemy.total_health = FINAL_BOSS_HEALTH;
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			TEXTURE_ASSET_ID::BACTERIOPHAGE,
+			EFFECT_ASSET_ID::SPRITE_SHEET,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	Animation& a = registry.animations.emplace(entity);
+	a.start_frame = 0;
+	a.end_frame = 9;
+	a.time_per_frame = 100.0f;
+	a.loop = ANIM_LOOP_TYPES::PING_PONG;
+
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 9;
+	spriteSheet.current_frame = 0;
+
+	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
+	sprite.width = motion.scale.x;
+	sprite.height = motion.scale.y;
+	
+	enemy_ai.associatedArrow = createBossArrow(entity);
+
+	return entity;
+}
+
+Entity createFinalBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& playerPosition) {
+	for (Entity& entity : registry.proceduralMaps.entities) {
+		registry.remove_all_components_of(entity);
+	}
+	for (Entity& entity : registry.portals.entities) {
+		registry.remove_all_components_of(entity);
+	}
+	auto entity = Entity();
+
+	ProceduralMap& map = registry.proceduralMaps.emplace(entity);
+	
+	map.width = size.x;
+	map.height = size.y;
+	map.top = floor(WORLD_ORIGIN.y - size.y / 2);
+	map.left = floor(WORLD_ORIGIN.x - size.x / 2);
+	map.bottom = ceil(WORLD_ORIGIN.y + size.y / 2);
+	map.right = ceil(WORLD_ORIGIN.x + size.x / 2);
+	
+	map.map.resize(map.height, std::vector<tileType>(map.width, tileType::EMPTY));
+	
+	std::vector<std::vector<int>> rawMap = {
+		{1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1},
+		{1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1},
+		{1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1},
+		{1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1},
+		{1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1},
+		{1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1},
+		{1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1}
+	};
+	
+	for (int i = 0; i < rawMap.size(); i++) {
+		for (int j = 0; j < rawMap[i].size(); j++) {
+			if (rawMap[i][j] == 1) {
+				map.map[i][j] = tileType::WALL;
+			} else {
+				map.map[i][j] = tileType::EMPTY;
+			}
+		}
+	}
+	
+	playerPosition.first = 9;
+	playerPosition.second = 0;
+
+	return entity;
+}
+
+
 void updateMiniMap(vec2 playerPos) {
 
 	float minimapViewRange = 3.0;

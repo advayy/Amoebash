@@ -455,18 +455,26 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	handlePlayerMovement(elapsed_ms_since_last_update);
 	handlePlayerHealth(elapsed_ms_since_last_update);
 
-	if (!progress_map["tutorial_mode"] && level < BOSS_LEVEL) {
+	if (!progress_map["tutorial_mode"] && level != BOSS_LEVEL && level != FINAL_BOSS_LEVEL) {
 		spawnEnemies(elapsed_ms_since_last_update);
 	} else if (level == BOSS_LEVEL) {
 		if (!updateBoss()) {
 			updateBossArrows();
-			std::cout << "apple pie" << std::endl;
-		} else { // WIN
+		} else {
+			goToNextLevel();
+			return true;
+		}
+	
+	} else if (level == FINAL_BOSS_LEVEL) {
+		if (registry.finalBossAIs.size() != 0) {
+			updateBossArrows();
+		} else {
 			previous_state = current_state;
 			current_state = GameState::VICTORY;
 			stateTimer = WIN_CUTSCENE_DURATION_MS;
 			createEndingWinScene();
 		}
+		std::cout << "final stage" << std::endl;
 	}
 	handleProjectiles(elapsed_ms_since_last_update);
 
@@ -612,13 +620,15 @@ void WorldSystem::goToNextLevel()
 	gameOver = false;
 	std::pair<int, int> playerPosition;
 
-	if (level < BOSS_LEVEL) {
+	if (level != BOSS_LEVEL && level != FINAL_BOSS_LEVEL) {
 		createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
-	} else {
+	} else if (level == BOSS_LEVEL) {
 		createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
 		createBoss(renderer, gridCellToPosition({10, 10}));
-		// std::cout << "Boss created" << std::endl;
-	}
+	} else if (level == FINAL_BOSS_LEVEL) {
+		createFinalBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
+		createFinalBoss(renderer, gridCellToPosition({10, 10}));
+	} 
 
 	Player &player = registry.players.get(registry.players.entities[0]);
 	Motion &playerMotion = registry.motions.get(registry.players.entities[0]);
@@ -642,17 +652,13 @@ void WorldSystem::goToNextLevel()
 // Reset the world state to its initial state
 void WorldSystem::restart_game()
 {
-
-	// std::cout << "Restarting..." << std::endl;
-    // std::cout << "Leve fl: " << level + 1 << std::endl;
-    
 	// Debugging for memory/component leaks
 	registry.list_all_components();
     
 	// Reset the game speed
 	current_speed = 1.f;
     
-	level = 0;
+	level = 1;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
 
