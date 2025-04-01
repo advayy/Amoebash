@@ -119,6 +119,17 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 			}
 		}
 
+        for (int i = 0; i < MAP_WIDTH; i++)
+        {
+            flat_visited_array[i] = 1;
+            flat_visited_array[(MAP_HEIGHT - 1) * MAP_WIDTH + i] = 1;
+        }
+        for (int i = 0; i < MAP_HEIGHT; i++)
+        {
+            flat_visited_array[i * MAP_WIDTH] = 1;
+            flat_visited_array[i * MAP_WIDTH + (MAP_WIDTH - 1)] = 1;
+        }
+
 		glUniform1iv(map_visited_array_uloc, MAP_WIDTH * MAP_HEIGHT, flat_visited_array.data());
 	}
 
