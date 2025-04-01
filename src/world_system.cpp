@@ -441,6 +441,8 @@ bool WorldSystem::checkPortalCollision(){
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
+	std::cout << "Level : " << level << std::endl;
+
 	updateCamera(elapsed_ms_since_last_update);
 
 	if (progress_map["tutorial_mode"] && registry.infoBoxes.size() == 0) {
@@ -650,7 +652,7 @@ void WorldSystem::restart_game()
 	// Reset the game speed
 	current_speed = 1.f;
     
-	level = 1;
+	level = 0;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
 
@@ -1240,6 +1242,14 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 					saveProgress();
 				}
 			}
+		}
+
+		else if (current_state == GameState::VICTORY && button == GLFW_MOUSE_BUTTON_LEFT)
+		{
+			previous_state = current_state;
+			current_state = GameState::START_SCREEN_ANIMATION;
+			removeCutScene();
+			restart_game();
 		}
 	}
 }

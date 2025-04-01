@@ -141,25 +141,13 @@ int main()
             break;
 		
 		case GameState::VICTORY:
-			stateTimer -= elapsed_ms;
 			renderer_system.drawCutScreneAnimation();
 			animation_system.step(elapsed_ms);
-
-			if (stateTimer <= 0.f)
-			{
-				stateTimer = INTRO_CUTSCENE_DURATION_MS;
-				removeCutScene();
-				previous_state = current_state;
-				current_state = GameState::START_SCREEN;
-				createStartScreen(LOGO_POSITION);
-			}
 			break;
 
         default:
             break;
 		}
-
-		std::cout << static_cast<int>(current_state) << std::endl;
 	}
 
 	return EXIT_SUCCESS;

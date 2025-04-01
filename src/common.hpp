@@ -119,8 +119,7 @@ const float ENEMY_SPAWN_RATE_MS = 1 * 1000;
 const float MAX_BACTERIOPHAGE_COUNT = 8;
 const float MAX_ENEMIES_COUNT = MAX_BACTERIOPHAGE_COUNT + 20;
 
-// const float BOSS_HEALTH = 200;
-const float BOSS_HEALTH = 1;
+const float BOSS_HEALTH = 200;
 const float SMALLEST_BOSS_HEALTH = BOSS_HEALTH / 8.f;
 
 // LARGE ENEMY

@@ -434,6 +434,12 @@ void removeCutScene()
 Entity createEndingWinScene() {
 	Entity winScreenEntity = Entity();
 
+	Motion& motion = registry.motions.emplace(winScreenEntity);
+	motion.angle = 0.0f;
+	motion.velocity = {0.0f, 0.0f};
+	motion.position = registry.cameras.components[0].position;
+	motion.scale = vec2({WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX});
+
 	registry.renderRequests.insert(
 		winScreenEntity,
 		{TEXTURE_ASSET_ID::WINSCREEN,
@@ -445,13 +451,14 @@ Entity createEndingWinScene() {
 	animation.time_per_frame = WIN_CUTSCENE_DURATION_MS / 4;
 	animation.start_frame = 0;
 	animation.end_frame = 4;
+	animation.loop = ANIM_LOOP_TYPES::LOOP;
 
 	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(winScreenEntity);
 	spriteSheet.total_frames = 4;
 
 	SpriteSize &sprite = registry.spritesSizes.emplace(winScreenEntity);
-	sprite.width = BACKGROUND_SCALE.x; 
-	sprite.height = BACKGROUND_SCALE.y;
+	sprite.width = 128.f; 
+	sprite.height = 68.f; 
 
 	registry.cutscenes.emplace(winScreenEntity);
 
