@@ -135,7 +135,7 @@ void PhysicsSystem::step(float elapsed_ms)
 						motion.velocity *= -1;
 						motion.angle -= 180;
 					} else if (registry.bossAIs.has(entity)) {
-                        motion.velocity *= -1;
+                        motion.velocity = vec2(0.f, 0.f);
                     }
 				}
 			}
@@ -249,6 +249,7 @@ void PhysicsSystem::step(float elapsed_ms)
 			if (registry.bossAIs.has(e_entity) && glm::length(e_motion.velocity) > 0.1f) {
 				player.knockback_duration = 500.f;
 			}
+
 			registry.collisions.emplace_with_duplicates(player_entity, e_entity);
 		}
 

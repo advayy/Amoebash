@@ -77,14 +77,11 @@ class RenderSystem
 		textures_path("enemies/boss/boss_projectile.png"),
 		textures_path("nucleus_menu/nucleus_menu_nucleus.png"),
 		textures_path("nucleus_menu/nucleus_menu_slot_34x34.png"),
-		// textures_path("enemies/boss/mitosis_boss_128.png"),
 		textures_path("enemies/boss/mitosis_boss_128_transparent.png"),
-		// textures_path("enemies/boss/mitosis_boss_64.png"),
 		textures_path("enemies/boss/mitosis_boss_64_transparent.png"),
-		// textures_path("enemies/boss/mitosis_boss_32.png"),
 		textures_path("enemies/boss/mitosis_boss_32_transparent.png"),
-		// textures_path("enemies/boss/mitosis_boss_16.png")
 		textures_path("enemies/boss/mitosis_boss_16_transparent.png"),
+		textures_path("enemies/boss/boss_arrow.png")
 	};
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.

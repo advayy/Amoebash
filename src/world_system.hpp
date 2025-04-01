@@ -119,6 +119,7 @@ private:
 	void updateCamera(float elapsed_ms);
 	void updateMouseCoords();
 	void updateBoss();	
+	void updateBossArrows();
 
 	void handlePlayerMovement(float elapsed_ms_since_last_update);
 	
@@ -132,7 +133,7 @@ private:
 
 	unsigned int points;
 
-	unsigned int level = 0;
+	unsigned int level = 1;
 
     // black screen for next level timer
     float darken_screen_timer = -1.0f;

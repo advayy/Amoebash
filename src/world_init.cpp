@@ -157,6 +157,7 @@ Entity createBoss(RenderSystem* renderer, vec2 position, BossState state, int bo
 	enemy.health = BOSS_HEALTH;
 	enemy.total_health = BOSS_HEALTH;
 
+
 	if (bossStage > 0) {
 		motion.scale /= (2 * bossStage);
 		enemy.health /= 2 * bossStage;
@@ -190,7 +191,26 @@ Entity createBoss(RenderSystem* renderer, vec2 position, BossState state, int bo
 	sprite.width = motion.scale.x;
 	sprite.height = motion.scale.y;
 
+	enemy_ai.associatedArrow = createBossArrow(entity);
+
 	return entity;
+}
+
+Entity createBossArrow(Entity Boss) {
+	Entity arrow = Entity();
+
+	BossArrow& bossArrow = registry.bossArrows.emplace(arrow);
+	bossArrow.associatedBoss = Boss;
+	registry.renderRequests.insert(
+		arrow,
+		{
+			TEXTURE_ASSET_ID::BOSS_ARROW,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	return arrow;
 }
 
 Entity createPlayer(RenderSystem *renderer, vec2 position)

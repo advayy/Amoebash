@@ -359,6 +359,11 @@ void RenderSystem::draw()
 		if (registry.tiles.has(entity))
 			continue;
 
+		// don't draw boss Arrows if not supposed to draw
+		if (registry.bossArrows.has(entity))  {
+			continue;
+		}
+
 		if (registry.keys.has(entity) || registry.chests.has(entity))
 		{
 			drawHexagon(entity, projection_2D);
@@ -390,7 +395,16 @@ void RenderSystem::draw()
 	{
 		drawHealthBar(entity, projection_2D);
 	}
-
+	for (Entity entity : registry.bossArrows.entities)
+	{
+		BossArrow &arrow = registry.bossArrows.get(entity);
+		if(arrow.draw) {
+			Motion& arrowMotion = registry.motions.get(entity);
+			
+			Motion& playerMotion = registry.motions.get(registry.players.entities[0]);
+			drawTexturedMesh(entity, projection_2D);
+		}
+	}
 	// draw dash charges
 	drawDashRecharge(projection_2D);
 
