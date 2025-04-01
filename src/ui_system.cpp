@@ -11,7 +11,7 @@ void createInfoBoxes() {
 
 	for (int i = 0; i < 6; i ++) {
 		auto entity1 = Entity();
-		int x = (3  *  i)  + 1;
+		int x = (3  *  i) + 2;
 		int y = (i % 2 == 0) ? 11 : 8;
 		vec2 infoPosition = gridCellToPosition({x, y});
 	
