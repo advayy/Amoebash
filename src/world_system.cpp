@@ -843,15 +843,14 @@ void WorldSystem::handle_collisions()
 				{
 					// womp womp	game over or vignetted??
 					uint current_time = SDL_GetTicks();
-
+					Player& player = registry.players.get(entity);
 					// then apply damage.
 					if (!registry.damageCooldowns.has(entity))
 					{
 						//  add the component and apply damage
 						registry.damageCooldowns.insert(entity, { current_time });
 
-						Player& player = registry.players.get(entity);
-						player.current_health -= 1; // FLAG this is not the right kind of damage...
+						player.current_health -= 1; 
 						Mix_PlayChannel(-1, damage_sound, 0);
 					}
 					else
@@ -861,7 +860,6 @@ void WorldSystem::handle_collisions()
 						if (current_time - dc.last_damage_time >= 500)
 						{
 							dc.last_damage_time = current_time;
-							Player& player = registry.players.get(entity);
 							player.current_health -= 1;
 							Mix_PlayChannel(-1, damage_sound, 0);
 						}
@@ -893,7 +891,11 @@ void WorldSystem::handle_collisions()
 						Motion& playerMotion = registry.motions.get(entity);
 
 						Player& player = registry.players.get(entity);
-                        player.current_health -= BOSS_RUMBLE_DAMAGE;
+						// need to check the rumble cool down
+
+						if (!bossAI.is_charging) {
+							player.current_health -= BOSS_RUMBLE_DAMAGE;
+						}
 
 						if (player.knockback_duration > 0.f && glm::length(bossMotion.velocity) > 0.1f)
 						{

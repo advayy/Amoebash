@@ -249,6 +249,7 @@ void PhysicsSystem::step(float elapsed_ms)
 			if (registry.bossAIs.has(e_entity) && glm::length(e_motion.velocity) > 0.1f) {
 				player.knockback_duration = 500.f;
 			}
+
 			registry.collisions.emplace_with_duplicates(player_entity, e_entity);
 		}
 
