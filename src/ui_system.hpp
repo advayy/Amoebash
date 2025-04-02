@@ -19,6 +19,7 @@ Entity createPauseScreen();
 Entity createClickableBuffUI(vec2 position, int buffType);
 
 void createGameplayCutScene();
+Entity createEndingWinScene();
 Entity createNose();
 Entity createCutSceneBackGround();
 Entity createNoseAccent();
