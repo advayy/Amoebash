@@ -858,6 +858,9 @@ void WorldSystem::handle_collisions()
                     removals.push_back(entity2);
 					// level += 1;
 					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
+                    
+                    Player& player = registry.players.get(registry.players.entities[0]);
+                    player.germoney_count += 1;
 
 					createBuff(vec2(enemy_position.x, enemy_position.y));
 					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15); 
@@ -941,6 +944,9 @@ void WorldSystem::handle_collisions()
                     points += 1;
                     removals.push_back(entity2);
                     Mix_PlayChannel(-1, enemy_death_sound, 0);
+
+                    Player& player = registry.players.get(registry.players.entities[0]);
+                    player.germoney_count += 1;
                     
                     createBuff(vec2(enemy_position.x, enemy_position.y));
                     particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);

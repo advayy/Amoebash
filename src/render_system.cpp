@@ -423,17 +423,23 @@ void RenderSystem::draw()
 		drawTexturedMesh(pause, projection_2D);
 	}
 
+    renderText("TESTING", 200.f, 500.f, 1.f, vec3(1.f, 1.f, 1.f));
+    renderText("TESTING", 200.f, 400.f, 1.f, vec3(1.f, 1.f, 1.f));
+    renderText("TESTING", 200.f, 300.f, 1.f, vec3(1.f, 1.f, 1.f));
+
+    // render player.germony
+    for (auto entity : registry.players.entities)
+    {
+        Player &player = registry.players.get(entity);
+        renderText(std::to_string(player.germoney_count), 160.f, 47.5f, .5f, vec3(1.f, 1.f, 1.f));
+    }
+
 	// INSTANCING: Draw instanced particles
 	drawInstancedParticles();
 
 	// draw framebuffer to screen
 	// adding "vignette" effect when applied
 	drawToScreen();
-
-    // test renderText
-    renderText("TESTING", 500.f, 500.f, 1.f, vec3(1.f, 1.f, 1.f));
-    renderText("TESTING", 500.f, 400.f, 1.f, vec3(1.f, 1.f, 1.f));
-    renderText("TESTING", 500.f, 300.f, 1.f, vec3(1.f, 1.f, 1.f));
 
 	// flicker-free display with a double buffer
 	glfwSwapBuffers(window);

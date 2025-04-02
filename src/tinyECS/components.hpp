@@ -71,6 +71,8 @@ struct Player
 
 	vec2 grid_position = {0, 0};
 	std::vector<int> buffsCollected;
+
+    int germoney_count = 0;
 };
 
 struct Dashing
