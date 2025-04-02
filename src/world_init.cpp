@@ -302,13 +302,13 @@ Entity createProjectile(vec2 pos, vec2 size, vec2 velocity, float damage)
 		 GEOMETRY_BUFFER_ID::SPRITE});
 
 	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(entity);
-	spriteSheet.total_frames = 10;
+	spriteSheet.total_frames = 6;
 
 	Animation &animation = registry.animations.emplace(entity);
 	animation.start_frame = 0;
-	animation.end_frame = 6;
+	animation.end_frame = 2;
 	animation.time_per_frame = 200.f;
-	animation.loop = ANIM_LOOP_TYPES::NO_LOOP;
+	animation.loop = ANIM_LOOP_TYPES::PING_PONG;
 	animation.forwards = true;
 
 	SpriteSize &sprite = registry.spritesSizes.emplace(entity);

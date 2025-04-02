@@ -773,8 +773,8 @@ void WorldSystem::handle_collisions()
 
 				if (registry.animations.has(entity)) {
     				Animation &animation = registry.animations.get(entity);
-					animation.start_frame = 7;
-					animation.end_frame = 9;
+					animation.start_frame = 3;
+					animation.end_frame = 5;
 					animation.time_per_frame = 5.f;
 					animation.loop = ANIM_LOOP_TYPES::NO_LOOP;
 					animation.forwards = true;
