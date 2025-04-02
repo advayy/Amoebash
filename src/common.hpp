@@ -37,7 +37,7 @@ inline std::string mesh_path(const std::string &name) { return data_path() + "/m
 //
 
 // Required to Scale up the game beyond base... -> View as 1280x720 at 2x WORK_SCALE_FACTOR
-const float WORK_SCALE_FACTOR = 2.f;
+const float WORK_SCALE_FACTOR = 2.65f;
 
 // Window dimensions
 inline float WINDOW_WIDTH_PX = 640 * WORK_SCALE_FACTOR;
