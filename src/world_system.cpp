@@ -37,10 +37,10 @@ WorldSystem::~WorldSystem()
 	// Destroy music components
 	if (background_music != nullptr)
 		Mix_FreeMusic(background_music);
-	if (dash_sound_a != nullptr)
-		Mix_FreeChunk(dash_sound_a);
-	if (dash_sound_b != nullptr)
-		Mix_FreeChunk(dash_sound_b);
+	if (dash_sound != nullptr)
+		Mix_FreeChunk(dash_sound);
+	if (player_shoot_sound != nullptr)
+		Mix_FreeChunk(player_shoot_sound);
 	if (damage_sound != nullptr)
 		Mix_FreeChunk(damage_sound);
 	if (enemy_death_sound != nullptr)
@@ -49,6 +49,12 @@ WorldSystem::~WorldSystem()
 		Mix_FreeChunk(enemy_shoot_sound);
 	if (click_sound != nullptr)
 		Mix_FreeChunk(click_sound);
+	if (boss_background_music != nullptr)
+		Mix_FreeMusic(boss_background_music);
+	if (portal_sound != nullptr)
+		Mix_FreeChunk(portal_sound);
+		
+	
 	Mix_CloseAudio();
 
 	// Destroy all created components
@@ -153,16 +159,21 @@ bool WorldSystem::start_and_load_sounds()
 		return false;
 	}
 
-	background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
-	dash_sound_a = Mix_LoadWAV(audio_path("dash_1.wav").c_str());
-	dash_sound_b = Mix_LoadWAV(audio_path("dash_2.wav").c_str());
+
+	Mix_VolumeMusic(64); // Background music is too loud so set volume to 50%
+
+	background_music = Mix_LoadMUS(audio_path("theme_loop.wav").c_str());
+	boss_background_music = Mix_LoadMUS(audio_path("boss_loop.wav").c_str());
+	dash_sound = Mix_LoadWAV(audio_path("dash_1.wav").c_str());
+	player_shoot_sound = Mix_LoadWAV(audio_path("dash_2.wav").c_str());
 	damage_sound = Mix_LoadWAV(audio_path("damage.wav").c_str());
 	enemy_shoot_sound = Mix_LoadWAV(audio_path("enemy_shoot.wav").c_str());
 	enemy_death_sound = Mix_LoadWAV(audio_path("enemy_death.wav").c_str());
-	click_sound = Mix_LoadWAV(audio_path("click.wav").c_str());
+	click_sound = Mix_LoadWAV(audio_path("click_1.wav").c_str());
+	portal_sound = Mix_LoadWAV(audio_path("portal.wav").c_str());
 
 
-	if (background_music == nullptr || dash_sound_a == nullptr) // IDK why we do this anymore
+	if (background_music == nullptr || dash_sound == nullptr) // IDK why we do this anymore
 	{
 		fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
 				audio_path("music.wav").c_str(),
@@ -466,6 +477,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
         screen.darken_screen_factor = 1;
        	darken_screen_timer = 0.0f;
         current_state = GameState::NEXT_LEVEL;
+		Mix_PlayChannel(-1, portal_sound, 0);
 		goToNextLevel();
 		return true;
 	}
@@ -1034,11 +1046,13 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 
 			// renderer.
 			createPauseScreen();
+			Mix_PauseMusic(); // Pause music
 		}
 		else if (current_state == GameState::PAUSE)
 		{
 			current_state = GameState::GAME_PLAY;
 			removePauseScreen();
+			Mix_ResumeMusic(); // Resume music
 		}
 	}
 
@@ -1150,12 +1164,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				if (canDash())
 				{
 					initiatePlayerDash();
-					float chance = uniform_dist(rng);
-					if(chance > 0.1) {
-						Mix_PlayChannel(-1, dash_sound_a, 0);
-					} else {
-						Mix_PlayChannel(-1, dash_sound_b, 0);
-					}
+					Mix_PlayChannel(-1, dash_sound, 0);
 				}
 			}
             else if (button == GLFW_MOUSE_BUTTON_RIGHT)
@@ -1187,7 +1196,6 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			else if (clickedButton == ButtonType::STARTBUTTON) 
 			{
 				Mix_PlayChannel(-1, click_sound, 0);
-				Mix_PlayMusic(background_music, -1);
 				previous_state = current_state;
 				current_state = GameState::GAMEPLAY_CUTSCENE;
 				removeStartScreen();
@@ -1257,7 +1265,7 @@ void WorldSystem::shootGun() {
 
 	if (gun.cooldown_timer_ms <= 0.0f) {
         gun.cooldown_timer_ms = GUN_COOLDOWN_MS; // Reset cooldown
-
+		Mix_PlayChannel(-1, player_shoot_sound, 0);
 
 		for(int i = 0; i < player.bulletsPerShot; i++) {
 			float offset_deg = (player.bulletsPerShot > 1)
@@ -1822,3 +1830,6 @@ void WorldSystem::loadProgress() {
 	level = progressData["levels"].get<int>();
 }
 
+void WorldSystem::startTheme() {
+	Mix_PlayMusic(background_music, -1);
+}

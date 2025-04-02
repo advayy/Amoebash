@@ -86,6 +86,7 @@ int main()
 			break;
 
 		case GameState::START_SCREEN:
+			Mix_PauseMusic();
 			renderer_system.drawStartScreen();
 			break;
 
@@ -131,10 +132,12 @@ int main()
 			renderer_system.drawInfoScreen();
 			break;
 		case GameState::GAME_OVER:
+			Mix_PauseMusic();
 			renderer_system.drawGameOverScreen();
 			break;
 
-		case GameState::GAMEPLAY_CUTSCENE:
+		case GameState::GAMEPLAY_CUTSCENE: // intro cutscene
+			Mix_PauseMusic();
 			stateTimer -= elapsed_ms;
 			renderer_system.drawCutScreneAnimation();
 			animation_system.step(elapsed_ms);
@@ -144,6 +147,7 @@ int main()
 				removeCutScene();
                 previous_state = current_state;
                 current_state = GameState::GAME_PLAY;
+				world_system.startTheme();
             }
             break;
 
