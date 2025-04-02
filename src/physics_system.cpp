@@ -79,8 +79,17 @@ void PhysicsSystem::step(float elapsed_ms)
 		Motion &motion = motion_registry.components[i];
 
 
-		// std::cout << "Player Velocity " << motion.velocity.x << " " << motion.velocity.y << std::endl;
 		motion.position += motion.velocity * step_seconds;
+
+		if (registry.spiralProjectiles.has(entity)) {
+			float spiral_speed = 0.5f;
+			float angle = spiral_speed * step_seconds;
+
+			// 2D Rotation Matrix
+			float new_x = motion.velocity.x * cos(angle) - motion.velocity.y * sin(angle);
+			float new_y = motion.velocity.x * sin(angle) + motion.velocity.y * cos(angle);
+			motion.velocity = { new_x, new_y };
+		}
 
 		if (registry.keys.has(entity)) {
 			float dampingFactor = 0.8f;
@@ -106,8 +115,6 @@ void PhysicsSystem::step(float elapsed_ms)
             if (player.knockback_duration > 0.0f) {
 			    player.knockback_duration -= elapsed_ms;
             }
-			// std::cout << "Knock back duration " << player.knockback_duration << std::endl;
-			// std::cout << "Velocity " << motion.velocity.x << " " << motion.velocity.y << std::endl; 
  
 			if (player.knockback_duration < 0.f) {
 				motion.velocity = vec2(0.0f, 0.0f);

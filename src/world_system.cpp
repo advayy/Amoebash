@@ -767,14 +767,11 @@ void WorldSystem::handle_collisions()
 				Player& player = registry.players.get(entity);
 				Projectile& projectile = registry.projectiles.get(entity2);
 
-				std::cout << "Beofre: " << player.current_health << std::endl;
 				// Player takes damage
 				player.current_health -= projectile.damage;
-				std::cout << "AFter : " << player.current_health << std::endl;
 
 				// remove projectile
                 removals.push_back(entity2);
-				// registry.remove_all_components_of(entity2);
 			}
 		}
 		else if (registry.keys.has(entity2))

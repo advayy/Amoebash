@@ -413,35 +413,42 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 				// spawn
 				ProceduralMap& map = registry.proceduralMaps.components[0];
 				std::vector<std::vector<tileType>> rawMap = map.map;
-
-				if (enemyBehavior.phase == 1) {
-					int count = 0;
-					for (int row = 2; row <= 4; ++row) {
-						for (int col = 0; col < rawMap[row].size(); ++col) {
-							if (rawMap[row][col] == tileType::EMPTY) {
-								vec2 worldPos = gridCellToPosition({ col, row });
-								createBacteriophage(nullptr, worldPos, count);
-								count += 1;
-							}
-						}
-					}
-				} else if (enemyBehavior.phase == 2) {
-					int count = 0;
-					for (int row = 0; row <= 9; ++row) {
-						for (int col = 0; col < rawMap[row].size(); ++col) {
-							if (rawMap[row][col] == tileType::EMPTY) {
-								vec2 worldPos = gridCellToPosition({ col, row });
-								createBacteriophage(nullptr, worldPos, count);
-								count += 1;
-							}
+				int count = 0;
+				for (int row = 2; row <= 4; ++row) {
+					for (int col = 0; col < rawMap[row].size(); ++col) {
+						if (rawMap[row][col] == tileType::EMPTY) {
+							vec2 worldPos = gridCellToPosition({ col, row });
+							createBacteriophage(nullptr, worldPos, count);
+							count += 1;
 						}
 					}
 				}
+
+
+				// spawn pattern per phase
+				// if (enemyBehavior.phase == 1) {
+				// } else if (enemyBehavior.phase == 2) {
+				// 	int count = 0;
+				// 	for (int row = 0; row <= 9; ++row) {
+				// 		for (int col = 0; col < rawMap[row].size(); ++col) {
+				// 			if (rawMap[row][col] == tileType::EMPTY) {
+				// 				vec2 worldPos = gridCellToPosition({ col, row });
+				// 				createBacteriophage(nullptr, worldPos, count);
+				// 				count += 1;
+				// 			}
+				// 		}
+				// 	}
+				// }
 			
 				enemyBehavior.has_spawned = true;
 			} else {
+				std::cout << "Num phage: " << registry.bacteriophageAIs.size() << std::endl;
 				if (registry.bacteriophageAIs.size() == 0) {
 					enemyBehavior.state = FinalBossState::SPIRAL_SHOOT_1;
+
+					// just for debugging purposes
+					enemyBehavior.phase = 2;
+
 					enemyBehavior.has_spawned = false;
 				}
 			}
@@ -462,7 +469,6 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 					vec2 velocity = dir * PROJECTILE_SPEED * 2.f;
 					vec2 spawnPos = enemyMotion.position + dir * enemyMotion.scale.x / 3.f;
 					
-					createBossProjectile(spawnPos, FINAL_BOSS_PROJECTILE, velocity);
 					if (enemyBehavior.phase == 2) {
 						Entity spiralProjectile = createBossProjectile(spawnPos, FINAL_BOSS_PROJECTILE, velocity);
 						registry.spiralProjectiles.emplace(spiralProjectile);
@@ -475,7 +481,7 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 
 			if (enemyBehavior.spiral_duration <= 0.f) {
 				enemyBehavior.state = FinalBossState::TIRED;
-				enemyBehavior.spiral_duration = 3000.f;
+				enemyBehavior.spiral_duration = 15000.f;
 				enemyBehavior.shoot_cool_down = 0.f;
 				enemyBehavior.cool_down = 20000.f;
 			}
@@ -492,13 +498,14 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 			} else {
 				enemyBehavior.cool_down -= elapsed_ms;
 				if (enemyBehavior.cool_down <= 0.f) {
-					enemyBehavior.state = FinalBossState::INITIAL;
+					enemyBehavior.state = FinalBossState::SPAWN_1;
 					enemyBehavior.cool_down = 20000.f;
 				}
 			}
 			break;
 		} 
 	}
+	std::cout << "Final Boss State: " << static_cast<int>(enemyBehavior.state) << std::endl;
 
 	return enemyBehavior.state;
 }

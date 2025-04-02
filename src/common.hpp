@@ -122,7 +122,7 @@ const float MAX_ENEMIES_COUNT = MAX_BACTERIOPHAGE_COUNT + 20;
 
 const float BOSS_HEALTH = 200;
 const float SMALLEST_BOSS_HEALTH = BOSS_HEALTH / 8.f;
-const float FINAL_BOSS_HEALTH = 1.f;
+const float FINAL_BOSS_HEALTH = 200.f;
 
 // LARGE ENEMY
 const float LARGE_ENEMY_BB_WIDTH = (float)LARGE_ENEMY_SIZE;

@@ -670,7 +670,7 @@ struct FinalBossAI : EnemyAI
 	bool has_spawned = false;
 
 	float shoot_cool_down = 0.f;
-	float spiral_duration = 3000.f; 
+	float spiral_duration = 15000.f; 
 
 	Entity associatedArrow;
 };
