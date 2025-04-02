@@ -91,6 +91,7 @@ public:
 	void spawnEnemies(float elapsed_ms_since_last_update);
 	void handleProjectiles(float elapsed_ms_since_last_update);
 	bool checkPortalCollision();
+	void startTheme();
 
 private:
 	bool gameOver = false;
@@ -154,12 +155,14 @@ private:
 
 	// music references
 	Mix_Music *background_music;
-	Mix_Chunk *dash_sound_a;
-	Mix_Chunk *dash_sound_b;
+	Mix_Music *boss_background_music;
+	Mix_Chunk *dash_sound;
+	Mix_Chunk *player_shoot_sound;
 	Mix_Chunk *damage_sound;
 	Mix_Chunk *enemy_shoot_sound;
 	Mix_Chunk *enemy_death_sound;
 	Mix_Chunk *click_sound;
+	Mix_Chunk *portal_sound;
 
 	// debugging (fps etc..)
 	void toggleFPSDisplay();

@@ -54,7 +54,8 @@ struct Player
 	int dash_damage = PLAYER_DASH_DAMAGE;
 	float healing_rate = PLAYER_BASE_HEALING_RATE;
 	float healing_timer_ms = PLAYER_DEFAULT_HEALING_TIMER_MS;
-	
+	float default_healing_timer = PLAYER_DEFAULT_HEALING_TIMER_MS;
+
 	// Active cooldown timer and the default cooldown time
 	int dash_count = DASH_RECHARGE_COUNT;
 	int max_dash_count = DASH_RECHARGE_COUNT;
@@ -63,6 +64,19 @@ struct Player
 	int dash_cooldown_ms = PLAYER_DASH_COOLDOWN_MS;
 	float dash_speed = PLAYER_DASH_SPEED;
 	float dash_range = PLAYER_DASH_RANGE;
+
+	float minimapViewRange = 3.0;
+	float dashDecay = VELOCITY_DECAY_RATE;
+
+	int sheilds = 0;
+
+	float gun_projectile_damage = GUN_PROJECTILE_DAMAGE;
+	int bulletsPerShot = 1;
+	float angleConeRadius = 30;
+	float bulletSpeed = GUN_PROJECTILE_SPEED;
+
+	int extra_lives = 0;
+
 
 	// Detection range for enemies
 	float detection_range = 1.0f;
