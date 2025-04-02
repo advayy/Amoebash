@@ -298,11 +298,27 @@ Entity createProjectile(vec2 pos, vec2 size, vec2 velocity, float damage)
 	registry.renderRequests.insert(
 		entity,
 		{TEXTURE_ASSET_ID::PROJECTILE,
-		 EFFECT_ASSET_ID::TEXTURED,
+		 EFFECT_ASSET_ID::SPRITE_SHEET,
 		 GEOMETRY_BUFFER_ID::SPRITE});
+
+	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 10;
+
+	Animation &animation = registry.animations.emplace(entity);
+	animation.start_frame = 0;
+	animation.end_frame = 6;
+	animation.time_per_frame = 200.f;
+	animation.loop = ANIM_LOOP_TYPES::NO_LOOP;
+	animation.forwards = true;
+
+	SpriteSize &sprite = registry.spritesSizes.emplace(entity);
+	sprite.width = 64;
+	sprite.height = 64;
 
 	return entity;
 }
+
+
 
 Entity createBacteriophageProjectile(Entity& bacteriophage)
 {

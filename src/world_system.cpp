@@ -332,8 +332,8 @@ void WorldSystem::handleProjectiles(float elapsed_ms_since_last_update)
 
 		if (projectile.ms_until_despawn < 0.0f)
 		{
-			
 			registry.remove_all_components_of(registry.projectiles.entities[i]);
+			i--;
 		}
 	}
 
@@ -771,6 +771,22 @@ void WorldSystem::handle_collisions()
 			{
 				Projectile& projectile = registry.projectiles.get(entity);
 
+				if (registry.animations.has(entity)) {
+    				Animation &animation = registry.animations.get(entity);
+					animation.start_frame = 7;
+					animation.end_frame = 9;
+					animation.time_per_frame = 5.f;
+					animation.loop = ANIM_LOOP_TYPES::NO_LOOP;
+					animation.forwards = true;
+				}
+
+				if (registry.motions.has(entity)) {
+					Motion &motion = registry.motions.get(entity);
+					motion.velocity = {0.f, 0.f};
+				}
+
+
+
 				if (projectile.from_enemy) continue;
 
 				// Invader takes damage
@@ -778,7 +794,9 @@ void WorldSystem::handle_collisions()
 
 				// remove projectile
 				// registry.remove_all_components_of(entity);
-                removals.push_back(entity);
+                // removals.push_back(entity);
+				projectile.ms_until_despawn = (5 - 1 + 1) * 100.f;
+
 				// if invader health is below 0
 				// remove invader and increase points
 				// buff created
