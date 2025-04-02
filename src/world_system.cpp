@@ -1121,8 +1121,8 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			}
 			else if (clickedButton == ButtonType::STARTBUTTON) 
 			{
-				Mix_PlayChannel(-1, click_sound, 0);
-				Mix_PlayMusic(background_music, -1);
+				// Mix_PlayChannel(-1, click_sound, 0);
+				// Mix_PlayMusic(background_music, -1);
 				previous_state = current_state;
 				current_state = GameState::GAMEPLAY_CUTSCENE;
 				removeStartScreen();
@@ -1556,7 +1556,7 @@ void WorldSystem::handleRippleEffect(float elapsed_ms)
     static float ripple_timer = 0.0f;
     ripple_timer += elapsed_ms;
     
-    if (ripple_timer >= 30.0f) {
+    if (ripple_timer >= 5.0f) {
         particle_system.createPlayerRipples(player_entity);
         ripple_timer = 0.0f;
     }

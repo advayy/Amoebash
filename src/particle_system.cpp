@@ -176,7 +176,7 @@ Entity ParticleSystem::createRippleParticle(vec2 position, float lifetime_scale 
 
     Particle& particle = registry.particles.emplace(entity);
     particle.type = PARTICLE_TYPE::RIPPLE_PARTICLE;
-particle.max_lifetime_ms = (3000.0f + uniform_dist(rng) * 200.0f) * lifetime_scale;
+    particle.max_lifetime_ms = (3000.0f + uniform_dist(rng) * 200.0f) * lifetime_scale;
     particle.max_lifetime_ms = particle.lifetime_ms;
     particle.state = PARTICLE_STATE::FADE;
 
@@ -201,12 +201,12 @@ void ParticleSystem::createPlayerRipples(Entity player_entity)
     vec2 velocity_direction = glm::normalize(player_motion.velocity);
     vec2 perpendicular = vec2(-velocity_direction.y, velocity_direction.x);
 
-    float tail_offset = player_motion.scale.y * 0.6f;
-    float side_offset = player_motion.scale.x * 0.3f;
+    float tail_offset = player_motion.scale.y * -0.35f;
+    float side_offset = player_motion.scale.x * 0.35f;
 
     vec2 tail_center = player_motion.position - velocity_direction * tail_offset;
 
-    float random_factor = 1.0f;
+    float random_factor = 5.0f;
     vec2 randomness = vec2(
         (uniform_dist(rng) - 0.5f) * random_factor,
         (uniform_dist(rng) - 0.5f) * random_factor
@@ -215,7 +215,7 @@ void ParticleSystem::createPlayerRipples(Entity player_entity)
     vec2 left_position = tail_center - perpendicular * side_offset + randomness;
     vec2 right_position = tail_center + perpendicular * side_offset + randomness;
 
-    float speed_scale = 2.0f;
+    float speed_scale = 1.0f;
 
     float left_distance = glm::length(left_position - tail_center);
     float right_distance = glm::length(right_position - tail_center);
@@ -223,7 +223,7 @@ void ParticleSystem::createPlayerRipples(Entity player_entity)
     float left_speed = left_distance * speed_scale;
     float right_speed = right_distance * speed_scale;
 
-    float angle_variation = 0.005f;
+    float angle_variation = 0.01f;
     float angle_offset_left = (uniform_dist(rng) - 0.5f) * angle_variation;
     float angle_offset_right = (uniform_dist(rng) - 0.5f) * angle_variation;
 
