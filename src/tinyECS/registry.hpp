@@ -30,6 +30,7 @@ public:
 	ComponentContainer<Projectile> projectiles;
 	ComponentContainer<BacteriophageProjectile> bacteriophageProjectiles;
 	ComponentContainer<BossProjectile> bossProjectiles;
+	ComponentContainer<FinalBossProjectile> finalBossProjectiles;
     ComponentContainer<Portal> portals;
 
 	// mine
@@ -145,6 +146,7 @@ public:
         registry_list.push_back(&clickableBuffs);
 		registry_list.push_back(&bossArrows);
 		registry_list.push_back(&finalBossAIs);
+		registry_list.push_back(&finalBossProjectiles);
 	}
 
 	void clear_all_components()

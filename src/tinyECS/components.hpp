@@ -158,6 +158,7 @@ struct BacteriophageProjectile {
 };
 
 struct BossProjectile {};
+struct FinalBossProjectile {};
 
 // used for Entities that cause damage
 struct Deadly
@@ -628,6 +629,14 @@ enum class BossState
 	NUM_STATES = FLEE + 1
 };
 
+enum class FinalBossState
+{
+	INITIAL = 0,
+	SPAWN_1 = INITIAL + 1,
+	SPIRAL_SHOOT_1 = SPAWN_1 + 1,
+	TIRED = SPIRAL_SHOOT_1 + 1
+};
+
 struct BossAI : EnemyAI
 {
 	BossState state = BossState::INITIAL;
@@ -650,6 +659,14 @@ struct BossAI : EnemyAI
 
 struct FinalBossAI : EnemyAI
 {
+	FinalBossState state = FinalBossState::INITIAL;
+	unsigned int phase = 1;
+	float cool_down = 20000.f;
+	bool has_spawned = false;
+
+	float shoot_cool_down = 0.f;
+	float spiral_duration = 3000.f; 
+
 	Entity associatedArrow;
 };
 

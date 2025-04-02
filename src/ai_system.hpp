@@ -16,4 +16,5 @@ private:
 	RBCEnemyState handleRBCBehavior(Entity& enemyEntity, RBCEnemyAI& enemyBehavior, float dist, vec2 direction, bool playerDetected, float elapsed_ms);
 	BacteriophageState handleBacteriophageBehavior(Entity& enemyEntity, BacteriophageAI& enemyBehavior, vec2 direction, bool playerDetected, float elapsed_ms, vec2 positionToReach, vec2 directionToPlayer);
 	BossState handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavior, float dist, vec2 direction, bool playerDetected, float elapsed_ms);
+	FinalBossState handleFinalBossBehaviour(Entity& enemyEntity, FinalBossAI& enemyBehavior, float dist, vec2 direction, bool playerDetected, float elapsed_ms);
 };

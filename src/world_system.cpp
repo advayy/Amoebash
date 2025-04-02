@@ -278,12 +278,11 @@ bool WorldSystem::updateBoss()
 
 void WorldSystem::updateBossArrows() {
 	std::vector<Entity> removals;
-
+	
 	for (uint i = 0; i < registry.bossArrows.size(); i++) {
 		Entity arrow = registry.bossArrows.entities[i];
 		BossArrow& arrowComp = registry.bossArrows.get(arrow);
-
-		if (!registry.bossAIs.has(arrowComp.associatedBoss)) {
+		if (!registry.bossAIs.has(arrowComp.associatedBoss) && !registry.finalBossAIs.has(arrowComp.associatedBoss)) {
 			removals.push_back(arrow);
 			continue;
 		}
@@ -441,8 +440,6 @@ bool WorldSystem::checkPortalCollision(){
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
-	std::cout << "Level : " << level << std::endl;
-
 	updateCamera(elapsed_ms_since_last_update);
 
 	if (progress_map["tutorial_mode"] && registry.infoBoxes.size() == 0) {
@@ -474,7 +471,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 			stateTimer = WIN_CUTSCENE_DURATION_MS;
 			createEndingWinScene();
 		}
-		std::cout << "final stage" << std::endl;
 	}
 	handleProjectiles(elapsed_ms_since_last_update);
 
@@ -627,7 +623,7 @@ void WorldSystem::goToNextLevel()
 		createBoss(renderer, gridCellToPosition({10, 10}));
 	} else if (level == FINAL_BOSS_LEVEL) {
 		createFinalBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
-		createFinalBoss(renderer, gridCellToPosition({10, 10}));
+		createFinalBoss(renderer, gridCellToPosition({9, 2}));
 	} 
 
 	Player &player = registry.players.get(registry.players.entities[0]);
@@ -771,8 +767,10 @@ void WorldSystem::handle_collisions()
 				Player& player = registry.players.get(entity);
 				Projectile& projectile = registry.projectiles.get(entity2);
 
+				std::cout << "Beofre: " << player.current_health << std::endl;
 				// Player takes damage
 				player.current_health -= projectile.damage;
+				std::cout << "AFter : " << player.current_health << std::endl;
 
 				// remove projectile
                 removals.push_back(entity2);
@@ -798,11 +796,6 @@ void WorldSystem::handle_collisions()
 					{
 						keyMotion.velocity = vec2(0.0f, 0.0f);
 					}
-					// std::cout << "Mesh collision imminent between player and hexagon" << std::endl;
-				}
-				else 
-				{
-					// std::cout << "No mesh collision predicted soon" << std::endl;
 				}
 			}
 			else if (registry.chests.has(entity))
@@ -816,10 +809,6 @@ void WorldSystem::handle_collisions()
 
 				if (physics_system.pointInPolygon(keyMotion.position, chestWorldVertices))
 				{
-					// remove chest
-					// registry.remove_all_components_of(entity);
-					// registry.remove_all_components_of(entity2);
-
                     removals.push_back(entity);
                     removals.push_back(entity2);
                 

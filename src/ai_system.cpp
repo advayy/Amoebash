@@ -390,6 +390,97 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 	return enemyBehavior.state;
 }
 
+FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBossAI& enemyBehavior, float dist, vec2 direction, bool playerDetected, float elapsed_ms)
+{
+	Motion& enemyMotion = registry.motions.get(enemyEntity);
+	Enemy& enemy = registry.enemies.get(enemyEntity);
+
+	switch (enemyBehavior.state)
+	{
+		case FinalBossState::INITIAL:
+		{
+			if (playerDetected)
+			{
+				enemyBehavior.state = FinalBossState::SPAWN_1;
+				enemyBehavior.cool_down = 3000.f;
+			}
+			break;
+		}
+
+		case FinalBossState::SPAWN_1:
+		{
+			if (!enemyBehavior.has_spawned) {
+				// spawn
+				ProceduralMap& map = registry.proceduralMaps.components[0];
+				std::vector<std::vector<tileType>> rawMap = map.map;
+
+				int count = 0;
+				for (int row = 2; row <= 4; ++row) {
+					for (int col = 0; col < rawMap[row].size(); ++col) {
+						if (rawMap[row][col] == tileType::EMPTY) {
+							vec2 worldPos = gridCellToPosition({ col, row });
+							createBacteriophage(nullptr, worldPos, count);
+						}
+						count += 1;
+					}
+				}
+			
+				enemyBehavior.has_spawned = true;
+			} else {
+				if (registry.bacteriophageAIs.size() == 0) {
+					enemyBehavior.state = FinalBossState::SPIRAL_SHOOT_1;
+					enemyBehavior.has_spawned = false;
+				}
+			}
+			break;
+		}
+
+		case FinalBossState::SPIRAL_SHOOT_1: {
+			enemyBehavior.spiral_duration -= elapsed_ms;
+			enemyBehavior.shoot_cool_down -= elapsed_ms;
+
+			if (enemyBehavior.shoot_cool_down <= 0.f) {
+				int bullets = 24; 
+				for (int i = 0; i < bullets; ++i)
+				{
+					float angleRad = glm::radians((360.f / bullets) * i);
+					vec2 dir = { cosf(angleRad), sinf(angleRad) };
+					vec2 velocity = dir * PROJECTILE_SPEED * 2.f;
+					vec2 spawnPos = enemyMotion.position + dir * enemyMotion.scale.x / 3.f;
+
+					createBossProjectile(spawnPos, FINAL_BOSS_PROJECTILE, velocity);
+				}
+
+				enemyBehavior.shoot_cool_down = 400.f;
+			}
+
+			if (enemyBehavior.spiral_duration <= 0.f) {
+				enemyBehavior.state = FinalBossState::TIRED;
+				enemyBehavior.spiral_duration = 3000.f;
+				enemyBehavior.shoot_cool_down = 0.f;
+				enemyBehavior.cool_down = 20000.f;
+			}
+
+			break;
+		}
+
+		case FinalBossState::TIRED: {
+			std::cout << "So tired" << std::endl;
+			enemyBehavior.cool_down -= elapsed_ms;
+			if (enemyBehavior.cool_down <= 0.f) {
+				enemyBehavior.state = FinalBossState::INITIAL;
+				enemyBehavior.cool_down = 20000.f;
+			}
+			Enemy& enemy = registry.enemies.get(enemyEntity);
+			std::cout << "Boss Health: " << enemy.health << std::endl;
+			break;
+		}
+	}
+
+	return enemyBehavior.state;
+}
+
+
 // handle AI behavior for all enemies with according parameters
 void AISystem::step(float elapsed_ms)
 {
@@ -453,5 +544,17 @@ void AISystem::step(float elapsed_ms)
 		bool playerDetected = isPlayerInRadius(playerMotion.position, enemyMotion.position, dist, direction, enemyBehavior.detectionRadius);
 
 		enemyBehavior.state = handleBossBehaviour(enemyEntity, enemyBehavior, dist, direction, playerDetected, elapsed_ms);
+	}
+
+	for (auto& enemyEntity : registry.finalBossAIs.entities)
+	{
+		FinalBossAI& enemyBehavior = registry.finalBossAIs.get(enemyEntity);
+		Motion& enemyMotion = registry.motions.get(enemyEntity);
+
+		vec2 direction;
+		float dist = 0;
+		bool playerDetected = isPlayerInRadius(playerMotion.position, enemyMotion.position, dist, direction, enemyBehavior.detectionRadius);
+
+		enemyBehavior.state = handleFinalBossBehaviour(enemyEntity, enemyBehavior, dist, direction, playerDetected, elapsed_ms);
 	}
 }

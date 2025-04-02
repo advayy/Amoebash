@@ -233,6 +233,13 @@ void PhysicsSystem::step(float elapsed_ms)
 			// to prevent projectile (from enemy) to enemy collision
 			if (projectile.from_enemy) continue;
 
+			if (registry.finalBossAIs.has(e_entity)) {
+				FinalBossAI& finalBossAI = registry.finalBossAIs.get(e_entity);
+				if (finalBossAI.state != FinalBossState::TIRED) {
+					continue;
+				}
+			}
+
 			Motion& proj_motion = registry.motions.get(proj_entity);
 
 			// ensure the projectile is the "first" entity
@@ -250,13 +257,19 @@ void PhysicsSystem::step(float elapsed_ms)
 				player.knockback_duration = 500.f;
 			}
 
+			if (registry.finalBossAIs.has(e_entity)) {
+				FinalBossAI& finalBossAI = registry.finalBossAIs.get(e_entity);
+				if (finalBossAI.state != FinalBossState::TIRED) {
+					continue;
+				}
+			}
+
 			registry.collisions.emplace_with_duplicates(player_entity, e_entity);
 		}
 
 		 handleWallCollision(e_entity);
 	}
 
-	// for (auto& proj_entity : registry.bacteriophageProjectiles.entities)
 	for (auto& proj_entity : registry.projectiles.entities)
 	{
 		Motion& proj_motion = registry.motions.get(proj_entity);

@@ -347,6 +347,18 @@ Entity createBossProjectile(vec2 position, vec2 size, vec2 velocity)
 	return projectile;
 }
 
+Entity createFinalBossProjectile(vec2 position, vec2 size, vec2 velocity)
+{
+	Entity projectile = createProjectile(position, size, velocity);
+	RenderRequest& render_request = registry.renderRequests.get(projectile);
+	render_request.used_texture = TEXTURE_ASSET_ID::BOSS_PROJECTILE;
+	Projectile& p = registry.projectiles.get(projectile);
+	p.damage = BOSS_PROJECTILE_DAMAGE;
+	registry.finalBossProjectiles.emplace(projectile);
+
+	return projectile;
+}
+
 Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& playerPosition) {
 	for (Entity& entity : registry.proceduralMaps.entities) {
         registry.remove_all_components_of(entity);
@@ -385,6 +397,8 @@ Entity createFinalBoss(RenderSystem* renderer, vec2 position) {
 	motion.scale = {FINAL_BOSS_BB_WIDTH, FINAL_BOSS_BB_HEIGHT};
 
 	FinalBossAI& enemy_ai = registry.finalBossAIs.emplace(entity);
+	enemy_ai.detectionRadius = BOSS_DETECTION_RADIUS;
+	
 
 	Enemy& enemy = registry.enemies.get(entity);
 	enemy.health = FINAL_BOSS_HEALTH;
@@ -412,9 +426,8 @@ Entity createFinalBoss(RenderSystem* renderer, vec2 position) {
 	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
 	sprite.width = motion.scale.x;
 	sprite.height = motion.scale.y;
-	
-	enemy_ai.associatedArrow = createBossArrow(entity);
 
+	enemy_ai.associatedArrow = createBossArrow(entity);
 	return entity;
 }
 
@@ -439,28 +452,28 @@ Entity createFinalBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>
 	map.map.resize(map.height, std::vector<tileType>(map.width, tileType::EMPTY));
 	
 	std::vector<std::vector<int>> rawMap = {
-		{1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1},
-		{1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1},
-		{1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1},
-		{1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-		{1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-		{1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1},
-		{1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1},
-		{1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1},
-		{1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1}
+		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+		{1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1},
+		{1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1},
+		{1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1},
+		{1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1},
+		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
 	};
-	
+
 	for (int i = 0; i < rawMap.size(); i++) {
 		for (int j = 0; j < rawMap[i].size(); j++) {
 			if (rawMap[i][j] == 1) {
@@ -471,8 +484,8 @@ Entity createFinalBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>
 		}
 	}
 	
-	playerPosition.first = 9;
-	playerPosition.second = 0;
+	playerPosition.first = 19;
+	playerPosition.second = 9;
 
 	return entity;
 }
