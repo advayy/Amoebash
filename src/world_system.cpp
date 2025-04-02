@@ -1198,7 +1198,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		{
 			Entity e;
 
-			if (getClickedButton() == ButtonType::PROCEED_BUTTON)
+			if (getClickedButton() == ButtonType::PROCEEDBUTTON)
 			{
 				previous_state = current_state;
 				current_state = GameState::START_SCREEN_ANIMATION;
@@ -1220,7 +1220,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 					saveProgress();
 				}
 			}
-			else if (getClickedButton() == ButtonType::PROCEED_BUTTON){
+			else if (getClickedButton() == ButtonType::PROCEEDBUTTON){
 				current_state = GameState::GAME_PLAY;
 				removePauseScreen();
 			}

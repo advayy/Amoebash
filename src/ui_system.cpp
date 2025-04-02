@@ -746,7 +746,7 @@ Entity createBackButton() {
 Entity createNextButton(vec2 position) {
 	vec2 scale = BACK_BUTTON_SCALE;
 
-	return createButton(ButtonType::PROCEED_BUTTON,
+	return createButton(ButtonType::PROCEEDBUTTON,
 						position,
 						scale,
 						TEXTURE_ASSET_ID::BACK_BUTTON);
