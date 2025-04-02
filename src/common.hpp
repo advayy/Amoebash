@@ -156,7 +156,7 @@ const float ARROW_HEIGHT = 16 * WORK_SCALE_FACTOR;
 const float GUN_COOLDOWN_MS = 500.0f;
 const float GUN_SIZE = 20 * WORK_SCALE_FACTOR;
 const float GUN_UI_SIZE = 20 * WORK_SCALE_FACTOR;
-const float GUN_PROJECTILE_DAMAGE = 20;
+const float GUN_PROJECTILE_DAMAGE = 15;
 const float GUN_PROJECTILE_SPEED = 600.0f;
 
 const float PROJECTILE_BB_WIDTH = (float)PROJECTILE_SIZE;
@@ -254,7 +254,8 @@ const vec2 GUN_UI_POS = {WEAPON_PILL_UI_POS.x - WEAPON_PILL_UI_WIDTH / 4,
                          WEAPON_PILL_UI_POS.y};
 
 // 
-const int NUMBER_OF_BUFFS = 5;
+const int NUMBER_OF_BUFFS = 15;
+
 const float BUFF_WIDTH = 20.0f * WORK_SCALE_FACTOR;
 const float BUFF_HEIGHT = 20.0f * WORK_SCALE_FACTOR;
 const float BUFF_UI_WIDTH = 20.0f * UI_SCALE;

@@ -516,7 +516,7 @@ void WorldSystem::handlePlayerHealth(float elapsed_ms)
 	player.healing_timer_ms -= elapsed_ms;
 	if (player.healing_timer_ms <= 0 && player.current_health < player.max_health)
 	{
-		player.healing_timer_ms = PLAYER_DEFAULT_HEALING_TIMER_MS;
+		player.healing_timer_ms = player.default_healing_timer;
 		player.current_health += player.max_health * player.healing_rate;
 		if (player.current_health > player.max_health)
 		{
@@ -527,11 +527,17 @@ void WorldSystem::handlePlayerHealth(float elapsed_ms)
 	if (player.current_health <= 0 && current_state != GameState::GAME_OVER)
 	{
 		// save buffs to progression
-		Progression& p = registry.progressions.get(registry.progressions.entities[0]);
-		p.buffsFromLastRun = player.buffsCollected;
-		previous_state = current_state;
-		current_state = GameState::GAME_OVER;
-		createGameOverScreen();
+		if (player.extra_lives > 0) {
+			player.extra_lives --;
+			player.current_health = player.max_health/2;
+			removeBuffUI(10);
+		} else {
+			Progression& p = registry.progressions.get(registry.progressions.entities[0]);
+			p.buffsFromLastRun = player.buffsCollected;
+			previous_state = current_state;
+			current_state = GameState::GAME_OVER;
+			createGameOverScreen();
+		}
 	}
 }
 
@@ -758,7 +764,7 @@ void WorldSystem::handle_collisions()
 				Projectile& projectile = registry.projectiles.get(entity2);
 
 				// Player takes damage
-				player.current_health -= projectile.damage;
+				damagePlayer(projectile.damage);
 
 				// remove projectile
                 removals.push_back(entity2);
@@ -898,7 +904,6 @@ void WorldSystem::handle_collisions()
 				}
 				else
 				{
-					// womp womp	game over or vignetted??
 					uint current_time = SDL_GetTicks();
 					Player& player = registry.players.get(entity);
 					// then apply damage.
@@ -907,7 +912,8 @@ void WorldSystem::handle_collisions()
 						//  add the component and apply damage
 						registry.damageCooldowns.insert(entity, { current_time });
 
-						player.current_health -= 1; 
+						damagePlayer(1); // Why is this one
+						
 						Mix_PlayChannel(-1, damage_sound, 0);
 					}
 					else
@@ -917,7 +923,9 @@ void WorldSystem::handle_collisions()
 						if (current_time - dc.last_damage_time >= 500)
 						{
 							dc.last_damage_time = current_time;
-							player.current_health -= 1;
+
+							damagePlayer(1); // Why is this one
+
 							Mix_PlayChannel(-1, damage_sound, 0);
 						}
 					}
@@ -951,7 +959,7 @@ void WorldSystem::handle_collisions()
 						// need to check the rumble cool down
 
 						if (!bossAI.is_charging) {
-							player.current_health -= BOSS_RUMBLE_DAMAGE;
+							damagePlayer(BOSS_RUMBLE_DAMAGE);
 						}
 
 						if (player.knockback_duration > 0.f && glm::length(bossMotion.velocity) > 0.1f)
@@ -1093,6 +1101,8 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 			loadProgress();
 		}
 	}
+
+	
 }
 
 void WorldSystem::on_mouse_move(vec2 mouse_position)
@@ -1241,21 +1251,34 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 void WorldSystem::shootGun() {
     Gun &gun = registry.guns.get(registry.guns.entities[0]);
     Motion &gun_motion = registry.motions.get(registry.guns.entities[0]);
-    if (gun.cooldown_timer_ms <= 0.0f) {
+    Player &player = registry.players.get(registry.players.entities[0]);
+
+	float base_angle_rad = glm::radians(180.f + gun_motion.angle);
+
+	if (gun.cooldown_timer_ms <= 0.0f) {
         gun.cooldown_timer_ms = GUN_COOLDOWN_MS; // Reset cooldown
 
-        float angle_radians = glm::radians(180.f + gun_motion.angle);
-        vec2 velocity = {cos(angle_radians) * GUN_PROJECTILE_SPEED, sin(angle_radians) * GUN_PROJECTILE_SPEED};
 
-        velocity = {velocity.y, -velocity.x};
+		for(int i = 0; i < player.bulletsPerShot; i++) {
+			float offset_deg = (player.bulletsPerShot > 1)
+			? -player.angleConeRadius/2 + (2.f * player.angleConeRadius/2 * i / (player.bulletsPerShot - 1))
+			: 0.f;
+			float angle_rad = base_angle_rad + glm::radians(offset_deg);
 
-        Entity projectiles = createProjectile(gun_motion.position, {PROJECTILE_SIZE, PROJECTILE_SIZE}, velocity, GUN_PROJECTILE_DAMAGE);
+			vec2 velocity = {
+				cos(angle_rad) * player.bulletSpeed,
+				sin(angle_rad) * player.bulletSpeed
+			};
+			velocity = {velocity.y, -velocity.x};
+			
+			Entity projectiles = createProjectile(gun_motion.position, {PROJECTILE_SIZE, PROJECTILE_SIZE}, velocity, player.gun_projectile_damage);
 
-		RenderRequest& render_request = registry.renderRequests.get(projectiles);
-		render_request.used_texture = TEXTURE_ASSET_ID::GUN_PROJECTILE;
+			RenderRequest& render_request = registry.renderRequests.get(projectiles);
+			render_request.used_texture = TEXTURE_ASSET_ID::GUN_PROJECTILE;
 
-		Projectile &projectile = registry.projectiles.get(projectiles);
-		projectile.from_enemy = false;
+			Projectile &projectile = registry.projectiles.get(projectiles);
+			projectile.from_enemy = false;
+		}
 	}
 }
 
@@ -1410,68 +1433,67 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 
 void WorldSystem::applyBuff(Player& player, int buff_type)
 {
+	bool skipUIRender = false;
 
 	switch (buff_type)
 	{
 	case 0: // Tail
 		player.speed += player.speed * 0.05f;
-		// std::cout << "Collected Tail: Player Speed increased by 5%" << std::endl;
 		break;
 
-	case 1: // Mitochondria
+	case 1: // Mitochondria is the powerhouse of the cell
 		player.max_dash_count ++;
 		createDashRecharge();
-		// // std::cout << "Collected Mitochondria: Dash cooldown decreased by 5%" << std::endl;
 		break;
 
 	case 2: // Hemoglobin
 		player.detection_range -= player.dash_cooldown_ms * 0.05f;
-		// std::cout << "Collected Hemoglobin: Enemies Detection range decreased by 5%" << std::endl;
 		break;
 
 	case 3: // Golgi Apparatus Buff (need to be implemented)
-		// player.current_health += 10;
 		player.dash_cooldown_ms = player.dash_cooldown_ms * 0.95;
-		// std::cout << "Collected Golgi Body: need to be implemented" << std::endl;
 		break;
 
 	case 4: // Chloroplast
 		player.healing_rate += 0.03;
-		// std::cout << "Collected Chloroplast: Healing increased by 5% " << std::endl;
 		break;
-	case 5: // Cell Wall
-		//	Defend next damage, remove cell wall on damage ... - sheild
+	case 5: // Plant Cell Wall
+		player.sheilds += 1;
 		break;
 	case 6: // Amino Acid
 		//	Increase Player Damage
 		player.dash_damage += 0.05;
 		break;
 	case 7: // Lysosyme
-		//	Ammo has +1 piercing ...
+		// Shoot multiple projectiles?
+		player.bulletsPerShot++;
 		break;
 	case 8: // CytoPlasm
 		player.max_health += 10;
 		break;
-	case 9: // Pilli
-		//	Dash decay drop - turns off drift
+	case 9: // Pilli OR Virality
+		//	increases bullet area cone // projectile speed instead?
+		player.bulletSpeed += 200;
 		break;
 	case 10: // Spare Nucleus
-		//	Adds +1 lives this run
+		player.extra_lives++;
 		break;
 	case 11: // Vacuole
-		//	 - doesnt render in the ui... - Heals hp
+		//	 - doesnt render in the ui... - Heals hp -------------------------------> POPUP CALL HERE
+		player.current_health += 50;
+		skipUIRender = true;
 		break;
-	case 12: // Endoplasmic Reticulum
-		//	
+	case 12: // Endoplasmic Reticulum 
+		player.default_healing_timer -= 250;
 		break;
 	case 13: // oceloid cell
-		//	 -> See more of the minimap
+		player.minimapViewRange++;
 		break;
 	case 14: // Secretor cell
-		//	reduces decauy for dash - more drift
+		player.dashDecay += 0.005; // SUPER OP
 		break;
-	case 15: // IDK
-		//	Adds +1 lives this run
+	case 15: // IDK some weird orange and pink shit	
+		player.angleConeRadius += 30;
 		break;
 	case 16: // Peroxisomes
 		//	Removes a nerf ...?
@@ -1492,8 +1514,10 @@ void WorldSystem::applyBuff(Player& player, int buff_type)
 		break;
 	}
     
-    player.buffsCollected.push_back(buff_type);
-	renderCollectedBuff(renderer, buff_type);
+	if(!skipUIRender) {
+	    player.buffsCollected.push_back(buff_type);
+		renderCollectedBuff(renderer, buff_type);
+	}
 }
 
 
@@ -1797,3 +1821,4 @@ void WorldSystem::loadProgress() {
 
 	level = progressData["levels"].get<int>();
 }
+
