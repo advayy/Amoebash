@@ -58,6 +58,9 @@ void RenderSystem::drawFPS()
 void RenderSystem::drawTexturedMesh(Entity entity,
 																		const mat3 &projection)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	assert(registry.renderRequests.has(entity));
 	const RenderRequest &render_request = registry.renderRequests.get(entity);
 
@@ -199,6 +202,9 @@ void RenderSystem::setUpSpriteSheetTexture(Entity &entity, const GLuint program)
 
 void RenderSystem::setUpDefaultProgram(Entity &entity, const RenderRequest &render_request, const GLuint program)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	// Setting shaders
 	glUseProgram(program);
 	gl_has_errors();
@@ -245,6 +251,9 @@ void RenderSystem::setUpDefaultProgram(Entity &entity, const RenderRequest &rend
 // then draw the intermediate texture
 void RenderSystem::drawToScreen()
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	// Setting shaders
 	// get the vignette texture, sprite mesh, and program
 	glUseProgram(effects[(GLuint)EFFECT_ASSET_ID::VIGNETTE]);
@@ -421,6 +430,11 @@ void RenderSystem::draw()
 	// adding "vignette" effect when applied
 	drawToScreen();
 
+    // test renderText
+    renderText("TESTING", 500.f, 500.f, 1.f, vec3(1.f, 1.f, 1.f));
+    renderText("TESTING", 500.f, 400.f, 1.f, vec3(1.f, 1.f, 1.f));
+    renderText("TESTING", 500.f, 300.f, 1.f, vec3(1.f, 1.f, 1.f));
+
 	// flicker-free display with a double buffer
 	glfwSwapBuffers(window);
 	gl_has_errors();
@@ -495,6 +509,8 @@ void RenderSystem::drawScreenAndButtons(
 		ScreenType screenType,
 		const std::vector<ButtonType> &buttonTypes)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
 
 	int w, h;
 	glfwGetFramebufferSize(window, &w, &h);
@@ -580,6 +596,8 @@ void RenderSystem::drawScreenAndButtons(
 
 void RenderSystem::drawCutScreneAnimation()
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
 
 	int w, h;
 	glfwGetFramebufferSize(window, &w, &h);
@@ -613,6 +631,9 @@ void RenderSystem::drawCutScreneAnimation()
 
 void RenderSystem::drawUI(Entity entity, const mat3 &projection)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	Motion &motion = registry.motions.get(entity);
 	Transform transform;
 	transform.translate(motion.position);
@@ -661,6 +682,9 @@ void RenderSystem::drawUI(Entity entity, const mat3 &projection)
 
 void RenderSystem::drawUIElements()
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	if (registry.uiElements.size() == 0)
 		return;
 
@@ -677,6 +701,9 @@ void RenderSystem::drawUIElements()
 
 void RenderSystem::drawHexagon(Entity entity, const mat3 &projection)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	if (!registry.keys.has(entity) && !registry.chests.has(entity))
 	{
 		return;
@@ -741,6 +768,9 @@ void RenderSystem::drawHexagon(Entity entity, const mat3 &projection)
 
 void RenderSystem::drawHealthBar(Entity entity, const mat3 &projection)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	if (!registry.healthBars.has(entity))
 		return;
 
@@ -808,6 +838,9 @@ void RenderSystem::drawHealthBar(Entity entity, const mat3 &projection)
 
 void RenderSystem::drawDashRecharge(const mat3 &projection)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	if (registry.dashes.size() == 0)
 	{
 		return;
@@ -874,6 +907,9 @@ void RenderSystem::drawDashRecharge(const mat3 &projection)
 
 void RenderSystem::drawBuffUI()
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	if (registry.buffUIs.size() == 0)
 		return;
 
@@ -892,6 +928,9 @@ void RenderSystem::drawBuffUI()
 // INSTANCING: Draw instanced particles
 void RenderSystem::drawInstancedParticles()
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+    
 	// for debugging purposes, check for errors
 	while (glGetError() != GL_NO_ERROR)
 	{ /* clear errors */
@@ -984,6 +1023,8 @@ struct TileInstance
 
 void RenderSystem::drawInstancedTiles(const mat3 &projection)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
 
 	// group tile instances by texture used.
 	std::unordered_map<GLuint, std::vector<TileInstance>> groups;
@@ -1084,4 +1125,67 @@ void RenderSystem::drawInstancedTiles(const mat3 &projection)
 			glDisableVertexAttribArray(i);
 		}
 	}
+}
+
+void RenderSystem::renderText(std::string text, float x, float y, float scale, const glm::vec3& color)
+{
+    glm::mat4 trans = glm::mat4(1.0f);
+
+    // ENABLE BLENDING
+    glEnable(GL_BLEND);
+
+    // activate corresponding render state
+    glUseProgram(m_font_shaderProgram);
+
+    GLint textColor_location = glGetUniformLocation(m_font_shaderProgram, "textColor");
+    assert(textColor_location > -1);
+    // std::cout << "textColor_location: " << textColor_location << std::endl;
+    glUniform3f(textColor_location, color.x, color.y, color.z);
+
+    auto transformLoc = glGetUniformLocation(m_font_shaderProgram, "transform");
+    // std::cout << "transformLoc: " << transformLoc << std::endl;
+    assert(transformLoc > -1);
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+
+    glBindVertexArray(m_font_VAO);
+
+    // iterate through each character
+    std::string::const_iterator c;
+    for (c = text.begin(); c != text.end(); c++)
+    {
+        Character ch = m_ftCharacters[*c];
+
+        float xpos = x + ch.Bearing.x * scale;
+        float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+
+        float w = ch.Size.x * scale;
+        float h = ch.Size.y * scale;
+
+        float vertices[6][4] = {
+            { xpos,     ypos + h,   0.0f, 0.0f },
+            { xpos,     ypos,       0.0f, 1.0f },
+            { xpos + w, ypos,       1.0f, 1.0f },
+
+            { xpos,     ypos + h,   0.0f, 0.0f },
+            { xpos + w, ypos,       1.0f, 1.0f },
+            { xpos + w, ypos + h,   1.0f, 0.0f }
+        };
+
+        // render glyph texture over quad
+        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+        // std::cout << "binding texture: " << ch.character << " = " << ch.TextureID << std::endl;
+
+        // update content of VBO memory
+        glBindBuffer(GL_ARRAY_BUFFER, m_font_VBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        // render quad
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        // advance to next glyph (note that advance is number of 1/64 pixels)
+        x += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
+    }
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }

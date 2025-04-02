@@ -7,6 +7,21 @@
 #include "tinyECS/components.hpp"
 #include "tinyECS/tiny_ecs.hpp"
 
+// fonts
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include <map>
+#include <glm/gtc/type_ptr.hpp>
+
+// fonts
+struct Character {
+	unsigned int TextureID;  // ID handle of the glyph texture
+	glm::ivec2   Size;       // Size of glyph
+	glm::ivec2   Bearing;    // Offset from baseline to left/top of glyph
+	unsigned int Advance;    // Offset to advance to next glyph
+	char character;
+};
+
 // System responsible for setting up OpenGL and for rendering all the
 // visual entities in the game
 class RenderSystem
@@ -98,7 +113,9 @@ class RenderSystem
 		shader_path("health_bar"),
 		shader_path("dash_ui"),
 		shader_path("hexagon"),
-		shader_path("particle_textured")};
+		shader_path("particle_textured"),
+        shader_path("font")
+    };
 
 	std::array<GLuint, geometry_count> vertex_buffers;
 	std::array<GLuint, geometry_count> index_buffers;
@@ -214,6 +231,16 @@ private:
 
 	// INSTANCING: Instance VBO for tiles
 	GLuint tile_instance_vbo;
+
+    // freetype font rendering
+    bool fontInit(GLFWwindow& window, const std::string& font_filename, unsigned int font_default_size);
+    void renderText(std::string text, float x, float y, float scale, const glm::vec3& color);
+    
+    // freetype font rendering
+	std::map<char, Character> m_ftCharacters;
+	GLuint m_font_shaderProgram;
+	GLuint m_font_VAO;
+	GLuint m_font_VBO;
 };
 
 bool loadEffectFromFile(

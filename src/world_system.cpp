@@ -441,7 +441,7 @@ bool WorldSystem::checkPortalCollision(){
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
-	std::cout << "Level : " << level << std::endl;
+	// std::cout << "Level : " << level << std::endl;
 
 	updateCamera(elapsed_ms_since_last_update);
 
