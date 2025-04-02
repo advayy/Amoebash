@@ -261,8 +261,9 @@ Entity createNucleusMenuScreen() {
 	Motion &motion = registry.motions.emplace(nucleusMenuScreen);
 	Camera &camera = registry.cameras.components[0];
 	motion.position = camera.position;
-
-	Entity nextButtonEntity = createNextButton(vec2({origin_position.x + 180, origin_position.y + NUCLEUS_MENU_NUCLEUS_HEIGHT}));
+	
+	vec2 buttonPos = vec2(origin_position.x + 180, origin_position.y + NUCLEUS_MENU_NUCLEUS_HEIGHT/2 + 50);
+	Entity nextButtonEntity = createNextButton(buttonPos);
 	o.buttons = {nextButtonEntity};
 
 
@@ -774,12 +775,30 @@ Entity createBackButton() {
 }
 
 Entity createNextButton(vec2 position) {
-	vec2 scale = BACK_BUTTON_SCALE;
+    vec2 scale = BACK_BUTTON_SCALE;
+    
+    Entity buttonEntity = Entity();
 
-	return createButton(ButtonType::PROCEED_BUTTON,
-						position,
-						scale,
-						TEXTURE_ASSET_ID::BACK_BUTTON);
+    registry.renderRequests.insert(
+        buttonEntity,
+        {TEXTURE_ASSET_ID::BACK_BUTTON,
+         EFFECT_ASSET_ID::TEXTURED,
+         GEOMETRY_BUFFER_ID::SPRITE});
+
+    Motion &motion = registry.motions.emplace(buttonEntity);
+    motion.position = position;
+    motion.scale = scale;
+
+
+    screenButton &button = registry.buttons.emplace(buttonEntity);
+    button.w = scale[0];
+    button.h = scale[1];
+    
+    Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+    button.center = vec2(position.x, position.y);
+    button.type = ButtonType::PROCEED_BUTTON;
+    
+    return buttonEntity;
 }
 
 Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, EFFECT_ASSET_ID effect_id)

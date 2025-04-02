@@ -225,15 +225,19 @@ void WorldSystem::updateCamera(float elapsed_ms)
 
 void WorldSystem::updateMouseCoords()
 {
-    // get the current window size
+    // Get the current window size to use for calculations
     int current_width, current_height;
     glfwGetWindowSize(window, &current_width, &current_height);
     
     Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
     
-    // use current window dimensions rather than constants
-    game_mouse_pos_x = device_mouse_pos_x + camera.position.x - current_width * 0.5f;
-    game_mouse_pos_y = device_mouse_pos_y + camera.position.y - current_height * 0.5f;
+    // Calculate normalized device coordinates to world space
+    float scale_x = (float)current_width / (640.0f * WORK_SCALE_FACTOR);
+    float scale_y = (float)current_height / (360.0f * WORK_SCALE_FACTOR);
+    
+    // Transform mouse coordinates to game coordinates consistently across window sizes
+    game_mouse_pos_x = device_mouse_pos_x / scale_x + camera.position.x - WINDOW_WIDTH_PX * 0.5f;
+    game_mouse_pos_y = device_mouse_pos_y / scale_y + camera.position.y - WINDOW_HEIGHT_PX * 0.5f;
 }
 
 bool WorldSystem::updateBoss()
@@ -1127,13 +1131,52 @@ void WorldSystem::on_mouse_move(vec2 mouse_position)
 
 ButtonType WorldSystem::getClickedButton()
 {
-	for (auto& button : registry.buttons.components) {
-		if (isButtonClicked(button)) {
-			return button.type;
-		}
-	}
+    int current_width, current_height;
+    glfwGetWindowSize(window, &current_width, &current_height);
+    
+    float scale_x = current_width / (640.0f * WORK_SCALE_FACTOR);
+    float scale_y = current_height / (360.0f * WORK_SCALE_FACTOR);
+    
+    // Get camera position
+    Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
+    
 
-	return ButtonType::NONE;
+    if (current_state == GameState::GAME_OVER && registry.overs.size() > 0) {
+        for (auto& over : registry.overs.components) {
+            for (auto button_entity : over.buttons) {
+                if (registry.buttons.has(button_entity)) {
+                    screenButton& btn = registry.buttons.get(button_entity);
+                    
+                    float button_x = btn.center[0];
+                    float button_y = btn.center[1];
+                    
+      
+                    float button_screen_x = (button_x - camera.position.x + (WINDOW_WIDTH_PX/2)) * scale_x;
+                    float button_screen_y = (button_y - camera.position.y + (WINDOW_HEIGHT_PX/2)) * scale_y;
+                    
+
+                    float dx = std::abs(button_screen_x - device_mouse_pos_x);
+                    float dy = std::abs(button_screen_y - device_mouse_pos_y);
+  
+                    float button_width_screen = btn.w * scale_x;
+                    float button_height_screen = btn.h * scale_y;
+                    
+                    if (dx < button_width_screen/2.0f && dy < button_height_screen/2.0f) {
+                        return btn.type;
+                    }
+                }
+            }
+        }
+    }
+    
+
+    for (auto& button : registry.buttons.components) {
+        if (isButtonClicked(button)) {
+            return button.type;
+        }
+    }
+    
+    return ButtonType::NONE;
 }
 
 void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
@@ -1302,26 +1345,47 @@ void WorldSystem::moveSelectedBuffsToProgression() {
 }
 
 bool WorldSystem::isClickableBuffClicked(Entity* return_e) {
-	float mouse_x = game_mouse_pos_x; 
-    float mouse_y = game_mouse_pos_y;
-
-	Camera& camera = registry.cameras.components[0];
-	vec2 camera_pos = camera.position;	
-	vec2 m_pos = {mouse_x, mouse_y};
-	
-
-	for(int i = 0; i < registry.clickableBuffs.entities.size(); i++) {
-		ClickableBuff& c = registry.clickableBuffs.get(registry.clickableBuffs.entities[i]);
-		Motion& c_motion = registry.motions.get(registry.clickableBuffs.entities[i]); // GUARANTEED TO HAVE A POSITION
-
-		vec2 c_pos = c_motion.position;
-
-		if(mouseBuffIntersect(m_pos , c_pos)) {
-			*return_e = registry.clickableBuffs.entities[i];
-			return true;
-		}
-	}
-	return false;
+    // Get the current window size 
+    int current_width, current_height;
+    glfwGetWindowSize(window, &current_width, &current_height);
+    
+    // Calculate scaling factors
+    float scale_x = current_width / (640.0f * WORK_SCALE_FACTOR);
+    float scale_y = current_height / (360.0f * WORK_SCALE_FACTOR);
+    
+    // Get camera position
+    Camera& camera = registry.cameras.components[0];
+    vec2 camera_pos = camera.position;
+    
+    // Transform device mouse coordinates 
+    vec2 m_pos;
+    
+    //  need to convert device coordinates to world space
+    if (current_state == GameState::GAME_OVER) {
+        // Calculate mouse position in world space
+        m_pos.x = (device_mouse_pos_x / scale_x) + camera.position.x - (WINDOW_WIDTH_PX / 2);
+        m_pos.y = (device_mouse_pos_y / scale_y) + camera.position.y - (WINDOW_HEIGHT_PX / 2);
+    } else {
+        m_pos = {game_mouse_pos_x, game_mouse_pos_y};
+    }
+    
+    // Debug output
+    // std::cout << "Mouse position: " << m_pos.x << ", " << m_pos.y << std::endl;
+    
+    // Check each buff
+    for(int i = 0; i < registry.clickableBuffs.entities.size(); i++) {
+        ClickableBuff& c = registry.clickableBuffs.get(registry.clickableBuffs.entities[i]);
+        Motion& c_motion = registry.motions.get(registry.clickableBuffs.entities[i]);
+        
+        // Debug output
+        // std::cout << "Buff position: " << c_motion.position.x << ", " << c_motion.position.y << std::endl;
+        
+        if(mouseBuffIntersect(m_pos, c_motion.position)) {
+            *return_e = registry.clickableBuffs.entities[i];
+            return true;
+        }
+    }
+    return false;
 }
 
 void WorldSystem::handleClickableBuff(Entity e) {
@@ -1381,19 +1445,13 @@ Entity WorldSystem::getFreeSlot(){
 	}
 }
 
-bool WorldSystem::mouseBuffIntersect(vec2 mouse_pos, vec2 c_pos) {
-	float c_top = c_pos.y - BUFF_HEIGHT/2;
-	float c_bottom = c_pos.y + BUFF_HEIGHT/2;
-
-	if (mouse_pos.y >= c_top && mouse_pos.y <= c_bottom){ // Y match
-		float c_l = c_pos.x - BUFF_WIDTH/2;
-		float c_r = c_pos.x + BUFF_WIDTH/2;
-		if(mouse_pos.x >= c_l && mouse_pos.x <= c_r) {
-			return true;
-		}
-	}
-
-	return false;
+bool WorldSystem::mouseBuffIntersect(vec2 mouse_pos, vec2 buff_pos) {
+    // check distance between mouse and buff
+    float dx = std::abs(mouse_pos.x - buff_pos.x);
+    float dy = std::abs(mouse_pos.y - buff_pos.y);
+    
+    //uUse the actual buff size for comparison
+    return (dx < BUFF_WIDTH/2.0f) && (dy < BUFF_HEIGHT/2.0f);
 }
 
 bool WorldSystem::isButtonClicked(screenButton &button)
