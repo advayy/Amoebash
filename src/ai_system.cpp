@@ -414,14 +414,27 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 				ProceduralMap& map = registry.proceduralMaps.components[0];
 				std::vector<std::vector<tileType>> rawMap = map.map;
 
-				int count = 0;
-				for (int row = 2; row <= 4; ++row) {
-					for (int col = 0; col < rawMap[row].size(); ++col) {
-						if (rawMap[row][col] == tileType::EMPTY) {
-							vec2 worldPos = gridCellToPosition({ col, row });
-							createBacteriophage(nullptr, worldPos, count);
+				if (enemyBehavior.phase == 1) {
+					int count = 0;
+					for (int row = 2; row <= 4; ++row) {
+						for (int col = 0; col < rawMap[row].size(); ++col) {
+							if (rawMap[row][col] == tileType::EMPTY) {
+								vec2 worldPos = gridCellToPosition({ col, row });
+								createBacteriophage(nullptr, worldPos, count);
+								count += 1;
+							}
 						}
-						count += 1;
+					}
+				} else if (enemyBehavior.phase == 2) {
+					int count = 0;
+					for (int row = 0; row <= 9; ++row) {
+						for (int col = 0; col < rawMap[row].size(); ++col) {
+							if (rawMap[row][col] == tileType::EMPTY) {
+								vec2 worldPos = gridCellToPosition({ col, row });
+								createBacteriophage(nullptr, worldPos, count);
+								count += 1;
+							}
+						}
 					}
 				}
 			
@@ -440,16 +453,22 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 			enemyBehavior.shoot_cool_down -= elapsed_ms;
 
 			if (enemyBehavior.shoot_cool_down <= 0.f) {
+								
 				int bullets = 24; 
-				for (int i = 0; i < bullets; ++i)
+				for (int angleDeg = 0; angleDeg < 360; angleDeg += 30)
 				{
-					float angleRad = glm::radians((360.f / bullets) * i);
+					float angleRad = glm::radians((360.f / bullets) * angleDeg);
 					vec2 dir = { cosf(angleRad), sinf(angleRad) };
 					vec2 velocity = dir * PROJECTILE_SPEED * 2.f;
 					vec2 spawnPos = enemyMotion.position + dir * enemyMotion.scale.x / 3.f;
-
+					
 					createBossProjectile(spawnPos, FINAL_BOSS_PROJECTILE, velocity);
+					if (enemyBehavior.phase == 2) {
+						Entity spiralProjectile = createBossProjectile(spawnPos, FINAL_BOSS_PROJECTILE, velocity);
+						registry.spiralProjectiles.emplace(spiralProjectile);
+					}
 				}
+
 
 				enemyBehavior.shoot_cool_down = 400.f;
 			}
@@ -465,16 +484,20 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 		}
 
 		case FinalBossState::TIRED: {
-			std::cout << "So tired" << std::endl;
-			enemyBehavior.cool_down -= elapsed_ms;
-			if (enemyBehavior.cool_down <= 0.f) {
-				enemyBehavior.state = FinalBossState::INITIAL;
-				enemyBehavior.cool_down = 20000.f;
+
+			if (enemy.health <= 2/3.f * enemy.total_health) {
+				enemyBehavior.phase = 2;
+				enemyBehavior.state = FinalBossState::SPAWN_1;
+				enemyBehavior.cool_down = 3000.f;
+			} else {
+				enemyBehavior.cool_down -= elapsed_ms;
+				if (enemyBehavior.cool_down <= 0.f) {
+					enemyBehavior.state = FinalBossState::INITIAL;
+					enemyBehavior.cool_down = 20000.f;
+				}
 			}
-			Enemy& enemy = registry.enemies.get(enemyEntity);
-			std::cout << "Boss Health: " << enemy.health << std::endl;
 			break;
-		}
+		} 
 	}
 
 	return enemyBehavior.state;

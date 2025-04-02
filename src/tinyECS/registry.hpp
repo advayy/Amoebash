@@ -79,6 +79,7 @@ public:
 	ComponentContainer<BossAI> bossAIs;
 	ComponentContainer<FinalBossAI> finalBossAIs;
 	ComponentContainer<BossArrow> bossArrows;
+	ComponentContainer<SpiralProjectile> spiralProjectiles;
 
 	// particle
 	ComponentContainer<Particle> particles;
@@ -147,6 +148,7 @@ public:
 		registry_list.push_back(&bossArrows);
 		registry_list.push_back(&finalBossAIs);
 		registry_list.push_back(&finalBossProjectiles);
+		registry_list.push_back(&spiralProjectiles);
 	}
 
 	void clear_all_components()

@@ -153,6 +153,10 @@ struct Projectile
 	bool from_enemy = true;
 };
 
+struct SpiralProjectile
+{
+};
+
 struct BacteriophageProjectile {
 	int dummy = 0;
 };
@@ -634,7 +638,8 @@ enum class FinalBossState
 	INITIAL = 0,
 	SPAWN_1 = INITIAL + 1,
 	SPIRAL_SHOOT_1 = SPAWN_1 + 1,
-	TIRED = SPIRAL_SHOOT_1 + 1
+	TIRED = SPIRAL_SHOOT_1 + 1,
+	SPAWN_2 = TIRED + 1,
 };
 
 struct BossAI : EnemyAI
