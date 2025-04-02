@@ -859,8 +859,10 @@ void WorldSystem::handle_collisions()
 				Projectile& projectile = registry.projectiles.get(entity);
 
 				if (projectile.from_enemy) continue;
+				if (enemy.health <= 0) continue; // prevent multy buff drop
 
 				// Invader takes damage
+
 				enemy.health -= projectile.damage;
 
 				// remove projectile
@@ -911,6 +913,7 @@ void WorldSystem::handle_collisions()
                             enemy_motion.velocity = knockback_direction * SPIKE_ENEMY_KNOCKBACK_STRENGTH;
                         }
                     } else {
+						if (enemy.health < 0.f) continue; // prevent multy buff drop
                         enemy.health -= PLAYER_DASH_DAMAGE;
 
                         if (registry.bossAIs.has(entity2)) {
