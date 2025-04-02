@@ -452,7 +452,7 @@ bool WorldSystem::checkPortalCollision(){
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
-	std::cout << "Level : " << level << std::endl;
+	// std::cout << "Level : " << level << std::endl;
 
 	updateCamera(elapsed_ms_since_last_update);
 
@@ -471,7 +471,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	} else if (level == BOSS_LEVEL) {
 		if (!updateBoss()) {
 			updateBossArrows();
-			std::cout << "apple pie" << std::endl;
+			// std::cout << "apple pie" << std::endl;
 		} else { // WIN
 			previous_state = current_state;
 			current_state = GameState::VICTORY;
