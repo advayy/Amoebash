@@ -413,32 +413,32 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 				// spawn
 				ProceduralMap& map = registry.proceduralMaps.components[0];
 				std::vector<std::vector<tileType>> rawMap = map.map;
-				int count = 0;
-				for (int row = 2; row <= 4; ++row) {
-					for (int col = 0; col < rawMap[row].size(); ++col) {
-						if (rawMap[row][col] == tileType::EMPTY) {
-							vec2 worldPos = gridCellToPosition({ col, row });
-							createBacteriophage(nullptr, worldPos, count);
-							count += 1;
+				
+				
+				// spawn pattern per phase
+				if (enemyBehavior.phase == 1) {
+					int count = 0;
+					for (int row = 2; row <= 4; ++row) {
+						for (int col = 0; col < rawMap[row].size(); ++col) {
+							if (rawMap[row][col] == tileType::EMPTY) {
+								vec2 worldPos = gridCellToPosition({ col, row });
+								createBacteriophage(nullptr, worldPos, count);
+								count += 1;
+							}
+						}
+					}
+				} else if (enemyBehavior.phase == 2) {
+					int count = 0;
+					for (int row = 0; row <= 9; ++row) {
+						for (int col = 0; col < rawMap[row].size(); ++col) {
+							if (rawMap[row][col] == tileType::EMPTY) {
+								vec2 worldPos = gridCellToPosition({ col, row });
+								createBacteriophage(nullptr, worldPos, count);
+								count += 1;
+							}
 						}
 					}
 				}
-
-
-				// spawn pattern per phase
-				// if (enemyBehavior.phase == 1) {
-				// } else if (enemyBehavior.phase == 2) {
-				// 	int count = 0;
-				// 	for (int row = 0; row <= 9; ++row) {
-				// 		for (int col = 0; col < rawMap[row].size(); ++col) {
-				// 			if (rawMap[row][col] == tileType::EMPTY) {
-				// 				vec2 worldPos = gridCellToPosition({ col, row });
-				// 				createBacteriophage(nullptr, worldPos, count);
-				// 				count += 1;
-				// 			}
-				// 		}
-				// 	}
-				// }
 			
 				enemyBehavior.has_spawned = true;
 			} else {
