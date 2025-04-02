@@ -293,7 +293,7 @@ enum ScreenType
 	NUCLEUS = SHOP + 1,
 	GAMEOVER = NUCLEUS + 1,
 	PAUSE = GAMEOVER + 1,
-    NEXT_LEVEL = PAUSE + 1
+    NEXT_LEVEL = PAUSE + 1,
 };
 
 struct GameScreen
@@ -379,6 +379,11 @@ struct Gun {
     float cooldown_timer_ms = 0.0f;
 };
 
+struct BossArrow {
+	Entity associatedBoss;
+	bool draw = false;
+};
+
 /**
  * The following enumerators represent global identifiers refering to graphic
  * assets. For example TEXTURE_ASSET_ID are the identifiers of each texture
@@ -454,7 +459,9 @@ enum class TEXTURE_ASSET_ID
 	BOSS_STAGE_2 = BOSS_STAGE_1 + 1,
 	BOSS_STAGE_3 = BOSS_STAGE_2 + 1,
 	BOSS_STAGE_4 = BOSS_STAGE_3 + 1,
-	TEXTURE_COUNT = BOSS_STAGE_4 + 1
+	BOSS_ARROW = BOSS_STAGE_4 + 1,
+	WINSCREEN = BOSS_ARROW + 1,
+	TEXTURE_COUNT = WINSCREEN + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -637,6 +644,8 @@ struct BossAI : EnemyAI
 	float flee_duration = 1000.f;    // Arbitrary duration in ms
 	float flee_timer = 0.f;
 	bool is_fleeing = false;
+
+	Entity associatedArrow;
 };
 
 enum class PARTICLE_TYPE 

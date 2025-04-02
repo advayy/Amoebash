@@ -148,6 +148,10 @@ const float PROJECTILE_SPAWN_RATE_MS = 2 * MS_PER_S;
 const float PROJECTILE_SPEED = 300.0f;
 const float PROJECTILE_TTL_MS = 4 * MS_PER_S;
 
+// ARROW STATS
+const float ARROW_WIDTH = 16 * WORK_SCALE_FACTOR;
+const float ARROW_HEIGHT = 16 * WORK_SCALE_FACTOR;
+
 // GUN and PROJECTILE
 const float GUN_COOLDOWN_MS = 500.0f;
 const float GUN_SIZE = 20 * WORK_SCALE_FACTOR;
@@ -161,7 +165,7 @@ const vec2 BOSS_PROJECTILE = {BOSS_PROJECTILE_SIZE, BOSS_PROJECTILE_SIZE};
 const float BOSS_PROJECTILE_SPEED = 300.f;
 const float BOSS_BB_WIDTH = 128 * WORK_SCALE_FACTOR;
 const float BOSS_BB_HEIGHT = 128 * WORK_SCALE_FACTOR;
-const float BOSS_DETECTION_RADIUS = SPIKE_ENEMY_DETECTION_RADIUS * 1.5f;
+const float BOSS_DETECTION_RADIUS = SPIKE_ENEMY_DETECTION_RADIUS * 3.0f;
 const float BOSS_RUMBLE_DAMAGE = 10.f * 2.f;
 const float BOSS_PROJECTILE_DAMAGE = 5.f;
 const unsigned int BOSS_LEVEL = 3;
@@ -179,6 +183,7 @@ const float INTRO_CUTSCENE_DURATION_MS = 3 * MS_PER_S; // for animation after cl
 const float BOOT_CUTSCENE_DURATION_MS = 2 * MS_PER_S;  // for logo movement at boot
 const float GAMEPLAY_CUTSCENE_DURATION_MS = 3 * MS_PER_S;
 const float STATE_TIMER_DEFAULT = 3 * MS_PER_S;
+const float WIN_CUTSCENE_DURATION_MS = 3 * MS_PER_S;
 
 // button positions, scales
 const vec2 LOGO_POSITION_INITIAL = {-WINDOW_WIDTH_PX / 2.f, -WINDOW_HEIGHT_PX / 3.5f};

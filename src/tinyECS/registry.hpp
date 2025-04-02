@@ -76,6 +76,7 @@ public:
 	ComponentContainer<RBCEnemyAI> rbcEnemyAIs;
 	ComponentContainer<BacteriophageAI> bacteriophageAIs;
 	ComponentContainer<BossAI> bossAIs;
+	ComponentContainer<BossArrow> bossArrows;
 
 	// particle
 	ComponentContainer<Particle> particles;
@@ -141,6 +142,7 @@ public:
         registry_list.push_back(&guns);
 		registry_list.push_back(&slots);
         registry_list.push_back(&clickableBuffs);
+		registry_list.push_back(&bossArrows);
 	}
 
 	void clear_all_components()
