@@ -878,7 +878,7 @@ void RenderSystem::drawBuffUI()
 // INSTANCING: Draw instanced particles
 void RenderSystem::drawInstancedParticles()
 {
-    drawParticlesByTexture(TEXTURE_ASSET_ID::PARTICLE);
+    drawParticlesByTexture(TEXTURE_ASSET_ID::DEATH_PARTICLE);
     drawParticlesByTexture(TEXTURE_ASSET_ID::PIXEL_PARTICLE);
 }
 

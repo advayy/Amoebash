@@ -161,7 +161,7 @@ Entity ParticleSystem::createDeathParticle(vec2 position)
 
     registry.renderRequests.insert(
         entity,
-        {TEXTURE_ASSET_ID::PARTICLE,
+        {TEXTURE_ASSET_ID::DEATH_PARTICLE,
          EFFECT_ASSET_ID::TEXTURED,  
          GEOMETRY_BUFFER_ID::SPRITE});
 
