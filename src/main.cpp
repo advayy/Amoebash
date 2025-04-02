@@ -114,8 +114,8 @@ int main()
 			renderer_system.drawInfoScreen();
 			break;
 		case GameState::GAME_OVER:
-			Mix_PauseMusic();
 			renderer_system.drawGameOverScreen();
+			Mix_PauseMusic();
 			break;
 
 		case GameState::GAMEPLAY_CUTSCENE: // intro cutscene
