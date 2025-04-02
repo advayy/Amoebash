@@ -225,9 +225,15 @@ void WorldSystem::updateCamera(float elapsed_ms)
 
 void WorldSystem::updateMouseCoords()
 {
-	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
-	game_mouse_pos_x = device_mouse_pos_x + camera.position.x - WINDOW_WIDTH_PX * 0.5f;
-	game_mouse_pos_y = device_mouse_pos_y + camera.position.y - WINDOW_HEIGHT_PX * 0.5f;
+    // get the current window size
+    int current_width, current_height;
+    glfwGetWindowSize(window, &current_width, &current_height);
+    
+    Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+    
+    // use current window dimensions rather than constants
+    game_mouse_pos_x = device_mouse_pos_x + camera.position.x - current_width * 0.5f;
+    game_mouse_pos_y = device_mouse_pos_y + camera.position.y - current_height * 0.5f;
 }
 
 void WorldSystem::updateBoss()
@@ -1320,8 +1326,20 @@ bool WorldSystem::isButtonClicked(screenButton &button)
     float button_x = button.center[0];
     float button_y = button.center[1];
 
-    float prenormalized_x = button_x - device_mouse_pos_x;
-    float prenormalized_y = button_y - device_mouse_pos_y;
+    // Get the current window
+    int current_width, current_height;
+    glfwGetWindowSize(window, &current_width, &current_height);
+    
+    // Calculate scaling factors 
+    float scale_x = current_width / (640.0f * WORK_SCALE_FACTOR);
+    float scale_y = current_height / (360.0f * WORK_SCALE_FACTOR);
+    
+    // Scale button coordinates
+    float scaled_button_x = button_x * scale_x;
+    float scaled_button_y = button_y * scale_y;
+
+    float prenormalized_x = scaled_button_x - device_mouse_pos_x;
+    float prenormalized_y = scaled_button_y - device_mouse_pos_y;
 
     if (current_state == GameState::GAME_PLAY || current_state == GameState::PAUSE || current_state == GameState::GAME_OVER) {
         Camera& camera = registry.cameras.components[0];
@@ -1334,11 +1352,11 @@ bool WorldSystem::isButtonClicked(screenButton &button)
     float x_distance = std::abs(prenormalized_x);
     float y_distance = std::abs(prenormalized_y);
     
-    bool res = (x_distance < button.w / 2.f) && (y_distance < button.h / 2.f);
+    // Aalso scale the button width/height for hit detection
+    bool res = (x_distance < button.w * scale_x / 2.f) && (y_distance < button.h * scale_y / 2.f);
 
     return res;
 }
-
 
 void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 {
@@ -1743,29 +1761,52 @@ void WorldSystem::loadProgress() {
 	level = progressData["levels"].get<int>();
 }
 
-
 void WorldSystem::toggleFullscreen()
 {
     is_fullscreen = !is_fullscreen;
     const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    
+    // store original camera position
+    Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+    vec2 originalCameraPos = camera.position;
+    
     if (is_fullscreen)
     {
         // switch to fullscreen on primary monitor
         glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
-        // update viewport
-        glViewport(0, 0, mode->width, mode->height);
+        
+        // update rendere
+        renderer->updateWindowSize(mode->width, mode->height);
     }
     else
     {
-        // Switch back to windowed mode using default dimensions
-        int width = WINDOW_WIDTH_PX, height = WINDOW_HEIGHT_PX;
-        int xpos = (mode->width - width) / 2;
-        int ypos = (mode->height - height) / 2;
-				
-        glfwSetWindowMonitor(window, nullptr, xpos, ypos, width, height, 0);
-        // Update viewport to match window dimensions
-        glViewport(0, 0, width, height);
+        // switch back to windowed mode using default dimensions
+        float original_width = 640 * WORK_SCALE_FACTOR;
+        float original_height = 360 * WORK_SCALE_FACTOR;
+        
+        int xpos = (mode->width - original_width) / 2;
+        int ypos = (mode->height - original_height) / 2;
+        
+        glfwSetWindowMonitor(window, nullptr, xpos, ypos, original_width, original_height, 0);
+        
+        // update renderer with original window size
+        renderer->updateWindowSize(original_width, original_height);
     }
-    // Ensure the cursor behaves normally in both modes.
+    
+    // ensure the cursor behaves normally in both modes
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    
+    // force camera update next frame to prevent zoom issues
+    Camera &camera_after = registry.cameras.get(registry.cameras.entities[0]);
+    camera_after.initialized = false;
+    camera_after.position = originalCameraPos;  // Maintain the same camera position
+    
+    // update mouse coordinates immediately to prevent any lag in player control
+    updateMouseCoords();
+    
+    // reset UI elements and HUD positions
+    updateHuds();
+    
+    // Wait for a frame
+    glfwPollEvents();
 }

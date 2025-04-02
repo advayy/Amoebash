@@ -40,8 +40,8 @@ inline std::string mesh_path(const std::string &name) { return data_path() + "/m
 const float WORK_SCALE_FACTOR = 2.65f;
 
 // Window dimensions
-const float WINDOW_WIDTH_PX = 640 * WORK_SCALE_FACTOR;
-const float WINDOW_HEIGHT_PX = 360 * WORK_SCALE_FACTOR;
+inline float WINDOW_WIDTH_PX = 640 * WORK_SCALE_FACTOR;
+inline float WINDOW_HEIGHT_PX = 360 * WORK_SCALE_FACTOR;
 
 const float MS_PER_S = 1000.f;
 

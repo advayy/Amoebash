@@ -58,6 +58,60 @@ bool RenderSystem::init(GLFWwindow *window_arg)
 	return true;
 }
 
+void RenderSystem::updateWindowSize(int width, int height)
+{
+    // get the actual framebuffer size which may differ on high DPI displays
+    int framebuffer_width, framebuffer_height;
+    glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
+    
+    // aet viewport to actual framebuffer size
+    glViewport(0, 0, framebuffer_width, framebuffer_height);
+    gl_has_errors();
+
+    // spdate framebuffer size to match new window dimensions
+    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+    
+    // Delete old color and depth attachments
+    glDeleteTextures(1, &off_screen_render_buffer_color);
+    glDeleteRenderbuffers(1, &off_screen_render_buffer_depth);
+    
+    // create new color attachment texture
+    glGenTextures(1, &off_screen_render_buffer_color);
+    glBindTexture(GL_TEXTURE_2D, off_screen_render_buffer_color);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, framebuffer_width, framebuffer_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, off_screen_render_buffer_color, 0);
+    
+    // create new depth attachment
+    glGenRenderbuffers(1, &off_screen_render_buffer_depth);
+    glBindRenderbuffer(GL_RENDERBUFFER, off_screen_render_buffer_depth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, framebuffer_width, framebuffer_height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, off_screen_render_buffer_depth);
+    
+    // check framebuffer is complete
+    assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    
+    // update window dimension variables - maintain aspect ratio
+    float original_aspect_ratio = 640.0f / 360.0f;  // The original aspect ratio
+    float current_aspect_ratio = (float)width / (float)height;
+    
+    // xalculate dimensions that preserve aspect ratio (start screen fix)
+    if (current_aspect_ratio > original_aspect_ratio) {
+        // Width is proportionally larger, height constrains
+        WINDOW_HEIGHT_PX = height;
+        WINDOW_WIDTH_PX = height * original_aspect_ratio;
+    } else {
+        //hHeight is proportionally larger, width constrains
+        WINDOW_WIDTH_PX = width;
+        WINDOW_HEIGHT_PX = width / original_aspect_ratio;
+    }
+    
+    // Reset default framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    gl_has_errors();
+}
+
 void RenderSystem::initializeGlTextures()
 {
 	glGenTextures((GLsizei)texture_gl_handles.size(), texture_gl_handles.data());

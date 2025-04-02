@@ -139,6 +139,8 @@ public:
 	// Destroy resources associated to one or all entities created by the system
 	~RenderSystem();
 
+	void updateWindowSize(int width, int height);
+
 	// Draw all entities
 	void draw();
 
