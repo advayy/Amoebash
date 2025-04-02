@@ -58,9 +58,6 @@ void RenderSystem::drawFPS()
 void RenderSystem::drawTexturedMesh(Entity entity,
 																		const mat3 &projection)
 {
-    glBindVertexArray(default_vao);
-    gl_has_errors();
-
 	assert(registry.renderRequests.has(entity));
 	const RenderRequest &render_request = registry.renderRequests.get(entity);
 
@@ -202,9 +199,6 @@ void RenderSystem::setUpSpriteSheetTexture(Entity &entity, const GLuint program)
 
 void RenderSystem::setUpDefaultProgram(Entity &entity, const RenderRequest &render_request, const GLuint program)
 {
-    glBindVertexArray(default_vao);
-    gl_has_errors();
-
 	// Setting shaders
 	glUseProgram(program);
 	gl_has_errors();
@@ -423,9 +417,9 @@ void RenderSystem::draw()
 		drawTexturedMesh(pause, projection_2D);
 	}
 
-    renderText("TESTING", 200.f, 500.f, 1.f, vec3(1.f, 1.f, 1.f));
-    renderText("TESTING", 200.f, 400.f, 1.f, vec3(1.f, 1.f, 1.f));
-    renderText("TESTING", 200.f, 300.f, 1.f, vec3(1.f, 1.f, 1.f));
+    renderText("TESTING", 50.f, 500.f, 1.f, vec3(1.f, 1.f, 1.f));
+    renderText("TESTING", 50.f, 400.f, 1.f, vec3(1.f, 1.f, 1.f));
+    renderText("TESTING", 50.f, 300.f, 1.f, vec3(1.f, 1.f, 1.f));
 
     // render player.germony
     for (auto entity : registry.players.entities)
@@ -602,9 +596,6 @@ void RenderSystem::drawScreenAndButtons(
 
 void RenderSystem::drawCutScreneAnimation()
 {
-    glBindVertexArray(default_vao);
-    gl_has_errors();
-
 	int w, h;
 	glfwGetFramebufferSize(window, &w, &h);
 	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
@@ -637,9 +628,6 @@ void RenderSystem::drawCutScreneAnimation()
 
 void RenderSystem::drawUI(Entity entity, const mat3 &projection)
 {
-    glBindVertexArray(default_vao);
-    gl_has_errors();
-
 	Motion &motion = registry.motions.get(entity);
 	Transform transform;
 	transform.translate(motion.position);
