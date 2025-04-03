@@ -844,9 +844,11 @@ void damagePlayer(float damageAmount) {
 				player.current_health = player.max_health/2;
 				player.extra_lives--;
 				removeBuffUI(10);
+			} else {
+				// game over
 			}
 		} else {
-			// do nothing?
+			// normally took damage
 		}
 	}
 }

@@ -563,21 +563,18 @@ void WorldSystem::handlePlayerHealth(float elapsed_ms)
 
 	if (player.current_health <= 0 && current_state != GameState::GAME_OVER)
 	{
-		// save buffs to progression
-		if (player.extra_lives > 0) {
-			player.extra_lives --;
-			player.current_health = player.max_health/2;
-			removeBuffUI(10);
-		} else {
-			Progression& p = registry.progressions.get(registry.progressions.entities[0]);
-			p.buffsFromLastRun = player.buffsCollected;
-			previous_state = current_state;
-			current_state = GameState::GAME_OVER;
-			createGameOverScreen();
-		}
+		triggerGameOver();
 	}
 }
 
+void WorldSystem::triggerGameOver() {
+	Player& player = registry.players.get(registry.players.entities[0]);
+	Progression& p = registry.progressions.get(registry.progressions.entities[0]);
+				p.buffsFromLastRun = player.buffsCollected;
+				previous_state = current_state;
+				current_state = GameState::GAME_OVER;
+				createGameOverScreen();	
+}
 
 // Handle player movement
 void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {

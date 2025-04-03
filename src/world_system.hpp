@@ -92,6 +92,8 @@ public:
 	void handleProjectiles(float elapsed_ms_since_last_update);
 	bool checkPortalCollision();
 	void startTheme();
+	void triggerGameOver();
+
 
 private:
 	bool gameOver = false;
