@@ -959,3 +959,18 @@ void updateHuds()
 	}
 }
 
+
+bool isButtonClicked(Entity buttonEntity, const vec2 &mouseWorldPos) {
+	if (!registry.motions.has(buttonEntity))
+			return false;
+	Motion &motion = registry.motions.get(buttonEntity);
+	// Assume motion.position is the center and motion.scale represents the full width/height.
+	float halfWidth = motion.scale.x / 2.f;
+	float halfHeight = motion.scale.y / 2.f;
+	vec2 center = motion.position;
+	
+	return (mouseWorldPos.x >= center.x - halfWidth &&
+					mouseWorldPos.x <= center.x + halfWidth &&
+					mouseWorldPos.y >= center.y - halfHeight &&
+					mouseWorldPos.y <= center.y + halfHeight);
+}
