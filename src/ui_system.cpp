@@ -431,6 +431,40 @@ void removeCutScene()
     }
 }
 
+Entity createEndingWinScene() {
+	Entity winScreenEntity = Entity();
+
+	Motion& motion = registry.motions.emplace(winScreenEntity);
+	motion.angle = 0.0f;
+	motion.velocity = {0.0f, 0.0f};
+	motion.position = registry.cameras.components[0].position;
+	motion.scale = vec2({WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX});
+
+	registry.renderRequests.insert(
+		winScreenEntity,
+		{TEXTURE_ASSET_ID::WINSCREEN,
+		 EFFECT_ASSET_ID::SPRITE_SHEET,
+		 GEOMETRY_BUFFER_ID::SPRITE}
+	);
+
+	Animation &animation = registry.animations.emplace(winScreenEntity);
+	animation.time_per_frame = WIN_CUTSCENE_DURATION_MS / 4;
+	animation.start_frame = 0;
+	animation.end_frame = 4;
+	animation.loop = ANIM_LOOP_TYPES::LOOP;
+
+	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(winScreenEntity);
+	spriteSheet.total_frames = 4;
+
+	SpriteSize &sprite = registry.spritesSizes.emplace(winScreenEntity);
+	sprite.width = 128.f; 
+	sprite.height = 68.f; 
+
+	registry.cutscenes.emplace(winScreenEntity);
+
+	return winScreenEntity;
+}
+
 Entity createCutSceneBackGround()
 {
 	Entity backGroundEntity = Entity();
@@ -791,11 +825,6 @@ Entity createHealthBar()
 
 void createDashRecharge()
 {
-	Player &player = registry.players.get(registry.players.entities[0]);
-	vec2 playerPos = registry.motions.get(registry.players.entities[0]).position;
-
-	for (int i = 0; i < DASH_RECHARGE_COUNT; i++)
-	{
 		Entity dash = Entity();
 
 		Animation &a = registry.animations.emplace(dash);
@@ -819,9 +848,8 @@ void createDashRecharge()
 			 GEOMETRY_BUFFER_ID::SPRITE});
 
 		
-		Motion &motion = registry.motions.emplace(dash);
-		registry.dashRecharges.emplace(dash);
-	}
+	Motion &motion = registry.motions.emplace(dash);
+	registry.dashRecharges.emplace(dash);
 }
 
 Entity createBuffUI(vec2 position, int type)
@@ -857,20 +885,127 @@ Entity createBuffUI(vec2 position, int type)
 void renderCollectedBuff(RenderSystem *renderer, int buffType)
 {
 	int numCollectedBuffs = registry.buffUIs.size();
+	int freeSlot = registry.buffUIs.size(); // Assume that we will never leave a buff on there with a gap when removing.
+
 	int buffsPerRow = BUFF_NUM / 2;
 	vec2 position;
-	if (numCollectedBuffs < buffsPerRow)
+	
+	if (freeSlot < buffsPerRow) // if the free slot id is larger than collected buffs 
 	{
-		position = {BUFF_START_POS.x + numCollectedBuffs * BUFF_SPACING, BUFF_START_POS.y};
+		position = {BUFF_START_POS.x + freeSlot * BUFF_SPACING, BUFF_START_POS.y};
 		Entity buffUI = createBuffUI(position, buffType);
 	}
-	else if (numCollectedBuffs >= buffsPerRow && numCollectedBuffs < BUFF_NUM)
+	else if (freeSlot >= buffsPerRow && freeSlot < BUFF_NUM)
 	{
-		position = {BUFF_START_POS.x + (numCollectedBuffs - buffsPerRow) * BUFF_SPACING,
+		position = {BUFF_START_POS.x + (freeSlot - buffsPerRow) * BUFF_SPACING,
 					BUFF_START_POS.y - BUFF_SPACING};
 		Entity buffUI = createBuffUI(position, buffType);
 	}
 }
+
+vec2 getBuffSlot (int buffType) {
+	vec2 position = {0, 0};
+
+	for(int i = 0; i < registry.buffUIs.size(); i++) {
+		// Get the buffUI, if the type is correct, return its position
+		BuffUI& b = registry.buffUIs.get(registry.buffUIs.entities[i]);
+
+		if(b.buffType == buffType) {
+			position = registry.motions.get(registry.buffUIs.entities[i]).position;
+			break;
+		}
+	}
+	return position;
+}
+
+vec2 getBuffSlot_uiPos (int buffType) {
+	vec2 position = {0, 0};
+
+	for(int i = 0; i < registry.buffUIs.size(); i++) {
+		// Get the buffUI, if the type is correct, return its position
+		BuffUI& b = registry.buffUIs.get(registry.buffUIs.entities[i]);
+
+		if(b.buffType == buffType) {
+			position = registry.uiElements.get(registry.buffUIs.entities[i]).position;
+			break;
+		}
+	}
+	return position;
+}
+
+void removeBuffUI(int buffType) {
+	// After you find the position to remove, then first remove the buff, and for all motions that are greater than it, move them back + think of the wrap around case
+	// this ensures that the buff no and slot no are always paired.
+	
+	vec2 removeBuffPosition = getBuffSlot(buffType);
+	vec2 uiPos_removeBuffPosition = getBuffSlot_uiPos(buffType);
+	bool isRemovedOnFirstLevel = true; // Assumed its on first / lower bar..
+
+	if(uiPos_removeBuffPosition.y == (BUFF_START_POS.y - BUFF_SPACING)) { // not on first level...
+		isRemovedOnFirstLevel = false;
+	}
+
+	Entity toRemove;
+
+	for(auto e: registry.buffUIs.entities) {
+		Motion& m = registry.motions.get(e);
+
+		if(m.position.x == removeBuffPosition.x && m.position.y == removeBuffPosition.y) {
+			toRemove = e;
+			break;
+		}
+	}
+
+	registry.remove_all_components_of(toRemove);
+
+	vec2 pos = removeBuffPosition;
+	
+	for(auto e: registry.buffUIs.entities) {
+		Motion& m = registry.motions.get(e);
+		
+		// DETERMINE WHETHER TO MOVE? 
+		// - if Y is the same and x new is greater than x saved
+		// - if Y new is less then the other
+		if(m.position.y == pos.y && m.position.x > pos.x) {
+			// needs to be shifted back
+		} else if (m.position.y < pos.y) {
+			// needs to shift back
+		} else {
+			// skip this buffUI
+			continue;
+		}
+		
+		// CASES When moving
+		// IS FIRST LEVEL SHIFT BACK (2)
+		// IS SECOND LEVEL AND WOULD SHIFT TO LOWER X THEN SHIFT DOWN TO MAX
+		// IS SECOND LEVEL AND WOULDNT, THEN SHIFT BACK (2)
+
+		UIElement& ui_e = registry.uiElements.get(e);
+		
+		if(isRemovedOnFirstLevel && ui_e.position.x == BUFF_START_POS.x) {
+			int buffsPerRow = BUFF_NUM / 2;
+			ui_e.position.x = BUFF_START_POS.x + ((buffsPerRow - 1) * BUFF_SPACING); // Move back by one space - not sure about the -1
+			ui_e.position.y = BUFF_START_POS.y;
+		} else {
+			ui_e.position.x -= BUFF_SPACING;
+		}
+
+		// for some reason we need to also change its position as a UI element 	registry.uiElements.emplace(buffUI, UIElement{motion.position, motion.scale});
+	}
+
+	// Remove the buff from the player's collected buffs
+	findAndRemove(registry.players.get(registry.players.entities[0]).buffsCollected, buffType
+);
+}
+
+
+void findAndRemove(std::vector<int>& vec, int N) {
+    auto it = std::find(vec.begin(), vec.end(), N);
+    if (it != vec.end()) {
+        vec.erase(it); // Erase the first occurrence
+    }
+}
+
 
 // HUD element update such has health etc.
 void updateHuds()

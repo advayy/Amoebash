@@ -23,6 +23,7 @@ Entity createChest(RenderSystem *renderer, vec2 position);
 Entity createProjectile(vec2 pos, vec2 size, vec2 velocity, float damage = PROJECTILE_DAMAGE);
 Entity createBacteriophageProjectile(Entity& bacteriophage);
 Entity createBossProjectile(vec2 position, vec2 size, vec2 velocity);
+Entity createBossArrow(Entity Boss);
 
 Entity createCamera();
 
@@ -43,4 +44,6 @@ Entity createBuff(vec2 position);
 
 void updateMiniMap(vec2 playerPos);
 void emptyMiniMap();
-    
+
+void damagePlayer(float damageAmount);
+int getRandomBuffType();

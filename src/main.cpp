@@ -86,37 +86,20 @@ int main()
 			break;
 
 		case GameState::START_SCREEN:
+			Mix_PauseMusic();
 			renderer_system.drawStartScreen();
 			break;
 
 		case GameState::GAME_PLAY:
 			// CK: be mindful of the order of your systems and rearrange this list only if necessary
-			// std::cout << "main - f1" << std::endl;
 			world_system.step(elapsed_ms);
-			// std::cout << "main - f2" << std::endl;
-
 			ai_system.step(elapsed_ms);
-			// std::cout << "main - f3" << std::endl;
-
 			physics_system.step(elapsed_ms);
-			// std::cout << "main - f4" << std::endl;
-
 			world_system.handle_collisions();
-			// std::cout << "main - f5" << std::endl;
-
             particle_system.step(elapsed_ms);
-			// std::cout << "main - f6" << std::endl;
-
 			animation_system.step(elapsed_ms);
-			// std::cout << "main - f7" << std::endl;
-
-
 			renderer_system.draw();
-			// std::cout << "main - f8" << std::endl;
-
 			renderer_system.drawUIElements();
-			// std::cout << "main - f9" << std::endl;
-
 			break;
 
 		case GameState::PAUSE:
@@ -132,9 +115,11 @@ int main()
 			break;
 		case GameState::GAME_OVER:
 			renderer_system.drawGameOverScreen();
+			Mix_PauseMusic();
 			break;
 
-		case GameState::GAMEPLAY_CUTSCENE:
+		case GameState::GAMEPLAY_CUTSCENE: // intro cutscene
+			Mix_PauseMusic();
 			stateTimer -= elapsed_ms;
 			renderer_system.drawCutScreneAnimation();
 			animation_system.step(elapsed_ms);
@@ -144,6 +129,7 @@ int main()
 				removeCutScene();
                 previous_state = current_state;
                 current_state = GameState::GAME_PLAY;
+				world_system.startTheme();
             }
             break;
 
@@ -157,6 +143,11 @@ int main()
                 current_state = GameState::GAME_PLAY;
             }
             break;
+		
+		case GameState::VICTORY:
+			renderer_system.drawCutScreneAnimation();
+			animation_system.step(elapsed_ms);
+			break;
 
         default:
             break;
