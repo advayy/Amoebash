@@ -1084,6 +1084,12 @@ void WorldSystem::on_mouse_move(vec2 mouse_position)
 		} else {
 			request.used_texture = TEXTURE_ASSET_ID::PROCEED_BUTTON;
 		}
+	} else if (button.type == ButtonType::RESUMEBUTTON && registry.renderRequests.has(button_entity)) {
+		if (isButtonClicked(button)) {
+			request.used_texture = TEXTURE_ASSET_ID::RESUME_BUTTON_ON_HOVER;
+		} else {
+			request.used_texture = TEXTURE_ASSET_ID::RESUME_BUTTON;
+		}
 	}
 	
 	updateMouseCoords();
@@ -1220,7 +1226,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 					saveProgress();
 				}
 			}
-			else if (getClickedButton() == ButtonType::PROCEEDBUTTON){
+			else if (getClickedButton() == ButtonType::RESUMEBUTTON){
 				current_state = GameState::GAME_PLAY;
 				removePauseScreen();
 			}

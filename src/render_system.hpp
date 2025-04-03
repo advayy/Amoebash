@@ -41,7 +41,7 @@ class RenderSystem
 		textures_path("tiles/parallax_tile_1_128x.png"),
 		textures_path("ui_art/amoebash_logo.png"),
 		textures_path("ui_art/gameOver.png"),
-		textures_path("ui_art/start_button.png"),
+		textures_path("ui_art/button_outline.png"),
 		textures_path("ui_art/pausescreen.png"),
 		textures_path("ui_art/shop_button.png"),
 		textures_path("ui_art/shop_button_on_hover.png"),
@@ -91,10 +91,12 @@ class RenderSystem
 		textures_path("ui_art/start_button_on_hover.png"),
 		textures_path("ui_art/back_button.png"),
 		textures_path("ui_art/back_button_on_hover.png"),
-		textures_path("ui_art/resume_button.png"),
-		textures_path("ui_art/resume_button_on_hover.png"),
+		textures_path("ui_art/resume_button.png"), // exit button
+		textures_path("ui_art/resume_button_on_hover.png"), // exit button
 		textures_path("ui_art/save_button.png"),
 		textures_path("ui_art/save_button_on_hover.png"),
+		textures_path("ui_art/resume_button.png"),
+		textures_path("ui_art/resume_button_on_hover.png"),
 	};
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.
