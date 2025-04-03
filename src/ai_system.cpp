@@ -402,7 +402,6 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 			if (playerDetected)
 			{
 				enemyBehavior.state = FinalBossState::SPAWN_1;
-				// enemyBehavior.state = FinalBossState::SPIRAL_SHOOT_1;
 				enemyBehavior.cool_down = 3000.f;
 			}
 			break;
@@ -417,39 +416,36 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 				
 				// spawn pattern per phase
 				if (enemyBehavior.phase == 1) {
-					// int count = 0;
-					// for (int row = 2; row <= 4; ++row) {
-					// 	for (int col = 0; col < rawMap[row].size(); ++col) {
-					// 		if (rawMap[row][col] == tileType::EMPTY) {
-					// 			vec2 worldPos = gridCellToPosition({ col, row });
-					// 			createBacteriophage(nullptr, worldPos, count);
-					// 			count += 1;
-					// 		}
-					// 	}
-					// }
-
-					createBacteriophage(nullptr, gridCellToPosition({ 9, 2 }), 0);
+					for (int row = 2; row <= 4; ++row) {
+						for (int col = 0; col < rawMap[row].size(); ++col) {
+							if (rawMap[row][col] == tileType::EMPTY) {
+								createDenderite(nullptr, gridCellToPosition({ col, row }));
+							}
+						}
+					}
 				} else if (enemyBehavior.phase == 2) {
-					// int count = 0;
-					// for (int row = 2; row <= 7; ++row) {
-					// 	for (int col = 0; col < rawMap[row].size(); ++col) {
-					// 		if (row == 2 && col ==9) continue; // skip boss position
+					for (int row = 2; row <= 7; ++row) {
+						for (int col = 0; col < rawMap[row].size(); ++col) {
+							if (row == 2 && col ==9) continue; // skip boss position
 
-					// 		if (rawMap[row][col] == tileType::EMPTY) {
-					// 			vec2 worldPos = gridCellToPosition({ col, row });
-					// 			createBacteriophage(nullptr, worldPos, count);
-					// 			count += 1;
-					// 		}
-					// 	}
-					// }
-					createBacteriophage(nullptr, gridCellToPosition({ 9, 2 }), 0);
+							if (rawMap[row][col] == tileType::EMPTY) {
+								createDenderite(nullptr, gridCellToPosition({ col, row }));
+							}
+						}
+					}
 				} else {
-					createBacteriophage(nullptr, gridCellToPosition({ 9, 2 }), 0);
+					for (int row = 0; row < rawMap.size(); row++) {
+						for (int col = 0; col < rawMap[row].size(); col++) {
+							if (rawMap[row][col] == tileType::EMPTY) {
+								createDenderite(nullptr, gridCellToPosition({ col, row }));
+							}
+						}
+					}
 				}
 			
 				enemyBehavior.has_spawned = true;
 			} else {
-				if (registry.bacteriophageAIs.size() == 0) {
+				if (registry.denderiteAIs.size() == 0) {
 					enemyBehavior.state = FinalBossState::SPIRAL_SHOOT_1;
 					enemyBehavior.has_spawned = false;
 				}
@@ -494,6 +490,7 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 
 			if (enemyBehavior.spiral_duration <= 0.f) {
 				enemyBehavior.state = FinalBossState::TIRED;
+				changeAnimationFrames(enemyEntity, 11, 13);
 				enemyBehavior.spiral_duration = 15000.f;
 				enemyBehavior.shoot_cool_down = 0.f;
 				enemyBehavior.cool_down = 20000.f;
@@ -509,18 +506,20 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 				enemyBehavior.phase = 2;
 				enemyBehavior.state = FinalBossState::SPAWN_1;
 				enemyBehavior.cool_down = 3000.f;
+				changeAnimationFrames(enemyEntity, 0, 10);
 			} else if (enemy.health <= 1/3.f * enemy.total_health && enemyBehavior.phase == 2) {
 				std::cout << "Last Phase" << std::endl;
 				enemyBehavior.phase = 3;
 				enemyBehavior.state = FinalBossState::SPAWN_1;
 				enemyBehavior.cool_down = 3000.f;
-
+				changeAnimationFrames(enemyEntity, 0, 10);
 			} else {
 				enemyBehavior.cool_down -= elapsed_ms;
 				if (enemyBehavior.cool_down <= 0.f) {
 					enemyBehavior.shoot_cool_down = 3000.f;
 					enemyBehavior.state = FinalBossState::SPAWN_1;
 					enemyBehavior.cool_down = 20000.f;
+					changeAnimationFrames(enemyEntity, 0, 10);
 				}
 			}
 			break;

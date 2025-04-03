@@ -12,7 +12,7 @@ Entity createEnemy(RenderSystem* renderer, vec2 position);
 Entity createSpikeEnemy(RenderSystem* renderer, vec2 position);
 Entity createRBCEnemy(RenderSystem* renderer, vec2 position);
 Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_index);
-Entity createDenderite(RenderSystem* renderer, vec2 position, std::vector<ivec2> &path);
+Entity createDenderite(RenderSystem* renderer, vec2 position);
 Entity createBoss(RenderSystem* renderer, vec2 position, BossState state = BossState::INITIAL, int bossStage = 0);
 Entity createFinalBoss(RenderSystem* renderer, vec2 position);
 

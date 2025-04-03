@@ -85,27 +85,16 @@ void PhysicsSystem::step(float elapsed_ms)
 			DenderiteAI& denderiteAI = registry.denderiteAIs.get(entity);
 			if (denderiteAI.state == DenderiteState::HUNT) {
 				ivec2 player_grid = positionToGridCell(player_motion.position);
-				// print denderite position not in grid cell
-				std::cout << motion.position.x << " " << motion.position.y << std::endl;
-				// print grid cell position of denderite
 				ivec2 denderite_grid = positionToGridCell(motion.position);
-				std::cout << denderite_grid.x << " " << denderite_grid.y << std::endl;
-
-				// print denderite velocity
-				std::cout << motion.velocity.x << " " << motion.velocity.y << std::endl;
-
-				
 				if (denderiteAI.path.empty() || denderiteAI.path.back() != player_grid) {
 					denderiteAI.path.clear();
 					denderiteAI.currentNodeIndex = 0;
-					std::cout << "Calculating Path!" << std::endl;
-					if (find_path(denderiteAI.path, motion.position, player_motion.position)) {
-						std::cout << "Found path" << std::endl;
 
-						for (auto& cell : denderiteAI.path) {
-							std::cout << "(" << cell.x << "," << cell.y << ") ";
-						}
-						std::cout << std::endl;
+					if (find_path(denderiteAI.path, motion.position, player_motion.position)) {
+						// for (auto& cell : denderiteAI.path) {
+						// 	std::cout << "(" << cell.x << "," << cell.y << ") ";
+						// }
+						// std::cout << std::endl;
 					}
 				}
 
@@ -305,13 +294,6 @@ void PhysicsSystem::step(float elapsed_ms)
 			// to prevent projectile (from enemy) to enemy collision
 			if (projectile.from_enemy) continue;
 
-			if (registry.finalBossAIs.has(e_entity)) {
-				FinalBossAI& finalBossAI = registry.finalBossAIs.get(e_entity);
-				if (finalBossAI.state != FinalBossState::TIRED) {
-					continue;
-				}
-			}
-
 			Motion& proj_motion = registry.motions.get(proj_entity);
 
 			// ensure the projectile is the "first" entity
@@ -325,16 +307,9 @@ void PhysicsSystem::step(float elapsed_ms)
 		if (detector.hasCollided(player_motion, e_motion))
 		{
 			// to make sure the player doesn't get locked to the enemy 
-			if (registry.bossAIs.has(e_entity) && glm::length(e_motion.velocity) > 0.1f) {
+			if ((registry.bossAIs.has(e_entity) || registry.finalBossAIs.has(e_entity)) && glm::length(e_motion.velocity) > 0.1f) {
 				player.knockback_duration = 500.f;
-			}
-
-			if (registry.finalBossAIs.has(e_entity)) {
-				FinalBossAI& finalBossAI = registry.finalBossAIs.get(e_entity);
-				if (finalBossAI.state != FinalBossState::TIRED) {
-					continue;
-				}
-			}
+			} 
 
 			registry.collisions.emplace_with_duplicates(player_entity, e_entity);
 		}

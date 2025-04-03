@@ -618,7 +618,7 @@ void WorldSystem::goToNextLevel()
 	std::pair<int, int> playerPosition;
 
 	if (level != BOSS_LEVEL && level != FINAL_BOSS_LEVEL) {
-		createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition)
+		createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
 	} else if (level == BOSS_LEVEL) {
 		createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
 		createBoss(renderer, gridCellToPosition({10, 10}));
@@ -849,9 +849,21 @@ void WorldSystem::handle_collisions()
 				// Invader takes damage
 				enemy.health -= projectile.damage;
 
-				// remove projectile
-				// registry.remove_all_components_of(entity);
-                removals.push_back(entity);
+				// reflect projectile if hitting final boss in non-tired state
+				if (registry.finalBossAIs.has(entity2)) {
+					FinalBossAI & finalBossAI = registry.finalBossAIs.get(entity2);
+					if (finalBossAI.state != FinalBossState::TIRED) {
+						enemy.health += projectile.damage;
+						Motion& projectile_motion = registry.motions.get(entity);
+						projectile_motion.velocity *= -1.f;
+						projectile.from_enemy = !projectile.from_enemy;
+					} else {
+						removals.push_back(entity);
+					}
+				} else {
+					removals.push_back(entity);
+				}
+
 				// if invader health is below 0
 				// remove invader and increase points
 				// buff created
@@ -867,7 +879,9 @@ void WorldSystem::handle_collisions()
 					// level += 1;
 					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
 
-					createBuff(vec2(enemy_position.x, enemy_position.y));
+					if (level != FINAL_BOSS_LEVEL) {
+						createBuff(vec2(enemy_position.x, enemy_position.y));
+					}
 					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15); 
 				}
 			}
@@ -898,18 +912,30 @@ void WorldSystem::handle_collisions()
                         }
                     } else {
                         enemy.health -= PLAYER_DASH_DAMAGE;
+						Player& player = registry.players.get(entity);
+						Motion& playerMotion = registry.motions.get(entity);
 
                         if (registry.bossAIs.has(entity2)) {
-                        Player& player = registry.players.get(entity);
-                        Motion& playerMotion = registry.motions.get(entity);
-                        
-                        for (auto e : registry.dashes.entities) {
-                            removals.push_back(e);
-                        }
-                        playerMotion.velocity = -1.f * glm::normalize(playerMotion.velocity) * PLAYER_DASH_SPEED;
+							
+							for (auto e : registry.dashes.entities) {
+								removals.push_back(e);
+							}
+							playerMotion.velocity = -1.f * glm::normalize(playerMotion.velocity) * PLAYER_DASH_SPEED;
+							player.knockback_duration = 500.f;
+						}
 
-                        player.knockback_duration = 500.f;
-                    }
+						if (registry.finalBossAIs.has(entity2)) {
+							FinalBossAI & finalBossAI = registry.finalBossAIs.get(entity2);
+							for (auto e : registry.dashes.entities) {
+								removals.push_back(e);
+							}
+							// prevent damage in non-tired mode
+							if (finalBossAI.state != FinalBossState::TIRED) {
+								enemy.health += PLAYER_DASH_DAMAGE;
+							}
+							playerMotion.velocity = -1.f * glm::normalize(playerMotion.velocity) * PLAYER_DASH_SPEED;
+							player.knockback_duration = 500.f;
+						}
                     }
 				}
 				else

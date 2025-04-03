@@ -139,11 +139,10 @@ Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_
 	return entity;
 }
 
-Entity createDenderite(RenderSystem* renderer, vec2 position, std::vector<ivec2>& path)
+Entity createDenderite(RenderSystem* renderer, vec2 position)
 {
 	Entity entity = createEnemy(renderer, position);
 	DenderiteAI& enemy_ai = registry.denderiteAIs.emplace(entity);
-	enemy_ai.path = path;
 
 	registry.renderRequests.insert(
 		entity,
@@ -396,6 +395,10 @@ Entity createFinalBossProjectile(vec2 position, vec2 size, vec2 velocity, int ph
 	if (phase == 2) {
 		registry.spiralProjectiles.emplace(projectile);
 	} else if (phase == 3) {
+		p.ms_until_despawn = 15000.f;
+		Motion& motion = registry.motions.get(projectile);
+		motion.velocity *= 2.f;
+
 		registry.followingProjectiles.emplace(projectile);
 		render_request.used_texture = TEXTURE_ASSET_ID::EYE_BALL_PROJECTILE;
 		render_request.used_effect = EFFECT_ASSET_ID::SPRITE_SHEET;
@@ -466,7 +469,7 @@ Entity createFinalBoss(RenderSystem* renderer, vec2 position) {
 	registry.renderRequests.insert(
 		entity,
 		{
-			TEXTURE_ASSET_ID::BACTERIOPHAGE,
+			TEXTURE_ASSET_ID::FINAL_BOSS,
 			EFFECT_ASSET_ID::SPRITE_SHEET,
 			GEOMETRY_BUFFER_ID::SPRITE
 		}
@@ -474,12 +477,12 @@ Entity createFinalBoss(RenderSystem* renderer, vec2 position) {
 
 	Animation& a = registry.animations.emplace(entity);
 	a.start_frame = 0;
-	a.end_frame = 9;
+	a.end_frame = 10;
 	a.time_per_frame = 100.0f;
 	a.loop = ANIM_LOOP_TYPES::PING_PONG;
 
 	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
-	spriteSheet.total_frames = 9;
+	spriteSheet.total_frames = 14;
 	spriteSheet.current_frame = 0;
 
 	SpriteSize& sprite = registry.spritesSizes.emplace(entity);

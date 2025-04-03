@@ -84,7 +84,8 @@ class RenderSystem
 		textures_path("enemies/boss/boss_arrow.png"),
 		textures_path("ui_art/victory_cutscene.png"),
 		textures_path("enemies/boss/eyeball_projectile.png"),
-		textures_path("enemies/dendrite_32x62.png")
+		textures_path("enemies/dendrite_32x62.png"),
+		textures_path("enemies/finalBoss/brainBoss.png")
 	};
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.
