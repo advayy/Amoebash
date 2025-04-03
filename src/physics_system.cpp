@@ -81,6 +81,39 @@ void PhysicsSystem::step(float elapsed_ms)
 
 		motion.position += motion.velocity * step_seconds;
 
+		if (registry.denderiteAIs.has(entity)) {
+			DenderiteAI& denderiteAI = registry.denderiteAIs.get(entity);
+			std::cout << "It's me denderite!" << std::endl;
+			std::cout << "My grid cell position " << positionToGridCell(motion.position).x << " " << positionToGridCell(motion.position).y << std::endl;
+			if (denderiteAI.state == DenderiteState::HUNT) {
+				std::cout << "I am hunting!" << std::endl;
+				ivec2 player_grid = positionToGridCell(player_motion.position);
+
+				if (denderiteAI.path.empty() || denderiteAI.path.back() != player_grid) {
+					denderiteAI.path.clear();
+					std::cout << "Calculating Path!" << std::endl;
+					if (find_path(denderiteAI.path, motion.position, player_motion.position)) {
+						std::cout << "Found path" << std::endl;
+					}
+				}
+
+				if (!denderiteAI.path.empty()) {
+					std::cout << "hehe player I am finding you" << std::endl;
+					ivec2 currentTargetTile = denderiteAI.path[0];
+					vec2 targetWorldPos = gridCellToPosition(currentTargetTile);
+				
+					vec2 dir = glm::normalize(targetWorldPos - motion.position);
+					motion.velocity = dir * 150.f;
+					motion.angle = atan2f(dir.y, dir.x) * 180.f / M_PI + 90.f;
+				
+					float reachThreshold = 5.f; 
+					if (glm::distance(motion.position, targetWorldPos) < reachThreshold) {
+						denderiteAI.path.erase(denderiteAI.path.begin()); 
+					}
+				}
+			}
+		}
+
 		if (registry.spiralProjectiles.has(entity)) {
 			float spiral_speed = 0.5f;
 			float angle = spiral_speed * step_seconds;
@@ -89,6 +122,13 @@ void PhysicsSystem::step(float elapsed_ms)
 			float new_x = motion.velocity.x * cos(angle) - motion.velocity.y * sin(angle);
 			float new_y = motion.velocity.x * sin(angle) + motion.velocity.y * cos(angle);
 			motion.velocity = { new_x, new_y };
+		}
+
+		if (registry.followingProjectiles.has(entity)) {
+			float speed = glm::length(motion.velocity);
+			vec2 direction = glm::normalize(player_motion.position - motion.position);
+			motion.velocity = direction * speed;
+			motion.angle = atan2f(direction.y, direction.x) * 180 / M_PI + 90.f;
 		}
 
 		if (registry.keys.has(entity)) {
@@ -141,9 +181,9 @@ void PhysicsSystem::step(float elapsed_ms)
 					{
 						motion.velocity *= -1;
 						motion.angle -= 180;
-					} else if (registry.bossAIs.has(entity)) {
+					} else if (registry.bossAIs.has(entity) || registry.denderiteAIs.has(entity)) {	
                         motion.velocity = vec2(0.f, 0.f);
-                    }
+                    } 
 				}
 			}
 		}
@@ -445,4 +485,101 @@ std::vector<vec2> PhysicsSystem::getWorldVertices(const std::vector<TexturedVert
         worldVertices.push_back(worldVertex);
     }
     return worldVertices;
+}
+
+bool PhysicsSystem::find_path(std::vector<ivec2> & path, vec2 start_world, vec2 end_world)
+{	
+	ivec2 start_pos = positionToGridCell(start_world);
+	ivec2 end_pos = positionToGridCell(end_world);
+	
+	struct Node {
+		ivec2 position;
+		int g_cost;
+		int h_cost;
+		Node* parent;
+		int f_cost() const { return g_cost + h_cost; }
+	};
+
+	struct CompareNode {
+		bool operator()(const Node* a, const Node* b) const {
+			return a->f_cost() >= b->f_cost(); 
+		}
+	};
+	
+	struct CompareVec2 {
+		bool operator()(const glm::ivec2& a, const glm::ivec2& b) const {
+			if (a.x == b.x) return a.y < b.y;
+			return a.x < b.x;
+		}
+	};
+	std::priority_queue<Node*, std::vector<Node*>, CompareNode> open;
+    std::set<ivec2, CompareVec2> closed;
+    std::map<ivec2, Node*, CompareVec2> all_nodes;
+
+	auto heuristic = [](ivec2 a, ivec2 b) {
+        return abs(a.x - b.x) + abs(a.y - b.y); 
+    };
+
+	
+	Node* start = new Node{ start_pos, 0, heuristic(start_pos, end_pos), nullptr };
+    open.push(start);
+    all_nodes[start_pos] = start;
+
+    const std::vector<ivec2> directions = {
+        {1, 0}, {-1, 0}, {0, 1}, {0, -1}
+    };
+
+	while(!open.empty()) {
+		Node* current = open.top();
+		open.pop();
+		
+		std::cout << "All known nodes:" << std::endl;
+		for (auto& [pos, node] : all_nodes) {
+			std::cout << "  (" << pos.x << ", " << pos.y << ") - f: " << node->f_cost() << std::endl;
+		}
+
+		if (current->position == end_pos) {
+			while (current) {
+				path.push_back(ivec2(current->position));
+				current = current->parent;	
+			}
+			std::reverse(path.begin(), path.end());
+			return true;
+		}
+
+		closed.insert(current->position);
+		
+		for (auto& dir : directions) {
+			ivec2 neighbor_pos = current->position + dir;
+
+            if (closed.find(neighbor_pos) != closed.end()) continue;
+            if (!isTraversable(neighbor_pos)) continue;
+
+            int g_cost = current->g_cost + 1;
+            int h_cost = heuristic(neighbor_pos, end_pos);
+            int f_cost = g_cost + h_cost;
+
+            if (all_nodes.find(neighbor_pos) == all_nodes.end() || f_cost < all_nodes[neighbor_pos]->f_cost()) {
+                Node* neighbor = new Node{ neighbor_pos, g_cost, h_cost, current };
+                open.push(neighbor);
+                all_nodes[neighbor_pos] = neighbor;
+            }
+		}
+	}
+
+	return false;
+}
+
+bool PhysicsSystem::isTraversable(ivec2 pos) {
+	const auto& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map;
+	int height = map.size();
+	int width = map[0].size();
+
+	int x = pos.x;
+	int y = height - 1 - pos.y; 
+
+	if (y < 0 || y >= height || x < 0 || x >= width)
+		return false;
+
+	return map[y][x] != tileType::WALL;
 }

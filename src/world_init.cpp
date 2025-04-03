@@ -139,6 +139,41 @@ Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_
 	return entity;
 }
 
+Entity createDenderite(RenderSystem* renderer, vec2 position, std::vector<ivec2>& path)
+{
+	Entity entity = createEnemy(renderer, position);
+	DenderiteAI& enemy_ai = registry.denderiteAIs.emplace(entity);
+	enemy_ai.path = path;
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			TEXTURE_ASSET_ID::DENDERITE,
+			EFFECT_ASSET_ID::SPRITE_SHEET,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	Motion& motion = registry.motions.get(entity);
+	motion.scale = DENDERITE_SIZE;
+
+	Animation& a = registry.animations.emplace(entity);
+	a.start_frame = 0;
+	a.end_frame = 6;
+	a.time_per_frame = 100.0f;
+	a.loop = ANIM_LOOP_TYPES::PING_PONG;
+
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 6;
+	spriteSheet.current_frame = 0;
+
+	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
+	sprite.width = 32;
+	sprite.height = 64;
+
+	return entity;
+}
+
 Entity createBoss(RenderSystem* renderer, vec2 position, BossState state, int bossStage)
 {
 	Entity entity = createEnemy(renderer, position);
@@ -347,14 +382,38 @@ Entity createBossProjectile(vec2 position, vec2 size, vec2 velocity)
 	return projectile;
 }
 
-Entity createFinalBossProjectile(vec2 position, vec2 size, vec2 velocity)
+Entity createFinalBossProjectile(vec2 position, vec2 size, vec2 velocity, int phase)
 {
 	Entity projectile = createProjectile(position, size, velocity);
 	RenderRequest& render_request = registry.renderRequests.get(projectile);
 	render_request.used_texture = TEXTURE_ASSET_ID::BOSS_PROJECTILE;
 	Projectile& p = registry.projectiles.get(projectile);
 	p.damage = BOSS_PROJECTILE_DAMAGE;
+	p.ms_until_despawn = 7500.f;
+
 	registry.finalBossProjectiles.emplace(projectile);
+
+	if (phase == 2) {
+		registry.spiralProjectiles.emplace(projectile);
+	} else if (phase == 3) {
+		registry.followingProjectiles.emplace(projectile);
+		render_request.used_texture = TEXTURE_ASSET_ID::EYE_BALL_PROJECTILE;
+		render_request.used_effect = EFFECT_ASSET_ID::SPRITE_SHEET;
+
+		Animation& a = registry.animations.emplace(projectile);
+		a.start_frame = 0;
+		a.end_frame = 8;
+		a.time_per_frame = 100.0f;
+		a.loop = ANIM_LOOP_TYPES::LOOP;
+
+		SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(projectile);
+		spriteSheet.total_frames = 9;
+		spriteSheet.current_frame = 0;
+
+		SpriteSize& sprite = registry.spritesSizes.emplace(projectile);
+		sprite.width = 32.f;
+		sprite.height = 32.f;
+	}
 
 	return projectile;
 }

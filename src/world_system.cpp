@@ -703,7 +703,9 @@ void WorldSystem::restart_game()
 		
 	if (progress_map["tutorial_mode"]) {
 		createPlayer(renderer, gridCellToPosition({0, 10}));
-		createSpikeEnemy(renderer, gridCellToPosition({12, 10}));
+		// createSpikeEnemy(renderer, gridCellToPosition({12, 10}));
+		std::vector<ivec2> denderite_positions = {{12, 10}, {13, 10}, {14, 10}};
+		createDenderite(renderer, gridCellToPosition({12, 10}), denderite_positions);
 		createKey(renderer, gridCellToPosition({16, 10}));
 		createChest(renderer, gridCellToPosition({19, 10}));
 	} else {
@@ -760,18 +762,33 @@ void WorldSystem::handle_collisions()
 		Collision& collision = registry.collisions.get(entity);
 		Entity entity2 = collision.other;
 
-		if (registry.bacteriophageProjectiles.has(entity2) || registry.bossProjectiles.has(entity2))
+		// if (registry.bacteriophageProjectiles.has(entity2) || registry.bossProjectiles.has(entity2) 
+		// 	|| registry.finalBossProjectiles.has(entity2) || registry.denderiteProjectile.has(entity2))
+		// {
+		// 	if (registry.players.has(entity)) // HANDLE PROJECTILE/PLAYER COLLISION
+		// 	{
+		// 		Player& player = registry.players.get(entity);
+		// 		Projectile& projectile = registry.projectiles.get(entity2);
+
+		// 		// Player takes damage
+		// 		player.current_health -= projectile.damage;
+
+		// 		// remove projectile
+        //         removals.push_back(entity2);
+		// 	}
+		// }
+
+		if (registry.projectiles.has(entity2)) 
 		{
-			if (registry.players.has(entity)) // HANDLE PROJECTILE/PLAYER COLLISION
+			if (registry.players.has(entity))
 			{
-				Player& player = registry.players.get(entity);
 				Projectile& projectile = registry.projectiles.get(entity2);
-
-				// Player takes damage
-				player.current_health -= projectile.damage;
-
-				// remove projectile
-                removals.push_back(entity2);
+				if(projectile.from_enemy) {
+					Player& player = registry.players.get(entity);
+					player.current_health -= projectile.damage;
+					removals.push_back(entity2);
+					
+				}
 			}
 		}
 		else if (registry.keys.has(entity2))

@@ -157,6 +157,10 @@ struct SpiralProjectile
 {
 };
 
+struct FollowingProjectile
+{
+};
+
 struct BacteriophageProjectile {
 	int dummy = 0;
 };
@@ -466,7 +470,9 @@ enum class TEXTURE_ASSET_ID
 	BOSS_STAGE_4 = BOSS_STAGE_3 + 1,
 	BOSS_ARROW = BOSS_STAGE_4 + 1,
 	WINSCREEN = BOSS_ARROW + 1,
-	TEXTURE_COUNT = WINSCREEN + 1
+	EYE_BALL_PROJECTILE = WINSCREEN + 1,
+	DENDERITE = EYE_BALL_PROJECTILE + 1,
+	TEXTURE_COUNT = DENDERITE + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -623,6 +629,24 @@ struct BacteriophageAI
 	int placement_index = 0;
 };
 
+enum class DenderiteState
+{
+	HUNT = 0,
+	PIERCE = HUNT + 1,
+	SHOOT = PIERCE + 1
+};
+
+struct DenderiteAI : EnemyAI
+{
+	// store whole path to follow 
+	std::vector<ivec2> path;
+	bool isCharging = false;
+	float chargeTime = 100.0f;
+	float chargeDuration = 500.0f;
+	float shootCoolDown = 200.0f;
+	DenderiteState state = DenderiteState::HUNT;
+};
+
 enum class BossState
 {
 	INITIAL = 0,
@@ -669,7 +693,7 @@ struct FinalBossAI : EnemyAI
 	float cool_down = 20000.f;
 	bool has_spawned = false;
 
-	float shoot_cool_down = 0.f;
+	float shoot_cool_down = 300.f;
 	float spiral_duration = 15000.f; 
 
 	Entity associatedArrow;

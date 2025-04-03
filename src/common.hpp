@@ -178,6 +178,9 @@ const unsigned int BOSS_LEVEL = 3;
 // const unsigned int FINAL_BOSS_LEVEL = 5;
 const unsigned int FINAL_BOSS_LEVEL = 2;
 
+
+const vec2 DENDERITE_SIZE = {32 * WORK_SCALE_FACTOR, 64 * WORK_SCALE_FACTOR};
+
 // OTHER CONSTANTS
 const float DASH_DURATION_MS = 500.0f;
 const float VELOCITY_DECAY_RATE = 1.01f; // 0.95f;
