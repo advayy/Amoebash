@@ -225,19 +225,19 @@ void WorldSystem::updateCamera(float elapsed_ms)
 
 void WorldSystem::updateMouseCoords()
 {
-    // Get the current window size to use for calculations
-    int current_width, current_height;
-    glfwGetWindowSize(window, &current_width, &current_height);
-    
-    Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
-    
-    // Calculate normalized device coordinates to world space
-    float scale_x = (float)current_width / (640.0f * WORK_SCALE_FACTOR);
-    float scale_y = (float)current_height / (360.0f * WORK_SCALE_FACTOR);
-    
-    // Transform mouse coordinates to game coordinates consistently across window sizes
-    game_mouse_pos_x = device_mouse_pos_x / scale_x + camera.position.x - WINDOW_WIDTH_PX * 0.5f;
-    game_mouse_pos_y = device_mouse_pos_y / scale_y + camera.position.y - WINDOW_HEIGHT_PX * 0.5f;
+	// Get the current window size to use for calculations
+	int current_width, current_height;
+	glfwGetWindowSize(window, &current_width, &current_height);
+
+	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+
+	// Calculate normalized device coordinates to world space using consistent scaling
+	float scale_x = (float)current_width / (640.0f * WORK_SCALE_FACTOR);
+	float scale_y = (float)current_height / (360.0f * WORK_SCALE_FACTOR);
+
+	// Transform mouse coordinates to game coordinates consistently
+	game_mouse_pos_x = (device_mouse_pos_x / scale_x) + camera.position.x - (640.0f * WORK_SCALE_FACTOR / 2);
+	game_mouse_pos_y = (device_mouse_pos_y / scale_y) + camera.position.y - (360.0f * WORK_SCALE_FACTOR / 2);
 }
 
 bool WorldSystem::updateBoss()
