@@ -83,33 +83,61 @@ void PhysicsSystem::step(float elapsed_ms)
 
 		if (registry.denderiteAIs.has(entity)) {
 			DenderiteAI& denderiteAI = registry.denderiteAIs.get(entity);
-			std::cout << "It's me denderite!" << std::endl;
-			std::cout << "My grid cell position " << positionToGridCell(motion.position).x << " " << positionToGridCell(motion.position).y << std::endl;
 			if (denderiteAI.state == DenderiteState::HUNT) {
-				std::cout << "I am hunting!" << std::endl;
 				ivec2 player_grid = positionToGridCell(player_motion.position);
+				// print denderite position not in grid cell
+				std::cout << motion.position.x << " " << motion.position.y << std::endl;
+				// print grid cell position of denderite
+				ivec2 denderite_grid = positionToGridCell(motion.position);
+				std::cout << denderite_grid.x << " " << denderite_grid.y << std::endl;
 
+				// print denderite velocity
+				std::cout << motion.velocity.x << " " << motion.velocity.y << std::endl;
+
+				
 				if (denderiteAI.path.empty() || denderiteAI.path.back() != player_grid) {
 					denderiteAI.path.clear();
+					denderiteAI.currentNodeIndex = 0;
 					std::cout << "Calculating Path!" << std::endl;
 					if (find_path(denderiteAI.path, motion.position, player_motion.position)) {
 						std::cout << "Found path" << std::endl;
+
+						for (auto& cell : denderiteAI.path) {
+							std::cout << "(" << cell.x << "," << cell.y << ") ";
+						}
+						std::cout << std::endl;
 					}
 				}
 
 				if (!denderiteAI.path.empty()) {
-					std::cout << "hehe player I am finding you" << std::endl;
-					ivec2 currentTargetTile = denderiteAI.path[0];
-					vec2 targetWorldPos = gridCellToPosition(currentTargetTile);
-				
-					vec2 dir = glm::normalize(targetWorldPos - motion.position);
-					motion.velocity = dir * 150.f;
-					motion.angle = atan2f(dir.y, dir.x) * 180.f / M_PI + 90.f;
-				
-					float reachThreshold = 5.f; 
-					if (glm::distance(motion.position, targetWorldPos) < reachThreshold) {
-						denderiteAI.path.erase(denderiteAI.path.begin()); 
+					std::cout << "Moving towards target!" << std::endl;
+					std::cout << "My grid position " << positionToGridCell(motion.position).x << " " << positionToGridCell(motion.position).y << std::endl;
+					std::cout << denderiteAI.currentNodeIndex << std::endl;
+					if (denderiteAI.currentNodeIndex >= (int)denderiteAI.path.size()) {
+						motion.velocity = {0.f, 0.f};
+						motion.angle = 0.f;
+					} else {
+						ivec2 currentTargetTile = denderiteAI.path[0];
+						vec2 targetWorldPos = gridCellToPosition(currentTargetTile);
+
+						vec2 offset = targetWorldPos - motion.position;
+            			float dist  = glm::length(offset);
+						
+						if (dist > 0.0001f) {
+							vec2 dir = offset / dist;
+							motion.velocity = dir * 300.f;
+							motion.angle = atan2f(dir.y, dir.x) * 180.f / M_PI + 90.f;
+						} else {
+							motion.velocity = {0.f, 0.f};
+							motion.angle = 0.f;
+						}
+					
+						float reachThreshold = 5.f; 
+						if (glm::distance(motion.position, targetWorldPos) < reachThreshold) {
+							denderiteAI.currentNodeIndex++;
+						}
 					}
+
 				}
 			}
 		}
@@ -489,6 +517,9 @@ std::vector<vec2> PhysicsSystem::getWorldVertices(const std::vector<TexturedVert
 
 bool PhysicsSystem::find_path(std::vector<ivec2> & path, vec2 start_world, vec2 end_world)
 {	
+	const auto& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map;
+	int map_height = map.size();
+
 	ivec2 start_pos = positionToGridCell(start_world);
 	ivec2 end_pos = positionToGridCell(end_world);
 	
@@ -512,6 +543,7 @@ bool PhysicsSystem::find_path(std::vector<ivec2> & path, vec2 start_world, vec2 
 			return a.x < b.x;
 		}
 	};
+
 	std::priority_queue<Node*, std::vector<Node*>, CompareNode> open;
     std::set<ivec2, CompareVec2> closed;
     std::map<ivec2, Node*, CompareVec2> all_nodes;
@@ -533,10 +565,10 @@ bool PhysicsSystem::find_path(std::vector<ivec2> & path, vec2 start_world, vec2 
 		Node* current = open.top();
 		open.pop();
 		
-		std::cout << "All known nodes:" << std::endl;
-		for (auto& [pos, node] : all_nodes) {
-			std::cout << "  (" << pos.x << ", " << pos.y << ") - f: " << node->f_cost() << std::endl;
-		}
+		// std::cout << "All known nodes:" << std::endl;
+		// for (auto& [pos, node] : all_nodes) {
+		// 	std::cout << "  (" << pos.x << ", " << pos.y << ") - f: " << node->f_cost() << std::endl;
+		// }
 
 		if (current->position == end_pos) {
 			while (current) {
@@ -572,14 +604,22 @@ bool PhysicsSystem::find_path(std::vector<ivec2> & path, vec2 start_world, vec2 
 
 bool PhysicsSystem::isTraversable(ivec2 pos) {
 	const auto& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map;
-	int height = map.size();
-	int width = map[0].size();
+
+	int map_width = map.size();
+    if (map_width == 0)
+        return false; // map is empty
+
+    int map_height = map[0].size();
 
 	int x = pos.x;
-	int y = height - 1 - pos.y; 
+    int y = pos.y;
 
-	if (y < 0 || y >= height || x < 0 || x >= width)
-		return false;
+    // Check bounds
+    if (x < 0 || x >= map_width ||
+        y < 0 || y >= map_height)
+    {
+        return false;
+    }
 
-	return map[y][x] != tileType::WALL;
+	return map[x][y] != tileType::WALL;
 }

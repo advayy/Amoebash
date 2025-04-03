@@ -644,6 +644,7 @@ struct DenderiteAI : EnemyAI
 	float chargeTime = 100.0f;
 	float chargeDuration = 500.0f;
 	float shootCoolDown = 200.0f;
+	int currentNodeIndex = 0;
 	DenderiteState state = DenderiteState::HUNT;
 };
 

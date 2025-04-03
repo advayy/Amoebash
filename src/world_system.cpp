@@ -562,6 +562,7 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 		return;
 	}
 
+
 	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
 	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x) * 180.0f / M_PI + 90.0f;
 
@@ -618,6 +619,12 @@ void WorldSystem::goToNextLevel()
 
 	if (level != BOSS_LEVEL && level != FINAL_BOSS_LEVEL) {
 		createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
+		if (level == 2) {
+			std::vector<ivec2> path;
+			std::pair<int, int> enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
+			vec2 den_pos = gridCellToPosition({enemyPosition.second, enemyPosition.first});
+			createDenderite(renderer, den_pos, path);
+		}
 	} else if (level == BOSS_LEVEL) {
 		createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
 		createBoss(renderer, gridCellToPosition({10, 10}));
@@ -703,9 +710,7 @@ void WorldSystem::restart_game()
 		
 	if (progress_map["tutorial_mode"]) {
 		createPlayer(renderer, gridCellToPosition({0, 10}));
-		// createSpikeEnemy(renderer, gridCellToPosition({12, 10}));
-		std::vector<ivec2> denderite_positions = {{12, 10}, {13, 10}, {14, 10}};
-		createDenderite(renderer, gridCellToPosition({12, 10}), denderite_positions);
+		createSpikeEnemy(renderer, gridCellToPosition({12, 10}));
 		createKey(renderer, gridCellToPosition({16, 10}));
 		createChest(renderer, gridCellToPosition({19, 10}));
 	} else {
@@ -1598,9 +1603,6 @@ void WorldSystem::tileProceduralMap() {
 				currentTiles[x][y] = 1;
 				addWallTile(gridCoord);
 			} else { // if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE)
-				
-				// print here
-				// std::cout << "x: " << x << " y: " << y << std::endl;
 				if (map.map[x][y] == tileType::EMPTY) 
 				{
 					// if its being tiled what tile to put
