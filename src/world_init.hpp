@@ -48,4 +48,6 @@ Entity createBuff(vec2 position);
 
 void updateMiniMap(vec2 playerPos);
 void emptyMiniMap();
-    
+
+void damagePlayer(float damageAmount);
+int getRandomBuffType();

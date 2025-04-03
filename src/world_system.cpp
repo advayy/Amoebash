@@ -37,10 +37,10 @@ WorldSystem::~WorldSystem()
 	// Destroy music components
 	if (background_music != nullptr)
 		Mix_FreeMusic(background_music);
-	if (dash_sound_a != nullptr)
-		Mix_FreeChunk(dash_sound_a);
-	if (dash_sound_b != nullptr)
-		Mix_FreeChunk(dash_sound_b);
+	if (dash_sound != nullptr)
+		Mix_FreeChunk(dash_sound);
+	if (player_shoot_sound != nullptr)
+		Mix_FreeChunk(player_shoot_sound);
 	if (damage_sound != nullptr)
 		Mix_FreeChunk(damage_sound);
 	if (enemy_death_sound != nullptr)
@@ -49,6 +49,12 @@ WorldSystem::~WorldSystem()
 		Mix_FreeChunk(enemy_shoot_sound);
 	if (click_sound != nullptr)
 		Mix_FreeChunk(click_sound);
+	if (boss_background_music != nullptr)
+		Mix_FreeMusic(boss_background_music);
+	if (portal_sound != nullptr)
+		Mix_FreeChunk(portal_sound);
+		
+	
 	Mix_CloseAudio();
 
 	// Destroy all created components
@@ -153,16 +159,21 @@ bool WorldSystem::start_and_load_sounds()
 		return false;
 	}
 
-	background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
-	dash_sound_a = Mix_LoadWAV(audio_path("dash_1.wav").c_str());
-	dash_sound_b = Mix_LoadWAV(audio_path("dash_2.wav").c_str());
+
+	Mix_VolumeMusic(64); // Background music is too loud so set volume to 50%
+
+	background_music = Mix_LoadMUS(audio_path("theme_loop.wav").c_str());
+	boss_background_music = Mix_LoadMUS(audio_path("boss_loop.wav").c_str());
+	dash_sound = Mix_LoadWAV(audio_path("dash_1.wav").c_str());
+	player_shoot_sound = Mix_LoadWAV(audio_path("dash_2.wav").c_str());
 	damage_sound = Mix_LoadWAV(audio_path("damage.wav").c_str());
 	enemy_shoot_sound = Mix_LoadWAV(audio_path("enemy_shoot.wav").c_str());
 	enemy_death_sound = Mix_LoadWAV(audio_path("enemy_death.wav").c_str());
-	click_sound = Mix_LoadWAV(audio_path("click.wav").c_str());
+	click_sound = Mix_LoadWAV(audio_path("click_1.wav").c_str());
+	portal_sound = Mix_LoadWAV(audio_path("portal.wav").c_str());
 
 
-	if (background_music == nullptr || dash_sound_a == nullptr) // IDK why we do this anymore
+	if (background_music == nullptr || dash_sound == nullptr) // IDK why we do this anymore
 	{
 		fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
 				audio_path("music.wav").c_str(),
@@ -437,9 +448,24 @@ bool WorldSystem::checkPortalCollision(){
 	return false;
 }
 
+void WorldSystem::updateDangerLevel(float elapsed_ms_since_last_update) {
+    Player& p = registry.players.get(registry.players.entities[0]);
+
+    static float dangerTimer = 0.f;
+    dangerTimer += elapsed_ms_since_last_update;
+
+    if (dangerTimer >= DANGER_INCREASE_INTERVAL) {
+        dangerTimer = 0.f;
+        p.dangerFactor = std::min(p.dangerFactor + DANGER_INCREASE_AMOUNT, MAX_DANGER_LEVEL);
+    }
+}
+
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
+	// std::cout << "Level : " << level << std::endl;
+	updateDangerLevel(elapsed_ms_since_last_update);
+
 	updateCamera(elapsed_ms_since_last_update);
 
 	if (progress_map["tutorial_mode"] && registry.infoBoxes.size() == 0) {
@@ -473,6 +499,10 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 		}
 	}
 	handleProjectiles(elapsed_ms_since_last_update);
+	// std::cout << "WS:step - f9" << std::endl;
+
+	handleRippleEffect(elapsed_ms_since_last_update);
+
 
     tileProceduralMap();
 
@@ -482,6 +512,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
         screen.darken_screen_factor = 1;
        	darken_screen_timer = 0.0f;
         current_state = GameState::NEXT_LEVEL;
+		Mix_PlayChannel(-1, portal_sound, 0);
 		goToNextLevel();
 		return true;
 	}
@@ -532,7 +563,7 @@ void WorldSystem::handlePlayerHealth(float elapsed_ms)
 	player.healing_timer_ms -= elapsed_ms;
 	if (player.healing_timer_ms <= 0 && player.current_health < player.max_health)
 	{
-		player.healing_timer_ms = PLAYER_DEFAULT_HEALING_TIMER_MS;
+		player.healing_timer_ms = player.default_healing_timer;
 		player.current_health += player.max_health * player.healing_rate;
 		if (player.current_health > player.max_health)
 		{
@@ -542,15 +573,18 @@ void WorldSystem::handlePlayerHealth(float elapsed_ms)
 
 	if (player.current_health <= 0 && current_state != GameState::GAME_OVER)
 	{
-		// save buffs to progression
-		Progression& p = registry.progressions.get(registry.progressions.entities[0]);
-		p.buffsFromLastRun = player.buffsCollected;
-		previous_state = current_state;
-		current_state = GameState::GAME_OVER;
-		createGameOverScreen();
+		triggerGameOver();
 	}
 }
 
+void WorldSystem::triggerGameOver() {
+	Player& player = registry.players.get(registry.players.entities[0]);
+	Progression& p = registry.progressions.get(registry.progressions.entities[0]);
+				p.buffsFromLastRun = player.buffsCollected;
+				previous_state = current_state;
+				current_state = GameState::GAME_OVER;
+				createGameOverScreen();	
+}
 
 // Handle player movement
 void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
@@ -655,7 +689,7 @@ void WorldSystem::restart_game()
 	// Reset the game speed
 	current_speed = 1.f;
     
-	level = 1;
+	level = 0;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
 
@@ -725,7 +759,12 @@ void WorldSystem::restart_game()
 					TEXTURE_ASSET_ID::NUCLEUS_UI,
 					EFFECT_ASSET_ID::UI);
 	createHealthBar();
-	createDashRecharge();
+	createThermometer();
+
+	for (int i = 0; i < registry.players.get(registry.players.entities[0]).max_dash_count; i++) {
+		createDashRecharge();
+	}
+	
 	createUIElement(GERMONEY_UI_POS,
 					vec2(GERMONEY_UI_WIDTH, GERMONEY_UI_HEIGHT),
 					TEXTURE_ASSET_ID::GERMONEY_UI,
@@ -782,12 +821,13 @@ void WorldSystem::handle_collisions()
 			if (registry.players.has(entity))
 			{
 				Projectile& projectile = registry.projectiles.get(entity2);
-				if(projectile.from_enemy) {
-					Player& player = registry.players.get(entity);
-					player.current_health -= projectile.damage;
-					removals.push_back(entity2);
-					
-				}
+
+				// Player takes damage
+				damagePlayer(projectile.damage);
+
+				// remove projectile
+                removals.push_back(entity2);
+				// registry.remove_all_components_of(entity2);
 			}
 		}
 		else if (registry.keys.has(entity2))
@@ -845,8 +885,10 @@ void WorldSystem::handle_collisions()
 				Projectile& projectile = registry.projectiles.get(entity);
 
 				if (projectile.from_enemy) continue;
+				if (enemy.health <= 0) continue; // prevent multy buff drop
 
 				// Invader takes damage
+
 				enemy.health -= projectile.damage;
 
 				// reflect projectile if hitting final boss in non-tired state
@@ -911,6 +953,7 @@ void WorldSystem::handle_collisions()
                             enemy_motion.velocity = knockback_direction * SPIKE_ENEMY_KNOCKBACK_STRENGTH;
                         }
                     } else {
+						if (enemy.health < 0.f) continue; // prevent multy buff drop
                         enemy.health -= PLAYER_DASH_DAMAGE;
 						Player& player = registry.players.get(entity);
 						Motion& playerMotion = registry.motions.get(entity);
@@ -940,7 +983,6 @@ void WorldSystem::handle_collisions()
 				}
 				else
 				{
-					// womp womp	game over or vignetted??
 					uint current_time = SDL_GetTicks();
 					Player& player = registry.players.get(entity);
 					// then apply damage.
@@ -949,7 +991,8 @@ void WorldSystem::handle_collisions()
 						//  add the component and apply damage
 						registry.damageCooldowns.insert(entity, { current_time });
 
-						player.current_health -= 1; 
+						damagePlayer(1); // Why is this one
+						
 						Mix_PlayChannel(-1, damage_sound, 0);
 					}
 					else
@@ -959,7 +1002,9 @@ void WorldSystem::handle_collisions()
 						if (current_time - dc.last_damage_time >= 500)
 						{
 							dc.last_damage_time = current_time;
-							player.current_health -= 1;
+
+							damagePlayer(1); // Why is this one
+
 							Mix_PlayChannel(-1, damage_sound, 0);
 						}
 					}
@@ -993,7 +1038,7 @@ void WorldSystem::handle_collisions()
 						// need to check the rumble cool down
 
 						if (!bossAI.is_charging) {
-							player.current_health -= BOSS_RUMBLE_DAMAGE;
+							damagePlayer(BOSS_RUMBLE_DAMAGE);
 						}
 
 						if (player.knockback_duration > 0.f && glm::length(bossMotion.velocity) > 0.1f)
@@ -1068,11 +1113,13 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 
 			// renderer.
 			createPauseScreen();
+			Mix_PauseMusic(); // Pause music
 		}
 		else if (current_state == GameState::PAUSE)
 		{
 			current_state = GameState::GAME_PLAY;
 			removePauseScreen();
+			Mix_ResumeMusic(); // Resume music
 		}
 	}
 
@@ -1135,6 +1182,8 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 			loadProgress();
 		}
 	}
+
+	
 }
 
 void WorldSystem::on_mouse_move(vec2 mouse_position)
@@ -1182,12 +1231,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				if (canDash())
 				{
 					initiatePlayerDash();
-					float chance = uniform_dist(rng);
-					if(chance > 0.1) {
-						Mix_PlayChannel(-1, dash_sound_a, 0);
-					} else {
-						Mix_PlayChannel(-1, dash_sound_b, 0);
-					}
+					Mix_PlayChannel(-1, dash_sound, 0);
 				}
 			}
             else if (button == GLFW_MOUSE_BUTTON_RIGHT)
@@ -1219,7 +1263,6 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			else if (clickedButton == ButtonType::STARTBUTTON) 
 			{
 				Mix_PlayChannel(-1, click_sound, 0);
-				Mix_PlayMusic(background_music, -1);
 				previous_state = current_state;
 				current_state = GameState::GAMEPLAY_CUTSCENE;
 				removeStartScreen();
@@ -1291,21 +1334,34 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 void WorldSystem::shootGun() {
     Gun &gun = registry.guns.get(registry.guns.entities[0]);
     Motion &gun_motion = registry.motions.get(registry.guns.entities[0]);
-    if (gun.cooldown_timer_ms <= 0.0f) {
+    Player &player = registry.players.get(registry.players.entities[0]);
+
+	float base_angle_rad = glm::radians(180.f + gun_motion.angle);
+
+	if (gun.cooldown_timer_ms <= 0.0f) {
         gun.cooldown_timer_ms = GUN_COOLDOWN_MS; // Reset cooldown
+		Mix_PlayChannel(-1, player_shoot_sound, 0);
 
-        float angle_radians = glm::radians(180.f + gun_motion.angle);
-        vec2 velocity = {cos(angle_radians) * GUN_PROJECTILE_SPEED, sin(angle_radians) * GUN_PROJECTILE_SPEED};
+		for(int i = 0; i < player.bulletsPerShot; i++) {
+			float offset_deg = (player.bulletsPerShot > 1)
+			? -player.angleConeRadius/2 + (2.f * player.angleConeRadius/2 * i / (player.bulletsPerShot - 1))
+			: 0.f;
+			float angle_rad = base_angle_rad + glm::radians(offset_deg);
 
-        velocity = {velocity.y, -velocity.x};
+			vec2 velocity = {
+				cos(angle_rad) * player.bulletSpeed,
+				sin(angle_rad) * player.bulletSpeed
+			};
+			velocity = {velocity.y, -velocity.x};
+			
+			Entity projectiles = createProjectile(gun_motion.position, {PROJECTILE_SIZE, PROJECTILE_SIZE}, velocity, player.gun_projectile_damage);
 
-        Entity projectiles = createProjectile(gun_motion.position, {PROJECTILE_SIZE, PROJECTILE_SIZE}, velocity, GUN_PROJECTILE_DAMAGE);
+			RenderRequest& render_request = registry.renderRequests.get(projectiles);
+			render_request.used_texture = TEXTURE_ASSET_ID::GUN_PROJECTILE;
 
-		RenderRequest& render_request = registry.renderRequests.get(projectiles);
-		render_request.used_texture = TEXTURE_ASSET_ID::GUN_PROJECTILE;
-
-		Projectile &projectile = registry.projectiles.get(projectiles);
-		projectile.from_enemy = false;
+			Projectile &projectile = registry.projectiles.get(projectiles);
+			projectile.from_enemy = false;
+		}
 	}
 }
 
@@ -1460,69 +1516,70 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 
 void WorldSystem::applyBuff(Player& player, int buff_type)
 {
+	bool skipUIRender = false;
 
 	switch (buff_type)
 	{
 	case 0: // Tail
 		player.speed += player.speed * 0.05f;
-		// std::cout << "Collected Tail: Player Speed increased by 5%" << std::endl;
 		break;
 
-	case 1: // Mitochondria
-		player.dash_cooldown_ms -= player.dash_cooldown_ms * 0.05f;
-		// std::cout << "Collected Mitochondria: Dash cooldown decreased by 5%" << std::endl;
+	case 1: // Mitochondria is the powerhouse of the cell
+		player.max_dash_count ++;
+		createDashRecharge();
 		break;
 
 	case 2: // Hemoglobin
 		player.detection_range -= player.dash_cooldown_ms * 0.05f;
-		// std::cout << "Collected Hemoglobin: Enemies Detection range decreased by 5%" << std::endl;
 		break;
 
 	case 3: // Golgi Apparatus Buff (need to be implemented)
-		player.current_health += 10;
-		// std::cout << "Collected Golgi Body: need to be implemented" << std::endl;
+		player.dash_cooldown_ms = player.dash_cooldown_ms * 0.95;
 		break;
 
 	case 4: // Chloroplast
 		player.healing_rate += 0.03;
-		// std::cout << "Collected Chloroplast: Healing increased by 5% " << std::endl;
 		break;
-	case 5: // Cell Wall
-		//	Defend next damage, remove cell wall on damage ... - sheild
+	case 5: // Plant Cell Wall
+		player.sheilds += 1;
 		break;
 	case 6: // Amino Acid
 		//	Increase Player Damage
 		player.dash_damage += 0.05;
 		break;
 	case 7: // Lysosyme
-		//	Ammo has +1 piercing ...
+		// Shoot multiple projectiles?
+		player.bulletsPerShot++;
 		break;
 	case 8: // CytoPlasm
 		player.max_health += 10;
 		break;
-	case 9: // Pilli
-		//	Dash decay drop - turns off drift
+	case 9: // Pilli OR Virality
+		//	increases bullet area cone // projectile speed instead?
+		player.bulletSpeed += 200;
 		break;
 	case 10: // Spare Nucleus
-		//	Adds +1 lives this run
+		player.extra_lives++;
 		break;
 	case 11: // Vacuole
-		//	Should roughly do what golgi does...
+		//	 - doesnt render in the ui... - Heals hp -------------------------------> POPUP CALL HERE
+		player.current_health += 50;
+		skipUIRender = true;
 		break;
-	case 12: // Endoplasmic Reticulum
-		//	IDK what it neess to do
+	case 12: // Endoplasmic Reticulum 
+		player.default_healing_timer -= 250;
 		break;
-	case 13: // Ovoid cell?
-		//	Eye ?
+	case 13: // oceloid cell
+		player.minimapViewRange++;
 		break;
 	case 14: // Secretor cell
-		//	reduces decauy for dash - more drift
+		player.dashDecay += 0.005; // SUPER OP
 		break;
-	case 15: // IDK
-		//	Adds +1 lives this run
+	case 15: // IDK some weird orange and pink shit	
+		player.angleConeRadius += 30;
 		break;
 	case 16: // Peroxisomes
-		//	Removes a nerf
+		//	Removes a nerf ...?
 		break;
 	case 17: // Mutation
 		//	Some nerf?
@@ -1540,8 +1597,10 @@ void WorldSystem::applyBuff(Player& player, int buff_type)
 		break;
 	}
     
-    player.buffsCollected.push_back(buff_type);
-	renderCollectedBuff(renderer, buff_type);
+	if(!skipUIRender) {
+	    player.buffsCollected.push_back(buff_type);
+		renderCollectedBuff(renderer, buff_type);
+	}
 }
 
 
@@ -1573,6 +1632,8 @@ void WorldSystem::initiatePlayerDash()
 
 	// Change animation frames
 	toggleDashAnimation(player_e, true);
+
+	particle_system.createParticles(PARTICLE_TYPE::RIPPLE_PARTICLE, player_motion.position, 4);
 }
 
 bool WorldSystem::canDash()
@@ -1647,6 +1708,20 @@ void WorldSystem::tileProceduralMap() {
 	initializedMap = true;
 }
 
+void WorldSystem::handleRippleEffect(float elapsed_ms)
+{
+        
+    Entity player_entity = registry.players.entities[0];
+    Motion& player_motion = registry.motions.get(player_entity);
+    
+    static float ripple_timer = 0.0f;
+    ripple_timer += elapsed_ms;
+    
+    if (ripple_timer >= 5.0f) {
+        particle_system.createPlayerRipples(player_entity);
+        ripple_timer = 0.0f;
+    }
+}
 // M3 Feature JSON Saving and Loading
 // On click of the save button in Pause Screen we save the progress so far.
 // Such as Player Status, Position and Map along with the buffs and projectiles
@@ -1841,4 +1916,8 @@ void WorldSystem::loadProgress() {
 	progress_map = progressData["progress"].get<std::map<std::string, bool>>();
 
 	level = progressData["levels"].get<int>();
+}
+
+void WorldSystem::startTheme() {
+	Mix_PlayMusic(background_music, -1);
 }

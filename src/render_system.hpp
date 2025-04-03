@@ -71,6 +71,7 @@ class RenderSystem
 		textures_path("tutorial/leave.png"),
 		textures_path("projectiles/chest.png"),
 		textures_path("effects/germoney.png"),
+		textures_path("effects/pixel_particle.png"),
 		textures_path("weapons/gun.png"),
 		textures_path("weapons/pet_bacteriophage_still.png"),
 		textures_path("weapons/gun_projectile.png"),
@@ -83,6 +84,7 @@ class RenderSystem
 		textures_path("enemies/boss/mitosis_boss_16_transparent.png"),
 		textures_path("enemies/boss/boss_arrow.png"),
 		textures_path("ui_art/victory_cutscene.png"),
+		textures_path("ui_art/thermometer_alone.png"),
 		textures_path("enemies/boss/eyeball_projectile.png"),
 		textures_path("enemies/dendrite_32x62.png"),
 		textures_path("enemies/finalBoss/brainBoss.png")
@@ -101,7 +103,9 @@ class RenderSystem
 		shader_path("health_bar"),
 		shader_path("dash_ui"),
 		shader_path("hexagon"),
-		shader_path("particle_textured")};
+		shader_path("particle_textured"),
+		shader_path("thermometer")
+	};
 
 	std::array<GLuint, geometry_count> vertex_buffers;
 	std::array<GLuint, geometry_count> index_buffers;
@@ -172,6 +176,8 @@ public:
 
 	// INSTANCING: instanced particle drawing
 	void drawInstancedParticles();
+	void drawParticlesByTexture(TEXTURE_ASSET_ID texture_id);
+
 
 	// INSTANCING: instanced tile drawing
 	void drawInstancedTiles(const mat3 &projection);
