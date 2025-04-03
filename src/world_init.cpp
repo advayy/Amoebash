@@ -837,16 +837,18 @@ void damagePlayer(float damageAmount) {
 		player.sheilds --;
 		removeBuffUI(5); // PLANT CELL WALL/ SHEILD
 	} else {
-		player.current_health -= damageAmount;
+		player.current_health -= damageAmount * player.dangerFactor;
 
 		if (player.current_health <= 0) {
 			if (player.extra_lives > 0) {
 				player.current_health = player.max_health/2;
 				player.extra_lives--;
 				removeBuffUI(10);
+			} else {
+				// game over
 			}
 		} else {
-			// do nothing?
+			// normally took damage
 		}
 	}
 }

@@ -71,7 +71,8 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 					render_request.used_effect == EFFECT_ASSET_ID::TILE ||
 					render_request.used_effect == EFFECT_ASSET_ID::UI ||
 					render_request.used_effect == EFFECT_ASSET_ID::HEALTH_BAR ||
-					render_request.used_effect == EFFECT_ASSET_ID::DASH_UI) &&
+					render_request.used_effect == EFFECT_ASSET_ID::DASH_UI ||
+					render_request.used_effect == EFFECT_ASSET_ID::THERMOMETER_EFFECT) &&
 				 "Type of render request not supported");
 
 	setUpDefaultProgram(entity, render_request, program);
@@ -120,6 +121,24 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		}
 
 		glUniform1iv(map_visited_array_uloc, MAP_WIDTH * MAP_HEIGHT, flat_visited_array.data());
+	}
+
+	if (render_request.used_effect == EFFECT_ASSET_ID::THERMOMETER_EFFECT) {
+		// FEED THE VALUES FOR CURRENT DANGER LEVEL, AND MAX DANGER LEVEL
+		// RANGES FROM GREEN TO PURPLE (Green->Yellow->Orange->Red->Pink->Purple)
+		float maxDangerLevel = MAX_DANGER_LEVEL;
+		float current_danger_level = registry.players.get(registry.players.entities[0]).dangerFactor;
+
+		// ULOCS TO PASS 
+		// uniform float max_danger;
+		// uniform float current_danger;
+		GLint max_danger_uloc = glGetUniformLocation(program, "max_danger");
+		glUniform1f(max_danger_uloc, (float)maxDangerLevel);
+		gl_has_errors();
+
+		GLint current_danger_uloc = glGetUniformLocation(program, "current_danger");
+		glUniform1f(current_danger_uloc, (float)current_danger_level);
+		gl_has_errors();
 	}
 
 	// Getting uniform locations for glUniform* calls
@@ -383,6 +402,7 @@ void RenderSystem::draw()
 
 	// draw the mini map
 	drawTexturedMesh(registry.miniMaps.entities[0], projection_2D);
+	drawTexturedMesh(registry.thermometers.entities[0], projection_2D);
 
 	// draw static ui elemments
 	for (Entity entity : registry.uiElements.entities)

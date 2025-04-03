@@ -449,10 +449,23 @@ bool WorldSystem::checkPortalCollision(){
 	return false;
 }
 
+void WorldSystem::updateDangerLevel(float elapsed_ms_since_last_update) {
+    Player& p = registry.players.get(registry.players.entities[0]);
+
+    static float dangerTimer = 0.f;
+    dangerTimer += elapsed_ms_since_last_update;
+
+    if (dangerTimer >= DANGER_INCREASE_INTERVAL) {
+        dangerTimer = 0.f;
+        p.dangerFactor = std::min(p.dangerFactor + DANGER_INCREASE_AMOUNT, MAX_DANGER_LEVEL);
+    }
+}
+
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
 	// std::cout << "Level : " << level << std::endl;
+	updateDangerLevel(elapsed_ms_since_last_update);
 
 	updateCamera(elapsed_ms_since_last_update);
 
@@ -554,21 +567,18 @@ void WorldSystem::handlePlayerHealth(float elapsed_ms)
 
 	if (player.current_health <= 0 && current_state != GameState::GAME_OVER)
 	{
-		// save buffs to progression
-		if (player.extra_lives > 0) {
-			player.extra_lives --;
-			player.current_health = player.max_health/2;
-			removeBuffUI(10);
-		} else {
-			Progression& p = registry.progressions.get(registry.progressions.entities[0]);
-			p.buffsFromLastRun = player.buffsCollected;
-			previous_state = current_state;
-			current_state = GameState::GAME_OVER;
-			createGameOverScreen();
-		}
+		triggerGameOver();
 	}
 }
 
+void WorldSystem::triggerGameOver() {
+	Player& player = registry.players.get(registry.players.entities[0]);
+	Progression& p = registry.progressions.get(registry.progressions.entities[0]);
+				p.buffsFromLastRun = player.buffsCollected;
+				previous_state = current_state;
+				current_state = GameState::GAME_OVER;
+				createGameOverScreen();	
+}
 
 // Handle player movement
 void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
@@ -744,6 +754,7 @@ void WorldSystem::restart_game()
 					TEXTURE_ASSET_ID::NUCLEUS_UI,
 					EFFECT_ASSET_ID::UI);
 	createHealthBar();
+	createThermometer();
 
 	for (int i = 0; i < registry.players.get(registry.players.entities[0]).max_dash_count; i++) {
 		createDashRecharge();

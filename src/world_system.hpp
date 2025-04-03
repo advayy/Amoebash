@@ -92,6 +92,8 @@ public:
 	void handleProjectiles(float elapsed_ms_since_last_update);
 	bool checkPortalCollision();
 	void startTheme();
+	void triggerGameOver();
+
 
 private:
 	bool gameOver = false;
@@ -187,4 +189,6 @@ private:
 	bool isFreeSlot();
 	void moveSelectedBuffsToProgression();
 	void applyBuff(Player& player, int buff_type);
+
+	void updateDangerLevel(float elapsed_ms_since_last_update);
 };
