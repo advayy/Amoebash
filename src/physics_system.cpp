@@ -110,14 +110,11 @@ void PhysicsSystem::step(float elapsed_ms)
 				}
 
 				if (!denderiteAI.path.empty()) {
-					std::cout << "Moving towards target!" << std::endl;
-					std::cout << "My grid position " << positionToGridCell(motion.position).x << " " << positionToGridCell(motion.position).y << std::endl;
-					std::cout << denderiteAI.currentNodeIndex << std::endl;
 					if (denderiteAI.currentNodeIndex >= (int)denderiteAI.path.size()) {
 						motion.velocity = {0.f, 0.f};
 						motion.angle = 0.f;
 					} else {
-						ivec2 currentTargetTile = denderiteAI.path[0];
+						ivec2 currentTargetTile = denderiteAI.path[denderiteAI.currentNodeIndex];
 						vec2 targetWorldPos = gridCellToPosition(currentTargetTile);
 
 						vec2 offset = targetWorldPos - motion.position;
