@@ -801,6 +801,24 @@ Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, E
 	return entity;
 }
 
+Entity createThermometer() {
+	Entity entity = Entity();
+
+	Motion &motion = registry.motions.emplace(entity);
+	motion.position = THERMOMETER_POS;
+	motion.scale = {THERMOMETER_WIDTH, THERMOMETER_HEIGHT};
+
+	Thermometer &t = registry.thermometers.emplace(entity);
+
+	registry.renderRequests.insert(
+		entity,
+		{TEXTURE_ASSET_ID::THERMOMETER,
+		 EFFECT_ASSET_ID::THERMOMETER_EFFECT,
+		 GEOMETRY_BUFFER_ID::SPRITE});
+
+	return entity;
+}
+
 Entity createHealthBar()
 {
 	Entity entity = Entity();
@@ -1037,6 +1055,15 @@ void updateHuds()
 		healthBarMotion.position = {camera.position.x + HEALTH_BAR_POS.x,
 									camera.position.y + HEALTH_BAR_POS.y};
 
+	}
+
+	if (!registry.thermometers.entities.empty()) {
+		Thermometer& t = registry.thermometers.get(registry.thermometers.entities[0]);
+		Motion& m = registry.motions.get(registry.thermometers.entities[0]);
+		m.position = {
+			camera.position.x + THERMOMETER_POS.x,
+			camera.position.y + THERMOMETER_POS.y
+		};
 	}
 }
 

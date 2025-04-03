@@ -185,4 +185,6 @@ private:
 	bool isFreeSlot();
 	void moveSelectedBuffsToProgression();
 	void applyBuff(Player& player, int buff_type);
+
+	void updateDangerLevel(float elapsed_ms_since_last_update);
 };

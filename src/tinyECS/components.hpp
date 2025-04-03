@@ -85,6 +85,8 @@ struct Player
 
 	vec2 grid_position = {0, 0};
 	std::vector<int> buffsCollected;
+
+	float dangerFactor = DEFAULT_DANGER_LEVEL;
 };
 
 struct Dashing
@@ -122,6 +124,8 @@ enum class tileType {
 	WALL = 1,
     PORTAL = 2
 };
+
+struct Thermometer {};
 
 struct ProceduralMap {
 	// 2D array of numbers representing the map
@@ -475,7 +479,8 @@ enum class TEXTURE_ASSET_ID
 	BOSS_STAGE_4 = BOSS_STAGE_3 + 1,
 	BOSS_ARROW = BOSS_STAGE_4 + 1,
 	WINSCREEN = BOSS_ARROW + 1,
-	TEXTURE_COUNT = WINSCREEN + 1
+	THERMOMETER = WINSCREEN + 1,
+	TEXTURE_COUNT = THERMOMETER + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -494,8 +499,8 @@ enum class EFFECT_ASSET_ID
 	DASH_UI = HEALTH_BAR + 1,
 	HEXAGON = DASH_UI + 1,
 	PARTICLE_EFFECT = HEXAGON + 1,
-	EFFECT_COUNT = PARTICLE_EFFECT + 1,
-
+	THERMOMETER_EFFECT = PARTICLE_EFFECT + 1,
+	EFFECT_COUNT = THERMOMETER_EFFECT + 1,
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 

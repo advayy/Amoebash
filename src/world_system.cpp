@@ -449,10 +449,23 @@ bool WorldSystem::checkPortalCollision(){
 	return false;
 }
 
+void WorldSystem::updateDangerLevel(float elapsed_ms_since_last_update) {
+    Player& p = registry.players.get(registry.players.entities[0]);
+
+    static float dangerTimer = 0.f;
+    dangerTimer += elapsed_ms_since_last_update;
+
+    if (dangerTimer >= DANGER_INCREASE_INTERVAL) {
+        dangerTimer = 0.f;
+        p.dangerFactor = std::min(p.dangerFactor + DANGER_INCREASE_AMOUNT, MAX_DANGER_LEVEL);
+    }
+}
+
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
 	// std::cout << "Level : " << level << std::endl;
+	updateDangerLevel(elapsed_ms_since_last_update);
 
 	updateCamera(elapsed_ms_since_last_update);
 
@@ -740,6 +753,7 @@ void WorldSystem::restart_game()
 					TEXTURE_ASSET_ID::NUCLEUS_UI,
 					EFFECT_ASSET_ID::UI);
 	createHealthBar();
+	createThermometer();
 
 	for (int i = 0; i < registry.players.get(registry.players.entities[0]).max_dash_count; i++) {
 		createDashRecharge();
