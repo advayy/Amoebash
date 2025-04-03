@@ -944,7 +944,8 @@ void updateHuds()
 				continue;
 			Motion &uiMotion = registry.motions.get(entity);
 			UIElement &uiElement = registry.uiElements.get(entity);
-			uiMotion.position = {camera.position.x + uiElement.position.x, camera.position.y + uiElement.position.y};
+			uiMotion.position = {camera.position.x + (uiElement.position.x * WINDOW_WIDTH_PX/(630.0* WORK_SCALE_FACTOR) ), 
+				camera.position.y + (uiElement.position.y * WINDOW_HEIGHT_PX/(360.0 * WORK_SCALE_FACTOR) )};
 		}
 	}
 
@@ -952,8 +953,8 @@ void updateHuds()
 	{
 		HealthBar &healthBar = registry.healthBars.get(registry.healthBars.entities[0]);
 		Motion &healthBarMotion = registry.motions.get(registry.healthBars.entities[0]);
-		healthBarMotion.position = {camera.position.x + HEALTH_BAR_POS.x,
-									camera.position.y + HEALTH_BAR_POS.y};
+		healthBarMotion.position = {camera.position.x + (HEALTH_BAR_POS.x * WINDOW_WIDTH_PX/(630.0 * WORK_SCALE_FACTOR)),
+									camera.position.y + (HEALTH_BAR_POS.y * WINDOW_HEIGHT_PX/(360.0 * WORK_SCALE_FACTOR) )};
 
 	}
 }

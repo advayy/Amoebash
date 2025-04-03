@@ -205,8 +205,8 @@ const vec2 BACKGROUND_SCALE = vec2(WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX);
 
 // UI
 const float UI_SCALE = 1;
-const float UI_MARGIN_X = 32;
-const float UI_MARGIN_Y = 32;
+const float UI_MARGIN_X = 24;
+const float UI_MARGIN_Y = 8;
 const float UI_SPACING = 8;
 
 // NUCLEUS MENU
