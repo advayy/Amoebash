@@ -481,7 +481,8 @@ enum class TEXTURE_ASSET_ID
 	BOSS_ARROW = BOSS_STAGE_4 + 1,
 	WINSCREEN = BOSS_ARROW + 1,
 	THERMOMETER = WINSCREEN + 1,
-	TEXTURE_COUNT = THERMOMETER + 1
+	CIRCLE = THERMOMETER + 1,
+	TEXTURE_COUNT = CIRCLE + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -501,7 +502,8 @@ enum class EFFECT_ASSET_ID
 	HEXAGON = DASH_UI + 1,
 	PARTICLE_EFFECT = HEXAGON + 1,
 	THERMOMETER_EFFECT = PARTICLE_EFFECT + 1,
-	EFFECT_COUNT = THERMOMETER_EFFECT + 1,
+	WEAPON_COOLDOWN_INDICATOR = THERMOMETER_EFFECT + 1,
+	EFFECT_COUNT = WEAPON_COOLDOWN_INDICATOR + 1,
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 
@@ -692,6 +694,10 @@ struct Particle
     float max_lifetime_ms = 2000.0f;
     float state_timer_ms = 0.0f;
     float speed_factor = 100.0f;
+};
+
+struct CooldownIndicator {
+    float cooldown;
 };
 
 // MACROS for "to_json" and "from_json" on user-defined structs

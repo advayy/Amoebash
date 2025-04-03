@@ -70,6 +70,7 @@ public:
 	ComponentContainer<DashRecharge> dashRecharges;
 	ComponentContainer<BuffUI> buffUIs;
 	ComponentContainer<ClickableBuff> clickableBuffs;
+	ComponentContainer<CooldownIndicator> cooldownIndicators;
 
 	// enemy behaviors
 	ComponentContainer<SpikeEnemyAI> spikeEnemyAIs;
@@ -145,6 +146,7 @@ public:
         registry_list.push_back(&clickableBuffs);
 		registry_list.push_back(&bossArrows);
 		registry_list.push_back(&thermometers);
+		registry_list.push_back(&cooldownIndicators);
 	}
 
 	void clear_all_components()

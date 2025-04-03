@@ -51,3 +51,5 @@ vec2 getBuffSlot (int buffType);
 void removeBuffUI(int buffType);
 vec2 getBuffSlot_uiPos (int buffType);
 void findAndRemove(std::vector<int>& vec, int N);
+
+Entity createWeaponCooldownIndicator();

@@ -755,6 +755,7 @@ void WorldSystem::restart_game()
 					EFFECT_ASSET_ID::UI);
 	createHealthBar();
 	createThermometer();
+	createWeaponCooldownIndicator();
 
 	for (int i = 0; i < registry.players.get(registry.players.entities[0]).max_dash_count; i++) {
 		createDashRecharge();
