@@ -618,13 +618,7 @@ void WorldSystem::goToNextLevel()
 	std::pair<int, int> playerPosition;
 
 	if (level != BOSS_LEVEL && level != FINAL_BOSS_LEVEL) {
-		createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
-		if (level == 2) {
-			std::vector<ivec2> path;
-			std::pair<int, int> enemyPosition = getRandomEmptyTile(registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map);
-			vec2 den_pos = gridCellToPosition({enemyPosition.second, enemyPosition.first});
-			createDenderite(renderer, den_pos, path);
-		}
+		createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition)
 	} else if (level == BOSS_LEVEL) {
 		createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
 		createBoss(renderer, gridCellToPosition({10, 10}));
