@@ -892,73 +892,108 @@ void RenderSystem::drawBuffUI()
 // INSTANCING: Draw instanced particles
 void RenderSystem::drawInstancedParticles()
 {
+    drawParticlesByTexture(TEXTURE_ASSET_ID::DEATH_PARTICLE);
+    drawParticlesByTexture(TEXTURE_ASSET_ID::PIXEL_PARTICLE);
+}
+
+void RenderSystem::drawParticlesByTexture(TEXTURE_ASSET_ID texture_id)
+{
 	// for debugging purposes, check for errors
 	while (glGetError() != GL_NO_ERROR)
 	{ /* clear errors */
 	}
 
-	if (registry.particles.size() == 0)
-		return;
+    if (registry.particles.size() == 0)
+        return;
+    
+    std::vector<mat3> instanceTransforms;
+	std::vector<float> instanceAlphas;
+	
+    for (uint i = 0; i < registry.particles.size(); i++)
+    {
+        Entity entity = registry.particles.entities[i];
+		
+		if (registry.renderRequests.has(entity)) {
+            RenderRequest& request = registry.renderRequests.get(entity);
+            if (request.used_texture != texture_id) {
+                continue;
+            }
+        } else {
+            continue; 
+        }
 
-	std::vector<mat3> instanceTransforms;
-	for (uint i = 0; i < registry.particles.size(); i++)
-	{
-		Entity entity = registry.particles.entities[i];
-		Motion &motion = registry.motions.get(entity);
-		Transform transform;
-		transform.translate(motion.position);
-		transform.scale(motion.scale);
-		transform.rotate(radians(motion.angle));
-		instanceTransforms.push_back(transform.mat);
-	}
+        Motion &motion = registry.motions.get(entity);
+        Transform transform;
+        transform.translate(motion.position);
+        transform.scale(motion.scale);
+        transform.rotate(radians(motion.angle));
+        instanceTransforms.push_back(transform.mat);
 
+		float alpha = 1.0f;
+        if (registry.particles.has(entity)) {
+            Particle& particle = registry.particles.get(entity);
+            if (particle.type == PARTICLE_TYPE::RIPPLE_PARTICLE) {
+                alpha = particle.lifetime_ms / particle.max_lifetime_ms;
+            }
+        }
+        instanceAlphas.push_back(alpha);
+    }
+    
 	// for debugging purposes
-	// std::cout << "[Particle Debug] Instance transforms count: " << instanceTransforms.size() << std::endl;
+    // std::cout << "[Particle Debug] Instance transforms count: " << instanceTransforms.size() << std::endl;
+		
+    if (instanceTransforms.empty())
+        return;
+    
+    // bind the default VAO
+    glBindVertexArray(default_vao);
+    
+    // bind the sprite geometry (base VBO) for particles
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffers[(uint)GEOMETRY_BUFFER_ID::SPRITE]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffers[(uint)GEOMETRY_BUFFER_ID::SPRITE]);
+    // set base vertex attrib pointers expected by particle_textured.vs.glsl:
+    glEnableVertexAttribArray(0); // in_position
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void*)0);
+    glEnableVertexAttribArray(1); // in_texcoord
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void*)sizeof(vec3));
+    
+    //  bind the instance VBO and update it
+    glBindBuffer(GL_ARRAY_BUFFER, particle_instance_vbo);
+    glBufferData(GL_ARRAY_BUFFER, instanceTransforms.size() * sizeof(mat3),
+                 instanceTransforms.data(), GL_DYNAMIC_DRAW);
+    
+    // setup instanced vertex attrib pointers for the mat3 (at locations 2, 3, and 4.)
+    for (int i = 0; i < 3; i++) {
+        GLuint attrib_location = 2 + i;
+        glEnableVertexAttribArray(attrib_location);
+        glVertexAttribPointer(attrib_location, 3, GL_FLOAT, GL_FALSE,
+                              sizeof(mat3), (void*)(sizeof(vec3) * i));
+        glVertexAttribDivisor(attrib_location, 1); // advance once per instance (super IMPORTANTT)
+    }
 
-	if (instanceTransforms.empty())
-		return;
-
-	// bind the default VAO
-	glBindVertexArray(default_vao);
-
-	// bind the sprite geometry (base VBO) for particles
-	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffers[(uint)GEOMETRY_BUFFER_ID::SPRITE]);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffers[(uint)GEOMETRY_BUFFER_ID::SPRITE]);
-	// set base vertex attrib pointers expected by particle_textured.vs.glsl:
-	glEnableVertexAttribArray(0); // in_position
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)0);
-	glEnableVertexAttribArray(1); // in_texcoord
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)sizeof(vec3));
-
-	//  bind the instance VBO and update it
-	glBindBuffer(GL_ARRAY_BUFFER, particle_instance_vbo);
-	glBufferData(GL_ARRAY_BUFFER, instanceTransforms.size() * sizeof(mat3),
-							 instanceTransforms.data(), GL_DYNAMIC_DRAW);
-
-	// setup instanced vertex attrib pointers for the mat3 (at locations 2, 3, and 4.)
-	for (int i = 0; i < 3; i++)
-	{
-		GLuint attrib_location = 2 + i;
-		glEnableVertexAttribArray(attrib_location);
-		glVertexAttribPointer(attrib_location, 3, GL_FLOAT, GL_FALSE,
-													sizeof(mat3), (void *)(sizeof(vec3) * i));
-		glVertexAttribDivisor(attrib_location, 1); // advance once per instance (super IMPORTANTT)
-	}
-
-	glActiveTexture(GL_TEXTURE0);
-	GLuint texture_id = texture_gl_handles[(uint)TEXTURE_ASSET_ID::PARTICLE];
-	glBindTexture(GL_TEXTURE_2D, texture_id);
-
-	// use the particle shader
-	glUseProgram(effects[(uint)EFFECT_ASSET_ID::PARTICLE_EFFECT]);
-
-	mat3 projection = createProjectionMatrix();
-	GLuint proj_loc = glGetUniformLocation(effects[(uint)EFFECT_ASSET_ID::PARTICLE_EFFECT], "projection");
-	glUniformMatrix3fv(proj_loc, 1, GL_FALSE, (float *)&projection);
-
-	// ise the stored sprite_index_count
-	GLsizei num_indices = sprite_index_count;
-
+    GLuint alpha_vbo;
+    glGenBuffers(1, &alpha_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, alpha_vbo);
+    glBufferData(GL_ARRAY_BUFFER, instanceAlphas.size() * sizeof(float),
+                 instanceAlphas.data(), GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(5);
+    glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
+    glVertexAttribDivisor(5, 1); 
+    
+    glActiveTexture(GL_TEXTURE0);
+	GLuint gl_texture_id = texture_gl_handles[(uint)texture_id];
+    glBindTexture(GL_TEXTURE_2D, gl_texture_id);
+    
+    // use the particle shader
+    glUseProgram(effects[(uint)EFFECT_ASSET_ID::PARTICLE_EFFECT]);
+    
+    mat3 projection = createProjectionMatrix();
+    GLuint proj_loc = glGetUniformLocation(effects[(uint)EFFECT_ASSET_ID::PARTICLE_EFFECT], "projection");
+    glUniformMatrix3fv(proj_loc, 1, GL_FALSE, (float *)&projection);
+    
+    // ise the stored sprite_index_count
+    GLsizei num_indices = sprite_index_count;
+    
 	// draw the instanced particles as a set
 	glDrawElementsInstanced(GL_TRIANGLES, num_indices,
 													GL_UNSIGNED_SHORT, nullptr, instanceTransforms.size());

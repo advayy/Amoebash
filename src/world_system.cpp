@@ -480,6 +480,10 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 		}
 	}
 	handleProjectiles(elapsed_ms_since_last_update);
+	// std::cout << "WS:step - f9" << std::endl;
+
+	handleRippleEffect(elapsed_ms_since_last_update);
+
 
     tileProceduralMap();
 
@@ -1580,6 +1584,8 @@ void WorldSystem::initiatePlayerDash()
 
 	// Change animation frames
 	toggleDashAnimation(player_e, true);
+
+	particle_system.createParticles(PARTICLE_TYPE::RIPPLE_PARTICLE, player_motion.position, 4);
 }
 
 bool WorldSystem::canDash()
@@ -1657,6 +1663,20 @@ void WorldSystem::tileProceduralMap() {
 	initializedMap = true;
 }
 
+void WorldSystem::handleRippleEffect(float elapsed_ms)
+{
+        
+    Entity player_entity = registry.players.entities[0];
+    Motion& player_motion = registry.motions.get(player_entity);
+    
+    static float ripple_timer = 0.0f;
+    ripple_timer += elapsed_ms;
+    
+    if (ripple_timer >= 5.0f) {
+        particle_system.createPlayerRipples(player_entity);
+        ripple_timer = 0.0f;
+    }
+}
 // M3 Feature JSON Saving and Loading
 // On click of the save button in Pause Screen we save the progress so far.
 // Such as Player Status, Position and Map along with the buffs and projectiles

@@ -71,6 +71,7 @@ class RenderSystem
 		textures_path("tutorial/leave.png"),
 		textures_path("projectiles/chest.png"),
 		textures_path("effects/germoney.png"),
+		textures_path("effects/pixel_particle.png"),
 		textures_path("weapons/gun.png"),
 		textures_path("weapons/pet_bacteriophage_still.png"),
 		textures_path("weapons/gun_projectile.png"),
@@ -169,6 +170,8 @@ public:
 
 	// INSTANCING: instanced particle drawing
 	void drawInstancedParticles();
+	void drawParticlesByTexture(TEXTURE_ASSET_ID texture_id);
+
 
 	// INSTANCING: instanced tile drawing
 	void drawInstancedTiles(const mat3 &projection);
