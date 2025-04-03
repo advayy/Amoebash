@@ -1905,11 +1905,22 @@ void WorldSystem::toggleFullscreen()
     
     if (is_fullscreen)
     {
-        // switch to fullscreen on primary monitor
         glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
-        
-        // update rendere
-        renderer->updateWindowSize(mode->width, mode->height);
+		renderer->updateWindowSize(mode->width, mode->height);
+
+		float aspect_ratio = 16.0/9.0;
+
+        // Calculate the correct aspect ratio size
+        float new_width = mode->width;
+        float new_height = mode->height;
+
+        int viewport_x = (mode->width - new_width) / 2;
+        int viewport_y = (mode->height - new_height) / 2;
+
+        glViewport(viewport_x, viewport_y, new_width, new_height);
+
+		WINDOW_WIDTH_PX = new_width;
+        WINDOW_HEIGHT_PX = new_height;
     }
     else
     {
@@ -1924,6 +1935,9 @@ void WorldSystem::toggleFullscreen()
         
         // update renderer with original window size
         renderer->updateWindowSize(original_width, original_height);
+
+		WINDOW_WIDTH_PX = original_width;
+        WINDOW_HEIGHT_PX = original_height;
     }
     
     // ensure the cursor behaves normally in both modes

@@ -96,16 +96,16 @@ void RenderSystem::updateWindowSize(int width, int height)
     float original_aspect_ratio = 640.0f / 360.0f;  // The original aspect ratio
     float current_aspect_ratio = (float)width / (float)height;
     
-    // xalculate dimensions that preserve aspect ratio (start screen fix)
-    if (current_aspect_ratio > original_aspect_ratio) {
-        // Width is proportionally larger, height constrains
-        WINDOW_HEIGHT_PX = height;
-        WINDOW_WIDTH_PX = height * original_aspect_ratio;
-    } else {
-        //hHeight is proportionally larger, width constrains
-        WINDOW_WIDTH_PX = width;
-        WINDOW_HEIGHT_PX = width / original_aspect_ratio;
-    }
+    // // xalculate dimensions that preserve aspect ratio (start screen fix)
+    // if (current_aspect_ratio > original_aspect_ratio) {
+    //     // Width is proportionally larger, height constrains
+    //     WINDOW_HEIGHT_PX = height;
+    //     WINDOW_WIDTH_PX = height * original_aspect_ratio;
+    // } else {
+    //     //hHeight is proportionally larger, width constrains
+    //     WINDOW_WIDTH_PX = width;
+    //     WINDOW_HEIGHT_PX = width / original_aspect_ratio;
+    // }
     
     // Reset default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

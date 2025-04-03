@@ -95,7 +95,7 @@ Entity createStartScreen(vec2 position)
 	bg_motion.position = WORLD_ORIGIN;
 	bg_motion.velocity = vec2(0.f,0.f);
 	bg_motion.angle = 0.f;
-	bg_motion.scale = BACKGROUND_SCALE;
+	bg_motion.scale = {WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX};
 	
 	Start &start = registry.starts.emplace(startScreenEntity);
 	GameScreen &screen = registry.gameScreens.emplace(startScreenEntity);
@@ -118,7 +118,7 @@ Entity createStartScreen(vec2 position)
 	Motion &logo_motion = registry.motions.emplace(startScreenLogoEntity);
 	logo_motion.position = position;
 	logo_motion.scale = {LOGO_WIDTH_PX, LOGO_HEIGHT_PX};
-	logo_motion.velocity = {WINDOW_WIDTH_PX / 2.f / BOOT_CUTSCENE_DURATION_MS * MS_PER_S, 0.f};
+	logo_motion.velocity = {BACKGROUND_SCALE.x / 2.f / BOOT_CUTSCENE_DURATION_MS * MS_PER_S, 0.f};
 
 	start.logo = startScreenLogoEntity;
 

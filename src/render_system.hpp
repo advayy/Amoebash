@@ -7,6 +7,7 @@
 #include "tinyECS/components.hpp"
 #include "tinyECS/tiny_ecs.hpp"
 
+
 // System responsible for setting up OpenGL and for rendering all the
 // visual entities in the game
 class RenderSystem
