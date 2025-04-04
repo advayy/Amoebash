@@ -3,7 +3,6 @@
 #include "ai_system.hpp"
 #include "world_init.hpp"
 #include "animation_system.hpp"
-
 // include lerp
 #include <glm/gtx/compatibility.hpp>
 
@@ -74,7 +73,7 @@ SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity& enemyEntity, SpikeEne
                     Enemy& enemy = registry.enemies.get(enemyEntity);
                     enemy.health = 0;
                     Player &player = registry.players.get(registry.players.entities[0]);
-                    player.current_health -= SPIKE_ENEMY_BOMB_DAMAGE;
+					damagePlayer(SPIKE_ENEMY_BOMB_DAMAGE);
                     applyVignetteEffect();
                 }
             }

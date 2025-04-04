@@ -48,3 +48,5 @@ void emptyMiniMap();
 void applyVignetteEffect();
 void clearVignetteEffect();
     
+void damagePlayer(float damageAmount);
+int getRandomBuffType();

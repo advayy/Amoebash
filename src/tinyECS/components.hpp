@@ -54,7 +54,8 @@ struct Player
 	int dash_damage = PLAYER_DASH_DAMAGE;
 	float healing_rate = PLAYER_BASE_HEALING_RATE;
 	float healing_timer_ms = PLAYER_DEFAULT_HEALING_TIMER_MS;
-	
+	float default_healing_timer = PLAYER_DEFAULT_HEALING_TIMER_MS;
+
 	// Active cooldown timer and the default cooldown time
 	int dash_count = DASH_RECHARGE_COUNT;
 	int max_dash_count = DASH_RECHARGE_COUNT;
@@ -64,6 +65,19 @@ struct Player
 	float dash_speed = PLAYER_DASH_SPEED;
 	float dash_range = PLAYER_DASH_RANGE;
 
+	float minimapViewRange = 3.0;
+	float dashDecay = VELOCITY_DECAY_RATE;
+
+	int sheilds = 0;
+
+	float gun_projectile_damage = GUN_PROJECTILE_DAMAGE;
+	int bulletsPerShot = 1;
+	float angleConeRadius = 30;
+	float bulletSpeed = GUN_PROJECTILE_SPEED;
+
+	int extra_lives = 0;
+
+
 	// Detection range for enemies
 	float detection_range = 1.0f;
 
@@ -71,6 +85,8 @@ struct Player
 
 	vec2 grid_position = {0, 0};
 	std::vector<int> buffsCollected;
+
+	float dangerFactor = DEFAULT_DANGER_LEVEL;
 };
 
 struct Dashing
@@ -108,6 +124,8 @@ enum class tileType {
 	WALL = 1,
     PORTAL = 2
 };
+
+struct Thermometer {};
 
 struct ProceduralMap {
 	// 2D array of numbers representing the map
@@ -294,7 +312,7 @@ enum ScreenType
 	NUCLEUS = SHOP + 1,
 	GAMEOVER = NUCLEUS + 1,
 	PAUSE = GAMEOVER + 1,
-    NEXT_LEVEL = PAUSE + 1
+    NEXT_LEVEL = PAUSE + 1,
 };
 
 struct GameScreen
@@ -449,8 +467,9 @@ enum class TEXTURE_ASSET_ID
 	RESTART_INFO = ENEMY_INFO + 1,
 	LEAVE_TUTORIAL = RESTART_INFO + 1,
 	CHEST = LEAVE_TUTORIAL + 1,
-	PARTICLE = CHEST + 1,
-	GUN = PARTICLE + 1,
+	DEATH_PARTICLE = CHEST + 1,
+	PIXEL_PARTICLE = DEATH_PARTICLE + 1,
+	GUN = PIXEL_PARTICLE + 1,
 	GUN_STILL = GUN + 1,
 	GUN_PROJECTILE = GUN_STILL + 1,
 	BOSS_PROJECTILE = GUN_PROJECTILE + 1,
@@ -461,7 +480,9 @@ enum class TEXTURE_ASSET_ID
 	BOSS_STAGE_3 = BOSS_STAGE_2 + 1,
 	BOSS_STAGE_4 = BOSS_STAGE_3 + 1,
 	BOSS_ARROW = BOSS_STAGE_4 + 1,
-	TEXTURE_COUNT = BOSS_ARROW + 1
+	WINSCREEN = BOSS_ARROW + 1,
+	THERMOMETER = WINSCREEN + 1,
+	TEXTURE_COUNT = THERMOMETER + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -480,8 +501,8 @@ enum class EFFECT_ASSET_ID
 	DASH_UI = HEALTH_BAR + 1,
 	HEXAGON = DASH_UI + 1,
 	PARTICLE_EFFECT = HEXAGON + 1,
-	EFFECT_COUNT = PARTICLE_EFFECT + 1,
-
+	THERMOMETER_EFFECT = PARTICLE_EFFECT + 1,
+	EFFECT_COUNT = THERMOMETER_EFFECT + 1,
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 
@@ -652,6 +673,7 @@ enum class PARTICLE_TYPE
 {
     DEATH_PARTICLE = 0,
     // add more particle types here
+	RIPPLE_PARTICLE = 1,
     PARTICLE_TYPE_COUNT
 };
 
