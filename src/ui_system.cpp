@@ -262,8 +262,8 @@ Entity createNucleusMenuScreen() {
 	Camera &camera = registry.cameras.components[0];
 	motion.position = camera.position;
 
-	Entity nextButtonEntity = createNextButton(vec2({origin_position.x + 180, origin_position.y + NUCLEUS_MENU_NUCLEUS_HEIGHT}));
-	o.buttons = {nextButtonEntity};
+	Entity proceedButtonEntity = createProceedButton(vec2({origin_position.x + 180, origin_position.y + NUCLEUS_MENU_NUCLEUS_HEIGHT}));
+	o.buttons = {proceedButtonEntity};
 
 
 	if(p.slots_unlocked == 1) { // upgrade 1...
@@ -390,15 +390,19 @@ Entity createPauseScreen()
 	motion.position = camera.position;
 	motion.scale = scale;
 
-	vec2 buttonPosition = camera.position + vec2(0, 100.f);
+	vec2 saveButtonPosition = camera.position + vec2(-BACK_BUTTON_SCALE.x/2.0f - WORK_SCALE_FACTOR * UI_MARGIN_X, -WINDOW_HEIGHT_PX/2.0f + WORK_SCALE_FACTOR* UI_MARGIN_Y);
+	vec2 resumeButtonPosition = camera.position + vec2(BACK_BUTTON_SCALE.x/2.0f + WORK_SCALE_FACTOR * UI_MARGIN_X, -WINDOW_HEIGHT_PX/2.0f + WORK_SCALE_FACTOR* UI_MARGIN_Y);
 
-	
+	Entity saveButtonEntity = createSaveButton(saveButtonPosition);
+	Entity resumeButtonEntity = createResumeButton(resumeButtonPosition);
 
-	Entity saveButtonEntity = createButton(ButtonType::SAVEBUTTON, buttonPosition, BACK_BUTTON_SCALE, TEXTURE_ASSET_ID::BACK_BUTTON);
 	
 	ButtonType type = registry.buttons.get(saveButtonEntity).type;
+	ButtonType resumeType = registry.buttons.get(resumeButtonEntity).type;
 
 	Pause &saveButton = registry.pauses.emplace(saveButtonEntity);
+	Pause &resumeButton = registry.pauses.emplace(resumeButtonEntity);
+	
 
 	return pauseScreenEntity;
 }
@@ -740,7 +744,7 @@ Entity createStartButton()
 	return createButton(ButtonType::STARTBUTTON,
 						position,
 						scale,
-						TEXTURE_ASSET_ID::BUTTON);
+						TEXTURE_ASSET_ID::START_BUTTON);
 }
 
 Entity createShopButton()
@@ -769,19 +773,41 @@ Entity createBackButton() {
 	vec2 scale = BACK_BUTTON_SCALE;
 	vec2 position = BACK_BUTTON_COORDINATES;
 
+	for (auto e : registry.buttons.entities) {
+			registry.buttons.remove(e);
+	}
+
 	return createButton(ButtonType::BACKBUTTON,
 						position,
 						scale,
 						TEXTURE_ASSET_ID::BACK_BUTTON);
 }
 
-Entity createNextButton(vec2 position) {
-	vec2 scale = BACK_BUTTON_SCALE;
+Entity createProceedButton(vec2 position) {
+	vec2 scale = PROCEED_BUTTON_SCALE;
 
-	return createButton(ButtonType::PROCEED_BUTTON,
+	return createButton(ButtonType::PROCEEDBUTTON,
 						position,
 						scale,
-						TEXTURE_ASSET_ID::BACK_BUTTON);
+						TEXTURE_ASSET_ID::PROCEED_BUTTON);
+}
+
+Entity createResumeButton(vec2 position) {
+	vec2 scale = RESUME_BUTTON_SCALE;
+
+	return createButton(ButtonType::RESUMEBUTTON,
+						position,
+						scale,
+						TEXTURE_ASSET_ID::RESUME_BUTTON);
+}
+
+Entity createSaveButton(vec2 position) {
+	vec2 scale = SAVE_BUTTON_SCALE;
+
+	return createButton(ButtonType::SAVEBUTTON,
+						position,
+						scale,
+						TEXTURE_ASSET_ID::SAVE_BUTTON);
 }
 
 Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, EFFECT_ASSET_ID effect_id)

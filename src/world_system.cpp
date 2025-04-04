@@ -1183,9 +1183,61 @@ void WorldSystem::on_mouse_move(vec2 mouse_position)
 	// record the current mouse position
 	device_mouse_pos_x = mouse_position.x;
 	device_mouse_pos_y = mouse_position.y;
+
+	for (Entity button_entity : registry.buttons.entities) {
+	screenButton &button = registry.buttons.get(button_entity);
+
+	RenderRequest &request = registry.renderRequests.get(button_entity);
+	if (button.type == ButtonType::STARTBUTTON && registry.renderRequests.has(button_entity)) {
+		if (isButtonClicked(button)) {
+			request.used_texture = TEXTURE_ASSET_ID::START_BUTTON_ON_HOVER;
+		} else {
+			request.used_texture = TEXTURE_ASSET_ID::START_BUTTON;
+		}
+	} else if (button.type == ButtonType::SHOPBUTTON && registry.renderRequests.has(button_entity)) {
+		if (isButtonClicked(button)) {
+			request.used_texture = TEXTURE_ASSET_ID::SHOP_BUTTON_ON_HOVER;
+		} else {
+			request.used_texture = TEXTURE_ASSET_ID::SHOP_BUTTON;
+		}
+	} else if (button.type == ButtonType::INFOBUTTON && registry.renderRequests.has(button_entity)) {
+		if (isButtonClicked(button)) {
+			request.used_texture = TEXTURE_ASSET_ID::INFO_BUTTON_ON_HOVER;
+		} else {
+			request.used_texture = TEXTURE_ASSET_ID::INFO_BUTTON;
+		}
+	} else if (button.type == ButtonType::BACKBUTTON && registry.renderRequests.has(button_entity)) {
+		if (isButtonClicked(button)) {
+			// std::cout << "Hovering over button type: " << static_cast<int>(button.type) << std::endl; //debug
+			request.used_texture = TEXTURE_ASSET_ID::BACK_BUTTON_ON_HOVER;
+		} else {
+			request.used_texture = TEXTURE_ASSET_ID::BACK_BUTTON;
+		}
+	} else if (button.type == ButtonType::SAVEBUTTON && registry.renderRequests.has(button_entity)) {
+		if (isButtonClicked(button)) {
+			request.used_texture = TEXTURE_ASSET_ID::SAVE_BUTTON_ON_HOVER;
+		} else {
+			request.used_texture = TEXTURE_ASSET_ID::SAVE_BUTTON;
+		}
+	} else if (button.type == ButtonType::PROCEEDBUTTON && registry.renderRequests.has(button_entity)) {
+		if (isButtonClicked(button)) {
+
+			request.used_texture = TEXTURE_ASSET_ID::PROCEED_BUTTON_ON_HOVER;
+		} else {
+			request.used_texture = TEXTURE_ASSET_ID::PROCEED_BUTTON;
+		}
+	} else if (button.type == ButtonType::RESUMEBUTTON && registry.renderRequests.has(button_entity)) {
+		if (isButtonClicked(button)) {
+			request.used_texture = TEXTURE_ASSET_ID::RESUME_BUTTON_ON_HOVER;
+		} else {
+			request.used_texture = TEXTURE_ASSET_ID::RESUME_BUTTON;
+		}
+	}
 	
 	updateMouseCoords();
+	}	
 }
+
 
 ButtonType WorldSystem::getClickedButton()
 {
@@ -1264,6 +1316,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		{
 			if (getClickedButton() == ButtonType::BACKBUTTON)
 			{
+				Mix_PlayChannel(-1, click_sound, 0);
 				removeShopScreen();
 				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
@@ -1273,9 +1326,9 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		}
 		else if (current_state == GameState::INFO && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
-			Mix_PlayChannel(-1, click_sound, 0);
 			if (getClickedButton() == ButtonType::BACKBUTTON)
 			{
+				Mix_PlayChannel(-1, click_sound, 0);
 				removeInfoScreen();
 				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
@@ -1288,8 +1341,9 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		{
 			Entity e;
 
-			if (getClickedButton() == ButtonType::PROCEED_BUTTON)
+			if (getClickedButton() == ButtonType::PROCEEDBUTTON)
 			{
+				Mix_PlayChannel(-1, click_sound, 0);
 				previous_state = current_state;
 				current_state = GameState::START_SCREEN_ANIMATION;
 				moveSelectedBuffsToProgression();
@@ -1298,17 +1352,25 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 
 			}
 			else if (isClickableBuffClicked(&e)) {
+				Mix_PlayChannel(-1, click_sound, 0);
 				handleClickableBuff(e);
 			}
 		}
 		else if (current_state == GameState::PAUSE && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
-			if (level < BOSS_LEVEL && !progress_map["tutorial_mode"]) {
-				if (getClickedButton() == ButtonType::SAVEBUTTON)
-				{
+			if (getClickedButton() == ButtonType::SAVEBUTTON)
+			{
+				Mix_PlayChannel(-1, click_sound, 0);
+				if (level < BOSS_LEVEL && !progress_map["tutorial_mode"]) {
 					saveGame();
 					saveProgress();
 				}
+			}
+			else if (getClickedButton() == ButtonType::RESUMEBUTTON){
+				Mix_PlayChannel(-1, click_sound, 0);
+				current_state = GameState::GAME_PLAY;
+				removePauseScreen();
+				Mix_ResumeMusic(); // Resume music
 			}
 		}
 
