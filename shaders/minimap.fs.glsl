@@ -24,18 +24,21 @@ uniform int map_visited_array[400];
 vec4 procColor() {
     vec4 fcolor = vec4(0.5, 0.0, 0.0, 0.25);
     
+    int iX = int(texcoord.y * float(map_width));
+    int iY = int(texcoord.x * float(map_height));
+    int index = iX + iY * map_width;
 
-	int index = int(texcoord.y * float(map_width)) + int(texcoord.x * float(map_height)) * map_width;
-    
-	if (map_visited_array[index] == 0) {
-		fcolor = vec4(0.0, 0.0, 0.0, 0.0);
-	} else {
-		if (map_array[index] == 1) {
-        	fcolor = vec4(0.75, 0.75, 0.75, 1.0);
-    	} else if (map_array[index] == 2) {
-        	fcolor = vec4(1.0, 1.0, 0.0, 1.0);
-    	}
-	}
+    if (iX == 0 || iX == map_width - 1 || iY == 0 || iY == map_height - 1) {
+        fcolor = vec4(0.75, 0.75, 0.75, 1.0);
+    } else if (map_visited_array[index] == 0) {
+        fcolor = vec4(0.0, 0.0, 0.0, 0.0);
+    } else {
+        if (map_array[index] == 1) {
+            fcolor = vec4(0.75, 0.75, 0.75, 1.0);
+        } else if (map_array[index] == 2) {
+            fcolor = vec4(1.0, 1.0, 0.0, 1.0);
+        }
+    }
 
     return fcolor;
 }

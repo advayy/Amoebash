@@ -26,7 +26,7 @@ namespace nlohmann {
 }
 
 struct Progression {
-	std::vector<int> buffsFromLastRun;
+	std::unordered_map<int, int> buffsFromLastRun;
 	std::vector<int> pickedInNucleus;
 	int slots_unlocked = 9;
 };
@@ -84,9 +84,20 @@ struct Player
 	float knockback_duration = 0.0f;
 
 	vec2 grid_position = {0, 0};
-	std::vector<int> buffsCollected;
+	// std::vector<int> buffsCollected;
+    std::unordered_map<int, int> buffsCollected;
+
+    int germoney_count = 0;
 
 	float dangerFactor = DEFAULT_DANGER_LEVEL;
+};
+
+struct Text
+{
+	std::string text;
+	float scale;
+	vec2 position;
+	vec3 color;
 };
 
 struct Dashing
@@ -222,8 +233,9 @@ extern Debug debugging;
 // Sets the brightness of the screen
 struct ScreenState
 {
-	float darken_screen_factor = -1;
-	float vignette_screen_factor = -1;
+	float darken_screen_factor = -1.f;
+	float vignette_screen_factor = 0.f;
+    float vignette_timer_ms = 0.f;
 };
 
 // A struct to refer to debugging graphics in the ECS
@@ -282,10 +294,11 @@ enum ButtonType
 	STARTBUTTON = 0,
 	SHOPBUTTON = STARTBUTTON + 1,
 	INFOBUTTON = SHOPBUTTON + 1,
-	BACKBUTTON = INFOBUTTON,
+	BACKBUTTON = INFOBUTTON + 1,
 	SAVEBUTTON = BACKBUTTON + 1,
-	PROCEED_BUTTON = SAVEBUTTON + 1,
-	NONE = PROCEED_BUTTON + 1
+	PROCEEDBUTTON = SAVEBUTTON + 1,
+	RESUMEBUTTON = PROCEEDBUTTON + 1,
+	NONE = RESUMEBUTTON + 1
 };
 
 // Coordinates and bounding box of start button on start screen
@@ -440,7 +453,8 @@ enum class TEXTURE_ASSET_ID
 	BUTTON = GAMEOVER + 1,
 	PAUSE = BUTTON + 1,
 	SHOP_BUTTON = PAUSE + 1,
-	NUCLEUS = SHOP_BUTTON + 1,
+	SHOP_BUTTON_ON_HOVER = SHOP_BUTTON + 1,
+	NUCLEUS = SHOP_BUTTON_ON_HOVER + 1,
 	SHOPSCREEN = NUCLEUS + 1,
 	INFOSCREEN = SHOPSCREEN + 1,
 	WALL_TILE = INFOSCREEN + 1,
@@ -454,9 +468,10 @@ enum class TEXTURE_ASSET_ID
 	GERMONEY_UI = DASH_UI + 1,
 	WEAPON_PILL_UI = GERMONEY_UI + 1,
 	INFO_BUTTON = WEAPON_PILL_UI + 1,
-	START_SCREEN_BG = INFO_BUTTON + 1,
-	BACK_BUTTON = START_SCREEN_BG + 1,
-	KEY = BACK_BUTTON + 1,
+	INFO_BUTTON_ON_HOVER = INFO_BUTTON + 1,
+	START_SCREEN_BG = INFO_BUTTON_ON_HOVER + 1,
+	OUTLINE_BUTTON = START_SCREEN_BG + 1,
+	KEY = OUTLINE_BUTTON + 1,
 	BUFFS_SHEET = KEY + 1,
 	PORTAL = BUFFS_SHEET + 1,
 	MOUSE_CONTROL_INFO = PORTAL + 1,
@@ -478,7 +493,17 @@ enum class TEXTURE_ASSET_ID
 	BOSS_STAGE_2 = BOSS_STAGE_1 + 1,
 	BOSS_STAGE_3 = BOSS_STAGE_2 + 1,
 	BOSS_STAGE_4 = BOSS_STAGE_3 + 1,
-	BOSS_ARROW = BOSS_STAGE_4 + 1,
+	START_BUTTON = BOSS_STAGE_4 + 1,
+	START_BUTTON_ON_HOVER = START_BUTTON + 1,
+	BACK_BUTTON = START_BUTTON_ON_HOVER + 1,
+	BACK_BUTTON_ON_HOVER = BACK_BUTTON + 1,
+	PROCEED_BUTTON = BACK_BUTTON_ON_HOVER + 1,
+	PROCEED_BUTTON_ON_HOVER = PROCEED_BUTTON + 1,
+	SAVE_BUTTON = PROCEED_BUTTON_ON_HOVER + 1,
+	SAVE_BUTTON_ON_HOVER = SAVE_BUTTON + 1,
+	RESUME_BUTTON = SAVE_BUTTON_ON_HOVER + 1,
+	RESUME_BUTTON_ON_HOVER = RESUME_BUTTON + 1,
+	BOSS_ARROW = RESUME_BUTTON_ON_HOVER + 1,
 	WINSCREEN = BOSS_ARROW + 1,
 	THERMOMETER = WINSCREEN + 1,
 	CIRCLE = THERMOMETER + 1,
@@ -501,9 +526,11 @@ enum class EFFECT_ASSET_ID
 	DASH_UI = HEALTH_BAR + 1,
 	HEXAGON = DASH_UI + 1,
 	PARTICLE_EFFECT = HEXAGON + 1,
-	THERMOMETER_EFFECT = PARTICLE_EFFECT + 1,
+    FONT = PARTICLE_EFFECT + 1,
+    THERMOMETER_EFFECT = FONT + 1,
 	WEAPON_COOLDOWN_INDICATOR = THERMOMETER_EFFECT + 1,
 	EFFECT_COUNT = WEAPON_COOLDOWN_INDICATOR + 1,
+
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 
@@ -611,6 +638,12 @@ enum class SpikeEnemyState
 struct SpikeEnemyAI : EnemyAI
 {
 	SpikeEnemyState state = SpikeEnemyState::PATROLLING;
+	
+	// Simple position tracking for collision detection
+	float previousPositionX = 0.0f;
+	bool hasPreviousPosition = false;
+	
+	float bombTimer = SPIKE_ENEMY_BOMB_TIMER;
 };
 
 enum class RBCEnemyState

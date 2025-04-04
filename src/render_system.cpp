@@ -274,6 +274,9 @@ void RenderSystem::setUpDefaultProgram(Entity &entity, const RenderRequest &rend
 // then draw the intermediate texture
 void RenderSystem::drawToScreen()
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	// Setting shaders
 	// get the vignette texture, sprite mesh, and program
 	glUseProgram(effects[(GLuint)EFFECT_ASSET_ID::VIGNETTE]);
@@ -447,6 +450,8 @@ void RenderSystem::draw()
 		drawTexturedMesh(pause, projection_2D);
 	}
 
+    drawText();
+
 	// INSTANCING: Draw instanced particles
 	drawInstancedParticles();
 
@@ -457,6 +462,74 @@ void RenderSystem::draw()
 	// flicker-free display with a double buffer
 	glfwSwapBuffers(window);
 	gl_has_errors();
+}
+
+vec2 worldToScreen(vec2 world_pos) {
+    Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+    float x = WINDOW_WIDTH_PX / 2.f - (camera.position.x - world_pos.x);
+    float y = WINDOW_HEIGHT_PX / 2.f - (world_pos.y - camera.position.y);
+    return {x, y};
+}
+
+void RenderSystem::drawText() {
+    drawBuffCountText();
+    drawDangerFactorText();
+    drawGermoneyText();
+}
+
+void RenderSystem::drawBuffCountText() {
+        for (auto entity : registry.buffUIs.entities) {
+        BuffUI &buffUI = registry.buffUIs.get(entity);
+        Motion &motion = registry.motions.get(entity);
+
+        vec2 screen_pos = worldToScreen(motion.position);
+
+        int buffCount = registry.players.get(registry.players.entities[0]).buffsCollected[buffUI.buffType];
+        if (buffCount > 0) {
+            renderText(std::to_string(buffCount), screen_pos.x + 5.f, screen_pos.y - 15.f, .4f, vec3(1.f, 1.f, 1.f));
+        } else {
+            continue;
+        }
+    }
+}
+
+void RenderSystem::drawDangerFactorText() {
+    Player &player = registry.players.get(registry.players.entities[0]);
+    float dangerLevel = player.dangerFactor;
+
+    std::string dangerText = "";
+    if (dangerLevel < 1.5f) {
+        dangerText = "Undetected";
+    } else if (dangerLevel < 2.5f) {
+        dangerText = "Detected";
+    } else if (dangerLevel < 3.5f) {
+        dangerText = "Threatned";
+    } else if (dangerLevel < 4.5f) {
+        dangerText = "Immunoresponse";
+    } else {
+        dangerText = "Meltdown!";
+    }
+
+    Motion& motion = registry.motions.get(registry.thermometers.entities[0]);
+    vec2 screen_pos = worldToScreen(motion.position);
+    screen_pos.x -= THERMOMETER_WIDTH * .6f;
+    screen_pos.y -= THERMOMETER_HEIGHT * .55f;
+
+    renderText(dangerText, screen_pos.x, screen_pos.y, .3f, vec3(1.f, 1.f, 1.f));
+}
+
+void RenderSystem::drawGermoneyText() {
+    Player &player = registry.players.get(registry.players.entities[0]);
+    int germoney_count = player.germoney_count;
+
+    vec2 screen_pos;
+    if (germoney_count >= 10) {
+        screen_pos = vec2(WINDOW_WIDTH_PX * .095f, WINDOW_HEIGHT_PX * .0685f);
+    } else {
+        screen_pos = vec2(WINDOW_WIDTH_PX * .0975f, WINDOW_HEIGHT_PX * .0685f);
+    }
+
+    renderText(std::to_string(player.germoney_count), screen_pos.x, screen_pos.y, .4f, vec3(1.f, 1.f, 1.f));
 }
 
 mat3 RenderSystem::createProjectionMatrix()
@@ -512,7 +585,7 @@ void RenderSystem::drawInfoScreen()
 void RenderSystem::drawGameOverScreen()
 {
 	std::vector<ButtonType> buttons = {
-			ButtonType::PROCEED_BUTTON}; // ACTS as a next button
+			ButtonType::PROCEEDBUTTON}; // ACTS as a next button
 
 	drawScreenAndButtons(ScreenType::GAMEOVER, buttons);
 }
@@ -528,6 +601,8 @@ void RenderSystem::drawScreenAndButtons(
 		ScreenType screenType,
 		const std::vector<ButtonType> &buttonTypes)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
 
 	int w, h;
 	glfwGetFramebufferSize(window, &w, &h);
@@ -613,7 +688,6 @@ void RenderSystem::drawScreenAndButtons(
 
 void RenderSystem::drawCutScreneAnimation()
 {
-
 	int w, h;
 	glfwGetFramebufferSize(window, &w, &h);
 	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
@@ -694,6 +768,9 @@ void RenderSystem::drawUI(Entity entity, const mat3 &projection)
 
 void RenderSystem::drawUIElements()
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	if (registry.uiElements.size() == 0)
 		return;
 
@@ -710,6 +787,9 @@ void RenderSystem::drawUIElements()
 
 void RenderSystem::drawHexagon(Entity entity, const mat3 &projection)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	if (!registry.keys.has(entity) && !registry.chests.has(entity))
 	{
 		return;
@@ -774,6 +854,9 @@ void RenderSystem::drawHexagon(Entity entity, const mat3 &projection)
 
 void RenderSystem::drawHealthBar(Entity entity, const mat3 &projection)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	if (!registry.healthBars.has(entity))
 		return;
 
@@ -841,6 +924,9 @@ void RenderSystem::drawHealthBar(Entity entity, const mat3 &projection)
 
 void RenderSystem::drawDashRecharge(const mat3 &projection)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	if (registry.dashes.size() == 0)
 	{
 		return;
@@ -907,6 +993,9 @@ void RenderSystem::drawDashRecharge(const mat3 &projection)
 
 void RenderSystem::drawBuffUI()
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	if (registry.buffUIs.size() == 0)
 		return;
 
@@ -931,6 +1020,9 @@ void RenderSystem::drawInstancedParticles()
 
 void RenderSystem::drawParticlesByTexture(TEXTURE_ASSET_ID texture_id)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+    
 	// for debugging purposes, check for errors
 	while (glGetError() != GL_NO_ERROR)
 	{ /* clear errors */
@@ -1052,6 +1144,8 @@ struct TileInstance
 
 void RenderSystem::drawInstancedTiles(const mat3 &projection)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
 
 	// group tile instances by texture used.
 	std::unordered_map<GLuint, std::vector<TileInstance>> groups;
@@ -1206,4 +1300,68 @@ void RenderSystem::drawGunCooldownIndicator(const vec2& camera_position, const m
     GLsizei num_indices = size / sizeof(uint16_t);
     glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
     gl_has_errors();
+}
+
+
+void RenderSystem::renderText(std::string text, float x, float y, float scale, const glm::vec3& color)
+{
+    glm::mat4 trans = glm::mat4(1.0f);
+
+    // ENABLE BLENDING
+    glEnable(GL_BLEND);
+
+    // activate corresponding render state
+    glUseProgram(m_font_shaderProgram);
+
+    GLint textColor_location = glGetUniformLocation(m_font_shaderProgram, "textColor");
+    assert(textColor_location > -1);
+    // std::cout << "textColor_location: " << textColor_location << std::endl;
+    glUniform3f(textColor_location, color.x, color.y, color.z);
+
+    auto transformLoc = glGetUniformLocation(m_font_shaderProgram, "transform");
+    // std::cout << "transformLoc: " << transformLoc << std::endl;
+    assert(transformLoc > -1);
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+
+    glBindVertexArray(m_font_VAO);
+
+    // iterate through each character
+    std::string::const_iterator c;
+    for (c = text.begin(); c != text.end(); c++)
+    {
+        Character ch = m_ftCharacters[*c];
+
+        float xpos = x + ch.Bearing.x * scale;
+        float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+
+        float w = ch.Size.x * scale;
+        float h = ch.Size.y * scale;
+
+        float vertices[6][4] = {
+            { xpos,     ypos + h,   0.0f, 0.0f },
+            { xpos,     ypos,       0.0f, 1.0f },
+            { xpos + w, ypos,       1.0f, 1.0f },
+
+            { xpos,     ypos + h,   0.0f, 0.0f },
+            { xpos + w, ypos,       1.0f, 1.0f },
+            { xpos + w, ypos + h,   1.0f, 0.0f }
+        };
+
+        // render glyph texture over quad
+        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+        // std::cout << "binding texture: " << ch.character << " = " << ch.TextureID << std::endl;
+
+        // update content of VBO memory
+        glBindBuffer(GL_ARRAY_BUFFER, m_font_VBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        // render quad
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        // advance to next glyph (note that advance is number of 1/64 pixels)
+        x += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
+    }
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
