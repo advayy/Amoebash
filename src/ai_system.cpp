@@ -202,44 +202,73 @@ BacteriophageState AISystem::handleBacteriophageBehavior(Entity& enemyEntity, Ba
 	{
 	case BacteriophageState::PATROLLING:
 	{
-		// if player is detected, transition to chasing state
+		// if player is detected, transition to chasing state with smooth transition
 		if (playerDetected)
 		{
 			enemyBehavior.state = BacteriophageState::CHASING;
-			enemyMotion.angle = atan2(directionToPlayer.y, directionToPlayer.x) * (180.0f / M_PI) + 90;
-			vec2 direction = glm::normalize(positionToReach - enemyMotion.position);
-			enemyMotion.velocity = direction * ENEMY_SPEED;
+			
+			// Start with a half-speed movement for smoother transition
+			vec2 moveDirection = glm::normalize(positionToReach - enemyMotion.position);
+			enemyMotion.velocity = moveDirection * (ENEMY_SPEED * 0.5f);
 		}
 		else
-		{	// else it stays still
-			enemyMotion.velocity = { 0, 0 };
+		{
+			// add slight floating motion even when idleto make it more alive and avoid jitter
+			float time = static_cast<float>(glfwGetTime() * 0.5f);
+			enemyMotion.velocity.x = sin(time + enemyBehavior.placement_index) * 10.0f;
+			enemyMotion.velocity.y = cos(time * 1.3f + enemyBehavior.placement_index) * 10.0f;
 		}
 		break;
 	}
 	case BacteriophageState::CHASING:
-
-		// if player is no longer detected, transition back to patrolling state
+	{
+		// if player is no longer detected, decelerate smoothly
 		if (!playerDetected)
 		{
 			enemyBehavior.state = BacteriophageState::PATROLLING;
-			enemyMotion.angle = 0.0f;
-			enemyMotion.velocity = { 0, 0 };
+			enemyMotion.velocity *= 0.5f; // Gradual slow down instead of abrupt stop
 		}
-		
-		// if player is detected, chase player and maintain distance
-		else if (glm::distance(enemyMotion.position, positionToReach) > 1)
-		{
-			vec2 direction = glm::normalize(positionToReach - enemyMotion.position);
-			enemyMotion.angle = atan2(directionToPlayer.y, directionToPlayer.x) * (180.0f / M_PI) + 90;
-			enemyMotion.velocity = direction * ENEMY_SPEED;
-		}
-
-		// adjust angle
 		else
 		{
-			enemyMotion.velocity = { 0, 0 };
-			enemyMotion.angle = atan2(directionToPlayer.y, directionToPlayer.x) * (180.0f / M_PI) + 90;
+	
+			float distanceToTarget = glm::distance(enemyMotion.position, positionToReach);
+			
+			// mmooth rotation towards target 
+			float targetAngle = atan2(directionToPlayer.y, directionToPlayer.x) * (180.0f / M_PI) + 90;
+			float currentAngle = enemyMotion.angle;
+			
+			if (targetAngle - currentAngle > 180.0f) targetAngle -= 360.0f;
+			if (targetAngle - currentAngle < -180.0f) targetAngle += 360.0f;
+			
+			// Interpolate toward plauer
+			enemyMotion.angle = glm::mix(currentAngle, targetAngle, 0.1f);
+			
+			// Ddynamic speed based on distance to target (drifting ishh)
+			if (distanceToTarget > 150.0f) {
+				// Far away - move at full speed
+				vec2 moveDirection = glm::normalize(positionToReach - enemyMotion.position);
+				enemyMotion.velocity = moveDirection * ENEMY_SPEED;
+			}
+			else if (distanceToTarget > 30.0f) {
+				// Medium distance - scale speed down proportionally
+				float speedFactor = glm::min(distanceToTarget / 150.0f, 1.0f);
+				vec2 moveDirection = glm::normalize(positionToReach - enemyMotion.position);
+				enemyMotion.velocity = moveDirection * (ENEMY_SPEED * speedFactor);
+			}
+			else if (distanceToTarget > 5.0f) {
+				// Close - move very slowly to reduce jitter
+				vec2 moveDirection = glm::normalize(positionToReach - enemyMotion.position);
+				enemyMotion.velocity = moveDirection * (distanceToTarget * 3.0f);
+			}
+			else {
+				// SUPERR close - maintain minimal movement >>proprotional to players delta
+				vec2 oldPos = enemyMotion.position;
+				vec2 idealPos = positionToReach;
+				enemyMotion.velocity = (idealPos - oldPos) * 2.0f;
+			}
 		}
+		break;
+	}
 	}
 
 	return enemyBehavior.state;
