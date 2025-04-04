@@ -809,7 +809,7 @@ void WorldSystem::handle_collisions()
 		// 		Projectile& projectile = registry.projectiles.get(entity2);
 
 		// 		// Player takes damage
-		// 		player.current_health -= projectile.damage;
+		// 		damagePlayer(projectile.damage);
 
 		// 		// remove projectile
         //         removals.push_back(entity2);
@@ -821,7 +821,7 @@ void WorldSystem::handle_collisions()
 			if (registry.players.has(entity))
 			{
 				Projectile& projectile = registry.projectiles.get(entity2);
-
+				if (!projectile.from_enemy) continue;
 				// Player takes damage
 				damagePlayer(projectile.damage);
 
@@ -897,7 +897,8 @@ void WorldSystem::handle_collisions()
 					if (finalBossAI.state != FinalBossState::TIRED) {
 						enemy.health += projectile.damage;
 						Motion& projectile_motion = registry.motions.get(entity);
-						projectile_motion.velocity *= -1.f;
+						vec2 direction = glm::normalize(projectile_motion.velocity);
+						projectile_motion.velocity = -direction * GUN_PROJECTILE_SPEED;
 						projectile.from_enemy = !projectile.from_enemy;
 					} else {
 						removals.push_back(entity);

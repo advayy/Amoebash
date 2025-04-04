@@ -133,8 +133,8 @@ const float BUFF_MAP_SIZE = 20 * WORK_SCALE_FACTOR;
 const float BUFF_HUD_SIZE = 16 * WORK_SCALE_FACTOR; // DONT USE YET!!
 
 // AMOEBA STATS
-const float PLAYER_DEFAULT_HEALTH = 100;
-// const float PLAYER_DEFAULT_HEALTH = 100000;
+// const float PLAYER_DEFAULT_HEALTH = 100;
+const float PLAYER_DEFAULT_HEALTH = 100000;
 const float PLAYER_SPEED = 200;
 const float PLAYER_DASH_SPEED = 500;
 const float PLAYER_DASH_RANGE = 200;
@@ -175,7 +175,8 @@ const float BOSS_DETECTION_RADIUS = SPIKE_ENEMY_DETECTION_RADIUS * 3.0f;
 const float BOSS_RUMBLE_DAMAGE = 10.f * 2.f;
 const float BOSS_PROJECTILE_DAMAGE = 5.f;
 const unsigned int BOSS_LEVEL = 3;
-const unsigned int FINAL_BOSS_LEVEL = 5;
+// const unsigned int FINAL_BOSS_LEVEL = 5;
+const unsigned int FINAL_BOSS_LEVEL = 2;
 
 
 const vec2 DENDERITE_SIZE = {32 * WORK_SCALE_FACTOR, 64 * WORK_SCALE_FACTOR};
