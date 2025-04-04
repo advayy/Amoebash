@@ -821,7 +821,6 @@ void WorldSystem::handle_collisions()
 
 				// Player takes damage
 				damagePlayer(projectile.damage);
-                applyVignetteEffect();
 
                 Mix_PlayChannel(-1, damage_sound, 0);
 
@@ -1022,7 +1021,6 @@ void WorldSystem::handle_collisions()
 
 						if (!bossAI.is_charging) {
 							damagePlayer(BOSS_RUMBLE_DAMAGE);
-                            applyVignetteEffect();
 
                             Mix_PlayChannel(-1, damage_sound, 0);
 						}

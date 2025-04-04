@@ -855,7 +855,7 @@ void damagePlayer(float damageAmount) {
 				// game over
 			}
 		} else {
-			// normally took damage
+			applyVignetteEffect();
 		}
 	}
 }
