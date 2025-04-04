@@ -584,6 +584,7 @@ void WorldSystem::handlePlayerHealth(float elapsed_ms)
 	if (player.current_health <= 0 && current_state != GameState::GAME_OVER)
 	{
 		triggerGameOver();
+        clearVignetteEffect();
 	}
 }
 

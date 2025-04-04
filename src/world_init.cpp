@@ -815,6 +815,7 @@ void applyVignetteEffect() {
 
 void clearVignetteEffect() {
     registry.screenStates.components[0].vignette_screen_factor = 0.f;
+}
 
 int getRandomBuffType() {
 	std::vector<int> commonBuffs = {0, 1, 2, 3, 5, 6, 11};
