@@ -270,19 +270,20 @@ bool WorldSystem::updateBoss()
 		vec2 offset = vec2(smallScale.x * 1.2f, 0.f);
 		vec2 pos1 = originalMotion.position - offset;
 		vec2 pos2 = originalMotion.position + offset;
+        
+		bosses_to_remove.push_back(boss);
+		bosses_to_remove.push_back(originalAI.associatedArrow);
 
 		Entity smallBoss1 = createBoss(renderer, pos1, BossState::IDLE, stage + 1);
 		Entity smallBoss2 = createBoss(renderer, pos2, BossState::IDLE, stage + 1);
-
-        bosses_to_remove.push_back(boss);
-		bosses_to_remove.push_back(originalAI.associatedArrow);
 	}
 
-    int size = bosses_to_remove.size();
-    for(int i = 0; i < size; i++) {
-        registry.remove_all_components_of(bosses_to_remove[i]);
-    }
-
+	for (int i = bosses_to_remove.size() - 1; i >= 0; --i) {
+		Entity boss = bosses_to_remove[i];
+		if (registry.motions.has(boss) || registry.enemies.has(boss) || registry.bossAIs.has(boss)) {
+			registry.remove_all_components_of(boss);
+		}
+	}
 	// terminal condition for the boss
 	return registry.bossAIs.size() == 0;
 }
@@ -894,7 +895,11 @@ void WorldSystem::handle_collisions()
 					}
 
 					vec2 enemy_position = enemy_motion.position;
-                    removals.push_back(entity2);
+
+					//
+					if(!registry.bossAIs.has(entity2)) {
+                    	removals.push_back(entity2);
+					}
 					// level += 1;
 					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
 
@@ -1107,6 +1112,16 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 	{
 		if (action == GLFW_RELEASE)
 		{
+
+			std::cout<< "ON O_KEY PRESS" << std::endl;
+			std::cout<< "cam x -" << registry.cameras.get(registry.cameras.entities[0]).position.x << std::endl;
+			std::cout<< "cam y -" << registry.cameras.get(registry.cameras.entities[0]).position.y << std::endl;
+			std::cout<< "player x -" << registry.motions.get(registry.players.entities[0]).position.x << std::endl;
+			std::cout<< "player y -" << registry.motions.get(registry.players.entities[0]).position.y << std::endl;
+			std::cout<< "player velocity x -" << registry.motions.get(registry.players.entities[0]).velocity.x << std::endl;
+			std::cout<< "player velocity y -" << registry.motions.get(registry.players.entities[0]).velocity.y << std::endl;
+
+
 			if (current_state == GameState::GAME_PLAY)
 			{
 				Progression& p = registry.progressions.get(registry.progressions.entities[0]);
@@ -1115,6 +1130,16 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 				previous_state = GameState::GAME_PLAY;
 				current_state = GameState::GAME_OVER;
 				createGameOverScreen();
+
+
+				// ON GAME OVER
+				std::cout<< "ON GAME OVER PRESS" << std::endl;
+				std::cout<< "cam x -" << registry.cameras.get(registry.cameras.entities[0]).position.x << std::endl;
+				std::cout<< "cam y -" << registry.cameras.get(registry.cameras.entities[0]).position.y << std::endl;
+				std::cout<< "player x -" << registry.motions.get(registry.players.entities[0]).position.x << std::endl;
+				std::cout<< "player y -" << registry.motions.get(registry.players.entities[0]).position.y << std::endl;
+				std::cout<< "player velocity x -" << registry.motions.get(registry.players.entities[0]).velocity.x << std::endl;
+				std::cout<< "player velocity y -" << registry.motions.get(registry.players.entities[0]).velocity.y << std::endl;	
 			}
 		}
 	}

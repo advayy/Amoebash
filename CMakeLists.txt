@@ -149,21 +149,21 @@ if(IS_OS_LINUX)
 endif()
 
 
-# # Memory Sanitize
+# Memory Sanitize
 
-# if(NOT CMAKE_BUILD_TYPE)
-#     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
-# endif()
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
+endif()
 
-# set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
 
-# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
-#     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
-# endif()
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+endif()
 
-# if (MSVC AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-#     add_compile_options(/Zi /RTC1) # Generate debug info, enable runtime error checks
-# endif()
+if (MSVC AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_options(/Zi /RTC1) # Generate debug info, enable runtime error checks
+endif()
 
-# message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
