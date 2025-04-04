@@ -91,8 +91,8 @@ class RenderSystem
 		textures_path("ui_art/start_button_on_hover.png"),
 		textures_path("ui_art/back_button.png"),
 		textures_path("ui_art/back_button_on_hover.png"),
-		textures_path("ui_art/resume_button.png"), // exit button
-		textures_path("ui_art/resume_button_on_hover.png"), // exit button
+		textures_path("ui_art/proceed_button.png"), // exit button
+		textures_path("ui_art/proceed_button_on_hover.png"), // exit button
 		textures_path("ui_art/save_button.png"),
 		textures_path("ui_art/save_button_on_hover.png"),
 		textures_path("ui_art/resume_button.png"),
