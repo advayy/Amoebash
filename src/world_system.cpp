@@ -1180,7 +1180,7 @@ void WorldSystem::on_mouse_move(vec2 mouse_position)
 		}
 	} else if (button.type == ButtonType::BACKBUTTON && registry.renderRequests.has(button_entity)) {
 		if (isButtonClicked(button)) {
-			std::cout << "Hovering over button type: " << static_cast<int>(button.type) << std::endl; //debug
+			// std::cout << "Hovering over button type: " << static_cast<int>(button.type) << std::endl; //debug
 			request.used_texture = TEXTURE_ASSET_ID::BACK_BUTTON_ON_HOVER;
 		} else {
 			request.used_texture = TEXTURE_ASSET_ID::BACK_BUTTON;
@@ -1336,6 +1336,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			else if (getClickedButton() == ButtonType::RESUMEBUTTON){
 				current_state = GameState::GAME_PLAY;
 				removePauseScreen();
+				Mix_ResumeMusic(); // Resume music
 			}
 		}
 
