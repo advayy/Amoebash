@@ -305,3 +305,7 @@ bool gl_has_errors();
 
 vec2 positionToGridCell(vec2 position);
 vec2 gridCellToPosition(vec2 gridCell);
+
+const vec2 SHOPKEEPER_SIZE = {274.f * WORK_SCALE_FACTOR, 203.f * WORK_SCALE_FACTOR};
+const vec2 PURCHASE_BOX_SCALE = {172.f * WORK_SCALE_FACTOR, 72.f * WORK_SCALE_FACTOR};
+const vec2 SHOP_PLATE_SCALE = {WORK_SCALE_FACTOR * 34.0, WORK_SCALE_FACTOR * 34.0};

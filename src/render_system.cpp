@@ -648,6 +648,37 @@ void RenderSystem::drawScreenAndButtons(
 		}
 	}
 
+	if (screenType == ScreenType::SHOP) {
+		for (uint i = 0; i < registry.shops.entities.size(); i++)
+		{
+			Entity e = registry.shops.entities[i];
+			if (registry.renderRequests.has(e) && !registry.clickableBuffs.has(e))
+			{
+				drawTexturedMesh(e, projection_matrix);
+			}
+		}
+
+		for (uint i = 0; i < registry.shops.entities.size(); i++)
+		{
+			Entity e = registry.shops.entities[i];
+			if (registry.renderRequests.has(e) && registry.clickableBuffs.has(e))
+			{
+				drawTexturedMesh(e, projection_matrix);
+			}
+		}
+	}
+
+	if (screenType == ScreenType::INFO) {
+		for (uint i = 0; i < registry.infos.entities.size(); i++)
+		{
+			Entity e = registry.infos.entities[i];
+			if (registry.renderRequests.has(e))
+			{
+				drawTexturedMesh(e, projection_matrix);
+			}
+		}
+	}
+
 	if (buttonTypes.size() != 0)
 	{
 

@@ -465,6 +465,15 @@ void WorldSystem::updateDangerLevel(float elapsed_ms_since_last_update) {
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
+	Progression& prog = registry.progressions.get(registry.progressions.entities[0]);
+	if (prog.pickedInNucleus.size() > 0) {
+		for(int i = 0; i < prog.pickedInNucleus.size(); i++) {
+			applyBuff(registry.players.get(registry.players.entities[0]), prog.pickedInNucleus[i]);
+		}
+		prog.pickedInNucleus.clear();	
+	}
+
+
 	// // std::cout << "Level : " << level << std::endl;
 	updateDangerLevel(elapsed_ms_since_last_update);
 
@@ -593,6 +602,7 @@ void WorldSystem::triggerGameOver() {
 	Player& player = registry.players.get(registry.players.entities[0]);
 	Progression& p = registry.progressions.get(registry.progressions.entities[0]);
 				p.buffsFromLastRun = player.buffsCollected;
+				p.germoney_savings = player.germoney_count;
 				previous_state = current_state;
 				current_state = GameState::GAME_OVER;
 				createGameOverScreen();	
@@ -710,6 +720,7 @@ void WorldSystem::restart_game()
     
 	// FLAG
 	gameOver = false;
+	shopItemsPlaced = false;
 
 	next_projectile_ms = 0;
 
@@ -740,6 +751,12 @@ void WorldSystem::restart_game()
     // remove all tiles
     while (registry.tiles.entities.size() > 0)
         registry.remove_all_components_of(registry.tiles.entities.back());
+	
+	while (registry.shops.entities.size() > 0)
+        registry.remove_all_components_of(registry.shops.entities.back());
+	while (registry.overs.entities.size() > 0)
+        registry.remove_all_components_of(registry.overs.entities.back());
+
 
 	// debugging for memory/component leaks
 	registry.list_all_components();
@@ -793,10 +810,11 @@ void WorldSystem::restart_game()
 
     Player &player = registry.players.get(registry.players.entities[0]);
     Progression &prog = registry.progressions.get(registry.progressions.entities[0]);
-	for(int i = 0; i < prog.pickedInNucleus.size(); i++) {
-		applyBuff(player, prog.pickedInNucleus[i]);
-	}
-    prog.pickedInNucleus.clear();
+	
+	// for(int i = 0; i < prog.pickedInNucleus.size(); i++) {
+	// 	applyBuff(player, prog.pickedInNucleus[i]);
+	// }
+    // prog.pickedInNucleus.clear();
 
 	
 	createMiniMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
@@ -1167,13 +1185,13 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 
 
 				// ON GAME OVER
-				std::cout<< "ON GAME OVER PRESS" << std::endl;
-				std::cout<< "cam x -" << registry.cameras.get(registry.cameras.entities[0]).position.x << std::endl;
-				std::cout<< "cam y -" << registry.cameras.get(registry.cameras.entities[0]).position.y << std::endl;
-				std::cout<< "player x -" << registry.motions.get(registry.players.entities[0]).position.x << std::endl;
-				std::cout<< "player y -" << registry.motions.get(registry.players.entities[0]).position.y << std::endl;
-				std::cout<< "player velocity x -" << registry.motions.get(registry.players.entities[0]).velocity.x << std::endl;
-				std::cout<< "player velocity y -" << registry.motions.get(registry.players.entities[0]).velocity.y << std::endl;	
+				// std::cout<< "ON GAME OVER PRESS" << std::endl;
+				// std::cout<< "cam x -" << registry.cameras.get(registry.cameras.entities[0]).position.x << std::endl;
+				// std::cout<< "cam y -" << registry.cameras.get(registry.cameras.entities[0]).position.y << std::endl;
+				// std::cout<< "player x -" << registry.motions.get(registry.players.entities[0]).position.x << std::endl;
+				// std::cout<< "player y -" << registry.motions.get(registry.players.entities[0]).position.y << std::endl;
+				// std::cout<< "player velocity x -" << registry.motions.get(registry.players.entities[0]).velocity.x << std::endl;
+				// std::cout<< "player velocity y -" << registry.motions.get(registry.players.entities[0]).velocity.y << std::endl;	
 			}
 		}
 	}
@@ -1325,6 +1343,10 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				current_state = GameState::SHOP;
 				removeStartScreen();
 				createShopScreen();
+				if (!shopItemsPlaced) {
+					placeBuffsOnShopScreen();
+					shopItemsPlaced = true;
+				}
 			}
 			else if (clickedButton == ButtonType::INFOBUTTON) 
 			{
@@ -1345,6 +1367,41 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		}
 		else if (current_state == GameState::SHOP && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
+
+			// SHOPPING LOGIC HERE
+			// if they clicked on a buff, buy it and depending on the type, alter progression, player buffs or game level,
+			// and deduct the buff price from the players progression savings
+			Entity e;
+			if(isClickableBuffClicked(&e)) {
+				// GET BUFF TYPE AND PRICE
+				ClickableBuff& c = registry.clickableBuffs.get(e);
+				Progression& p = registry.progressions.get(registry.progressions.entities[0]);
+
+				if(c.price <= p.germoney_savings) {
+					// MONEY SOUND {s}
+
+					// BUY AND APPLY
+					p.germoney_savings -= c.price;
+					
+					if(c.type == -1) {
+						level += 1; // hope this works xx
+					} else if (c.type == -2) {
+						if (p.slots_unlocked == 1) {
+							p.slots_unlocked = 4;
+						} else {
+							p.slots_unlocked = 9;
+						}
+					} else {
+						registry.progressions.get(registry.progressions.entities[0]).pickedInNucleus.push_back(c.type);
+					}
+
+					// remove buff
+					registry.remove_all_components_of(e);
+				} else {
+					// WOMP WOMP SOUND {s}
+				}
+			}
+
 			if (getClickedButton() == ButtonType::BACKBUTTON)
 			{
 				Mix_PlayChannel(-1, click_sound, 0);
@@ -1486,7 +1543,7 @@ bool WorldSystem::isClickableBuffClicked(Entity* return_e) {
 	return false;
 }
 
-void WorldSystem::handleClickableBuff(Entity e) {
+void WorldSystem::handleClickableBuff(Entity e) { // FOR NUCLEUS MENU 
 	// Find a free slot if there is one availibe
 	// move buff to slot if its not already in a slot, if it is move it to return position
 	Entity s;
@@ -2007,4 +2064,68 @@ void WorldSystem::loadProgress() {
 
 void WorldSystem::startTheme() {
 	Mix_PlayMusic(background_music, -1);
+}
+
+void WorldSystem::placeBuffsOnShopScreen() {
+	bool offerSlotBoost = false;
+	int unlocked = 0;
+
+	if(registry.progressions.get(registry.progressions.entities[0]).slots_unlocked < 9) {
+		offerSlotBoost = true;
+		unlocked = registry.progressions.get(registry.progressions.entities[0]).slots_unlocked;
+	}
+
+	int placed = 0;
+
+	for(int i = 0; i < registry.shops.entities.size(); i++) {
+		// Get the texture asset id, then check if its a plate, if so then get its position and put a clickable there.
+
+		if(!registry.renderRequests.has(registry.shops.entities[i])) {
+			continue;
+		}
+
+		RenderRequest& r = registry.renderRequests.get(registry.shops.entities[i]);
+
+		if(r.used_texture != TEXTURE_ASSET_ID::SHOP_PLATE) 
+		{
+			continue;
+		}
+
+		vec2 position = registry.motions.get(registry.shops.entities[i]).position;
+
+		if(placed == 0) {
+			ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, -1));
+			c.price = 1000.0;
+		} else {
+			if(offerSlotBoost) {
+				ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, -2));
+				c.price = 200.0 * unlocked;	// dynamic pricing
+				offerSlotBoost = false; // OFFERED NOW.
+			} else {
+				// GET RANDOM TYPE
+				// GET PRICE PER TYPE
+				int buffType = getRandomBuffType();
+				if(buffType == 11) {
+					buffType = 10;
+				}
+
+				std::vector<int> commonBuffs = {0, 1, 2, 3, 5, 6, 11};
+				std::vector<int> rareBuffs = {4, 8, 9, 12};
+				std::vector<int> eliteBuffs = {7, 10, 13, 14};
+
+				ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, buffType));
+				c.price = 1000;
+				
+				if (std::find(commonBuffs.begin(), commonBuffs.end(), buffType) != commonBuffs.end()) {
+					c.price = 50.0f;
+				} else if (std::find(rareBuffs.begin(), rareBuffs.end(), buffType) != rareBuffs.end()) {
+					c.price = 100.0f;
+				} else if (std::find(eliteBuffs.begin(), eliteBuffs.end(), buffType) != eliteBuffs.end()) {
+					c.price = 200.0f;
+				}
+			}
+		}
+
+		placed++;
+	}
 }

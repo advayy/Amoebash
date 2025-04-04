@@ -107,6 +107,7 @@ int main()
 			break;
 
 		case GameState::SHOP:
+			animation_system.step(elapsed_ms);
 			renderer_system.drawShopScreen();
 			break;
 

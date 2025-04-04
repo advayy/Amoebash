@@ -111,7 +111,12 @@ class RenderSystem
 		textures_path("ui_art/resume_button_on_hover.png"),
 		textures_path("enemies/boss/boss_arrow.png"),
 		textures_path("ui_art/victory_cutscene.png"),
-		textures_path("ui_art/thermometer_alone.png")
+		textures_path("ui_art/thermometer_alone.png"),
+		textures_path("ui_art/injection.png"),
+		textures_path("ui_art/purchase_box.png"),
+		textures_path("ui_art/Shop_ui_plate.png"),
+		textures_path("ui_art/shopkeeper.png"),
+		textures_path("ui_art/slots_increase_buff.png")
 	};
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.

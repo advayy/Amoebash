@@ -52,3 +52,8 @@ vec2 getBuffSlot (int buffType);
 void removeBuffUI(int buffType);
 vec2 getBuffSlot_uiPos (int buffType);
 void findAndRemove(std::unordered_map<int, int>& map, int N);
+
+Entity createShopKeeper();
+Entity createShopBox();
+Entity createShopPlate(vec2 pos);
+Entity createClickableShopBuff(vec2 position, int buffType);
