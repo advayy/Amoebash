@@ -1221,6 +1221,7 @@ void WorldSystem::on_mouse_move(vec2 mouse_position)
 		}
 	} else if (button.type == ButtonType::PROCEEDBUTTON && registry.renderRequests.has(button_entity)) {
 		if (isButtonClicked(button)) {
+
 			request.used_texture = TEXTURE_ASSET_ID::PROCEED_BUTTON_ON_HOVER;
 		} else {
 			request.used_texture = TEXTURE_ASSET_ID::PROCEED_BUTTON;
@@ -1315,6 +1316,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		{
 			if (getClickedButton() == ButtonType::BACKBUTTON)
 			{
+				Mix_PlayChannel(-1, click_sound, 0);
 				removeShopScreen();
 				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
@@ -1324,9 +1326,9 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		}
 		else if (current_state == GameState::INFO && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
-			Mix_PlayChannel(-1, click_sound, 0);
 			if (getClickedButton() == ButtonType::BACKBUTTON)
 			{
+				Mix_PlayChannel(-1, click_sound, 0);
 				removeInfoScreen();
 				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
@@ -1341,6 +1343,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 
 			if (getClickedButton() == ButtonType::PROCEEDBUTTON)
 			{
+				Mix_PlayChannel(-1, click_sound, 0);
 				previous_state = current_state;
 				current_state = GameState::START_SCREEN_ANIMATION;
 				moveSelectedBuffsToProgression();
@@ -1349,6 +1352,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 
 			}
 			else if (isClickableBuffClicked(&e)) {
+				Mix_PlayChannel(-1, click_sound, 0);
 				handleClickableBuff(e);
 			}
 		}
