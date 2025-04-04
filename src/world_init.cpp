@@ -42,6 +42,8 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 Entity createRBCEnemy(RenderSystem* renderer, vec2 position)
 {
 	Entity entity = createEnemy(renderer, position);
+	Entity hp_bar = createEnemyHPBar(entity);
+
 	RBCEnemyAI& enemy_ai = registry.rbcEnemyAIs.emplace(entity);
 	enemy_ai.patrolOrigin = position;
 	enemy_ai.state = RBCEnemyState::FLOATING;
@@ -77,6 +79,8 @@ Entity createRBCEnemy(RenderSystem* renderer, vec2 position)
 Entity createSpikeEnemy(RenderSystem* renderer, vec2 position)
 {
 	Entity entity = createEnemy(renderer, position);
+	Entity hp_bar = createEnemyHPBar(entity);
+
 	SpikeEnemyAI& enemy_ai = registry.spikeEnemyAIs.emplace(entity);
 	enemy_ai.patrolOrigin = position;
 	enemy_ai.state = SpikeEnemyState::PATROLLING;
@@ -110,6 +114,8 @@ Entity createSpikeEnemy(RenderSystem* renderer, vec2 position)
 Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_index)
 {
 	Entity entity = createEnemy(renderer, position);
+	Entity hp_bar = createEnemyHPBar(entity);
+
 	BacteriophageAI& enemy_ai = registry.bacteriophageAIs.emplace(entity);
 	enemy_ai.placement_index = placement_index;
 
@@ -142,6 +148,8 @@ Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_
 Entity createBoss(RenderSystem* renderer, vec2 position, BossState state, int bossStage)
 {
 	Entity entity = createEnemy(renderer, position);
+	// Entity hp_bar = createEnemyHPBar(entity);
+
 
 	Motion& motion = registry.motions.get(entity);
 	motion.scale = {BOSS_BB_WIDTH, BOSS_BB_HEIGHT};

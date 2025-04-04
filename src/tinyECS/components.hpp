@@ -365,6 +365,7 @@ struct HealthBar
 	vec2 position;
 	vec2 scale;
 	int health;
+	bool is_enemy_hp_bar = false;
 };
 
 struct DashRecharge
@@ -481,7 +482,8 @@ enum class TEXTURE_ASSET_ID
 	BOSS_ARROW = BOSS_STAGE_4 + 1,
 	WINSCREEN = BOSS_ARROW + 1,
 	THERMOMETER = WINSCREEN + 1,
-	TEXTURE_COUNT = THERMOMETER + 1
+	ENEMY_HP_BAR = THERMOMETER + 1,
+	TEXTURE_COUNT = ENEMY_HP_BAR + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;

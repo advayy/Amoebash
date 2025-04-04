@@ -870,6 +870,49 @@ void createDashRecharge()
 	registry.dashRecharges.emplace(dash);
 }
 
+Entity createEnemyHPBar(Entity enemy) {
+    Entity hp = Entity();
+
+    Motion& motion = registry.motions.emplace(hp);
+    motion.scale = vec2(80.f, 30.f); 
+    
+    HealthBar& healthBar = registry.healthBars.emplace(hp);
+    healthBar.is_enemy_hp_bar = true;
+    
+    if (registry.motions.has(enemy)) {
+        Motion& enemy_motion = registry.motions.get(enemy);
+        motion.position = enemy_motion.position + vec2(0.f, 30.f);
+    }
+
+    registry.renderRequests.insert(hp, {
+        TEXTURE_ASSET_ID::ENEMY_HP_BAR,
+        EFFECT_ASSET_ID::HEALTH_BAR,
+        GEOMETRY_BUFFER_ID::SPRITE
+    });
+
+    return hp;
+}
+
+void removeEnemyHPBar(Entity enemy) {
+	for (size_t i = 0; i < registry.healthBars.entities.size(); ++i)
+	{
+		Entity healthBarEntity = registry.healthBars.entities[i];
+		if (registry.healthBars.has(healthBarEntity))
+		{
+			HealthBar &hb = registry.healthBars.get(healthBarEntity);
+			if (hb.is_enemy_hp_bar && i < registry.enemies.entities.size())
+			{
+				if (registry.enemies.entities[i] == enemy)
+				{
+					registry.remove_all_components_of(healthBarEntity);
+					break;
+				}
+			}
+		}
+	}
+}
+
+
 Entity createBuffUI(vec2 position, int type)
 {
 	Entity buffUI = Entity();
@@ -1046,16 +1089,41 @@ void updateHuds()
 			UIElement &uiElement = registry.uiElements.get(entity);
 			uiMotion.position = {camera.position.x + uiElement.position.x, camera.position.y + uiElement.position.y};
 		}
-	}
-
-	if (!registry.healthBars.entities.empty())
-	{
-		HealthBar &healthBar = registry.healthBars.get(registry.healthBars.entities[0]);
-		Motion &healthBarMotion = registry.motions.get(registry.healthBars.entities[0]);
-		healthBarMotion.position = {camera.position.x + HEALTH_BAR_POS.x,
-									camera.position.y + HEALTH_BAR_POS.y};
 
 	}
+
+	if (!registry.healthBars.entities.empty()) {
+        for (size_t i = 0; i < registry.healthBars.entities.size(); ++i) {
+            Entity healthBar = registry.healthBars.entities[i];
+            
+            if (!registry.motions.has(healthBar) || !registry.healthBars.has(healthBar))
+                continue;
+                
+            Motion& motion = registry.motions.get(healthBar);
+            HealthBar& hb = registry.healthBars.get(healthBar);
+            
+            if (hb.is_enemy_hp_bar) {
+                if (i < registry.enemies.entities.size()) {
+                    Entity enemy = registry.enemies.entities[i];
+                    
+                    if (registry.motions.has(enemy) && registry.enemies.has(enemy)) {
+                        Motion& enemy_motion = registry.motions.get(enemy);
+                        Enemy& enemy_data = registry.enemies.get(enemy);
+
+                        motion.position = enemy_motion.position + vec2(0.f, -40.f);
+                    }
+                }
+            } else {
+                if (!registry.cameras.entities.empty()) {
+                    Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
+                    motion.position = {
+                        camera.position.x + HEALTH_BAR_POS.x,
+                        camera.position.y + HEALTH_BAR_POS.y
+                    };
+                }
+            }
+        }
+    }
 
 	if (!registry.thermometers.entities.empty()) {
 		Thermometer& t = registry.thermometers.get(registry.thermometers.entities[0]);
@@ -1065,5 +1133,6 @@ void updateHuds()
 			camera.position.y + THERMOMETER_POS.y
 		};
 	}
+
 }
 

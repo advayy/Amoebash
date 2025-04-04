@@ -84,7 +84,8 @@ class RenderSystem
 		textures_path("enemies/boss/mitosis_boss_16_transparent.png"),
 		textures_path("enemies/boss/boss_arrow.png"),
 		textures_path("ui_art/victory_cutscene.png"),
-		textures_path("ui_art/thermometer_alone.png")
+		textures_path("ui_art/thermometer_alone.png"),
+		textures_path("ui_art/hp_bar.png")
 	};
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.
@@ -166,7 +167,7 @@ public:
 
 	void drawUI(Entity entity, const mat3 &projection);
 	void drawUIElements();
-	void drawHealthBar(Entity entity, const mat3 &projection);
+	// void drawHealthBar(Entity entity, const mat3 &projection);
 	void drawDashRecharge(const mat3 &projection);
 	void drawHexagon(Entity entity, const mat3 &projection);
 	void drawBuffUI();

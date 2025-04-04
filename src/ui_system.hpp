@@ -42,6 +42,8 @@ Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, E
 Entity createHealthBar();
 Entity createThermometer();
 void createDashRecharge();
+Entity createEnemyHPBar(Entity enemy);
+void removeEnemyHPBar(Entity enemy);
 
 Entity createBuffUI(vec2 position, int type);
 void renderCollectedBuff(RenderSystem *renderer, int buffType);

@@ -894,7 +894,9 @@ void WorldSystem::handle_collisions()
 					}
 
 					vec2 enemy_position = enemy_motion.position;
+					removeEnemyHPBar(entity2);
                     removals.push_back(entity2);
+
 					// level += 1;
 					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
 
@@ -981,6 +983,7 @@ void WorldSystem::handle_collisions()
                     
                     vec2 enemy_position = enemy_motion.position;
                     points += 1;
+					removeEnemyHPBar(entity2);
                     removals.push_back(entity2);
                     Mix_PlayChannel(-1, enemy_death_sound, 0);
                     
