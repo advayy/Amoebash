@@ -5,7 +5,7 @@
 #include <ctime>
 #include <queue>
 #include "animation_system.hpp"
-
+#include "ui_system.hpp"
 
 void initializeProgression(){
 	auto entity = Entity();
@@ -157,6 +157,7 @@ Entity createBoss(RenderSystem* renderer, vec2 position, BossState state, int bo
 	enemy.health = BOSS_HEALTH;
 	enemy.total_health = BOSS_HEALTH;
 
+
 	if (bossStage > 0) {
 		motion.scale /= (2 * bossStage);
 		enemy.health /= 2 * bossStage;
@@ -190,7 +191,26 @@ Entity createBoss(RenderSystem* renderer, vec2 position, BossState state, int bo
 	sprite.width = motion.scale.x;
 	sprite.height = motion.scale.y;
 
+	enemy_ai.associatedArrow = createBossArrow(entity);
+
 	return entity;
+}
+
+Entity createBossArrow(Entity Boss) {
+	Entity arrow = Entity();
+
+	BossArrow& bossArrow = registry.bossArrows.emplace(arrow);
+	bossArrow.associatedBoss = Boss;
+	registry.renderRequests.insert(
+		arrow,
+		{
+			TEXTURE_ASSET_ID::BOSS_ARROW,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	return arrow;
 }
 
 Entity createPlayer(RenderSystem *renderer, vec2 position)
@@ -360,7 +380,7 @@ Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& pla
 
 void updateMiniMap(vec2 playerPos) {
 
-	float minimapViewRange = 3.0;
+	float minimapViewRange = registry.players.get(registry.players.entities[0]).minimapViewRange;
 	Entity e = registry.miniMaps.entities[0];
 	MiniMap& m = registry.miniMaps.get(e);
 
@@ -769,8 +789,8 @@ Entity createBuff(vec2 position)
 
 	Buff &buff = registry.buffs.emplace(entity);
 
-	// Currently only the first 5 buffs are active
-	buff.type = rand() % NUMBER_OF_BUFFS;
+	// Currently only the first 15 buffs are active
+	buff.type = getRandomBuffType();
 
 	registry.renderRequests.insert(
 		entity,
@@ -787,4 +807,48 @@ Entity createBuff(vec2 position)
 	sprite.height = 20;
 
 	return entity;
+}
+
+
+int getRandomBuffType() {
+	std::vector<int> commonBuffs = {0, 1, 2, 3, 5, 6, 11};
+	std::vector<int> rareBuffs = {4, 8, 9, 12};
+	std::vector<int> eliteBuffs = {7, 10, 13, 14};
+
+    int categoryRoll = rand() % 100;
+
+    std::vector<int>* selectedCategory;
+
+    if (categoryRoll < 50) {  // 50% chance for common
+        selectedCategory = &commonBuffs;
+    } else if (categoryRoll < 80) { // 30% chance for rare
+        selectedCategory = &rareBuffs;
+    } else { // 20% chance for elite
+        selectedCategory = &eliteBuffs;
+    }
+
+    int index = rand() % selectedCategory->size();
+    return (*selectedCategory)[index];
+}
+
+void damagePlayer(float damageAmount) {
+	Player& player = registry.players.get(registry.players.entities[0]);
+	if(player.sheilds > 0) {
+		player.sheilds --;
+		removeBuffUI(5); // PLANT CELL WALL/ SHEILD
+	} else {
+		player.current_health -= damageAmount * player.dangerFactor;
+
+		if (player.current_health <= 0) {
+			if (player.extra_lives > 0) {
+				player.current_health = player.max_health/2;
+				player.extra_lives--;
+				removeBuffUI(10);
+			} else {
+				// game over
+			}
+		} else {
+			// normally took damage
+		}
+	}
 }
