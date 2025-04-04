@@ -874,7 +874,7 @@ Entity createEnemyHPBar(Entity enemy) {
     Entity hp = Entity();
 
     Motion& motion = registry.motions.emplace(hp);
-    motion.scale = vec2(80.f, 30.f); 
+    motion.scale = vec2(ENEMY_HP_BAR_WIDTH, ENEMY_HP_BAR_HEIGHT); 
     
     HealthBar& healthBar = registry.healthBars.emplace(hp);
     healthBar.is_enemy_hp_bar = true;
@@ -894,22 +894,14 @@ Entity createEnemyHPBar(Entity enemy) {
 }
 
 void removeEnemyHPBar(Entity enemy) {
-	for (size_t i = 0; i < registry.healthBars.entities.size(); ++i)
-	{
-		Entity healthBarEntity = registry.healthBars.entities[i];
-		if (registry.healthBars.has(healthBarEntity))
-		{
-			HealthBar &hb = registry.healthBars.get(healthBarEntity);
-			if (hb.is_enemy_hp_bar && i < registry.enemies.entities.size())
-			{
-				if (registry.enemies.entities[i] == enemy)
-				{
-					registry.remove_all_components_of(healthBarEntity);
-					break;
-				}
-			}
-		}
-	}
+    for (size_t i = 0; i < registry.healthBars.size(); ++i) {
+        Entity healthBarEntity = registry.healthBars.entities[i];
+        HealthBar &hb = registry.healthBars.get(healthBarEntity);
+        if (hb.is_enemy_hp_bar && registry.enemies.has(enemy)) {
+            registry.remove_all_components_of(healthBarEntity);
+            break;
+        }
+    }
 }
 
 
