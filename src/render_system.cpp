@@ -437,16 +437,7 @@ void RenderSystem::draw()
 		drawTexturedMesh(pause, projection_2D);
 	}
 
-    renderText("TESTING", 50.f, 500.f, 1.f, vec3(1.f, 1.f, 1.f));
-    renderText("TESTING", 50.f, 400.f, 1.f, vec3(1.f, 1.f, 1.f));
-    renderText("TESTING", 50.f, 300.f, 1.f, vec3(1.f, 1.f, 1.f));
-
-    // render player.germony
-    for (auto entity : registry.players.entities)
-    {
-        Player &player = registry.players.get(entity);
-        renderText(std::to_string(player.germoney_count), 160.f, 47.5f, .5f, vec3(1.f, 1.f, 1.f));
-    }
+    drawText();
 
 	// INSTANCING: Draw instanced particles
 	drawInstancedParticles();
@@ -458,6 +449,29 @@ void RenderSystem::draw()
 	// flicker-free display with a double buffer
 	glfwSwapBuffers(window);
 	gl_has_errors();
+}
+
+vec2 worldToScreen(vec2 world_pos) {
+    Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+    float x = WINDOW_WIDTH_PX / 2.f - (camera.position.x - world_pos.x);
+    float y = WINDOW_HEIGHT_PX / 2.f - (world_pos.y - camera.position.y);
+    return {x, y};
+}
+
+void RenderSystem::drawText() {
+    for (auto entity : registry.buffUIs.entities) {
+        BuffUI &buffUI = registry.buffUIs.get(entity);
+        Motion &motion = registry.motions.get(entity);
+
+        vec2 screen_pos = worldToScreen(motion.position);
+
+        int buffCount = registry.players.get(registry.players.entities[0]).buffsCollected[buffUI.buffType];
+        if (buffCount > 0) {
+            renderText(std::to_string(buffCount), screen_pos.x, screen_pos.y, .5f, vec3(1.f, 1.f, 1.f));
+        } else {
+            continue;
+        }
+    }
 }
 
 mat3 RenderSystem::createProjectionMatrix()

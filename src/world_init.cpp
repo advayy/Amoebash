@@ -252,6 +252,10 @@ Entity createPlayer(RenderSystem *renderer, vec2 position)
 	sprite.width = 32;
 	sprite.height = 32;
 
+    for (int i = 0; i < NUMBER_OF_BUFFS; i++) {
+        p.buffsCollected[i] = 0;
+    }
+
     createGun(renderer, position);
 
 	return entity;

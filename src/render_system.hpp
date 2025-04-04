@@ -240,6 +240,7 @@ private:
     // freetype font rendering
     bool fontInit(GLFWwindow& window, const std::string& font_filename, unsigned int font_default_size);
     void renderText(std::string text, float x, float y, float scale, const glm::vec3& color);
+    void drawText();
     
     // freetype font rendering
 	std::map<char, Character> m_ftCharacters;

@@ -85,6 +85,7 @@ public:
 	// NUCLEUS MENU SLOT
 	ComponentContainer<Slot> slots;
 	ComponentContainer<Thermometer> thermometers;
+    ComponentContainer<Text> texts;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
@@ -145,6 +146,7 @@ public:
         registry_list.push_back(&clickableBuffs);
 		registry_list.push_back(&bossArrows);
 		registry_list.push_back(&thermometers);
+		registry_list.push_back(&texts);
 	}
 
 	void clear_all_components()

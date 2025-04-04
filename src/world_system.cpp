@@ -1567,7 +1567,7 @@ void WorldSystem::applyBuff(Player& player, int buff_type)
 	}
     
 	if(!skipUIRender) {
-	    player.buffsCollected.push_back(buff_type);
+        player.buffsCollected[buff_type] += 1;
 		renderCollectedBuff(renderer, buff_type);
 	}
 }
