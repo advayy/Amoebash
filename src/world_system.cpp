@@ -1038,10 +1038,13 @@ void WorldSystem::handle_collisions()
 
 						if (player.knockback_duration > 0.f && glm::length(bossMotion.velocity) > 0.1f)
 						{
-							vec2 bossDirection = glm::normalize(bossMotion.velocity);
+							vec2 bossDirection = glm::length(bossMotion.velocity) > 0.0001f
+							? glm::normalize(bossMotion.velocity)
+							: vec2(1.f, 0.f); // default direction, rightwards
+						
 							vec2 knockBackDirection = bossDirection;
 							playerMotion.velocity = knockBackDirection * 1000.f;
-                            bossMotion.velocity = {0.f, 0.f};
+							bossMotion.velocity = {0.f, 0.f};						
 						}
 					}
 				}
@@ -1140,13 +1143,16 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 		if (action == GLFW_RELEASE)
 		{
 
-			std::cout<< "ON O_KEY PRESS" << std::endl;
-			std::cout<< "cam x -" << registry.cameras.get(registry.cameras.entities[0]).position.x << std::endl;
-			std::cout<< "cam y -" << registry.cameras.get(registry.cameras.entities[0]).position.y << std::endl;
-			std::cout<< "player x -" << registry.motions.get(registry.players.entities[0]).position.x << std::endl;
-			std::cout<< "player y -" << registry.motions.get(registry.players.entities[0]).position.y << std::endl;
-			std::cout<< "player velocity x -" << registry.motions.get(registry.players.entities[0]).velocity.x << std::endl;
-			std::cout<< "player velocity y -" << registry.motions.get(registry.players.entities[0]).velocity.y << std::endl;
+			// std::cout<< "ON O_KEY PRESS" << std::endl;
+			// // print all of players components
+			// registry.list_all_components_of(registry.cameras.entities[0]);
+			// std::cout<< "cam x -" << registry.cameras.get(registry.cameras.entities[0]).position.x << std::endl;
+			// std::cout<< "cam y -" << registry.cameras.get(registry.cameras.entities[0]).position.y << std::endl;
+			// std::cout<< "player x -" << registry.motions.get(registry.players.entities[0]).position.x << std::endl;
+			// std::cout<< "player y -" << registry.motions.get(registry.players.entities[0]).position.y << std::endl;
+			// std::cout<< "player velocity x -" << registry.motions.get(registry.players.entities[0]).velocity.x << std::endl;
+			// std::cout<< "player velocity y -" << registry.motions.get(registry.players.entities[0]).velocity.y << std::endl;
+			// registry.list_all_components_of(registry.players.entities[0]);
 
 
 			if (current_state == GameState::GAME_PLAY)
