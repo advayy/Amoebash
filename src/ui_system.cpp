@@ -101,13 +101,24 @@ Entity createStartScreen(vec2 position)
 	GameScreen &screen = registry.gameScreens.emplace(startScreenEntity);
 	screen.type = ScreenType::START;
 
-	Entity startButtonEntity = createStartButton();
-	Entity shopButtonEntity = createShopButton();
-	Entity infoButtonEntity = createInfoButton();
+	// create buttons
+	Entity startButtonEntity = createButton(ButtonType::STARTBUTTON,
+																					START_BUTTON_COORDINATES,
+																					START_BUTTON_SCALE,
+																					TEXTURE_ASSET_ID::BUTTON_START);
+	Entity shopButtonEntity = createButton(ButtonType::SHOPBUTTON,
+																					SHOP_BUTTON_COORDINATES,
+																					SHOP_BUTTON_SCALE,
+																					TEXTURE_ASSET_ID::BUTTON_SHOP);
+	Entity infoButtonEntity = createButton(ButtonType::INFOBUTTON,
+																					INFO_BUTTON_COORDINATES,
+																					INFO_BUTTON_SCALE,
+																					TEXTURE_ASSET_ID::BUTTON_INFO);
 
-	start.buttons = std::vector{startButtonEntity, shopButtonEntity, infoButtonEntity};
-	
+	start.buttons = std::vector<Entity>{startButtonEntity, shopButtonEntity, infoButtonEntity};
+
 	Entity startScreenLogoEntity = Entity();
+
 	// render request for logo
 	registry.renderRequests.insert(
 		startScreenLogoEntity,
@@ -416,21 +427,6 @@ void createGameplayCutScene()
 	registry.cutscenes.emplace(nucleus);
 }
 
-// removing all cutscrene components
-void removeCutScene()
-{
-    std::vector<Entity> cutSceneList;
-
-    for (auto e : registry.cutscenes.entities) {
-        cutSceneList.push_back(e);
-    }
-
-    int size = cutSceneList.size();
-
-    for(int i = 0; i < size; i++) {
-        registry.remove_all_components_of(cutSceneList[i]);
-    }
-}
 
 Entity createEndingWinScene() {
 	Entity winScreenEntity = Entity();
@@ -609,102 +605,10 @@ Entity createEnteringNucleus()
 	return nucleusEntity;
 }
 
-// remove Pause Screen and buttons
-void removePauseScreen()
-{
-	if (registry.pauses.size() == 0)
-		return;
-
-	std::vector<Entity> removals;
-
-	for (auto e : registry.pauses.entities) {
-		removals.push_back(e);
-	}
-
-	int size = removals.size();
-
-	for (int i = 0; i < size; i++) {
-		registry.remove_all_components_of(removals[i]);
-	}
-
-	return;
-
-}
-
-// remove game over screen and related UI
-void removeGameOverScreen()
-{
-	if (registry.overs.size() == 0)
-		return;
 
 
-	std::vector<Entity> toRemove;
-	for(int i = 0; i < registry.overs.size(); i++) {
-		toRemove.push_back(registry.overs.entities[i]);
-	}
 
-	for(int i = 0;  i < toRemove.size(); i++) {
-		registry.remove_all_components_of(toRemove[i]);
-	}
-}
 
-// remove start screen and related UI
-void removeStartScreen()
-{
-	if (registry.starts.size() == 0)
-		return;
-
-	Entity start_entity = registry.starts.entities[0];
-	Start &start = registry.starts.components[0];
-	std::vector<Entity> buttons_to_remove = start.buttons;
-	Entity logo = start.logo;
-
-    int size = buttons_to_remove.size();
-
-    for (int i = 0; i < size; i++) {
-        registry.remove_all_components_of(buttons_to_remove[i]);
-    }
-
-	registry.remove_all_components_of(logo);
-	registry.remove_all_components_of(start_entity);
-}
-
-// remove shop screen and related UI
-void removeShopScreen()
-{
-	if (registry.shops.size() == 0)
-		return;
-	
-	Entity shop_entity = registry.shops.entities[0];
-	Shop &shop = registry.shops.components[0];
-	std::vector<Entity> buttons_to_remove = shop.buttons;
-	
-    int size = buttons_to_remove.size();
-
-    for (int i = 0; i < size; i++) {
-        registry.remove_all_components_of(buttons_to_remove[i]);
-    }
-	registry.remove_all_components_of(shop_entity);
-}
-
-// remove info screen and related UI
-void removeInfoScreen()
-{
-	if (registry.infos.size() == 0)
-		return;
-	
-	Entity info_entity = registry.infos.entities[0];
-	Info &info = registry.infos.components[0];
-	std::vector<Entity> buttons_to_remove = info.buttons;
-	
-    int size = buttons_to_remove.size();
-
-    for (int i = 0; i < size; i++) {
-        registry.remove_all_components_of(buttons_to_remove[i]);
-    }
-    
-	registry.remove_all_components_of(info_entity);
-}
 
 // Button Creater
 Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID texture)
@@ -728,41 +632,13 @@ Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID
 	button.center = position + vec2{WINDOW_WIDTH_PX / 2.f, WINDOW_HEIGHT_PX / 2.f};
 	button.type = type;
 
+	// print button llocation and name
+	std::cout << "Button: " << type << " created at: " << button.center[0] << ", " << button.center[1] << std::endl;
+
 	return buttonEntity;
 }
 
-Entity createStartButton()
-{
-	vec2 position = START_BUTTON_COORDINATES;
-	vec2 scale = START_BUTTON_SCALE;
 
-	return createButton(ButtonType::STARTBUTTON,
-						position,
-						scale,
-						TEXTURE_ASSET_ID::BUTTON);
-}
-
-Entity createShopButton()
-{
-	vec2 scale = SHOP_BUTTON_SCALE;
-	vec2 position = SHOP_BUTTON_COORDINATES;
-
-	return createButton(ButtonType::SHOPBUTTON,
-						position,
-						scale,
-						TEXTURE_ASSET_ID::SHOP_BUTTON);
-}
-
-Entity createInfoButton()
-{
-	vec2 scale = INFO_BUTTON_SCALE; // currently same scale as shop button
-	vec2 position = INFO_BUTTON_COORDINATES;
-
-	return createButton(ButtonType::INFOBUTTON,
-						position,
-						scale,
-						TEXTURE_ASSET_ID::INFO_BUTTON);
-}
 
 Entity createBackButton() {
 	vec2 scale = BACK_BUTTON_SCALE;
@@ -973,4 +849,55 @@ bool isButtonClicked(Entity buttonEntity, const vec2 &mouseWorldPos) {
 					mouseWorldPos.x <= center.x + halfWidth &&
 					mouseWorldPos.y >= center.y - halfHeight &&
 					mouseWorldPos.y <= center.y + halfHeight);
+}
+
+void removeUIElements(UIElementType type) {
+    switch (type) {
+        case UIElementType::CutScenes:
+            for (auto e : registry.cutscenes.entities) {
+                registry.remove_all_components_of(e);
+            }
+            break;
+        case UIElementType::PauseScreen:
+            for (auto e : registry.pauses.entities) {
+                registry.remove_all_components_of(e);
+            }
+            break;
+        case UIElementType::GameOverScreen:
+            for (auto e : registry.overs.entities) {
+                registry.remove_all_components_of(e);
+            }
+            break;
+        case UIElementType::StartScreen:
+            if (!registry.starts.entities.empty()) {
+                auto startEntity = registry.starts.entities[0];
+                Start &start = registry.starts.components[0];
+                for (auto button : start.buttons) {
+                    registry.remove_all_components_of(button);
+                }
+                registry.remove_all_components_of(start.logo);
+                registry.remove_all_components_of(startEntity);
+            }
+            break;
+        case UIElementType::ShopScreen:
+            if (!registry.shops.entities.empty()) {
+                auto shopEntity = registry.shops.entities[0];
+                Shop &shop = registry.shops.components[0];
+                for (auto button : shop.buttons) {
+                    registry.remove_all_components_of(button);
+                }
+                registry.remove_all_components_of(shopEntity);
+            }
+            break;
+        case UIElementType::InfoScreen:
+            if (!registry.infos.entities.empty()) {
+                auto infoEntity = registry.infos.entities[0];
+                Info &info = registry.infos.components[0];
+                for (auto button : info.buttons) {
+                    registry.remove_all_components_of(button);
+                }
+                registry.remove_all_components_of(infoEntity);
+            }
+            break;
+    }
 }

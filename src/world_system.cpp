@@ -1048,7 +1048,7 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 		else if (current_state == GameState::PAUSE)
 		{
 			current_state = GameState::GAME_PLAY;
-			removePauseScreen();
+			removeUIElements(UIElementType::PauseScreen);
 		}
 	}
 
@@ -1216,8 +1216,11 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
                 shootGun();
             }
 		}
-		else if (current_state == GameState::START_SCREEN && button == GLFW_MOUSE_BUTTON_LEFT)
+		else if (current_state != GameState::GAME_PLAY && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
+			// print clicked coordinates
+			// danys note:  this is where they hanldle the button clicks
+			std::cout << "WORLD SYSTEM -> Clicked coordinates: (" << device_mouse_pos_x << ", " << device_mouse_pos_y << ")" << std::endl;
 			
 			ButtonType clickedButton = getClickedButton();
 
@@ -1226,7 +1229,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				Mix_PlayChannel(-1, click_sound, 0);
 				previous_state = current_state;
 				current_state = GameState::SHOP;
-				removeStartScreen();
+				removeUIElements(UIElementType::StartScreen);
 				createShopScreen();
 			}
 			else if (clickedButton == ButtonType::INFOBUTTON) 
@@ -1234,7 +1237,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				Mix_PlayChannel(-1, click_sound, 0);
 				previous_state = current_state;
 				current_state = GameState::INFO;
-				removeStartScreen();
+				removeUIElements(UIElementType::StartScreen);
 				createInfoScreen();
 			}
 			else if (clickedButton == ButtonType::STARTBUTTON) 
@@ -1243,7 +1246,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				Mix_PlayMusic(background_music, -1);
 				previous_state = current_state;
 				current_state = GameState::GAMEPLAY_CUTSCENE;
-				removeStartScreen();
+				removeUIElements(UIElementType::StartScreen);
 				createGameplayCutScene();
 			}
 		}
@@ -1251,7 +1254,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		{
 			if (getClickedButton() == ButtonType::BACKBUTTON)
 			{
-				removeShopScreen();
+				removeUIElements(UIElementType::ShopScreen);
 				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
 				current_state = previous_state;
@@ -1263,7 +1266,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			Mix_PlayChannel(-1, click_sound, 0);
 			if (getClickedButton() == ButtonType::BACKBUTTON)
 			{
-				removeInfoScreen();
+				removeUIElements(UIElementType::InfoScreen);
 				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
 				current_state = previous_state;
@@ -1280,7 +1283,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				previous_state = current_state;
 				current_state = GameState::START_SCREEN_ANIMATION;
 				moveSelectedBuffsToProgression();
-				removeGameOverScreen();
+				removeUIElements(UIElementType::GameOverScreen);
 				restart_game();
 
 			}
@@ -1303,7 +1306,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		{
 			previous_state = current_state;
 			current_state = GameState::START_SCREEN_ANIMATION;
-			removeCutScene();
+			removeUIElements(UIElementType::CutScenes);
 			restart_game();
 		}
 	}

@@ -123,7 +123,7 @@ int main()
 
             if (stateTimer <= 0.f) {
                 stateTimer = BOOT_CUTSCENE_DURATION_MS;
-				removeCutScene();
+								removeUIElements(UIElementType::CutScenes);
                 previous_state = current_state;
                 current_state = GameState::GAME_PLAY;
             }

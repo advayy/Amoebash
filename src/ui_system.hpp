@@ -3,6 +3,15 @@
 #include "tinyECS/tiny_ecs.hpp"
 #include "render_system.hpp"
 
+enum class UIElementType {
+  CutScenes,
+  PauseScreen,
+  GameOverScreen,
+  StartScreen,
+  ShopScreen,
+  InfoScreen
+};
+
 void removeInfoBoxes();
 void createInfoBoxes();
 Entity createMiniMap(RenderSystem *renderer, vec2 size);
@@ -25,12 +34,7 @@ Entity createCutSceneBackGround();
 Entity createNoseAccent();
 Entity createEnteringNucleus();
 
-void removePauseScreen();
-void removeGameOverScreen();
-void removeStartScreen();
-void removeShopScreen();
-void removeInfoScreen();
-void removeCutScene();
+void removeUIElements(UIElementType type);
 
 Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID texture);
 Entity createStartButton();
