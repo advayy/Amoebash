@@ -40,9 +40,14 @@ Entity createBackButton();
 
 Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, EFFECT_ASSET_ID effect_id);
 Entity createHealthBar();
+Entity createThermometer();
 void createDashRecharge();
 
 Entity createBuffUI(vec2 position, int type);
 void renderCollectedBuff(RenderSystem *renderer, int buffType);
 
 void updateHuds();
+vec2 getBuffSlot (int buffType);
+void removeBuffUI(int buffType);
+vec2 getBuffSlot_uiPos (int buffType);
+void findAndRemove(std::vector<int>& vec, int N);

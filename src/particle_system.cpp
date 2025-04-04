@@ -77,6 +77,27 @@ void ParticleSystem::step(float elapsed_ms)
                         color = color * life_ratio * 2.0f;
                     }
                 }
+                break; 
+            }
+            case PARTICLE_TYPE::RIPPLE_PARTICLE:
+            {
+                Motion& motion = registry.motions.get(entity);
+                
+                motion.position += motion.velocity * (elapsed_ms / 1000.f);
+                
+                float life_ratio = particle.lifetime_ms / particle.max_lifetime_ms;
+                float start_size = 2.0f;
+                float end_size = 4.0f;
+                float current_size = start_size + (end_size - start_size) * (1.0f - life_ratio);
+                motion.scale = {current_size, current_size};
+                
+                if (registry.colors.has(entity))
+                {
+                    vec3& color = registry.colors.get(entity);
+                    color = color * life_ratio;
+                }
+                motion.velocity *= 0.97f;
+                
                 break;
             }
             default:
@@ -97,7 +118,6 @@ void ParticleSystem::createParticles(PARTICLE_TYPE type, vec2 position, int coun
             }
             break;
             /// add more particles type heree
-
         default:
             break;
     }
@@ -141,9 +161,99 @@ Entity ParticleSystem::createDeathParticle(vec2 position)
 
     registry.renderRequests.insert(
         entity,
-        {TEXTURE_ASSET_ID::PARTICLE,
+        {TEXTURE_ASSET_ID::DEATH_PARTICLE,
          EFFECT_ASSET_ID::TEXTURED,  
          GEOMETRY_BUFFER_ID::SPRITE});
 
     return entity;
+}
+
+Entity ParticleSystem::createRippleParticle(vec2 position, float lifetime_scale = 1.0f)
+{
+    Entity entity = Entity();
+    Motion& motion = registry.motions.emplace(entity);
+    motion.position = position;
+
+    Particle& particle = registry.particles.emplace(entity);
+    particle.type = PARTICLE_TYPE::RIPPLE_PARTICLE;
+    particle.max_lifetime_ms = (3000.0f + uniform_dist(rng) * 200.0f) * lifetime_scale;
+    particle.max_lifetime_ms = particle.lifetime_ms;
+    particle.state = PARTICLE_STATE::FADE;
+
+    registry.renderRequests.insert(
+        entity,
+        {TEXTURE_ASSET_ID::PIXEL_PARTICLE,
+         EFFECT_ASSET_ID::TEXTURED,
+         GEOMETRY_BUFFER_ID::SPRITE});
+
+    return entity;
+}
+
+void ParticleSystem::createPlayerRipples(Entity player_entity)
+{
+    if (!registry.motions.has(player_entity))
+        return;
+
+    Motion& player_motion = registry.motions.get(player_entity);
+    float player_speed = glm::length(player_motion.velocity);
+    if (glm::length(player_motion.velocity) < 1.0f) return;
+
+    vec2 velocity_direction = glm::normalize(player_motion.velocity);
+    vec2 perpendicular = vec2(-velocity_direction.y, velocity_direction.x);
+
+    float tail_offset = player_motion.scale.y * -0.35f;
+    float side_offset = player_motion.scale.x * 0.35f;
+
+    vec2 tail_center = player_motion.position - velocity_direction * tail_offset;
+
+    float random_factor = 5.0f;
+    vec2 randomness = vec2(
+        (uniform_dist(rng) - 0.5f) * random_factor,
+        (uniform_dist(rng) - 0.5f) * random_factor
+    );
+
+    vec2 left_position = tail_center - perpendicular * side_offset + randomness;
+    vec2 right_position = tail_center + perpendicular * side_offset + randomness;
+
+    float speed_scale = 1.0f;
+
+    float left_distance = glm::length(left_position - tail_center);
+    float right_distance = glm::length(right_position - tail_center);
+
+    float left_speed = left_distance * speed_scale;
+    float right_speed = right_distance * speed_scale;
+
+    float angle_variation = 0.01f;
+    float angle_offset_left = (uniform_dist(rng) - 0.5f) * angle_variation;
+    float angle_offset_right = (uniform_dist(rng) - 0.5f) * angle_variation;
+
+    vec2 left_base_dir = -perpendicular;
+    vec2 right_base_dir = perpendicular;
+
+    float cos_left = cos(angle_offset_left);
+    float sin_left = sin(angle_offset_left);
+    vec2 left_direction = vec2(
+        left_base_dir.x * cos_left - left_base_dir.y * sin_left,
+        left_base_dir.x * sin_left + left_base_dir.y * cos_left
+    );
+
+    float cos_right = cos(angle_offset_right);
+    float sin_right = sin(angle_offset_right);
+    vec2 right_direction = vec2(
+        right_base_dir.x * cos_right - right_base_dir.y * sin_right,
+        right_base_dir.x * sin_right + right_base_dir.y * cos_right
+    );
+
+    float lifetime_scale = glm::clamp(player_speed / 100.f, 0.2f, 1.0f);
+    Entity left_particle = createRippleParticle(left_position, lifetime_scale);
+    Entity right_particle = createRippleParticle(right_position, lifetime_scale);
+
+    Motion& left_motion = registry.motions.get(left_particle);
+    Motion& right_motion = registry.motions.get(right_particle);
+
+    left_motion.velocity = left_direction * left_speed;
+    right_motion.velocity = right_direction * right_speed;
+
+    particlesByType[PARTICLE_TYPE::RIPPLE_PARTICLE].push_back(left_particle);
+    particlesByType[PARTICLE_TYPE::RIPPLE_PARTICLE].push_back(right_particle);
 }

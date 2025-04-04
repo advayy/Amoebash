@@ -84,6 +84,7 @@ public:
     ComponentContainer<Gun> guns;
 	// NUCLEUS MENU SLOT
 	ComponentContainer<Slot> slots;
+	ComponentContainer<Thermometer> thermometers;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
@@ -143,6 +144,7 @@ public:
 		registry_list.push_back(&slots);
         registry_list.push_back(&clickableBuffs);
 		registry_list.push_back(&bossArrows);
+		registry_list.push_back(&thermometers);
 	}
 
 	void clear_all_components()
