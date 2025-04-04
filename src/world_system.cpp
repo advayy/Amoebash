@@ -223,21 +223,19 @@ void WorldSystem::updateCamera(float elapsed_ms)
 	camera.grid_position = positionToGridCell(camera.position);
 }
 
-void WorldSystem::updateMouseCoords()
-{
-	// Get the current window size to use for calculations
-	int current_width, current_height;
+void WorldSystem::updateMouseCoords() { 
+	int current_width, current_height; 
 	glfwGetWindowSize(window, &current_width, &current_height);
 
 	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
 
-	// Calculate normalized device coordinates to world space using consistent scaling
-	float scale_x = (float)current_width / (640.0f * WORK_SCALE_FACTOR);
-	float scale_y = (float)current_height / (360.0f * WORK_SCALE_FACTOR);
-
-	// Transform mouse coordinates to game coordinates consistently
-	game_mouse_pos_x = (device_mouse_pos_x / scale_x) + camera.position.x - (640.0f * WORK_SCALE_FACTOR / 2);
-	game_mouse_pos_y = (device_mouse_pos_y / scale_y) + camera.position.y - (360.0f * WORK_SCALE_FACTOR / 2);
+	// Use current window dimensions relative to WINDOW_WIDTH_PX and WINDOW_HEIGHT_PX
+	float scale_x = (float)current_width / WINDOW_WIDTH_PX;
+	float scale_y = (float)current_height / WINDOW_HEIGHT_PX;
+	
+	// Adjust device mouse coordinates to world coordinates
+	game_mouse_pos_x = (device_mouse_pos_x / scale_x) + camera.position.x - (WINDOW_WIDTH_PX / 2);
+	game_mouse_pos_y = (device_mouse_pos_y / scale_y) + camera.position.y - (WINDOW_HEIGHT_PX / 2);
 }
 
 bool WorldSystem::updateBoss()
@@ -1134,13 +1132,13 @@ ButtonType WorldSystem::getClickedButton()
     int current_width, current_height;
     glfwGetWindowSize(window, &current_width, &current_height);
     
-    float scale_x = current_width / (640.0f * WORK_SCALE_FACTOR);
-    float scale_y = current_height / (360.0f * WORK_SCALE_FACTOR);
+		float scale_x = current_width / WINDOW_WIDTH_PX; 
+		float scale_y = current_height / WINDOW_HEIGHT_PX;
+
     
     // Get camera position
     Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
-    
-
+  
     if (current_state == GameState::GAME_OVER && registry.overs.size() > 0) {
         for (auto& over : registry.overs.components) {
             for (auto button_entity : over.buttons) {
@@ -1216,44 +1214,49 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
                 shootGun();
             }
 		}
-		else if (current_state != GameState::GAME_PLAY && button == GLFW_MOUSE_BUTTON_LEFT)
+		else if (current_state == GameState::START_SCREEN && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
-			// print clicked coordinates
 			// danys note:  this is where they hanldle the button clicks
-			std::cout << "WORLD SYSTEM -> Clicked coordinates: (" << device_mouse_pos_x << ", " << device_mouse_pos_y << ")" << std::endl;
-			
+			std::cout << "start screen" << " -> Clicked coordinates: (" << device_mouse_pos_x << ", " << device_mouse_pos_y << ")" << std::endl;
+
 			ButtonType clickedButton = getClickedButton();
 
-			if (clickedButton == ButtonType::SHOPBUTTON) 
+			switch (clickedButton)
 			{
+			case ButtonType::SHOPBUTTON:
 				Mix_PlayChannel(-1, click_sound, 0);
-				previous_state = current_state;
-				current_state = GameState::SHOP;
+				AdvanceGameState(GameState::SHOP);
+
 				removeUIElements(UIElementType::StartScreen);
 				createShopScreen();
-			}
-			else if (clickedButton == ButtonType::INFOBUTTON) 
-			{
+				break;
+			case ButtonType::INFOBUTTON:
 				Mix_PlayChannel(-1, click_sound, 0);
-				previous_state = current_state;
-				current_state = GameState::INFO;
+				AdvanceGameState(GameState::INFO);
+
 				removeUIElements(UIElementType::StartScreen);
 				createInfoScreen();
-			}
-			else if (clickedButton == ButtonType::STARTBUTTON) 
-			{
+				break;
+			case ButtonType::STARTBUTTON:
 				Mix_PlayChannel(-1, click_sound, 0);
 				Mix_PlayMusic(background_music, -1);
-				previous_state = current_state;
-				current_state = GameState::GAMEPLAY_CUTSCENE;
+
+				AdvanceGameState(GameState::GAMEPLAY_CUTSCENE);
 				removeUIElements(UIElementType::StartScreen);
 				createGameplayCutScene();
+				break;
+			default:
+				break;
 			}
 		}
 		else if (current_state == GameState::SHOP && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
+			std::cout << "shop screen" << " -> Clicked coordinates: (" << device_mouse_pos_x << ", " << device_mouse_pos_y << ")" << std::endl;
+
 			if (getClickedButton() == ButtonType::BACKBUTTON)
 			{
+				std::cout << "back button is clicked" << std::endl;
+
 				removeUIElements(UIElementType::ShopScreen);
 				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
@@ -1263,9 +1266,15 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		}
 		else if (current_state == GameState::INFO && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
-			Mix_PlayChannel(-1, click_sound, 0);
+			std::cout << "info screen" << " -> Clicked coordinates: (" << device_mouse_pos_x << ", " << device_mouse_pos_y << ")" << std::endl;
+			// print getClickedButton() << std::endl;
+			std::cout << "typ of button: " << getClickedButton() << std::endl;
+
 			if (getClickedButton() == ButtonType::BACKBUTTON)
 			{
+				std::cout << "back button is clicked" << std::endl;
+				
+				Mix_PlayChannel(-1, click_sound, 0);
 				removeUIElements(UIElementType::InfoScreen);
 				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
@@ -1273,7 +1282,6 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				previous_state = temp;
 			}
 		}
-		// gameover state -> start screen state // FLAG this should be done with the button on the screen
 		else if (current_state == GameState::GAME_OVER && button == GLFW_MOUSE_BUTTON_LEFT) 
 		{
 			Entity e;
@@ -1301,7 +1309,6 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				}
 			}
 		}
-
 		else if (current_state == GameState::VICTORY && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
 			previous_state = current_state;
@@ -1353,9 +1360,9 @@ bool WorldSystem::isClickableBuffClicked(Entity* return_e) {
     glfwGetWindowSize(window, &current_width, &current_height);
     
     // Calculate scaling factors
-    float scale_x = current_width / (640.0f * WORK_SCALE_FACTOR);
-    float scale_y = current_height / (360.0f * WORK_SCALE_FACTOR);
-    
+		float scale_x = current_width / WINDOW_WIDTH_PX; 
+		float scale_y = current_height / WINDOW_HEIGHT_PX;
+
     // Get camera position
     Camera& camera = registry.cameras.components[0];
     vec2 camera_pos = camera.position;
@@ -1467,8 +1474,8 @@ bool WorldSystem::isButtonClicked(screenButton &button)
     glfwGetWindowSize(window, &current_width, &current_height);
     
     // Calculate scaling factors 
-    float scale_x = current_width / (640.0f * WORK_SCALE_FACTOR);
-    float scale_y = current_height / (360.0f * WORK_SCALE_FACTOR);
+float scale_x = current_width / WINDOW_WIDTH_PX; 
+float scale_y = current_height / WINDOW_HEIGHT_PX;
     
     // Scale button coordinates
     float scaled_button_x = button_x * scale_x;
@@ -1950,12 +1957,25 @@ void WorldSystem::toggleFullscreen()
     Camera &camera_after = registry.cameras.get(registry.cameras.entities[0]);
     camera_after.initialized = false;
     camera_after.position = originalCameraPos;  // Maintain the same camera position
+
+		// print the new window size
+		std::cout << "Window size: " << WINDOW_WIDTH_PX << ", " << WINDOW_HEIGHT_PX << std::endl;
     
     // update mouse coordinates immediately to prevent any lag in player control
     updateMouseCoords();
     
     // reset UI elements and HUD positions
     updateHuds();
+
+		for (auto& button : registry.buttons.components) {
+			if (registry.motions.has(registry.buttons.entities[&button - &registry.buttons.components[0]])) {
+					Entity buttonEntity = registry.buttons.entities[&button - &registry.buttons.components[0]];
+					Motion& motion = registry.motions.get(buttonEntity);
+					
+					// Re-calculate button center ba
+					button.center = motion.position + vec2{WINDOW_WIDTH_PX / 2.f, WINDOW_HEIGHT_PX / 2.f};
+			}
+	}
     
     // Wait for a frame
     glfwPollEvents();

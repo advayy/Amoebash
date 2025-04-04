@@ -75,6 +75,12 @@ public:
 	GameState current_state = GameState::START_SCREEN_ANIMATION;
 	GameState previous_state = GameState::START_SCREEN_ANIMATION;
 
+	void AdvanceGameState(GameState new_state)
+	{
+		previous_state = current_state;
+		current_state = new_state;
+	}
+
 	float stateTimer = BOOT_CUTSCENE_DURATION_MS;
 	void collectBuff(Entity player_entity, Entity buff_entity);
 

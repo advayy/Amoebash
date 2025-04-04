@@ -4,49 +4,55 @@
 #include <random>
 #include <iostream>
 
+
+
+#include "world_system.hpp"
+
 // create info boxes in tutorial mode
-void createInfoBoxes() {
+void createInfoBoxes()
+{
 
 	TEXTURE_ASSET_ID baseTexture = TEXTURE_ASSET_ID::MOUSE_CONTROL_INFO;
 
-	for (int i = 0; i < 6; i ++) {
+	for (int i = 0; i < 6; i++)
+	{
 		auto entity1 = Entity();
-		int x = (3  *  i)  + 1;
+		int x = (3 * i) + 1;
 		int y = (i % 2 == 0) ? 11 : 8;
 		vec2 infoPosition = gridCellToPosition({x, y});
-	
-		Motion& motion1 = registry.motions.emplace(entity1);
+
+		Motion &motion1 = registry.motions.emplace(entity1);
 		motion1.position = infoPosition;
 
 		motion1.scale = {128.f * WORK_SCALE_FACTOR * 3, 128.f * WORK_SCALE_FACTOR};
-	
-		InfoBox& info1 = registry.infoBoxes.emplace(entity1);
-	
+
+		InfoBox &info1 = registry.infoBoxes.emplace(entity1);
+
 		registry.renderRequests.insert(
-			entity1,
-			{
-				baseTexture,
-				EFFECT_ASSET_ID::TEXTURED,
-				GEOMETRY_BUFFER_ID::SPRITE
-			}
-		);
+				entity1,
+				{baseTexture,
+				 EFFECT_ASSET_ID::TEXTURED,
+				 GEOMETRY_BUFFER_ID::SPRITE});
 
 		baseTexture = static_cast<TEXTURE_ASSET_ID>(static_cast<int>(baseTexture) + 1);
 	}
 }
 
 // remove info boxes in tutorial mode
-void removeInfoBoxes() {
+void removeInfoBoxes()
+{
 	std::vector<Entity> entityList;
 
-	for (auto e : registry.infoBoxes.entities) {
+	for (auto e : registry.infoBoxes.entities)
+	{
 		entityList.push_back(e);
 	}
 
-    int size = entityList.size();
-    for(int i = 0; i < size; i++) {
-        registry.remove_all_components_of(entityList[i]);
-    }
+	int size = entityList.size();
+	for (int i = 0; i < size; i++)
+	{
+		registry.remove_all_components_of(entityList[i]);
+	}
 	return;
 }
 
@@ -64,13 +70,13 @@ Entity createMiniMap(RenderSystem *renderer, vec2 size)
 
 	// add render request
 	registry.renderRequests.insert(
-		entity,
-		{TEXTURE_ASSET_ID::SPIKE_ENEMY,
-		 EFFECT_ASSET_ID::MINI_MAP,
-		 GEOMETRY_BUFFER_ID::SPRITE});
+			entity,
+			{TEXTURE_ASSET_ID::SPIKE_ENEMY,
+			 EFFECT_ASSET_ID::MINI_MAP,
+			 GEOMETRY_BUFFER_ID::SPRITE});
 
 	// add entity to minimaps
-	MiniMap& m = registry.miniMaps.emplace(entity);
+	MiniMap &m = registry.miniMaps.emplace(entity);
 	m.visited = std::vector<std::vector<int>>(MAP_HEIGHT, std::vector<int>(MAP_WIDTH, 0));
 
 	return entity;
@@ -80,23 +86,20 @@ Entity createMiniMap(RenderSystem *renderer, vec2 size)
 Entity createStartScreen(vec2 position)
 {
 	Entity startScreenEntity = Entity();
-	
+
 	// render request for back ground
 	registry.renderRequests.insert(
-		startScreenEntity,
-		{
-			TEXTURE_ASSET_ID::START_SCREEN_BG,
-			EFFECT_ASSET_ID::TEXTURED,
-			GEOMETRY_BUFFER_ID::SPRITE
-		}
-	);
+			startScreenEntity,
+			{TEXTURE_ASSET_ID::START_SCREEN_BG,
+			 EFFECT_ASSET_ID::TEXTURED,
+			 GEOMETRY_BUFFER_ID::SPRITE});
 
-	Motion& bg_motion = registry.motions.emplace(startScreenEntity);
+	Motion &bg_motion = registry.motions.emplace(startScreenEntity);
 	bg_motion.position = WORLD_ORIGIN;
-	bg_motion.velocity = vec2(0.f,0.f);
+	bg_motion.velocity = vec2(0.f, 0.f);
 	bg_motion.angle = 0.f;
 	bg_motion.scale = {WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX};
-	
+
 	Start &start = registry.starts.emplace(startScreenEntity);
 	GameScreen &screen = registry.gameScreens.emplace(startScreenEntity);
 	screen.type = ScreenType::START;
@@ -107,13 +110,13 @@ Entity createStartScreen(vec2 position)
 																					START_BUTTON_SCALE,
 																					TEXTURE_ASSET_ID::BUTTON_START);
 	Entity shopButtonEntity = createButton(ButtonType::SHOPBUTTON,
-																					SHOP_BUTTON_COORDINATES,
-																					SHOP_BUTTON_SCALE,
-																					TEXTURE_ASSET_ID::BUTTON_SHOP);
+																				 SHOP_BUTTON_COORDINATES,
+																				 SHOP_BUTTON_SCALE,
+																				 TEXTURE_ASSET_ID::BUTTON_SHOP);
 	Entity infoButtonEntity = createButton(ButtonType::INFOBUTTON,
-																					INFO_BUTTON_COORDINATES,
-																					INFO_BUTTON_SCALE,
-																					TEXTURE_ASSET_ID::BUTTON_INFO);
+																				 INFO_BUTTON_COORDINATES,
+																				 INFO_BUTTON_SCALE,
+																				 TEXTURE_ASSET_ID::BUTTON_INFO);
 
 	start.buttons = std::vector<Entity>{startButtonEntity, shopButtonEntity, infoButtonEntity};
 
@@ -121,10 +124,10 @@ Entity createStartScreen(vec2 position)
 
 	// render request for logo
 	registry.renderRequests.insert(
-		startScreenLogoEntity,
-		{TEXTURE_ASSET_ID::GAME_LOGO,
-		 EFFECT_ASSET_ID::TEXTURED,
-		 GEOMETRY_BUFFER_ID::SPRITE});
+			startScreenLogoEntity,
+			{TEXTURE_ASSET_ID::GAME_LOGO,
+			 EFFECT_ASSET_ID::TEXTURED,
+			 GEOMETRY_BUFFER_ID::SPRITE});
 
 	Motion &logo_motion = registry.motions.emplace(startScreenLogoEntity);
 	logo_motion.position = position;
@@ -142,12 +145,12 @@ Entity createShopScreen()
 	Entity shopScreenEntity = Entity();
 
 	registry.renderRequests.insert(
-		shopScreenEntity,
-		{TEXTURE_ASSET_ID::START_SCREEN_BG,
-		 EFFECT_ASSET_ID::TEXTURED,
-		 GEOMETRY_BUFFER_ID::SPRITE});
-	
-	Shop& shop = registry.shops.emplace(shopScreenEntity);
+			shopScreenEntity,
+			{TEXTURE_ASSET_ID::START_SCREEN_BG,
+			 EFFECT_ASSET_ID::TEXTURED,
+			 GEOMETRY_BUFFER_ID::SPRITE});
+
+	Shop &shop = registry.shops.emplace(shopScreenEntity);
 
 	GameScreen &screen = registry.gameScreens.emplace(shopScreenEntity);
 	screen.type = ScreenType::SHOP;
@@ -159,9 +162,12 @@ Entity createShopScreen()
 	motion.position = position;
 	motion.scale = scale;
 
-	Entity backButtonEntity = createBackButton();
-	
-	shop.buttons = std::vector{backButtonEntity};
+	Entity backButtonEntity = createButton(ButtonType::BACKBUTTON,
+																					BACK_BUTTON_COORDINATES,
+																					BACK_BUTTON_SCALE,
+																					TEXTURE_ASSET_ID::BACK_BUTTON);
+
+	shop.buttons = std::vector<Entity>{backButtonEntity};
 
 	return shopScreenEntity;
 }
@@ -172,12 +178,12 @@ Entity createInfoScreen()
 	Entity infoScreenEntity = Entity();
 
 	registry.renderRequests.insert(
-		infoScreenEntity,
-		{TEXTURE_ASSET_ID::START_SCREEN_BG,
-		 EFFECT_ASSET_ID::TEXTURED,
-		 GEOMETRY_BUFFER_ID::SPRITE});
+			infoScreenEntity,
+			{TEXTURE_ASSET_ID::START_SCREEN_BG,
+			 EFFECT_ASSET_ID::TEXTURED,
+			 GEOMETRY_BUFFER_ID::SPRITE});
 
-	Info& info = registry.infos.emplace(infoScreenEntity);
+	Info &info = registry.infos.emplace(infoScreenEntity);
 
 	GameScreen &screen = registry.gameScreens.emplace(infoScreenEntity);
 	screen.type = ScreenType::INFO;
@@ -189,9 +195,12 @@ Entity createInfoScreen()
 	motion.position = position;
 	motion.scale = scale;
 
-	Entity backButtonEntity = createBackButton();
+	Entity backButtonEntity = createButton(ButtonType::BACKBUTTON,
+																					BACK_BUTTON_COORDINATES,
+																					BACK_BUTTON_SCALE,
+																					TEXTURE_ASSET_ID::BACK_BUTTON);
 
-	info.buttons = std::vector{backButtonEntity};
+	info.buttons = std::vector<Entity>{backButtonEntity};
 
 	return infoScreenEntity;
 }
@@ -203,41 +212,39 @@ Entity createGameOverScreen()
 }
 
 // create nucleus menu nucleus
-Entity createNucleusMenuNucleus() {
+Entity createNucleusMenuNucleus()
+{
 	Entity e = Entity();
 
 	registry.renderRequests.insert(e,
-	{
-		TEXTURE_ASSET_ID::NUCLEUS_MENU,
-		EFFECT_ASSET_ID::TEXTURED,
-		GEOMETRY_BUFFER_ID::SPRITE
-	});
+																 {TEXTURE_ASSET_ID::NUCLEUS_MENU,
+																	EFFECT_ASSET_ID::TEXTURED,
+																	GEOMETRY_BUFFER_ID::SPRITE});
 	Motion &motion = registry.motions.emplace(e);
 
 	vec2 scale = {NUCLEUS_MENU_NUCLEUS_WIDTH, NUCLEUS_MENU_NUCLEUS_HEIGHT};
 
 	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
-	motion.position = {camera.position.x + (2*100), camera.position.y + (2*-20)};
+	motion.position = {camera.position.x + (2 * 100), camera.position.y + (2 * -20)};
 	motion.scale = scale;
 
 	return e;
 }
 
 // create nucleus menu slot for buff carry on
-Entity createNucleusMenuSlot(vec2 position, int slotNumber){
+Entity createNucleusMenuSlot(vec2 position, int slotNumber)
+{
 	Entity e = Entity();
 
-	Slot& s = registry.slots.emplace(e);
+	Slot &s = registry.slots.emplace(e);
 	s.number = slotNumber;
 
 	registry.renderRequests.insert(e,
-	{
-		TEXTURE_ASSET_ID::NUCLEUS_MENU_SLOT,
-		EFFECT_ASSET_ID::TEXTURED,
-		GEOMETRY_BUFFER_ID::SPRITE
-	});
+																 {TEXTURE_ASSET_ID::NUCLEUS_MENU_SLOT,
+																	EFFECT_ASSET_ID::TEXTURED,
+																	GEOMETRY_BUFFER_ID::SPRITE});
 
-	Motion& m = registry.motions.emplace(e);
+	Motion &m = registry.motions.emplace(e);
 
 	m.position = position;
 	m.scale = {NUCLEUS_MENU_SLOT_WIDTH, NUCLEUS_MENU_SLOT_HEIGHT};
@@ -246,7 +253,8 @@ Entity createNucleusMenuSlot(vec2 position, int slotNumber){
 }
 
 // create nucleus menu screen with slots and menu
-Entity createNucleusMenuScreen() {
+Entity createNucleusMenuScreen()
+{
 	// Add all buffs collected to the screen,
 	// Add the number of cups
 	// add the nucleus thing
@@ -254,16 +262,16 @@ Entity createNucleusMenuScreen() {
 
 	Entity nucleus = createNucleusMenuNucleus();
 	Entity nucleusMenuScreen = Entity();
-	
+
 	registry.overs.emplace(nucleus);
-	Over& o = registry.overs.emplace(nucleusMenuScreen);
+	Over &o = registry.overs.emplace(nucleusMenuScreen);
 
 	// go through player/ game progression list of like buffs from last run... and place them using drawBuffUI?
-	// center of nucleus 	
-	
+	// center of nucleus
+
 	Camera &camera_temp = registry.cameras.get(registry.cameras.entities[0]);
-	vec2 origin_position = {camera_temp.position.x + (2*100), camera_temp.position.y + (2*-20)};
-	vec2 screeenCentre = {camera_temp.position.x , camera_temp.position.y};	
+	vec2 origin_position = {camera_temp.position.x + (2 * 100), camera_temp.position.y + (2 * -20)};
+	vec2 screeenCentre = {camera_temp.position.x, camera_temp.position.y};
 
 	GameScreen &screen = registry.gameScreens.emplace(nucleusMenuScreen);
 
@@ -272,26 +280,30 @@ Entity createNucleusMenuScreen() {
 	Motion &motion = registry.motions.emplace(nucleusMenuScreen);
 	Camera &camera = registry.cameras.components[0];
 	motion.position = camera.position;
-	
-	vec2 buttonPos = vec2(origin_position.x + 180, origin_position.y + NUCLEUS_MENU_NUCLEUS_HEIGHT/2 + 50);
+
+	vec2 buttonPos = vec2(origin_position.x + 180, origin_position.y + NUCLEUS_MENU_NUCLEUS_HEIGHT / 2 + 50);
 	Entity nextButtonEntity = createNextButton(buttonPos);
 	o.buttons = {nextButtonEntity};
 
-
-	if(p.slots_unlocked == 1) { // upgrade 1...
+	if (p.slots_unlocked == 1)
+	{ // upgrade 1...
 		registry.overs.emplace(createNucleusMenuSlot(origin_position, 1));
-	} else if (p.slots_unlocked == 4) {
+	}
+	else if (p.slots_unlocked == 4)
+	{
 		vec2 pos1 = {origin_position.x + NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT, origin_position.y};
 		vec2 pos2 = {origin_position.x, origin_position.y + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
 		vec2 pos3 = {origin_position.x - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y};
 		vec2 pos4 = {origin_position.x, origin_position.y - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
-		
+
 		registry.overs.emplace(createNucleusMenuSlot(pos4, 1)); // top
 		registry.overs.emplace(createNucleusMenuSlot(pos2, 2)); // left m
 		registry.overs.emplace(createNucleusMenuSlot(pos1, 3)); // right m
 		registry.overs.emplace(createNucleusMenuSlot(pos3, 4)); // bottom
-	} else if (p.slots_unlocked == 9) {
-		
+	}
+	else if (p.slots_unlocked == 9)
+	{
+
 		vec2 pos1 = {origin_position.x - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
 		vec2 pos2 = {origin_position.x, origin_position.y - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
 		vec2 pos3 = {origin_position.x + (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT), origin_position.y - (NUCLEUS_MENU_SLOT_PADDING + NUCLEUS_MENU_SLOT_HEIGHT)};
@@ -314,24 +326,25 @@ Entity createNucleusMenuScreen() {
 	}
 
 	// place each buff on the screen and make it "clickable" - with a clicked and a return to?
-	// HOW MUCH CAN I PLACE ON SCREEN? 
+	// HOW MUCH CAN I PLACE ON SCREEN?
 	// START CORNER PADDING ?
 
 	// CAN PLACE WITHIN THESE RANGES + PADDING TOP, BOTTOM, LEFT
-	float screenTop = screeenCentre.y - WINDOW_HEIGHT_PX/2;
-	float screenLeft = screeenCentre.x - WINDOW_WIDTH_PX/2;
-	float screenBottom = screeenCentre.y + WINDOW_HEIGHT_PX/2;
-	float rightMax = (camera.position.x + (2*100)) - NUCLEUS_MENU_NUCLEUS_WIDTH/2;
+	float screenTop = screeenCentre.y - WINDOW_HEIGHT_PX / 2;
+	float screenLeft = screeenCentre.x - WINDOW_WIDTH_PX / 2;
+	float screenBottom = screeenCentre.y + WINDOW_HEIGHT_PX / 2;
+	float rightMax = (camera.position.x + (2 * 100)) - NUCLEUS_MENU_NUCLEUS_WIDTH / 2;
 	float padding = 20;
 	vec2 startPos = {screenLeft + padding + BUFF_WIDTH, screenTop + padding + BUFF_HEIGHT};
 	vec2 currentPos = startPos;
 
-	for(int i = 0; i < p.buffsFromLastRun.size(); i++) {
+	for (int i = 0; i < p.buffsFromLastRun.size(); i++)
+	{
 
 		registry.overs.emplace(createClickableBuffUI(currentPos, p.buffsFromLastRun[i]));
 		currentPos.y += padding + BUFF_HEIGHT;
 
-		if((currentPos.y + padding + BUFF_HEIGHT) >= screenBottom) // forecast next position will fit otherwise shift start right and update current to start...
+		if ((currentPos.y + padding + BUFF_HEIGHT) >= screenBottom) // forecast next position will fit otherwise shift start right and update current to start...
 		{
 			startPos.x += padding + BUFF_WIDTH;
 			currentPos = startPos;
@@ -346,12 +359,11 @@ Entity createClickableBuffUI(vec2 position, int buffType)
 {
 	Entity buff = Entity();
 
-	ClickableBuff& clickable = registry.clickableBuffs.emplace(buff);
+	ClickableBuff &clickable = registry.clickableBuffs.emplace(buff);
 
 	clickable.picked = false;
 	clickable.returnPosition = position;
 	clickable.type = buffType;
-
 
 	Motion &motion = registry.motions.emplace(buff);
 	motion.position = position;
@@ -359,18 +371,18 @@ Entity createClickableBuffUI(vec2 position, int buffType)
 	motion.scale = {BUFF_WIDTH, BUFF_HEIGHT};
 
 	registry.renderRequests.insert(buff,
-								   {TEXTURE_ASSET_ID::BUFFS_SHEET,
-									EFFECT_ASSET_ID::SPRITE_SHEET,
-									GEOMETRY_BUFFER_ID::SPRITE});
+																 {TEXTURE_ASSET_ID::BUFFS_SHEET,
+																	EFFECT_ASSET_ID::SPRITE_SHEET,
+																	GEOMETRY_BUFFER_ID::SPRITE});
 
 	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(buff);
-	spriteSheet.total_frames = 20;	 
+	spriteSheet.total_frames = 20;
 	spriteSheet.current_frame = buffType;
-								
+
 	SpriteSize &sprite = registry.spritesSizes.emplace(buff);
 	sprite.width = BUFF_WIDTH;
 	sprite.height = BUFF_HEIGHT;
-	
+
 	// std::cout << "created clickable buff ui for " << buff << std::endl;
 
 	return buff;
@@ -382,10 +394,10 @@ Entity createPauseScreen()
 	Entity pauseScreenEntity = Entity();
 
 	registry.renderRequests.insert(
-		pauseScreenEntity,
-		{TEXTURE_ASSET_ID::PAUSE,
-		 EFFECT_ASSET_ID::TEXTURED,
-		 GEOMETRY_BUFFER_ID::SPRITE});
+			pauseScreenEntity,
+			{TEXTURE_ASSET_ID::PAUSE,
+			 EFFECT_ASSET_ID::TEXTURED,
+			 GEOMETRY_BUFFER_ID::SPRITE});
 
 	Pause &pause = registry.pauses.emplace(pauseScreenEntity);
 
@@ -402,10 +414,8 @@ Entity createPauseScreen()
 
 	vec2 buttonPosition = camera.position + vec2(0, 100.f);
 
-	
-
 	Entity saveButtonEntity = createButton(ButtonType::SAVEBUTTON, buttonPosition, BACK_BUTTON_SCALE, TEXTURE_ASSET_ID::BACK_BUTTON);
-	
+
 	ButtonType type = registry.buttons.get(saveButtonEntity).type;
 
 	Pause &saveButton = registry.pauses.emplace(saveButtonEntity);
@@ -427,22 +437,21 @@ void createGameplayCutScene()
 	registry.cutscenes.emplace(nucleus);
 }
 
-
-Entity createEndingWinScene() {
+Entity createEndingWinScene()
+{
 	Entity winScreenEntity = Entity();
 
-	Motion& motion = registry.motions.emplace(winScreenEntity);
+	Motion &motion = registry.motions.emplace(winScreenEntity);
 	motion.angle = 0.0f;
 	motion.velocity = {0.0f, 0.0f};
 	motion.position = registry.cameras.components[0].position;
 	motion.scale = vec2({WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX});
 
 	registry.renderRequests.insert(
-		winScreenEntity,
-		{TEXTURE_ASSET_ID::WINSCREEN,
-		 EFFECT_ASSET_ID::SPRITE_SHEET,
-		 GEOMETRY_BUFFER_ID::SPRITE}
-	);
+			winScreenEntity,
+			{TEXTURE_ASSET_ID::WINSCREEN,
+			 EFFECT_ASSET_ID::SPRITE_SHEET,
+			 GEOMETRY_BUFFER_ID::SPRITE});
 
 	Animation &animation = registry.animations.emplace(winScreenEntity);
 	animation.time_per_frame = WIN_CUTSCENE_DURATION_MS / 4;
@@ -454,8 +463,8 @@ Entity createEndingWinScene() {
 	spriteSheet.total_frames = 4;
 
 	SpriteSize &sprite = registry.spritesSizes.emplace(winScreenEntity);
-	sprite.width = 128.f; 
-	sprite.height = 68.f; 
+	sprite.width = 128.f;
+	sprite.height = 68.f;
 
 	registry.cutscenes.emplace(winScreenEntity);
 
@@ -474,10 +483,10 @@ Entity createCutSceneBackGround()
 	motion.scale = vec2({WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX});
 
 	registry.renderRequests.insert(
-		backGroundEntity,
-		{TEXTURE_ASSET_ID::CUTSCENEBACKGROUND,
-		 EFFECT_ASSET_ID::SPRITE_SHEET,
-		 GEOMETRY_BUFFER_ID::SPRITE});
+			backGroundEntity,
+			{TEXTURE_ASSET_ID::CUTSCENEBACKGROUND,
+			 EFFECT_ASSET_ID::SPRITE_SHEET,
+			 GEOMETRY_BUFFER_ID::SPRITE});
 
 	Animation &animation = registry.animations.emplace(backGroundEntity);
 	animation.time_per_frame = INTRO_CUTSCENE_DURATION_MS / 8;
@@ -508,10 +517,10 @@ Entity createNose()
 	motion.position = {(67.f / 2 - 3) * 5 * WORK_SCALE_FACTOR, (+0.5) * 5 * WORK_SCALE_FACTOR};
 
 	registry.renderRequests.insert(
-		noseEntity,
-		{TEXTURE_ASSET_ID::NOSE,
-		 EFFECT_ASSET_ID::SPRITE_SHEET,
-		 GEOMETRY_BUFFER_ID::SPRITE});
+			noseEntity,
+			{TEXTURE_ASSET_ID::NOSE,
+			 EFFECT_ASSET_ID::SPRITE_SHEET,
+			 GEOMETRY_BUFFER_ID::SPRITE});
 
 	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(noseEntity);
 
@@ -519,8 +528,8 @@ Entity createNose()
 
 	std::uniform_real_distribution<float> uniform_dist(0.0f, 1.0f);
 
-    std::random_device rd;
-    std::default_random_engine rng(rd());
+	std::random_device rd;
+	std::default_random_engine rng(rd());
 	int random_value = static_cast<int>(uniform_dist(rng) * spriteSheet.total_frames);
 	spriteSheet.current_frame = random_value;
 
@@ -547,18 +556,18 @@ Entity createNoseAccent()
 	motion.position = {(67.f / 2 - 3) * 5 * WORK_SCALE_FACTOR, (+0.5) * 5 * WORK_SCALE_FACTOR};
 
 	registry.renderRequests.insert(
-		accentEntity,
-		{TEXTURE_ASSET_ID::NOSEACCENT,
-		 EFFECT_ASSET_ID::SPRITE_SHEET,
-		 GEOMETRY_BUFFER_ID::SPRITE});
+			accentEntity,
+			{TEXTURE_ASSET_ID::NOSEACCENT,
+			 EFFECT_ASSET_ID::SPRITE_SHEET,
+			 GEOMETRY_BUFFER_ID::SPRITE});
 
 	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(accentEntity);
 	spriteSheet.total_frames = 5;
 
 	std::uniform_real_distribution<float> uniform_dist(0.0f, 1.0f);
 
-    std::random_device rd;
-    std::default_random_engine rng(rd());
+	std::random_device rd;
+	std::default_random_engine rng(rd());
 	int random_value = static_cast<int>(uniform_dist(rng) * spriteSheet.total_frames);
 	// std::cout << random_value << std::endl;
 	spriteSheet.current_frame = random_value;
@@ -581,13 +590,13 @@ Entity createEnteringNucleus()
 	motion.position = {0.f, 0.f};
 
 	motion.scale = vec2({128.f * 5 * WORK_SCALE_FACTOR,
-						 68.f * 5 * WORK_SCALE_FACTOR});
+											 68.f * 5 * WORK_SCALE_FACTOR});
 
 	registry.renderRequests.insert(
-		nucleusEntity,
-		{TEXTURE_ASSET_ID::ENTERINGNUCLEUS,
-		 EFFECT_ASSET_ID::SPRITE_SHEET,
-		 GEOMETRY_BUFFER_ID::SPRITE});
+			nucleusEntity,
+			{TEXTURE_ASSET_ID::ENTERINGNUCLEUS,
+			 EFFECT_ASSET_ID::SPRITE_SHEET,
+			 GEOMETRY_BUFFER_ID::SPRITE});
 
 	Animation &animation = registry.animations.emplace(nucleusEntity);
 	animation.time_per_frame = INTRO_CUTSCENE_DURATION_MS / 8;
@@ -605,21 +614,16 @@ Entity createEnteringNucleus()
 	return nucleusEntity;
 }
 
-
-
-
-
-
 // Button Creater
 Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID texture)
 {
 	Entity buttonEntity = Entity();
 
 	registry.renderRequests.insert(
-		buttonEntity,
-		{texture,
-		 EFFECT_ASSET_ID::TEXTURED,
-		 GEOMETRY_BUFFER_ID::SPRITE});
+			buttonEntity,
+			{texture,
+			 EFFECT_ASSET_ID::TEXTURED,
+			 GEOMETRY_BUFFER_ID::SPRITE});
 
 	Motion &motion = registry.motions.emplace(buttonEntity);
 
@@ -639,42 +643,31 @@ Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID
 }
 
 
-
-Entity createBackButton() {
+Entity createNextButton(vec2 position)
+{
 	vec2 scale = BACK_BUTTON_SCALE;
-	vec2 position = BACK_BUTTON_COORDINATES;
 
-	return createButton(ButtonType::BACKBUTTON,
-						position,
-						scale,
-						TEXTURE_ASSET_ID::BACK_BUTTON);
-}
+	Entity buttonEntity = Entity();
 
-Entity createNextButton(vec2 position) {
-    vec2 scale = BACK_BUTTON_SCALE;
-    
-    Entity buttonEntity = Entity();
+	registry.renderRequests.insert(
+			buttonEntity,
+			{TEXTURE_ASSET_ID::BACK_BUTTON,
+			 EFFECT_ASSET_ID::TEXTURED,
+			 GEOMETRY_BUFFER_ID::SPRITE});
 
-    registry.renderRequests.insert(
-        buttonEntity,
-        {TEXTURE_ASSET_ID::BACK_BUTTON,
-         EFFECT_ASSET_ID::TEXTURED,
-         GEOMETRY_BUFFER_ID::SPRITE});
+	Motion &motion = registry.motions.emplace(buttonEntity);
+	motion.position = position;
+	motion.scale = scale;
 
-    Motion &motion = registry.motions.emplace(buttonEntity);
-    motion.position = position;
-    motion.scale = scale;
+	screenButton &button = registry.buttons.emplace(buttonEntity);
+	button.w = scale[0];
+	button.h = scale[1];
 
+	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+	button.center = vec2(position.x, position.y);
+	button.type = ButtonType::PROCEED_BUTTON;
 
-    screenButton &button = registry.buttons.emplace(buttonEntity);
-    button.w = scale[0];
-    button.h = scale[1];
-    
-    Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
-    button.center = vec2(position.x, position.y);
-    button.type = ButtonType::PROCEED_BUTTON;
-    
-    return buttonEntity;
+	return buttonEntity;
 }
 
 Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, EFFECT_ASSET_ID effect_id)
@@ -688,10 +681,10 @@ Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, E
 	registry.uiElements.emplace(entity, UIElement{motion.position, motion.scale});
 
 	registry.renderRequests.insert(
-		entity,
-		{texture_id,
-		 effect_id,
-		 GEOMETRY_BUFFER_ID::SPRITE});
+			entity,
+			{texture_id,
+			 effect_id,
+			 GEOMETRY_BUFFER_ID::SPRITE});
 
 	return entity;
 }
@@ -710,10 +703,10 @@ Entity createHealthBar()
 	healthBar.health = registry.players.get(registry.players.entities[0]).current_health;
 
 	registry.renderRequests.insert(
-		entity,
-		{TEXTURE_ASSET_ID::HEALTH_BAR_UI,
-		 EFFECT_ASSET_ID::HEALTH_BAR,
-		 GEOMETRY_BUFFER_ID::SPRITE});
+			entity,
+			{TEXTURE_ASSET_ID::HEALTH_BAR_UI,
+			 EFFECT_ASSET_ID::HEALTH_BAR,
+			 GEOMETRY_BUFFER_ID::SPRITE});
 
 	return entity;
 }
@@ -742,12 +735,11 @@ void createDashRecharge()
 		sprite.height = 20;
 
 		registry.renderRequests.insert(
-			dash,
-			{TEXTURE_ASSET_ID::DASH_UI,
-			 EFFECT_ASSET_ID::SPRITE_SHEET,
-			 GEOMETRY_BUFFER_ID::SPRITE});
+				dash,
+				{TEXTURE_ASSET_ID::DASH_UI,
+				 EFFECT_ASSET_ID::SPRITE_SHEET,
+				 GEOMETRY_BUFFER_ID::SPRITE});
 
-		
 		Motion &motion = registry.motions.emplace(dash);
 		registry.dashRecharges.emplace(dash);
 	}
@@ -765,20 +757,20 @@ Entity createBuffUI(vec2 position, int type)
 	motion.scale = {BUFF_UI_WIDTH, BUFF_UI_HEIGHT};
 
 	registry.renderRequests.insert(buffUI,
-								   {TEXTURE_ASSET_ID::BUFFS_SHEET,
-									EFFECT_ASSET_ID::SPRITE_SHEET,
-									GEOMETRY_BUFFER_ID::SPRITE});
+																 {TEXTURE_ASSET_ID::BUFFS_SHEET,
+																	EFFECT_ASSET_ID::SPRITE_SHEET,
+																	GEOMETRY_BUFFER_ID::SPRITE});
 
 	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(buffUI);
-	spriteSheet.total_frames = 20;	 
+	spriteSheet.total_frames = 20;
 	spriteSheet.current_frame = type;
-								
+
 	SpriteSize &sprite = registry.spritesSizes.emplace(buffUI);
 	sprite.width = BUFF_UI_WIDTH;
 	sprite.height = BUFF_UI_HEIGHT;
-	
+
 	registry.uiElements.emplace(buffUI, UIElement{motion.position, motion.scale});
-	
+
 	return buffUI;
 }
 
@@ -796,7 +788,7 @@ void renderCollectedBuff(RenderSystem *renderer, int buffType)
 	else if (numCollectedBuffs >= buffsPerRow && numCollectedBuffs < BUFF_NUM)
 	{
 		position = {BUFF_START_POS.x + (numCollectedBuffs - buffsPerRow) * BUFF_SPACING,
-					BUFF_START_POS.y - BUFF_SPACING};
+								BUFF_START_POS.y - BUFF_SPACING};
 		Entity buffUI = createBuffUI(position, buffType);
 	}
 }
@@ -820,8 +812,8 @@ void updateHuds()
 				continue;
 			Motion &uiMotion = registry.motions.get(entity);
 			UIElement &uiElement = registry.uiElements.get(entity);
-			uiMotion.position = {camera.position.x + (uiElement.position.x * WINDOW_WIDTH_PX/(630.0* WORK_SCALE_FACTOR) ), 
-				camera.position.y + (uiElement.position.y * WINDOW_HEIGHT_PX/(360.0 * WORK_SCALE_FACTOR) )};
+			uiMotion.position = {camera.position.x + (uiElement.position.x * WINDOW_WIDTH_PX / (630.0 * WORK_SCALE_FACTOR)),
+													 camera.position.y + (uiElement.position.y * WINDOW_HEIGHT_PX / (360.0 * WORK_SCALE_FACTOR))};
 		}
 	}
 
@@ -829,75 +821,71 @@ void updateHuds()
 	{
 		HealthBar &healthBar = registry.healthBars.get(registry.healthBars.entities[0]);
 		Motion &healthBarMotion = registry.motions.get(registry.healthBars.entities[0]);
-		healthBarMotion.position = {camera.position.x + (HEALTH_BAR_POS.x * WINDOW_WIDTH_PX/(630.0 * WORK_SCALE_FACTOR)),
-									camera.position.y + (HEALTH_BAR_POS.y * WINDOW_HEIGHT_PX/(360.0 * WORK_SCALE_FACTOR) )};
-
+		healthBarMotion.position = {camera.position.x + (HEALTH_BAR_POS.x * WINDOW_WIDTH_PX / (630.0 * WORK_SCALE_FACTOR)),
+																camera.position.y + (HEALTH_BAR_POS.y * WINDOW_HEIGHT_PX / (360.0 * WORK_SCALE_FACTOR))};
 	}
 }
 
 
-bool isButtonClicked(Entity buttonEntity, const vec2 &mouseWorldPos) {
-	if (!registry.motions.has(buttonEntity))
-			return false;
-	Motion &motion = registry.motions.get(buttonEntity);
-	// Assume motion.position is the center and motion.scale represents the full width/height.
-	float halfWidth = motion.scale.x / 2.f;
-	float halfHeight = motion.scale.y / 2.f;
-	vec2 center = motion.position;
-	
-	return (mouseWorldPos.x >= center.x - halfWidth &&
-					mouseWorldPos.x <= center.x + halfWidth &&
-					mouseWorldPos.y >= center.y - halfHeight &&
-					mouseWorldPos.y <= center.y + halfHeight);
-}
 
-void removeUIElements(UIElementType type) {
-    switch (type) {
-        case UIElementType::CutScenes:
-            for (auto e : registry.cutscenes.entities) {
-                registry.remove_all_components_of(e);
-            }
-            break;
-        case UIElementType::PauseScreen:
-            for (auto e : registry.pauses.entities) {
-                registry.remove_all_components_of(e);
-            }
-            break;
-        case UIElementType::GameOverScreen:
-            for (auto e : registry.overs.entities) {
-                registry.remove_all_components_of(e);
-            }
-            break;
-        case UIElementType::StartScreen:
-            if (!registry.starts.entities.empty()) {
-                auto startEntity = registry.starts.entities[0];
-                Start &start = registry.starts.components[0];
-                for (auto button : start.buttons) {
-                    registry.remove_all_components_of(button);
-                }
-                registry.remove_all_components_of(start.logo);
-                registry.remove_all_components_of(startEntity);
-            }
-            break;
-        case UIElementType::ShopScreen:
-            if (!registry.shops.entities.empty()) {
-                auto shopEntity = registry.shops.entities[0];
-                Shop &shop = registry.shops.components[0];
-                for (auto button : shop.buttons) {
-                    registry.remove_all_components_of(button);
-                }
-                registry.remove_all_components_of(shopEntity);
-            }
-            break;
-        case UIElementType::InfoScreen:
-            if (!registry.infos.entities.empty()) {
-                auto infoEntity = registry.infos.entities[0];
-                Info &info = registry.infos.components[0];
-                for (auto button : info.buttons) {
-                    registry.remove_all_components_of(button);
-                }
-                registry.remove_all_components_of(infoEntity);
-            }
-            break;
-    }
+void removeUIElements(UIElementType type)
+{
+	switch (type)
+	{
+	case UIElementType::CutScenes:
+		for (auto e : registry.cutscenes.entities)
+		{
+			registry.remove_all_components_of(e);
+		}
+		break;
+	case UIElementType::PauseScreen:
+		for (auto e : registry.pauses.entities)
+		{
+			registry.remove_all_components_of(e);
+		}
+		break;
+	case UIElementType::GameOverScreen:
+		for (auto e : registry.overs.entities)
+		{
+			registry.remove_all_components_of(e);
+		}
+		break;
+	case UIElementType::StartScreen:
+		if (!registry.starts.entities.empty())
+		{
+			auto startEntity = registry.starts.entities[0];
+			Start &start = registry.starts.components[0];
+			for (auto button : start.buttons)
+			{
+				registry.remove_all_components_of(button);
+			}
+			registry.remove_all_components_of(start.logo);
+			registry.remove_all_components_of(startEntity);
+		}
+		break;
+	case UIElementType::ShopScreen:
+		if (!registry.shops.entities.empty())
+		{
+			auto shopEntity = registry.shops.entities[0];
+			Shop &shop = registry.shops.components[0];
+			for (auto button : shop.buttons)
+			{
+				registry.remove_all_components_of(button);
+			}
+			registry.remove_all_components_of(shopEntity);
+		}
+		break;
+	case UIElementType::InfoScreen:
+		if (!registry.infos.entities.empty())
+		{
+			auto infoEntity = registry.infos.entities[0];
+			Info &info = registry.infos.components[0];
+			for (auto button : info.buttons)
+			{
+				registry.remove_all_components_of(button);
+			}
+			registry.remove_all_components_of(infoEntity);
+		}
+		break;
+	}
 }
