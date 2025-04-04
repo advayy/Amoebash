@@ -774,6 +774,8 @@ void WorldSystem::handle_collisions()
 				player.current_health -= projectile.damage;
                 applyVignetteEffect();
 
+                Mix_PlayChannel(-1, damage_sound, 0);
+
 				// remove projectile
                 removals.push_back(entity2);
 				// registry.remove_all_components_of(entity2);
@@ -967,6 +969,8 @@ void WorldSystem::handle_collisions()
 						if (!bossAI.is_charging) {
 							player.current_health -= BOSS_RUMBLE_DAMAGE;
                             applyVignetteEffect();
+
+                            Mix_PlayChannel(-1, damage_sound, 0);
 						}
 
 						if (player.knockback_duration > 0.f && glm::length(bossMotion.velocity) > 0.1f)
