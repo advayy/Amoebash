@@ -732,10 +732,10 @@ void WorldSystem::restart_game()
 	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
 		
 	if (progress_map["tutorial_mode"]) {
-		createPlayer(renderer, gridCellToPosition({0, 10}));
+		createPlayer(renderer, gridCellToPosition({1, 10}));
 		createSpikeEnemy(renderer, gridCellToPosition({12, 10}));
-		createKey(renderer, gridCellToPosition({16, 10}));
-		createChest(renderer, gridCellToPosition({19, 10}));
+		createKey(renderer, gridCellToPosition({15, 10}));
+		createChest(renderer, gridCellToPosition({18, 10}));
 	} else {
 		createPlayer(renderer, gridCellToPosition(vec2(playerPosition.second, playerPosition.first)));
 	}
