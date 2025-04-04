@@ -977,6 +977,12 @@ vec2 getBuffSlot_uiPos (int buffType) {
 void removeBuffUI(int buffType) {
 	// After you find the position to remove, then first remove the buff, and for all motions that are greater than it, move them back + think of the wrap around case
 	// this ensures that the buff no and slot no are always paired.
+
+    auto& collectedBuffs = registry.players.get(registry.players.entities[0]).buffsCollected;
+    if (collectedBuffs[buffType] > 1) {
+        collectedBuffs[buffType]--;
+        return;
+    }
 	
 	vec2 removeBuffPosition = getBuffSlot(buffType);
 	vec2 uiPos_removeBuffPosition = getBuffSlot_uiPos(buffType);
