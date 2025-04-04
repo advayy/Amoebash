@@ -172,6 +172,8 @@ public:
 	void drawDashRecharge(const mat3 &projection);
 	void drawHexagon(Entity entity, const mat3 &projection);
 	void drawBuffUI();
+	void drawGunCooldownIndicator(const vec2& camera_position, const mat3& projection);
+
 
 	// INSTANCING: instanced particle drawing
 	void drawInstancedParticles();

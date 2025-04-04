@@ -253,7 +253,7 @@ const vec2 WEAPON_PILL_UI_POS = {WINDOW_WIDTH_PX / 2 - UI_MARGIN_X - WEAPON_PILL
 								 WINDOW_HEIGHT_PX / 2 - UI_MARGIN_Y - NUCLEUS_UI_HEIGHT / 2}; // pos.y aligns w/ nuclues
 const vec2 GUN_UI_POS = {WEAPON_PILL_UI_POS.x - WEAPON_PILL_UI_WIDTH / 4,
                          WEAPON_PILL_UI_POS.y};
-
+const vec2 GUN_COOLDOWN_INDICATOR_SCALE = {20.f * UI_SCALE, 20.f * UI_SCALE};
 
 
 // GAME BALANCE

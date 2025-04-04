@@ -696,10 +696,6 @@ struct Particle
     float speed_factor = 100.0f;
 };
 
-struct CooldownIndicator {
-    float cooldown;
-};
-
 // MACROS for "to_json" and "from_json" on user-defined structs
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(vec2, x, y)

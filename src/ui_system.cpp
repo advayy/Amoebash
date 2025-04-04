@@ -870,23 +870,6 @@ void createDashRecharge()
 	registry.dashRecharges.emplace(dash);
 }
 
-Entity createWeaponCooldownIndicator() {
-	Entity entity = Entity();
-
-	Motion &motion = registry.motions.emplace(entity);
-	motion.scale = {20.f, 20.f};
-
-	CooldownIndicator &c = registry.cooldownIndicators.emplace(entity);
-
-	registry.renderRequests.insert(
-		entity,
-		{TEXTURE_ASSET_ID::CIRCLE,
-		 EFFECT_ASSET_ID::WEAPON_COOLDOWN_INDICATOR,
-		 GEOMETRY_BUFFER_ID::SPRITE});
-
-	return entity;
-}
-
 
 Entity createBuffUI(vec2 position, int type)
 {
@@ -1083,13 +1066,4 @@ void updateHuds()
 			camera.position.y + THERMOMETER_POS.y
 		};
 	}
-
-	if (!registry.cooldownIndicators.entities.empty()) {
-		Motion &motion = registry.motions.get(registry.cooldownIndicators.entities[0]);
-		motion.position = {
-			camera.position.x + GUN_UI_POS.x,
-			camera.position.y + GUN_UI_POS.y - 50.f
-		};
-	}
-
 }
