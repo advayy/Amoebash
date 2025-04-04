@@ -463,9 +463,7 @@ void WorldSystem::updateDangerLevel(float elapsed_ms_since_last_update) {
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
-	// std::cout << "Level : " << level << std::endl;
 	updateDangerLevel(elapsed_ms_since_last_update);
-
 	updateCamera(elapsed_ms_since_last_update);
 
 	if (progress_map["tutorial_mode"] && registry.infoBoxes.size() == 0) {
@@ -647,6 +645,12 @@ void WorldSystem::goToNextLevel()
     for (int i = 0; i < buff_size; i++) {
         registry.remove_all_components_of(registry.buffs.entities.back());
     }
+
+	// remove boss arrows in case not removed
+	int bossArrow_size = registry.bossArrows.size();
+	for (int i = 0; i < bossArrow_size; i++) {
+		registry.remove_all_components_of(registry.bossArrows.entities.back());
+	}
 
 	gameOver = false;
 	std::pair<int, int> playerPosition;
@@ -1022,7 +1026,9 @@ void WorldSystem::handle_collisions()
                     removals.push_back(entity2);
                     Mix_PlayChannel(-1, enemy_death_sound, 0);
                     
-                    createBuff(vec2(enemy_position.x, enemy_position.y));
+					if (level != FINAL_BOSS_LEVEL) {
+						createBuff(vec2(enemy_position.x, enemy_position.y));
+					}
                     particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
                 } 
 

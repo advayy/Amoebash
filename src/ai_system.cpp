@@ -434,7 +434,7 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 						}
 					}
 				} else {
-					for (int row = 0; row < rawMap.size(); row++) {
+					for (int row = 2; row < 10; row++) {
 						for (int col = 0; col < rawMap[row].size(); col++) {
 							if (rawMap[row][col] == tileType::EMPTY) {
 								createDenderite(nullptr, gridCellToPosition({ col, row }));
@@ -477,8 +477,6 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 						enemyBehavior.shoot_cool_down = 300.f;
 					}
 				} else {
-					// now spawn following eye projectile
-					// two of them
 					vec2 dir = direction;
 					vec2 velocity = dir * PROJECTILE_SPEED * 0.5f;
 
