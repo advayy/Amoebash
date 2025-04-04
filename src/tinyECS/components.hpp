@@ -667,6 +667,9 @@ struct DenderiteAI : EnemyAI
 	float shootCoolDown = 200.0f;
 	int currentNodeIndex = 0;
 	DenderiteState state = DenderiteState::HUNT;
+
+	float timeSinceLastRecalc = 0.f;
+    float recalcTimeThreshold = DENDERITE_RECALC_DURATION;
 };
 
 enum class BossState

@@ -82,19 +82,24 @@ void PhysicsSystem::step(float elapsed_ms)
 		motion.position += motion.velocity * step_seconds;
 
 		if (registry.denderiteAIs.has(entity)) {
+			
 			DenderiteAI& denderiteAI = registry.denderiteAIs.get(entity);
-			if (denderiteAI.state == DenderiteState::HUNT) {
-				ivec2 player_grid = positionToGridCell(player_motion.position);
-				ivec2 denderite_grid = positionToGridCell(motion.position);
-				if (denderiteAI.path.empty() || denderiteAI.path.back() != player_grid) {
-					denderiteAI.path.clear();
-					denderiteAI.currentNodeIndex = 0;
 
-					if (find_path(denderiteAI.path, motion.position, player_motion.position)) {
-						// for (auto& cell : denderiteAI.path) {
-						// 	std::cout << "(" << cell.x << "," << cell.y << ") ";
-						// }
-						// std::cout << std::endl;
+			if (denderiteAI.state == DenderiteState::HUNT) {
+				denderiteAI.timeSinceLastRecalc += elapsed_ms;
+
+				bool needsRecalc = denderiteAI.path.empty() ||
+                           denderiteAI.timeSinceLastRecalc > denderiteAI.recalcTimeThreshold;
+
+				if (needsRecalc) {
+					denderiteAI.path.clear();
+            		denderiteAI.currentNodeIndex = 0;
+
+					if(find_path(denderiteAI.path, motion.position, player_motion.position)) {
+						denderiteAI.timeSinceLastRecalc = DENDERITE_RECALC_DURATION;
+					} else {
+						motion.velocity = {0.f, 0.f};
+						motion.angle = 0.f;
 					}
 				}
 
@@ -102,12 +107,13 @@ void PhysicsSystem::step(float elapsed_ms)
 					if (denderiteAI.currentNodeIndex >= (int)denderiteAI.path.size()) {
 						motion.velocity = {0.f, 0.f};
 						motion.angle = 0.f;
+						denderiteAI.path.clear();
+						denderiteAI.currentNodeIndex = 0;
 					} else {
 						ivec2 currentTargetTile = denderiteAI.path[denderiteAI.currentNodeIndex];
 						vec2 targetWorldPos = gridCellToPosition(currentTargetTile);
-
 						vec2 offset = targetWorldPos - motion.position;
-            			float dist  = glm::length(offset);
+						float dist = glm::length(offset);
 						
 						if (dist > 0.0001f) {
 							vec2 dir = offset / dist;
@@ -117,13 +123,12 @@ void PhysicsSystem::step(float elapsed_ms)
 							motion.velocity = {0.f, 0.f};
 							motion.angle = 0.f;
 						}
-					
-						float reachThreshold = 5.f; 
-						if (glm::distance(motion.position, targetWorldPos) < reachThreshold) {
+		
+						float reachThreshold = 5.f;
+						if (dist < reachThreshold) {
 							denderiteAI.currentNodeIndex++;
 						}
 					}
-
 				}
 			}
 		}
