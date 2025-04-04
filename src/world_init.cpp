@@ -252,6 +252,10 @@ Entity createPlayer(RenderSystem *renderer, vec2 position)
 	sprite.width = 32;
 	sprite.height = 32;
 
+    for (int i = 0; i < NUMBER_OF_BUFFS; i++) {
+        p.buffsCollected[i] = 0;
+    }
+
     createGun(renderer, position);
 
 	return entity;
@@ -862,6 +866,7 @@ void damagePlayer(float damageAmount) {
 		removeBuffUI(5); // PLANT CELL WALL/ SHEILD
 	} else {
 		player.current_health -= damageAmount * player.dangerFactor;
+		applyVignetteEffect();
 
 		if (player.current_health <= 0) {
 			if (player.extra_lives > 0) {
@@ -872,7 +877,7 @@ void damagePlayer(float damageAmount) {
 				// game over
 			}
 		} else {
-			applyVignetteEffect();
+
 		}
 	}
 }

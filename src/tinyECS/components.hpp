@@ -26,7 +26,7 @@ namespace nlohmann {
 }
 
 struct Progression {
-	std::vector<int> buffsFromLastRun;
+	std::unordered_map<int, int> buffsFromLastRun;
 	std::vector<int> pickedInNucleus;
 	int slots_unlocked = 9;
 };
@@ -84,9 +84,20 @@ struct Player
 	float knockback_duration = 0.0f;
 
 	vec2 grid_position = {0, 0};
-	std::vector<int> buffsCollected;
+	// std::vector<int> buffsCollected;
+    std::unordered_map<int, int> buffsCollected;
+
+    int germoney_count = 0;
 
 	float dangerFactor = DEFAULT_DANGER_LEVEL;
+};
+
+struct Text
+{
+	std::string text;
+	float scale;
+	vec2 position;
+	vec3 color;
 };
 
 struct Dashing
@@ -501,8 +512,10 @@ enum class EFFECT_ASSET_ID
 	DASH_UI = HEALTH_BAR + 1,
 	HEXAGON = DASH_UI + 1,
 	PARTICLE_EFFECT = HEXAGON + 1,
-	THERMOMETER_EFFECT = PARTICLE_EFFECT + 1,
+    FONT = PARTICLE_EFFECT + 1,
+    THERMOMETER_EFFECT = FONT + 1,
 	EFFECT_COUNT = THERMOMETER_EFFECT + 1,
+
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 

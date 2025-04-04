@@ -464,7 +464,7 @@ void WorldSystem::updateDangerLevel(float elapsed_ms_since_last_update) {
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
-	// std::cout << "Level : " << level << std::endl;
+	// // std::cout << "Level : " << level << std::endl;
 	updateDangerLevel(elapsed_ms_since_last_update);
 
 	updateCamera(elapsed_ms_since_last_update);
@@ -916,6 +916,9 @@ void WorldSystem::handle_collisions()
                     removals.push_back(entity2);
 					// level += 1;
 					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
+                    
+                    Player& player = registry.players.get(registry.players.entities[0]);
+                    player.germoney_count += 1;
 
 					createBuff(vec2(enemy_position.x, enemy_position.y));
 					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15); 
@@ -1002,6 +1005,9 @@ void WorldSystem::handle_collisions()
                     points += 1;
                     removals.push_back(entity2);
                     Mix_PlayChannel(-1, enemy_death_sound, 0);
+
+                    Player& player = registry.players.get(registry.players.entities[0]);
+                    player.germoney_count += 1;
                     
                     createBuff(vec2(enemy_position.x, enemy_position.y));
                     particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
@@ -1583,7 +1589,7 @@ void WorldSystem::applyBuff(Player& player, int buff_type)
 	}
     
 	if(!skipUIRender) {
-	    player.buffsCollected.push_back(buff_type);
+        player.buffsCollected[buff_type] += 1;
 		renderCollectedBuff(renderer, buff_type);
 	}
 }

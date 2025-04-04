@@ -314,17 +314,19 @@ Entity createNucleusMenuScreen() {
 	vec2 startPos = {screenLeft + padding + BUFF_WIDTH, screenTop + padding + BUFF_HEIGHT};
 	vec2 currentPos = startPos;
 
-	for(int i = 0; i < p.buffsFromLastRun.size(); i++) {
+    for (auto &buff : registry.players.components[0].buffsCollected) {
+        if (buff.second == 0) continue;
 
-		registry.overs.emplace(createClickableBuffUI(currentPos, p.buffsFromLastRun[i]));
-		currentPos.y += padding + BUFF_HEIGHT;
+        for (int i = 0; i < buff.second; i++) {
+            registry.overs.emplace(createClickableBuffUI(currentPos, buff.first));
+            currentPos.y += padding + BUFF_HEIGHT;
 
-		if((currentPos.y + padding + BUFF_HEIGHT) >= screenBottom) // forecast next position will fit otherwise shift start right and update current to start...
-		{
-			startPos.x += padding + BUFF_WIDTH;
-			currentPos = startPos;
-		}
-	}
+            if ((currentPos.y + padding + BUFF_HEIGHT) >= screenBottom) {
+                startPos.x += padding + BUFF_WIDTH;
+                currentPos = startPos;
+            }
+        }
+    }
 
 	return nucleusMenuScreen;
 }
@@ -902,23 +904,44 @@ Entity createBuffUI(vec2 position, int type)
 // Render collected buffs a certain amount per row that stacks
 void renderCollectedBuff(RenderSystem *renderer, int buffType)
 {
-	int numCollectedBuffs = registry.buffUIs.size();
-	int freeSlot = registry.buffUIs.size(); // Assume that we will never leave a buff on there with a gap when removing.
+    auto &collectedBuffs = registry.players.get(registry.players.entities[0]).buffsCollected;
+    if (collectedBuffs[buffType] == 0) {
+        return;
+    }
 
+    int numCollectedBuffs = 0;
+    for (auto& buff : collectedBuffs) {
+        if (buff.second > 0) {
+            numCollectedBuffs++;
+        }
+    }
+
+	int freeSlot = registry.buffUIs.size(); // Assume that we will never leave a buff on there with a gap when removing.
 	int buffsPerRow = BUFF_NUM / 2;
 	vec2 position;
 	
-	if (freeSlot < buffsPerRow) // if the free slot id is larger than collected buffs 
-	{
-		position = {BUFF_START_POS.x + freeSlot * BUFF_SPACING, BUFF_START_POS.y};
-		Entity buffUI = createBuffUI(position, buffType);
-	}
-	else if (freeSlot >= buffsPerRow && freeSlot < BUFF_NUM)
-	{
-		position = {BUFF_START_POS.x + (freeSlot - buffsPerRow) * BUFF_SPACING,
-					BUFF_START_POS.y - BUFF_SPACING};
-		Entity buffUI = createBuffUI(position, buffType);
-	}
+    bool found = false;
+    for (auto& b : registry.buffUIs.entities) {
+        if (registry.buffUIs.get(b).buffType == buffType) {
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        if (freeSlot < buffsPerRow) // if the free slot id is larger than collected buffs 
+        {
+            position = {BUFF_START_POS.x + freeSlot * BUFF_SPACING, BUFF_START_POS.y};
+            Entity buffUI = createBuffUI(position, buffType);
+        }
+        else if (freeSlot >= buffsPerRow && freeSlot < BUFF_NUM)
+        {
+            position = {BUFF_START_POS.x + (freeSlot - buffsPerRow) * BUFF_SPACING,
+                        BUFF_START_POS.y - BUFF_SPACING};
+            Entity buffUI = createBuffUI(position, buffType);
+        }
+    }
+
 }
 
 vec2 getBuffSlot (int buffType) {
@@ -954,6 +977,12 @@ vec2 getBuffSlot_uiPos (int buffType) {
 void removeBuffUI(int buffType) {
 	// After you find the position to remove, then first remove the buff, and for all motions that are greater than it, move them back + think of the wrap around case
 	// this ensures that the buff no and slot no are always paired.
+
+    auto& collectedBuffs = registry.players.get(registry.players.entities[0]).buffsCollected;
+    if (collectedBuffs[buffType] > 1) {
+        collectedBuffs[buffType]--;
+        return;
+    }
 	
 	vec2 removeBuffPosition = getBuffSlot(buffType);
 	vec2 uiPos_removeBuffPosition = getBuffSlot_uiPos(buffType);
@@ -1012,15 +1041,15 @@ void removeBuffUI(int buffType) {
 	}
 
 	// Remove the buff from the player's collected buffs
-	findAndRemove(registry.players.get(registry.players.entities[0]).buffsCollected, buffType
-);
+	findAndRemove(registry.players.get(registry.players.entities[0]).buffsCollected, buffType);
 }
 
 
-void findAndRemove(std::vector<int>& vec, int N) {
-    auto it = std::find(vec.begin(), vec.end(), N);
-    if (it != vec.end()) {
-        vec.erase(it); // Erase the first occurrence
+void findAndRemove(std::unordered_map<int, int>& map, int N) {
+    auto it = map.find(N);
+    if (it != map.end()) {
+        if (it->second == 0) return;
+        it->second--;
     }
 }
 
