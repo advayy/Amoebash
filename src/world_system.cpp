@@ -1360,12 +1360,14 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		{
 			if (getClickedButton() == ButtonType::SAVEBUTTON)
 			{
+				Mix_PlayChannel(-1, click_sound, 0);
 				if (level < BOSS_LEVEL && !progress_map["tutorial_mode"]) {
 					saveGame();
 					saveProgress();
 				}
 			}
 			else if (getClickedButton() == ButtonType::RESUMEBUTTON){
+				Mix_PlayChannel(-1, click_sound, 0);
 				current_state = GameState::GAME_PLAY;
 				removePauseScreen();
 				Mix_ResumeMusic(); // Resume music
