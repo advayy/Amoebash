@@ -488,11 +488,11 @@ void RenderSystem::drawDangerFactorText() {
     if (dangerLevel < 1.5f) {
         dangerText = "Undetected";
     } else if (dangerLevel < 2.5f) {
-        dangerText = "Low Danger";
+        dangerText = "Detected";
     } else if (dangerLevel < 3.5f) {
-        dangerText = "Med Danger";
+        dangerText = "Threatned";
     } else if (dangerLevel < 4.5f) {
-        dangerText = "High Danger";
+        dangerText = "Immunoresponse";
     } else {
         dangerText = "Meltdown!";
     }
