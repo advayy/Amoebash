@@ -502,7 +502,7 @@ void RenderSystem::drawDangerFactorText() {
     screen_pos.x -= THERMOMETER_WIDTH * .6f;
     screen_pos.y -= THERMOMETER_HEIGHT * .55f;
 
-    renderText(dangerText, screen_pos.x, screen_pos.y, .2f, vec3(1.f, 1.f, 1.f));
+    renderText(dangerText, screen_pos.x, screen_pos.y, .3f, vec3(1.f, 1.f, 1.f));
 }
 
 void RenderSystem::drawGermoneyText() {
