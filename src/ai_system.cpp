@@ -15,57 +15,81 @@ bool AISystem::isPlayerInRadius(vec2 player, vec2 enemy, float& distance, vec2& 
 	return distance < detectionRadius;
 }
 
-SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity& enemyEntity, SpikeEnemyAI& enemyBehavior, float dist, vec2 direction, bool playerDetected, float elapsed_ms)
+SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity &enemyEntity, SpikeEnemyAI &enemyBehavior, float dist, vec2 direction, bool playerDetected, float elapsed_ms)
 {
-	Motion& enemyMotion = registry.motions.get(enemyEntity);
+	Motion &enemyMotion = registry.motions.get(enemyEntity);
 
 	switch (enemyBehavior.state)
 	{
-		case SpikeEnemyState::CHASING:
+	case SpikeEnemyState::CHASING:
+	{
+		// adjust velocity towards player
+		if (dist > 0.001f)
 		{
-			// adjust velocity towards player
-			if (dist > 0.001f)
-			{
-				enemyMotion.velocity = direction * ENEMY_SPEED;
-			}
-			break;
+			enemyMotion.velocity = direction * ENEMY_SPEED;
 		}
-		case SpikeEnemyState::PATROLLING:
-		{
-			// define patrol boundaries based on stored origin and range.
-			float leftBoundary = enemyBehavior.patrolOrigin.x - enemyBehavior.patrolRange;
-			float rightBoundary = enemyBehavior.patrolOrigin.x + enemyBehavior.patrolRange;
-
-			// if enemy goes past boundaries, reverse its patrol direction.
-			if (enemyMotion.position.x < leftBoundary || enemyMotion.position.x > rightBoundary)
-			{
-				enemyBehavior.patrolForwards = !enemyBehavior.patrolForwards;
-				enemyBehavior.patrolTime = 0.0f;
-			}
-
-			enemyBehavior.patrolTime += elapsed_ms;
-
-			// M1 interpolation implementation
-
-			float t = enemyBehavior.patrolTime / ENEMY_PATROL_TIME_MS;
-			enemyMotion.position.x = enemyBehavior.patrolForwards ? lerp(leftBoundary, rightBoundary, t) : lerp(rightBoundary, leftBoundary, t);
+		break;
+	}
+	case SpikeEnemyState::PATROLLING:
+	{
+			// get current X position for comparison later
+		float currentX = enemyMotion.position.x;
+		
+		// define patrol boundaries based on stored origin and range
+		float leftBoundary = enemyBehavior.patrolOrigin.x - enemyBehavior.patrolRange;
+		float rightBoundary = enemyBehavior.patrolOrigin.x + enemyBehavior.patrolRange;
+		
+		// set velocity based on patrol direction
+		float targetVelocityX = enemyBehavior.patrolForwards ? 
+			SPIKE_ENEMY_PATROL_SPEED_PER_MS * 1000 : 
+			-SPIKE_ENEMY_PATROL_SPEED_PER_MS * 1000;
 			
-			// sse circular detection to transition to dash state.
-			if (playerDetected)
-			{
-				changeAnimationFrames(enemyEntity, 7, 12);
-				return SpikeEnemyState::DASHING;
+		enemyMotion.velocity.x = targetVelocityX;
+		enemyMotion.velocity.y = 0;
+
+		// check if enemy has not moved since the last frame
+		if (enemyBehavior.hasPreviousPosition) {
+			float distanceMoved = abs(currentX - enemyBehavior.previousPositionX);
+			
+			// if almost no movement occurred but we should be moving
+			if (distanceMoved < 0.1f && abs(targetVelocityX) > 50.0f) {
+				// Wall collision - reverse direction
+				enemyBehavior.patrolForwards = !enemyBehavior.patrolForwards;
+				
+				// Apply immediate velocity change in the opposite direction
+				enemyMotion.velocity.x = -enemyMotion.velocity.x;
+				
+				// debug
+				// std::cout << "Wall collision detected! Reversing direction." << std::endl;
 			}
-			break;
 		}
-		case SpikeEnemyState::DASHING:
+		
+		// save current position for next frame comparison
+		enemyBehavior.previousPositionX = currentX;
+		enemyBehavior.hasPreviousPosition = true;
+		
+		// check normal patrol boundary conditions
+		if (enemyMotion.position.x >= rightBoundary) {
+			enemyBehavior.patrolForwards = false;
+		} else if (enemyMotion.position.x <= leftBoundary) {
+			enemyBehavior.patrolForwards = true;
+		}
+		
+		// Switch to dashing if player detected
+		if (playerDetected) {
+			changeAnimationFrames(enemyEntity, 7, 12);
+			return SpikeEnemyState::DASHING;
+		}
+		break;
+	}
+	case SpikeEnemyState::DASHING:
+	{
+		if (dist > 0.001f && playerDetected)
 		{
-			if (dist > 0.001f && playerDetected)
+			// dash toward the player
+			enemyMotion.velocity = direction * ENEMY_SPEED;
+			if (dist <= 25.f)
 			{
-				// dash toward the player
-				enemyMotion.velocity = direction * ENEMY_SPEED;
-	            if (dist <= 25.f)
-            {
 				// if overlapping with player deal damage
                 enemyBehavior.bombTimer -= elapsed_ms;
                 if (enemyBehavior.bombTimer <= 0)
@@ -74,40 +98,39 @@ SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity& enemyEntity, SpikeEne
                     enemy.health = 0;
                     Player &player = registry.players.get(registry.players.entities[0]);
 					damagePlayer(SPIKE_ENEMY_BOMB_DAMAGE);
-                    applyVignetteEffect();
-                }
-            }
+				}
+			}
 		}
-			else
-			{
-				// change animation frames and reset patrol state
-				changeAnimationFrames(enemyEntity, 0, 6);
-				enemyBehavior.patrolOrigin = enemyMotion.position;
-				enemyBehavior.patrolTime = 0.0f;
-				enemyMotion.velocity = { 0, 0 };
-	            enemyBehavior.bombTimer = SPIKE_ENEMY_BOMB_TIMER;
+		else
+		{
+			// change animation frames and reset patrol state
+			changeAnimationFrames(enemyEntity, 0, 6);
+			enemyBehavior.patrolOrigin = enemyMotion.position;
+			enemyMotion.velocity = {0, 0};
+			enemyBehavior.bombTimer = SPIKE_ENEMY_BOMB_TIMER;
 
 			return SpikeEnemyState::PATROLLING;
-			}
+		}
 		break;
 	}
-    case SpikeEnemyState::KNOCKBACK:
-    {
+	case SpikeEnemyState::KNOCKBACK:
+	{
 		// apply knockback velocity
-        enemyBehavior.knockbackTimer -= elapsed_ms;
-        if (enemyBehavior.knockbackTimer <= 0)
-        {
-            changeAnimationFrames(enemyEntity, 0, 6);
-            enemyBehavior.patrolOrigin = enemyMotion.position;
-            enemyBehavior.patrolTime = 0.0f;
-            enemyMotion.velocity = { 0, 0 };
-            return SpikeEnemyState::DASHING;
-        } else {
+		enemyBehavior.knockbackTimer -= elapsed_ms;
+		if (enemyBehavior.knockbackTimer <= 0)
+		{
+			changeAnimationFrames(enemyEntity, 0, 6);
+			enemyBehavior.patrolOrigin = enemyMotion.position;
+			enemyMotion.velocity = {0, 0};
+			return SpikeEnemyState::DASHING;
+		}
+		else
+		{
 			// decay knockback velocity
-            enemyMotion.velocity *= SPIKE_ENEMY_KNOCKBACK_DECAY;
-        }
-	        break;
-	    }
+			enemyMotion.velocity *= SPIKE_ENEMY_KNOCKBACK_DECAY;
+		}
+		break;
+	}
 	}
 
 	return enemyBehavior.state;

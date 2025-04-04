@@ -610,6 +610,12 @@ enum class SpikeEnemyState
 struct SpikeEnemyAI : EnemyAI
 {
 	SpikeEnemyState state = SpikeEnemyState::PATROLLING;
+	
+	// Simple position tracking for collision detection
+	float previousPositionX = 0.0f;
+	bool hasPreviousPosition = false;
+	
+	float bombTimer = SPIKE_ENEMY_BOMB_TIMER;
 };
 
 enum class RBCEnemyState
