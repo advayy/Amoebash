@@ -11,7 +11,15 @@ layout(location = 0) out vec4 color;
 
 vec4 vignette(vec4 in_color) 
 {
-	return in_color;
+    vec2 centered_uv = texcoord - vec2(0.5, 0.5);
+    float dist = length(centered_uv) * 1.5;
+
+    float vignette_strength = smoothstep(0.5, 1.0, dist) * vignette_screen_factor; 
+
+    vec3 tint = vec3(1.0, 1.0, 1.0);
+    vec3 vignette_color = mix(in_color.rgb, tint, vignette_strength * 0.6);
+
+    return vec4(vignette_color, in_color.a);
 }
 
 // darken the screen, i.e., fade to black

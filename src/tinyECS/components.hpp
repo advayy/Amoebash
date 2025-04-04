@@ -222,8 +222,9 @@ extern Debug debugging;
 // Sets the brightness of the screen
 struct ScreenState
 {
-	float darken_screen_factor = -1;
-	float vignette_screen_factor = -1;
+	float darken_screen_factor = -1.f;
+	float vignette_screen_factor = 0.f;
+    float vignette_timer_ms = 0.f;
 };
 
 // A struct to refer to debugging graphics in the ECS

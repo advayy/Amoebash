@@ -91,12 +91,12 @@ SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity &enemyEntity, SpikeEne
 			if (dist <= 25.f)
 			{
 				// if overlapping with player deal damage
-				enemyBehavior.bombTimer -= elapsed_ms;
-				if (enemyBehavior.bombTimer <= 0)
-				{
-					Enemy &enemy = registry.enemies.get(enemyEntity);
-					enemy.health = 0;
-
+                enemyBehavior.bombTimer -= elapsed_ms;
+                if (enemyBehavior.bombTimer <= 0)
+                {
+                    Enemy& enemy = registry.enemies.get(enemyEntity);
+                    enemy.health = 0;
+                    Player &player = registry.players.get(registry.players.entities[0]);
 					damagePlayer(SPIKE_ENEMY_BOMB_DAMAGE);
 				}
 			}
