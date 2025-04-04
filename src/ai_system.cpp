@@ -32,51 +32,51 @@ SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity &enemyEntity, SpikeEne
 	}
 	case SpikeEnemyState::PATROLLING:
 	{
-		// define patrol boundaries based on stored origin and range.
+			// get current X position for comparison later
+		float currentX = enemyMotion.position.x;
+		
+		// define patrol boundaries based on stored origin and range
 		float leftBoundary = enemyBehavior.patrolOrigin.x - enemyBehavior.patrolRange;
 		float rightBoundary = enemyBehavior.patrolOrigin.x + enemyBehavior.patrolRange;
+		
+		// set velocity based on patrol direction
+		float targetVelocityX = enemyBehavior.patrolForwards ? 
+			SPIKE_ENEMY_PATROL_SPEED_PER_MS * 1000 : 
+			-SPIKE_ENEMY_PATROL_SPEED_PER_MS * 1000;
+			
+		enemyMotion.velocity.x = targetVelocityX;
+		enemyMotion.velocity.y = 0;
 
-		// Calculate expected patrol velocity based on current direction
-		float expectedVelocityX = enemyBehavior.patrolForwards ? SPIKE_ENEMY_PATROL_SPEED_PER_MS * 1000 : -SPIKE_ENEMY_PATROL_SPEED_PER_MS * 1000;
-
-		// Check for wall collision - if velocity is much lower than expected,
-		// we've likely hit a wall
-		float velocityRatio = abs(enemyMotion.velocity.x) / abs(expectedVelocityX);
-		if (velocityRatio < 0.2f && abs(expectedVelocityX) > 0.1f)
-		{
-			// Wall collision detected - reverse direction
-			enemyBehavior.patrolForwards = !enemyBehavior.patrolForwards;
-		}
-
-		// Set velocity based on patrol direction
-		if (enemyBehavior.patrolForwards)
-		{
-			// Moving right
-			enemyMotion.velocity.x = SPIKE_ENEMY_PATROL_SPEED_PER_MS * 1000;
-			enemyMotion.velocity.y = 0;
-
-			// Check if reached right boundary
-			if (enemyMotion.position.x >= rightBoundary)
-			{
-				enemyBehavior.patrolForwards = false;
+		// check if enemy has not moved since the last frame
+		if (enemyBehavior.hasPreviousPosition) {
+			float distanceMoved = abs(currentX - enemyBehavior.previousPositionX);
+			
+			// if almost no movement occurred but we should be moving
+			if (distanceMoved < 0.1f && abs(targetVelocityX) > 50.0f) {
+				// Wall collision - reverse direction
+				enemyBehavior.patrolForwards = !enemyBehavior.patrolForwards;
+				
+				// Apply immediate velocity change in the opposite direction
+				enemyMotion.velocity.x = -enemyMotion.velocity.x;
+				
+				// debug
+				// std::cout << "Wall collision detected! Reversing direction." << std::endl;
 			}
 		}
-		else
-		{
-			// Moving left
-			enemyMotion.velocity.x = -SPIKE_ENEMY_PATROL_SPEED_PER_MS * 1000;
-			enemyMotion.velocity.y = 0;
-
-			// Check if reached left boundary
-			if (enemyMotion.position.x <= leftBoundary)
-			{
-				enemyBehavior.patrolForwards = true;
-			}
+		
+		// save current position for next frame comparison
+		enemyBehavior.previousPositionX = currentX;
+		enemyBehavior.hasPreviousPosition = true;
+		
+		// check normal patrol boundary conditions
+		if (enemyMotion.position.x >= rightBoundary) {
+			enemyBehavior.patrolForwards = false;
+		} else if (enemyMotion.position.x <= leftBoundary) {
+			enemyBehavior.patrolForwards = true;
 		}
-
+		
 		// Switch to dashing if player detected
-		if (playerDetected)
-		{
+		if (playerDetected) {
 			changeAnimationFrames(enemyEntity, 7, 12);
 			return SpikeEnemyState::DASHING;
 		}
