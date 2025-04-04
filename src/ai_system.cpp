@@ -15,57 +15,81 @@ bool AISystem::isPlayerInRadius(vec2 player, vec2 enemy, float& distance, vec2& 
 	return distance < detectionRadius;
 }
 
-SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity& enemyEntity, SpikeEnemyAI& enemyBehavior, float dist, vec2 direction, bool playerDetected, float elapsed_ms)
+SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity &enemyEntity, SpikeEnemyAI &enemyBehavior, float dist, vec2 direction, bool playerDetected, float elapsed_ms)
 {
-	Motion& enemyMotion = registry.motions.get(enemyEntity);
+	Motion &enemyMotion = registry.motions.get(enemyEntity);
 
 	switch (enemyBehavior.state)
 	{
-		case SpikeEnemyState::CHASING:
+	case SpikeEnemyState::CHASING:
+	{
+		// adjust velocity towards player
+		if (dist > 0.001f)
 		{
-			// adjust velocity towards player
-			if (dist > 0.001f)
-			{
-				enemyMotion.velocity = direction * ENEMY_SPEED;
-			}
-			break;
+			enemyMotion.velocity = direction * ENEMY_SPEED;
 		}
-		case SpikeEnemyState::PATROLLING:
-		{
-			// define patrol boundaries based on stored origin and range.
-			float leftBoundary = enemyBehavior.patrolOrigin.x - enemyBehavior.patrolRange;
-			float rightBoundary = enemyBehavior.patrolOrigin.x + enemyBehavior.patrolRange;
-
-			// if enemy goes past boundaries, reverse its patrol direction.
-			if (enemyMotion.position.x < leftBoundary || enemyMotion.position.x > rightBoundary)
-			{
-				enemyBehavior.patrolForwards = !enemyBehavior.patrolForwards;
-				enemyBehavior.patrolTime = 0.0f;
-			}
-
-			enemyBehavior.patrolTime += elapsed_ms;
-
-			// M1 interpolation implementation
-
-			float t = enemyBehavior.patrolTime / ENEMY_PATROL_TIME_MS;
-			enemyMotion.position.x = enemyBehavior.patrolForwards ? lerp(leftBoundary, rightBoundary, t) : lerp(rightBoundary, leftBoundary, t);
+		break;
+	}
+	case SpikeEnemyState::PATROLLING:
+	{
+			// get current X position for comparison later
+		float currentX = enemyMotion.position.x;
+		
+		// define patrol boundaries based on stored origin and range
+		float leftBoundary = enemyBehavior.patrolOrigin.x - enemyBehavior.patrolRange;
+		float rightBoundary = enemyBehavior.patrolOrigin.x + enemyBehavior.patrolRange;
+		
+		// set velocity based on patrol direction
+		float targetVelocityX = enemyBehavior.patrolForwards ? 
+			SPIKE_ENEMY_PATROL_SPEED_PER_MS * 1000 : 
+			-SPIKE_ENEMY_PATROL_SPEED_PER_MS * 1000;
 			
-			// sse circular detection to transition to dash state.
-			if (playerDetected)
-			{
-				changeAnimationFrames(enemyEntity, 7, 12);
-				return SpikeEnemyState::DASHING;
+		enemyMotion.velocity.x = targetVelocityX;
+		enemyMotion.velocity.y = 0;
+
+		// check if enemy has not moved since the last frame
+		if (enemyBehavior.hasPreviousPosition) {
+			float distanceMoved = abs(currentX - enemyBehavior.previousPositionX);
+			
+			// if almost no movement occurred but we should be moving
+			if (distanceMoved < 0.1f && abs(targetVelocityX) > 50.0f) {
+				// Wall collision - reverse direction
+				enemyBehavior.patrolForwards = !enemyBehavior.patrolForwards;
+				
+				// Apply immediate velocity change in the opposite direction
+				enemyMotion.velocity.x = -enemyMotion.velocity.x;
+				
+				// debug
+				// std::cout << "Wall collision detected! Reversing direction." << std::endl;
 			}
-			break;
 		}
-		case SpikeEnemyState::DASHING:
+		
+		// save current position for next frame comparison
+		enemyBehavior.previousPositionX = currentX;
+		enemyBehavior.hasPreviousPosition = true;
+		
+		// check normal patrol boundary conditions
+		if (enemyMotion.position.x >= rightBoundary) {
+			enemyBehavior.patrolForwards = false;
+		} else if (enemyMotion.position.x <= leftBoundary) {
+			enemyBehavior.patrolForwards = true;
+		}
+		
+		// Switch to dashing if player detected
+		if (playerDetected) {
+			changeAnimationFrames(enemyEntity, 7, 12);
+			return SpikeEnemyState::DASHING;
+		}
+		break;
+	}
+	case SpikeEnemyState::DASHING:
+	{
+		if (dist > 0.001f && playerDetected)
 		{
-			if (dist > 0.001f && playerDetected)
+			// dash toward the player
+			enemyMotion.velocity = direction * ENEMY_SPEED;
+			if (dist <= 25.f)
 			{
-				// dash toward the player
-				enemyMotion.velocity = direction * ENEMY_SPEED;
-	            if (dist <= 25.f)
-            {
 				// if overlapping with player deal damage
                 enemyBehavior.bombTimer -= elapsed_ms;
                 if (enemyBehavior.bombTimer <= 0)
@@ -73,41 +97,40 @@ SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity& enemyEntity, SpikeEne
                     Enemy& enemy = registry.enemies.get(enemyEntity);
                     enemy.health = 0;
                     Player &player = registry.players.get(registry.players.entities[0]);
-                    
 					damagePlayer(SPIKE_ENEMY_BOMB_DAMAGE);
-                }
-            }
+				}
+			}
 		}
-			else
-			{
-				// change animation frames and reset patrol state
-				changeAnimationFrames(enemyEntity, 0, 6);
-				enemyBehavior.patrolOrigin = enemyMotion.position;
-				enemyBehavior.patrolTime = 0.0f;
-				enemyMotion.velocity = { 0, 0 };
-	            enemyBehavior.bombTimer = SPIKE_ENEMY_BOMB_TIMER;
+		else
+		{
+			// change animation frames and reset patrol state
+			changeAnimationFrames(enemyEntity, 0, 6);
+			enemyBehavior.patrolOrigin = enemyMotion.position;
+			enemyMotion.velocity = {0, 0};
+			enemyBehavior.bombTimer = SPIKE_ENEMY_BOMB_TIMER;
 
 			return SpikeEnemyState::PATROLLING;
-			}
+		}
 		break;
 	}
-    case SpikeEnemyState::KNOCKBACK:
-    {
+	case SpikeEnemyState::KNOCKBACK:
+	{
 		// apply knockback velocity
-        enemyBehavior.knockbackTimer -= elapsed_ms;
-        if (enemyBehavior.knockbackTimer <= 0)
-        {
-            changeAnimationFrames(enemyEntity, 0, 6);
-            enemyBehavior.patrolOrigin = enemyMotion.position;
-            enemyBehavior.patrolTime = 0.0f;
-            enemyMotion.velocity = { 0, 0 };
-            return SpikeEnemyState::DASHING;
-        } else {
+		enemyBehavior.knockbackTimer -= elapsed_ms;
+		if (enemyBehavior.knockbackTimer <= 0)
+		{
+			changeAnimationFrames(enemyEntity, 0, 6);
+			enemyBehavior.patrolOrigin = enemyMotion.position;
+			enemyMotion.velocity = {0, 0};
+			return SpikeEnemyState::DASHING;
+		}
+		else
+		{
 			// decay knockback velocity
-            enemyMotion.velocity *= SPIKE_ENEMY_KNOCKBACK_DECAY;
-        }
-	        break;
-	    }
+			enemyMotion.velocity *= SPIKE_ENEMY_KNOCKBACK_DECAY;
+		}
+		break;
+	}
 	}
 
 	return enemyBehavior.state;
@@ -179,44 +202,73 @@ BacteriophageState AISystem::handleBacteriophageBehavior(Entity& enemyEntity, Ba
 	{
 	case BacteriophageState::PATROLLING:
 	{
-		// if player is detected, transition to chasing state
+		// if player is detected, transition to chasing state with smooth transition
 		if (playerDetected)
 		{
 			enemyBehavior.state = BacteriophageState::CHASING;
-			enemyMotion.angle = atan2(directionToPlayer.y, directionToPlayer.x) * (180.0f / M_PI) + 90;
-			vec2 direction = glm::normalize(positionToReach - enemyMotion.position);
-			enemyMotion.velocity = direction * ENEMY_SPEED;
+			
+			// Start with a half-speed movement for smoother transition
+			vec2 moveDirection = glm::normalize(positionToReach - enemyMotion.position);
+			enemyMotion.velocity = moveDirection * (ENEMY_SPEED * 0.5f);
 		}
 		else
-		{	// else it stays still
-			enemyMotion.velocity = { 0, 0 };
+		{
+			// add slight floating motion even when idleto make it more alive and avoid jitter
+			float time = static_cast<float>(glfwGetTime() * 0.5f);
+			enemyMotion.velocity.x = sin(time + enemyBehavior.placement_index) * 10.0f;
+			enemyMotion.velocity.y = cos(time * 1.3f + enemyBehavior.placement_index) * 10.0f;
 		}
 		break;
 	}
 	case BacteriophageState::CHASING:
-
-		// if player is no longer detected, transition back to patrolling state
+	{
+		// if player is no longer detected, decelerate smoothly
 		if (!playerDetected)
 		{
 			enemyBehavior.state = BacteriophageState::PATROLLING;
-			enemyMotion.angle = 0.0f;
-			enemyMotion.velocity = { 0, 0 };
+			enemyMotion.velocity *= 0.5f; // Gradual slow down instead of abrupt stop
 		}
-		
-		// if player is detected, chase player and maintain distance
-		else if (glm::distance(enemyMotion.position, positionToReach) > 1)
-		{
-			vec2 direction = glm::normalize(positionToReach - enemyMotion.position);
-			enemyMotion.angle = atan2(directionToPlayer.y, directionToPlayer.x) * (180.0f / M_PI) + 90;
-			enemyMotion.velocity = direction * ENEMY_SPEED;
-		}
-
-		// adjust angle
 		else
 		{
-			enemyMotion.velocity = { 0, 0 };
-			enemyMotion.angle = atan2(directionToPlayer.y, directionToPlayer.x) * (180.0f / M_PI) + 90;
+	
+			float distanceToTarget = glm::distance(enemyMotion.position, positionToReach);
+			
+			// mmooth rotation towards target 
+			float targetAngle = atan2(directionToPlayer.y, directionToPlayer.x) * (180.0f / M_PI) + 90;
+			float currentAngle = enemyMotion.angle;
+			
+			if (targetAngle - currentAngle > 180.0f) targetAngle -= 360.0f;
+			if (targetAngle - currentAngle < -180.0f) targetAngle += 360.0f;
+			
+			// Interpolate toward plauer
+			enemyMotion.angle = glm::mix(currentAngle, targetAngle, 0.1f);
+			
+			// Ddynamic speed based on distance to target (drifting ishh)
+			if (distanceToTarget > 150.0f) {
+				// Far away - move at full speed
+				vec2 moveDirection = glm::normalize(positionToReach - enemyMotion.position);
+				enemyMotion.velocity = moveDirection * ENEMY_SPEED;
+			}
+			else if (distanceToTarget > 30.0f) {
+				// Medium distance - scale speed down proportionally
+				float speedFactor = glm::min(distanceToTarget / 150.0f, 1.0f);
+				vec2 moveDirection = glm::normalize(positionToReach - enemyMotion.position);
+				enemyMotion.velocity = moveDirection * (ENEMY_SPEED * speedFactor);
+			}
+			else if (distanceToTarget > 5.0f) {
+				// Close - move very slowly to reduce jitter
+				vec2 moveDirection = glm::normalize(positionToReach - enemyMotion.position);
+				enemyMotion.velocity = moveDirection * (distanceToTarget * 3.0f);
+			}
+			else {
+				// SUPERR close - maintain minimal movement >>proprotional to players delta
+				vec2 oldPos = enemyMotion.position;
+				vec2 idealPos = positionToReach;
+				enemyMotion.velocity = (idealPos - oldPos) * 2.0f;
+			}
 		}
+		break;
+	}
 	}
 
 	return enemyBehavior.state;

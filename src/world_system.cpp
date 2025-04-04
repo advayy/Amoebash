@@ -513,13 +513,15 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
     if (darken_screen_timer >= 0.0f) {
         darken_screen_timer += elapsed_ms_since_last_update;
-        if (darken_screen_timer >= 1000.0f) {
+        if (darken_screen_timer >= NEXT_LEVEL_BLACK_SCREEN_TIMER_MS) {
             Entity screen_state_entity = renderer->get_screen_state_entity();
             ScreenState &screen = registry.screenStates.get(screen_state_entity);
             screen.darken_screen_factor = -1;
             darken_screen_timer = -1.0f; // Stop the timer
         }
     }
+
+    handleVignetteEffect(elapsed_ms_since_last_update);
 
 	// step the particle system only when its needed
 	// for optimaztion, we could only step the particles that are on screen
@@ -546,6 +548,20 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	return true;
 }
 
+void WorldSystem::handleVignetteEffect(float elapsed_ms_since_last_update) {
+    Entity screen_state_entity = renderer->get_screen_state_entity();
+    ScreenState &screen = registry.screenStates.get(screen_state_entity);
+    if (screen.vignette_screen_factor > 0) {
+        screen.vignette_timer_ms -= elapsed_ms_since_last_update;
+        if (screen.vignette_timer_ms <= 0) {
+            screen.vignette_screen_factor -= elapsed_ms_since_last_update / 1000;
+            if (screen.vignette_screen_factor < 0) {
+                screen.vignette_screen_factor = 0;
+            }
+        }
+    }
+}
+
 // Handle player health
 void WorldSystem::handlePlayerHealth(float elapsed_ms)
 {
@@ -568,6 +584,7 @@ void WorldSystem::handlePlayerHealth(float elapsed_ms)
 	if (player.current_health <= 0 && current_state != GameState::GAME_OVER)
 	{
 		triggerGameOver();
+        clearVignetteEffect();
 	}
 }
 
@@ -732,10 +749,10 @@ void WorldSystem::restart_game()
 	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
 		
 	if (progress_map["tutorial_mode"]) {
-		createPlayer(renderer, gridCellToPosition({0, 10}));
+		createPlayer(renderer, gridCellToPosition({1, 10}));
 		createSpikeEnemy(renderer, gridCellToPosition({12, 10}));
-		createKey(renderer, gridCellToPosition({16, 10}));
-		createChest(renderer, gridCellToPosition({19, 10}));
+		createKey(renderer, gridCellToPosition({15, 10}));
+		createChest(renderer, gridCellToPosition({18, 10}));
 	} else {
 		createPlayer(renderer, gridCellToPosition(vec2(playerPosition.second, playerPosition.first)));
 	}
@@ -804,6 +821,8 @@ void WorldSystem::handle_collisions()
 
 				// Player takes damage
 				damagePlayer(projectile.damage);
+
+                Mix_PlayChannel(-1, damage_sound, 0);
 
 				// remove projectile
                 removals.push_back(entity2);
@@ -1008,6 +1027,8 @@ void WorldSystem::handle_collisions()
 
 						if (!bossAI.is_charging) {
 							damagePlayer(BOSS_RUMBLE_DAMAGE);
+
+                            Mix_PlayChannel(-1, damage_sound, 0);
 						}
 
 						if (player.knockback_duration > 0.f && glm::length(bossMotion.velocity) > 0.1f)
@@ -1053,7 +1074,7 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 	if (action == GLFW_RELEASE && key == GLFW_KEY_ESCAPE)
 	{
 		close_window();
-	}
+    }
 
 	// toggle FPS display with F key
 	if (action == GLFW_RELEASE && key == GLFW_KEY_F)
@@ -1120,6 +1141,7 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 				p.buffsFromLastRun = registry.players.get(registry.players.entities[0]).buffsCollected;		
 				previous_state = GameState::GAME_PLAY;
 				current_state = GameState::GAME_OVER;
+                clearVignetteEffect();
 				createGameOverScreen();
 			}
 		}
