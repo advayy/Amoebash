@@ -413,32 +413,25 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 				// spawn
 				ProceduralMap& map = registry.proceduralMaps.components[0];
 				std::vector<std::vector<tileType>> rawMap = map.map;
-				
-				// spawn pattern per phase
-				if (enemyBehavior.phase == 1) {
-					for (int row = 2; row <= 4; ++row) {
-						for (int col = 0; col < rawMap[row].size(); ++col) {
-							if (rawMap[row][col] == tileType::EMPTY) {
-								createDenderite(nullptr, gridCellToPosition({ col, row }));
-							}
-						}
-					}
-				} else if (enemyBehavior.phase == 2) {
-					for (int row = 2; row <= 7; ++row) {
-						for (int col = 0; col < rawMap[row].size(); ++col) {
-							if (row == 2 && col ==9) continue; // skip boss position
 
-							if (rawMap[row][col] == tileType::EMPTY) {
-								createDenderite(nullptr, gridCellToPosition({ col, row }));
-							}
+				int maxRow = 0;
+				if (enemyBehavior.phase == 1) maxRow = 8;
+				else if (enemyBehavior.phase == 2) maxRow = 11;
+				else maxRow = 14;
+
+				int startRow = 4;
+
+				for (int row = startRow; row < maxRow; row++) {
+					for (int col = 0; col <= 3; col ++) {
+						if (rawMap[row][col] == tileType::EMPTY) {
+							createDenderite(nullptr, gridCellToPosition({ col, row }));
 						}
 					}
-				} else {
-					for (int row = 2; row < 10; row++) {
-						for (int col = 0; col < rawMap[row].size(); col++) {
-							if (rawMap[row][col] == tileType::EMPTY) {
-								createDenderite(nullptr, gridCellToPosition({ col, row }));
-							}
+
+					int lastCol = rawMap[row].size() - 1;
+					for (int col = lastCol; col >= lastCol - 3; col--) {
+						if (rawMap[row][col] == tileType::EMPTY) {
+							createDenderite(nullptr, gridCellToPosition({ col, row }));
 						}
 					}
 				}

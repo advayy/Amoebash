@@ -96,7 +96,7 @@ void PhysicsSystem::step(float elapsed_ms)
             		denderiteAI.currentNodeIndex = 0;
 
 					if(find_path(denderiteAI.path, motion.position, player_motion.position)) {
-						denderiteAI.timeSinceLastRecalc = DENDERITE_RECALC_DURATION;
+						denderiteAI.timeSinceLastRecalc = 0;
 					} else {
 						motion.velocity = {0.f, 0.f};
 						motion.angle = 0.f;
