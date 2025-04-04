@@ -60,7 +60,7 @@ bool RenderSystem::init(GLFWwindow *window_arg)
 	initializeGlGeometryBuffers();
 
     // init font
-    std::string font_filename = PROJECT_SOURCE_DIR + std::string("data/fonts/Kenney_Mini_Square_Mono.ttf");
+    std::string font_filename = PROJECT_SOURCE_DIR + std::string("data/fonts/PixelifySans-Regular.ttf");
     unsigned int font_default_size = 48;
 	fontInit(*window, font_filename, font_default_size);
 

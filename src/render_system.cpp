@@ -467,7 +467,7 @@ void RenderSystem::drawText() {
 
         int buffCount = registry.players.get(registry.players.entities[0]).buffsCollected[buffUI.buffType];
         if (buffCount > 0) {
-            renderText(std::to_string(buffCount), screen_pos.x, screen_pos.y, .5f, vec3(1.f, 1.f, 1.f));
+            renderText(std::to_string(buffCount), screen_pos.x, screen_pos.y - 15.f, .5f, vec3(1.f, 1.f, 1.f));
         } else {
             continue;
         }
