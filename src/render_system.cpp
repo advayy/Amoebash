@@ -459,7 +459,13 @@ vec2 worldToScreen(vec2 world_pos) {
 }
 
 void RenderSystem::drawText() {
-    for (auto entity : registry.buffUIs.entities) {
+    drawBuffCountText();
+    drawDangerFactorText();
+    drawGermoneyText();
+}
+
+void RenderSystem::drawBuffCountText() {
+        for (auto entity : registry.buffUIs.entities) {
         BuffUI &buffUI = registry.buffUIs.get(entity);
         Motion &motion = registry.motions.get(entity);
 
@@ -467,11 +473,50 @@ void RenderSystem::drawText() {
 
         int buffCount = registry.players.get(registry.players.entities[0]).buffsCollected[buffUI.buffType];
         if (buffCount > 0) {
-            renderText(std::to_string(buffCount), screen_pos.x, screen_pos.y - 15.f, .5f, vec3(1.f, 1.f, 1.f));
+            renderText(std::to_string(buffCount), screen_pos.x + 5.f, screen_pos.y - 15.f, .4f, vec3(1.f, 1.f, 1.f));
         } else {
             continue;
         }
     }
+}
+
+void RenderSystem::drawDangerFactorText() {
+    Player &player = registry.players.get(registry.players.entities[0]);
+    float dangerLevel = player.dangerFactor;
+
+    std::string dangerText = "";
+    if (dangerLevel < 1.5f) {
+        dangerText = "Undetected";
+    } else if (dangerLevel < 2.5f) {
+        dangerText = "Low Danger";
+    } else if (dangerLevel < 3.5f) {
+        dangerText = "Med Danger";
+    } else if (dangerLevel < 4.5f) {
+        dangerText = "High Danger";
+    } else {
+        dangerText = "Meltdown!";
+    }
+
+    Motion& motion = registry.motions.get(registry.thermometers.entities[0]);
+    vec2 screen_pos = worldToScreen(motion.position);
+    screen_pos.x -= THERMOMETER_WIDTH * .6f;
+    screen_pos.y -= THERMOMETER_HEIGHT * .55f;
+
+    renderText(dangerText, screen_pos.x, screen_pos.y, .2f, vec3(1.f, 1.f, 1.f));
+}
+
+void RenderSystem::drawGermoneyText() {
+    Player &player = registry.players.get(registry.players.entities[0]);
+    int germoney_count = player.germoney_count;
+
+    vec2 screen_pos;
+    if (germoney_count >= 10) {
+        screen_pos = vec2(WINDOW_WIDTH_PX * .095f, WINDOW_HEIGHT_PX * .0685f);
+    } else {
+        screen_pos = vec2(WINDOW_WIDTH_PX * .0975f, WINDOW_HEIGHT_PX * .0685f);
+    }
+
+    renderText(std::to_string(player.germoney_count), screen_pos.x, screen_pos.y, .4f, vec3(1.f, 1.f, 1.f));
 }
 
 mat3 RenderSystem::createProjectionMatrix()
