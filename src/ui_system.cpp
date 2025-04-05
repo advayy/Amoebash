@@ -870,7 +870,7 @@ void createDashRecharge()
 	registry.dashRecharges.emplace(dash);
 }
 
-Entity createEnemyHPBar(Entity enemy) {
+Entity createEnemyHPBar(Entity enemy, TEXTURE_ASSET_ID texture_id) {
     for (Entity hp : registry.healthBars.entities) {
         if (registry.healthBars.get(hp).is_enemy_hp_bar &&
             registry.healthBars.get(hp).owner == enemy) {
@@ -881,19 +881,17 @@ Entity createEnemyHPBar(Entity enemy) {
     Entity hp = Entity();
 
     Motion& motion = registry.motions.emplace(hp);
-    motion.scale = vec2(ENEMY_HP_BAR_WIDTH, ENEMY_HP_BAR_HEIGHT); 
+	Motion& enemy_motion = registry.motions.get(enemy);
+	float scale_factor = enemy_motion.scale.x * 0.65f / ENEMY_HP_BAR_WIDTH;
+    motion.scale = vec2(ENEMY_HP_BAR_WIDTH * scale_factor, ENEMY_HP_BAR_HEIGHT * scale_factor); 
+	motion.position = enemy_motion.position + vec2(0.f, enemy_motion.scale.y / 1.5f);
     
     HealthBar& healthBar = registry.healthBars.emplace(hp);
     healthBar.is_enemy_hp_bar = true;
 	healthBar.owner = enemy; 
-    
-    if (registry.motions.has(enemy)) {
-        Motion& enemy_motion = registry.motions.get(enemy);
-        motion.position = enemy_motion.position + vec2(0.f, ENEMY_BB_HEIGHT / 2.0f);
-    }
 
     registry.renderRequests.insert(hp, {
-        TEXTURE_ASSET_ID::ENEMY_HP_BAR,
+        texture_id,
         EFFECT_ASSET_ID::HEALTH_BAR,
         GEOMETRY_BUFFER_ID::SPRITE
     });
@@ -1107,7 +1105,7 @@ void updateHuds()
 				continue;
 			}	
 				Motion& enemy_motion = registry.motions.get(enemy);
-				bar_motion.position = enemy_motion.position + vec2(0.f, -40.f);
+				bar_motion.position = enemy_motion.position + vec2(0.f, -enemy_motion.scale.y / 1.5f);
 			} else {
 				if (!registry.cameras.entities.empty()) {
 					Camera& camera = registry.cameras.get(registry.cameras.entities[0]);

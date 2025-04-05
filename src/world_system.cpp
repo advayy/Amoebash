@@ -648,7 +648,7 @@ void WorldSystem::goToNextLevel()
 		createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
 	} else {
 		createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
-		createBoss(renderer, gridCellToPosition({10, 10}));
+	 	createBoss(renderer, gridCellToPosition({10, 10}));
 		// std::cout << "Boss created" << std::endl;
 	}
 
@@ -723,17 +723,6 @@ void WorldSystem::restart_game()
     while (registry.tiles.entities.size() > 0)
         registry.remove_all_components_of(registry.tiles.entities.back());
 
-	// Remove all enemy HP bars
-    std::vector<Entity> hp_bars_to_remove;
-    for (Entity healthBar : registry.healthBars.entities) {
-        HealthBar& hb = registry.healthBars.get(healthBar);
-        if (hb.is_enemy_hp_bar) {
-            hp_bars_to_remove.push_back(healthBar);
-        }
-    }
-    for (Entity bar : hp_bars_to_remove) {
-        registry.remove_all_components_of(bar);
-    }
 
 	// debugging for memory/component leaks
 	registry.list_all_components();
