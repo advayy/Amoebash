@@ -797,6 +797,7 @@ void WorldSystem::restart_game()
 	}
     prog.pickedInNucleus.clear();
 
+	createGunCooldown();
 	
 	createMiniMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
 	emptyMiniMap();

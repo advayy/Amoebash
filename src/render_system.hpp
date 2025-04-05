@@ -111,7 +111,8 @@ class RenderSystem
 		textures_path("ui_art/resume_button_on_hover.png"),
 		textures_path("enemies/boss/boss_arrow.png"),
 		textures_path("ui_art/victory_cutscene.png"),
-		textures_path("ui_art/thermometer_alone.png")
+		textures_path("ui_art/thermometer_alone.png"),
+		textures_path("ui_art/circle.png")
 	};
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.
@@ -129,7 +130,8 @@ class RenderSystem
 		shader_path("hexagon"),
 		shader_path("particle_textured"),
         shader_path("font"),
-		shader_path("thermometer")
+		shader_path("thermometer"),
+		shader_path("weapon_cooldown_indicator")
 	};
 
 	std::array<GLuint, geometry_count> vertex_buffers;
@@ -198,6 +200,8 @@ public:
 	void drawDashRecharge(const mat3 &projection);
 	void drawHexagon(Entity entity, const mat3 &projection);
 	void drawBuffUI();
+	void drawGunCooldownIndicator(const vec2& camera_position, const mat3& projection);
+
 
 	// INSTANCING: instanced particle drawing
 	void drawInstancedParticles();

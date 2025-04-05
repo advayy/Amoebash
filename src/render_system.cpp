@@ -72,8 +72,9 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 					render_request.used_effect == EFFECT_ASSET_ID::UI ||
 					render_request.used_effect == EFFECT_ASSET_ID::HEALTH_BAR ||
 					render_request.used_effect == EFFECT_ASSET_ID::DASH_UI ||
-					render_request.used_effect == EFFECT_ASSET_ID::THERMOMETER_EFFECT) &&
-				 "Type of render request not supported");
+					render_request.used_effect == EFFECT_ASSET_ID::THERMOMETER_EFFECT ||
+					render_request.used_effect == EFFECT_ASSET_ID::WEAPON_COOLDOWN_INDICATOR) &&
+					"Type of render request not supported");
 
 	setUpDefaultProgram(entity, render_request, program);
 
@@ -160,6 +161,15 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		GLint camera_position_uloc = glGetUniformLocation(program, "camera_position");
 		glUniform2fv(camera_position_uloc, 1, (float *)&cameraPos);
 	}
+
+	if (render_request.used_effect == EFFECT_ASSET_ID::WEAPON_COOLDOWN_INDICATOR) {
+		Gun &gun = registry.guns.get(registry.guns.entities[0]);
+		float ratio = 1.f - std::clamp(gun.cooldown_timer_ms / GUN_COOLDOWN_MS, 0.f, 1.f);
+		GLint ratio_uloc = glGetUniformLocation(program, "cooldown_ratio");
+		glUniform1f(ratio_uloc, ratio);
+		gl_has_errors();
+	}
+
 
 	// Get number of indices from index buffer, which has elements uint16_t
 	GLint size = 0;
