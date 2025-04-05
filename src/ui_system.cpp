@@ -929,7 +929,7 @@ Entity UISystem::createBuffUI(vec2 position, BUFF_TYPE type, vec2 scale)
 	sprite.width = scale.x;
 	sprite.height = scale.y;
 	
-	registry.u.emplace(buffUI, UIElement{motion.position, motion.scale});
+	registry.uiElements.emplace(buffUI, UIElement{motion.position, motion.scale});
 	
 	return buffUI;
 }
@@ -982,8 +982,7 @@ void UISystem::renderCollectedBuffs()
 		vec2 position;
 		if (count < buffsPerRow)
 		{
-			// position = { BUFF_START_POS.x + count * ROW_BUFF_SPACING, BUFF_START_POS.y };
-			position = BUFF_POPUP_POS + vec2(BUFF_POPUP_GAP, BUFF_POPUP_GAP);
+			position = { BUFF_START_POS.x + count * ROW_BUFF_SPACING, BUFF_START_POS.y };
 		}
 		else if (count >= buffsPerRow && count < BUFF_NUM)
 		{
@@ -994,24 +993,24 @@ void UISystem::renderCollectedBuffs()
 		if (count < BUFF_NUM)
 		{
 			Motion& motion = registry.motions.get(buff_to_ui_entity[buff.first]);
-			motion.position.x = position.x;
-			motion.position.y = position.y;
 
-			vec2 screen_pos = worldToScreen(motion.position);
-			Motion& text_motion = registry.motions.get(buff_to_text_entity[buff.first]);
-			text_motion.position.x = screen_pos.x + 5.f;
-			text_motion.position.y = screen_pos.y - 15.f;
+			UIElement& uiElement = registry.uiElements.get(buff_to_ui_entity[buff.first]);
+			uiElement.position = position;
 
 			Text& text = registry.texts.get(buff_to_text_entity[buff.first]);
 			text.text = std::to_string(buff.second);
+
+			vec2 screen_pos = imageCoordToTextCoord(uiElement.position + vec2(motion.scale.x * 0.5, motion.scale.y * 0.8));
+			Motion& text_motion = registry.motions.get(buff_to_text_entity[buff.first]);
+			text_motion.position = screen_pos;
 		}
 
 		count++;
 	}
 }
 
-// HUD element update such has health etc.
-void UISystem::updateHuds()
+// make all ui elements camera tracked so they stay on screen as the player / camera moves
+void UISystem::cameraTrackUIElements()
 {
 	vec2 offset = {WINDOW_WIDTH_PX / 2 - 100, -WINDOW_HEIGHT_PX / 2 + 100};
 
@@ -1039,7 +1038,6 @@ void UISystem::updateHuds()
 		Motion &healthBarMotion = registry.motions.get(registry.healthBars.entities[0]);
 		healthBarMotion.position = {camera.position.x + HEALTH_BAR_POS.x,
 									camera.position.y + HEALTH_BAR_POS.y};
-
 	}
 
 	if (!registry.thermometers.entities.empty()) {
@@ -1101,10 +1099,12 @@ vec2 UISystem::worldToScreen(vec2 world_pos) {
 void UISystem::step(float elapsed_ms_since_last_update)
 {
 	updatePopups(elapsed_ms_since_last_update);
-	updateHuds();
 	updateThermometerText();
 	renderCollectedBuffs();
 	updateGermoneyText();
+
+	// should be at the end, since it converts pos -> screen pos
+	cameraTrackUIElements();
 }
 
 void UISystem::createGermoneyText()

@@ -53,7 +53,7 @@ public:
 	Entity createBuffPopup(BUFF_TYPE type);
 	vec2 imageCoordToTextCoord(vec2 imageCoord);
 
-	void updateHuds();
+	void cameraTrackUIElements();
 
 	void step(float elapsed_ms_since_last_update);
 	void updateThermometerText();

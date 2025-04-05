@@ -474,8 +474,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	
     updateMouseCoords();
 
-	this->ui_system->updatePopups(elapsed_ms_since_last_update);
-
 	handlePlayerMovement(elapsed_ms_since_last_update);
 	handlePlayerHealth(elapsed_ms_since_last_update);
 
