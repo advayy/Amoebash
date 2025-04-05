@@ -11,7 +11,7 @@ void createInfoBoxes() {
 
 	for (int i = 0; i < 6; i ++) {
 		auto entity1 = Entity();
-		int x = (3  *  i)  + 1;
+		int x = (3  *  i) + 2;
 		int y = (i % 2 == 0) ? 11 : 8;
 		vec2 infoPosition = gridCellToPosition({x, y});
 	
@@ -262,8 +262,8 @@ Entity createNucleusMenuScreen() {
 	Camera &camera = registry.cameras.components[0];
 	motion.position = camera.position;
 
-	Entity nextButtonEntity = createNextButton(vec2({origin_position.x + 180, origin_position.y + NUCLEUS_MENU_NUCLEUS_HEIGHT}));
-	o.buttons = {nextButtonEntity};
+	Entity proceedButtonEntity = createProceedButton(vec2({origin_position.x + 180, origin_position.y + NUCLEUS_MENU_NUCLEUS_HEIGHT}));
+	o.buttons = {proceedButtonEntity};
 
 
 	if(p.slots_unlocked == 1) { // upgrade 1...
@@ -314,17 +314,19 @@ Entity createNucleusMenuScreen() {
 	vec2 startPos = {screenLeft + padding + BUFF_WIDTH, screenTop + padding + BUFF_HEIGHT};
 	vec2 currentPos = startPos;
 
-	for(int i = 0; i < p.buffsFromLastRun.size(); i++) {
+    for (auto &buff : registry.players.components[0].buffsCollected) {
+        if (buff.second == 0) continue;
 
-		registry.overs.emplace(createClickableBuffUI(currentPos, p.buffsFromLastRun[i]));
-		currentPos.y += padding + BUFF_HEIGHT;
+        for (int i = 0; i < buff.second; i++) {
+            registry.overs.emplace(createClickableBuffUI(currentPos, buff.first));
+            currentPos.y += padding + BUFF_HEIGHT;
 
-		if((currentPos.y + padding + BUFF_HEIGHT) >= screenBottom) // forecast next position will fit otherwise shift start right and update current to start...
-		{
-			startPos.x += padding + BUFF_WIDTH;
-			currentPos = startPos;
-		}
-	}
+            if ((currentPos.y + padding + BUFF_HEIGHT) >= screenBottom) {
+                startPos.x += padding + BUFF_WIDTH;
+                currentPos = startPos;
+            }
+        }
+    }
 
 	return nucleusMenuScreen;
 }
@@ -388,15 +390,19 @@ Entity createPauseScreen()
 	motion.position = camera.position;
 	motion.scale = scale;
 
-	vec2 buttonPosition = camera.position + vec2(0, 100.f);
+	vec2 saveButtonPosition = camera.position + vec2(-BACK_BUTTON_SCALE.x/2.0f - WORK_SCALE_FACTOR * UI_MARGIN_X, -WINDOW_HEIGHT_PX/2.0f + WORK_SCALE_FACTOR* UI_MARGIN_Y);
+	vec2 resumeButtonPosition = camera.position + vec2(BACK_BUTTON_SCALE.x/2.0f + WORK_SCALE_FACTOR * UI_MARGIN_X, -WINDOW_HEIGHT_PX/2.0f + WORK_SCALE_FACTOR* UI_MARGIN_Y);
 
-	
+	Entity saveButtonEntity = createSaveButton(saveButtonPosition);
+	Entity resumeButtonEntity = createResumeButton(resumeButtonPosition);
 
-	Entity saveButtonEntity = createButton(ButtonType::SAVEBUTTON, buttonPosition, BACK_BUTTON_SCALE, TEXTURE_ASSET_ID::BACK_BUTTON);
 	
 	ButtonType type = registry.buttons.get(saveButtonEntity).type;
+	ButtonType resumeType = registry.buttons.get(resumeButtonEntity).type;
 
 	Pause &saveButton = registry.pauses.emplace(saveButtonEntity);
+	Pause &resumeButton = registry.pauses.emplace(resumeButtonEntity);
+	
 
 	return pauseScreenEntity;
 }
@@ -458,7 +464,7 @@ Entity createEndingWinScene() {
 
 	SpriteSize &sprite = registry.spritesSizes.emplace(winScreenEntity);
 	sprite.width = 128.f; 
-	sprite.height = 68.f; 
+	sprite.height = 72.f;  
 
 	registry.cutscenes.emplace(winScreenEntity);
 
@@ -738,7 +744,7 @@ Entity createStartButton()
 	return createButton(ButtonType::STARTBUTTON,
 						position,
 						scale,
-						TEXTURE_ASSET_ID::BUTTON);
+						TEXTURE_ASSET_ID::START_BUTTON);
 }
 
 Entity createShopButton()
@@ -767,19 +773,41 @@ Entity createBackButton() {
 	vec2 scale = BACK_BUTTON_SCALE;
 	vec2 position = BACK_BUTTON_COORDINATES;
 
+	for (auto e : registry.buttons.entities) {
+			registry.buttons.remove(e);
+	}
+
 	return createButton(ButtonType::BACKBUTTON,
 						position,
 						scale,
 						TEXTURE_ASSET_ID::BACK_BUTTON);
 }
 
-Entity createNextButton(vec2 position) {
-	vec2 scale = BACK_BUTTON_SCALE;
+Entity createProceedButton(vec2 position) {
+	vec2 scale = PROCEED_BUTTON_SCALE;
 
-	return createButton(ButtonType::PROCEED_BUTTON,
+	return createButton(ButtonType::PROCEEDBUTTON,
 						position,
 						scale,
-						TEXTURE_ASSET_ID::BACK_BUTTON);
+						TEXTURE_ASSET_ID::PROCEED_BUTTON);
+}
+
+Entity createResumeButton(vec2 position) {
+	vec2 scale = RESUME_BUTTON_SCALE;
+
+	return createButton(ButtonType::RESUMEBUTTON,
+						position,
+						scale,
+						TEXTURE_ASSET_ID::RESUME_BUTTON);
+}
+
+Entity createSaveButton(vec2 position) {
+	vec2 scale = SAVE_BUTTON_SCALE;
+
+	return createButton(ButtonType::SAVEBUTTON,
+						position,
+						scale,
+						TEXTURE_ASSET_ID::SAVE_BUTTON);
 }
 
 Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, EFFECT_ASSET_ID effect_id)
@@ -870,6 +898,7 @@ void createDashRecharge()
 	registry.dashRecharges.emplace(dash);
 }
 
+
 Entity createBuffUI(vec2 position, int type)
 {
 	Entity buffUI = Entity();
@@ -902,23 +931,44 @@ Entity createBuffUI(vec2 position, int type)
 // Render collected buffs a certain amount per row that stacks
 void renderCollectedBuff(RenderSystem *renderer, int buffType)
 {
-	int numCollectedBuffs = registry.buffUIs.size();
-	int freeSlot = registry.buffUIs.size(); // Assume that we will never leave a buff on there with a gap when removing.
+    auto &collectedBuffs = registry.players.get(registry.players.entities[0]).buffsCollected;
+    if (collectedBuffs[buffType] == 0) {
+        return;
+    }
 
+    int numCollectedBuffs = 0;
+    for (auto& buff : collectedBuffs) {
+        if (buff.second > 0) {
+            numCollectedBuffs++;
+        }
+    }
+
+	int freeSlot = registry.buffUIs.size(); // Assume that we will never leave a buff on there with a gap when removing.
 	int buffsPerRow = BUFF_NUM / 2;
 	vec2 position;
 	
-	if (freeSlot < buffsPerRow) // if the free slot id is larger than collected buffs 
-	{
-		position = {BUFF_START_POS.x + freeSlot * BUFF_SPACING, BUFF_START_POS.y};
-		Entity buffUI = createBuffUI(position, buffType);
-	}
-	else if (freeSlot >= buffsPerRow && freeSlot < BUFF_NUM)
-	{
-		position = {BUFF_START_POS.x + (freeSlot - buffsPerRow) * BUFF_SPACING,
-					BUFF_START_POS.y - BUFF_SPACING};
-		Entity buffUI = createBuffUI(position, buffType);
-	}
+    bool found = false;
+    for (auto& b : registry.buffUIs.entities) {
+        if (registry.buffUIs.get(b).buffType == buffType) {
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        if (freeSlot < buffsPerRow) // if the free slot id is larger than collected buffs 
+        {
+            position = {BUFF_START_POS.x + freeSlot * BUFF_SPACING, BUFF_START_POS.y};
+            Entity buffUI = createBuffUI(position, buffType);
+        }
+        else if (freeSlot >= buffsPerRow && freeSlot < BUFF_NUM)
+        {
+            position = {BUFF_START_POS.x + (freeSlot - buffsPerRow) * BUFF_SPACING,
+                        BUFF_START_POS.y - BUFF_SPACING};
+            Entity buffUI = createBuffUI(position, buffType);
+        }
+    }
+
 }
 
 vec2 getBuffSlot (int buffType) {
@@ -954,6 +1004,12 @@ vec2 getBuffSlot_uiPos (int buffType) {
 void removeBuffUI(int buffType) {
 	// After you find the position to remove, then first remove the buff, and for all motions that are greater than it, move them back + think of the wrap around case
 	// this ensures that the buff no and slot no are always paired.
+
+    auto& collectedBuffs = registry.players.get(registry.players.entities[0]).buffsCollected;
+    if (collectedBuffs[buffType] > 1) {
+        collectedBuffs[buffType]--;
+        return;
+    }
 	
 	vec2 removeBuffPosition = getBuffSlot(buffType);
 	vec2 uiPos_removeBuffPosition = getBuffSlot_uiPos(buffType);
@@ -1012,15 +1068,15 @@ void removeBuffUI(int buffType) {
 	}
 
 	// Remove the buff from the player's collected buffs
-	findAndRemove(registry.players.get(registry.players.entities[0]).buffsCollected, buffType
-);
+	findAndRemove(registry.players.get(registry.players.entities[0]).buffsCollected, buffType);
 }
 
 
-void findAndRemove(std::vector<int>& vec, int N) {
-    auto it = std::find(vec.begin(), vec.end(), N);
-    if (it != vec.end()) {
-        vec.erase(it); // Erase the first occurrence
+void findAndRemove(std::unordered_map<int, int>& map, int N) {
+    auto it = map.find(N);
+    if (it != map.end()) {
+        if (it->second == 0) return;
+        it->second--;
     }
 }
 
@@ -1066,4 +1122,3 @@ void updateHuds()
 		};
 	}
 }
-

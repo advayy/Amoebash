@@ -55,6 +55,14 @@ if (OPENGL_FOUND)
    target_link_libraries(${PROJECT_NAME} PUBLIC ${OPENGL_gl_LIBRARY})
 endif()
 
+# Find Freetype
+find_package(Freetype REQUIRED)
+
+if (FREETYPE_FOUND)
+    target_include_directories(${PROJECT_NAME} PUBLIC ${FREETYPE_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${FREETYPE_LIBRARIES})
+endif()
+
 set(glm_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glm/cmake/glm) # if necessary
 find_package(glm REQUIRED)
 
