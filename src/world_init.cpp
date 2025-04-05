@@ -905,7 +905,10 @@ void applyVignetteEffect() {
 }
 
 void clearVignetteEffect() {
+	std::cout << "clearing vignette effect" << std::endl;
     registry.screenStates.components[0].vignette_screen_factor = 0.f;
+	std::cout << "cleared vignette effect" << std::endl;
+	std::cout << registry.screenStates.components[0].vignette_screen_factor << std::endl;
 }
 
 int getRandomBuffType() {
@@ -931,6 +934,9 @@ int getRandomBuffType() {
 
 void damagePlayer(float damageAmount) {
 	Player& player = registry.players.get(registry.players.entities[0]);
+	
+	if (player.current_health <= 0) return;
+
 	if(player.sheilds > 0) {
 		player.sheilds --;
 		removeBuffUI(5); // PLANT CELL WALL/ SHEILD

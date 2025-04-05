@@ -559,7 +559,7 @@ void WorldSystem::handleVignetteEffect(float elapsed_ms_since_last_update) {
                 screen.vignette_screen_factor = 0;
             }
         }
-    }
+	}
 }
 
 // Handle player health
@@ -694,10 +694,6 @@ void WorldSystem::goToNextLevel()
 // Reset the world state to its initial state
 void WorldSystem::restart_game()
 {
-
-	// std::cout << "Restarting..." << std::endl;
-    // std::cout << "Leve fl: " << level + 1 << std::endl;
-    
 	// Debugging for memory/component leaks
 	registry.list_all_components();
     
@@ -1002,6 +998,7 @@ void WorldSystem::handle_collisions()
 						}
 					}
 				}
+				
                 if (enemy.health <= 0)
                 {
                     if (registry.bacteriophageAIs.has(entity2))
