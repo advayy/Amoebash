@@ -179,8 +179,6 @@ Entity createBoss(RenderSystem* renderer, vec2 position, BossState state, int bo
 		Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::MITOSIS_BOSS_128_HP_BAR);
 	} else {
 		Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::MITOSIS_BOSS_16_HP_BAR);
-		// Motion& hp_bar_motion = registry.motions.get(hp_bar);
-		//hp_bar_motion.scale /= (2 * bossStage);
 	}
 
 	TEXTURE_ASSET_ID texture = static_cast<TEXTURE_ASSET_ID>(static_cast<int>(TEXTURE_ASSET_ID::BOSS_STAGE_1) + bossStage);

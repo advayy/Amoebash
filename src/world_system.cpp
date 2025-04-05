@@ -701,7 +701,7 @@ void WorldSystem::restart_game()
 	// Reset the game speed
 	current_speed = 1.f;
     
-	level = BOSS_LEVEL - 1; // debug
+	level = 0;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
 
