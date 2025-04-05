@@ -257,8 +257,32 @@ Entity createPlayer(RenderSystem *renderer, vec2 position)
     }
 
     createGun(renderer, position);
-
 	return entity;
+}
+
+Entity 	createGunCooldown() {
+	Entity e = Entity();	
+	// camera position at window width and height - 50 each?
+	vec2 pos = WEAPON_PILL_UI_POS;
+	
+	pos.x += WEAPON_PILL_UI_WIDTH/4;
+
+	registry.renderRequests.insert(e,
+		{
+			TEXTURE_ASSET_ID::GUN_PROJECTILE,
+			EFFECT_ASSET_ID::WEAPON_COOLDOWN_INDICATOR,
+			GEOMETRY_BUFFER_ID::SPRITE
+		});
+
+
+	Motion& m = registry.motions.emplace(e);
+	m.position = {pos.x, pos.y};
+	m.scale = {30, 30};
+
+	UIElement& u = registry.uiElements.emplace(e);
+	u.position = {pos.x, pos.y};
+	u.scale = {30, 30};
+	return e;
 }
 
 Entity createGun(RenderSystem *renderer, vec2 position) {

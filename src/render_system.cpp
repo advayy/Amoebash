@@ -162,13 +162,13 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		glUniform2fv(camera_position_uloc, 1, (float *)&cameraPos);
 	}
 
-	// if (render_request.used_effect == EFFECT_ASSET_ID::WEAPON_COOLDOWN_INDICATOR) {
-	// 	Gun &gun = registry.guns.get(registry.guns.entities[0]);
-	// 	float ratio = 1.f - std::clamp(gun.cooldown_timer_ms / GUN_COOLDOWN_MS, 0.f, 1.f);
-	// 	GLint ratio_uloc = glGetUniformLocation(program, "cooldown_ratio");
-	// 	glUniform1f(ratio_uloc, ratio);
-	// 	gl_has_errors();
-	// }
+	if (render_request.used_effect == EFFECT_ASSET_ID::WEAPON_COOLDOWN_INDICATOR) {
+		Gun &gun = registry.guns.get(registry.guns.entities[0]);
+		float ratio = 1.f - std::clamp(gun.cooldown_timer_ms / GUN_COOLDOWN_MS, 0.f, 1.f);
+		GLint ratio_uloc = glGetUniformLocation(program, "cooldown_ratio");
+		glUniform1f(ratio_uloc, ratio);
+		gl_has_errors();
+	}
 
 
 	// Get number of indices from index buffer, which has elements uint16_t
@@ -411,9 +411,6 @@ void RenderSystem::draw()
 	{
 		if (registry.renderRequests.has(entity))
 			drawTexturedMesh(entity, projection_2D);
-
-		Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
-		drawGunCooldownIndicator(camera.position, projection_2D);
 	}
 
 	// draw the mini map
@@ -1247,61 +1244,6 @@ void RenderSystem::drawInstancedTiles(const mat3 &projection)
 		}
 	}
 }
-
-void RenderSystem::drawGunCooldownIndicator(const vec2& camera_position, const mat3& projection) {
-    if (registry.guns.size() == 0)
-        return;
-
-    Gun& gun = registry.guns.get(registry.guns.entities[0]);
-
-    vec2 cooldown_ui_pos = {
-        camera_position.x + GUN_UI_POS.x,
-        camera_position.y + GUN_UI_POS.y - 50.f
-    };
-
-    Transform transform;
-    transform.translate(cooldown_ui_pos);
-    transform.scale(GUN_COOLDOWN_INDICATOR_SCALE);
-
-    GLuint program = effects[(GLuint)EFFECT_ASSET_ID::WEAPON_COOLDOWN_INDICATOR];
-    glUseProgram(program);
-    gl_has_errors();
-
-    GLuint vbo = vertex_buffers[(GLuint)GEOMETRY_BUFFER_ID::SPRITE];
-    GLuint ibo = index_buffers[(GLuint)GEOMETRY_BUFFER_ID::SPRITE];
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-
-    GLint in_position_loc = glGetAttribLocation(program, "in_position");
-    GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
-    glEnableVertexAttribArray(in_position_loc);
-    glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void*)0);
-    glEnableVertexAttribArray(in_texcoord_loc);
-    glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void*)sizeof(vec3));
-
-    glActiveTexture(GL_TEXTURE0);
-    GLuint texture_id = texture_gl_handles[(GLuint)TEXTURE_ASSET_ID::CIRCLE];
-    glBindTexture(GL_TEXTURE_2D, texture_id);
-    gl_has_errors();
-
-    float ratio = 1.f - std::clamp(gun.cooldown_timer_ms / GUN_COOLDOWN_MS, 0.f, 1.f);
-    GLint cooldown_ratio_loc = glGetUniformLocation(program, "cooldown_ratio");
-    glUniform1f(cooldown_ratio_loc, ratio);
-
-    GLint transform_loc = glGetUniformLocation(program, "transform");
-    glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float*)&transform.mat);
-
-    GLint projection_loc = glGetUniformLocation(program, "projection");
-    glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float*)&projection);
-    gl_has_errors();
-
-    GLint size = 0;
-    glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
-    GLsizei num_indices = size / sizeof(uint16_t);
-    glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
-    gl_has_errors();
-}
-
 
 void RenderSystem::renderText(std::string text, float x, float y, float scale, const glm::vec3& color)
 {

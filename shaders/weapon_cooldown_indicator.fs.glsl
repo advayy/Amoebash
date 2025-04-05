@@ -15,13 +15,13 @@ void main() {
     if (angle < 0.0)
         angle += 2.0 * 3.1415926;
     
-    float pct = cooldown_ratio;
+    float pct = 1 - cooldown_ratio;
 
     float angleLimit = pct * 2.0 * 3.1415926;
 
-    if (length(centeredCoord) > 0.5 || angle < angleLimit) {
+    if (angle < angleLimit) { // length(centeredCoord) > 0.5 || 
         discard;
     }
 
-    outColor = vec4(1.0, 1.0, 1.0, 0.8 * texColor.a);
+    outColor = texColor;
 }

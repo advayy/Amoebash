@@ -50,3 +50,4 @@ void clearVignetteEffect();
     
 void damagePlayer(float damageAmount);
 int getRandomBuffType();
+Entity 	createGunCooldown();
