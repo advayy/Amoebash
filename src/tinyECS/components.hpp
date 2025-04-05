@@ -447,8 +447,7 @@ enum class TEXTURE_ASSET_ID
 	PLAYER = BACTERIOPHAGE + 1,
 	PROJECTILE = PLAYER + 1,
 	TILE = PROJECTILE + 1,
-	PARALAX_TILE = TILE + 1,
-	GAME_LOGO = PARALAX_TILE + 1,
+	GAME_LOGO = TILE + 1,
 	GAMEOVER = GAME_LOGO + 1,
 	BUTTON = GAMEOVER + 1,
 	PAUSE = BUTTON + 1,
@@ -457,8 +456,7 @@ enum class TEXTURE_ASSET_ID
 	NUCLEUS = SHOP_BUTTON_ON_HOVER + 1,
 	SHOPSCREEN = NUCLEUS + 1,
 	INFOSCREEN = SHOPSCREEN + 1,
-	WALL_TILE = INFOSCREEN + 1,
-	NOSE = WALL_TILE + 1,
+	NOSE = INFOSCREEN + 1,
 	CUTSCENEBACKGROUND = NOSE + 1,
 	NOSEACCENT = CUTSCENEBACKGROUND + 1,
 	ENTERINGNUCLEUS = NOSEACCENT + 1,
@@ -507,7 +505,16 @@ enum class TEXTURE_ASSET_ID
 	WINSCREEN = BOSS_ARROW + 1,
 	THERMOMETER = WINSCREEN + 1,
 	CIRCLE = THERMOMETER + 1,
-	TEXTURE_COUNT = CIRCLE + 1
+
+	RED_TILES = CIRCLE + 1,
+	RED_WALL = RED_TILES + 1,
+	GREEN_TILES = RED_WALL + 1,
+	GREEN_WALL = GREEN_TILES + 1,
+	BLUE_TILES = GREEN_WALL + 1,
+	BLUE_WALL = BLUE_TILES + 1,
+
+	TEXTURE_COUNT = BLUE_WALL + 1,
+
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -727,6 +734,15 @@ struct Particle
     float max_lifetime_ms = 2000.0f;
     float state_timer_ms = 0.0f;
     float speed_factor = 100.0f;
+};
+
+//biomes
+enum class Biome {
+  RED = 0,
+  GREEN = RED + 1,
+  BLUE = GREEN + 1,
+  // add more
+  BIOME_COUNT = BLUE + 1
 };
 
 // MACROS for "to_json" and "from_json" on user-defined structs

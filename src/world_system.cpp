@@ -637,6 +637,9 @@ void WorldSystem::goToNextLevel()
 	level += 1;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
+
+	// update biome for the new level
+	setCurrentBiomeByLevel(level); 
 	
 	initializedMap = false;
 	currentTiles.clear();

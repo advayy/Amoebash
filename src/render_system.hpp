@@ -53,7 +53,6 @@ class RenderSystem
 		textures_path("amoeba/player_dash.png"),
 		textures_path("projectiles/bacteriophage_projectile.png"),
 		textures_path("tiles/test_tile.png"),
-		textures_path("tiles/parallax_tile_1_128x.png"),
 		textures_path("ui_art/amoebash_logo.png"),
 		textures_path("ui_art/gameOver.png"),
 		textures_path("ui_art/button_outline.png"),
@@ -63,7 +62,6 @@ class RenderSystem
 		textures_path("ui_art/nucleus_full_size.png"),
 		textures_path("ui_art/shopscreen.png"),
 		textures_path("ui_art/infoscreen.png"),
-		textures_path("tiles/wall_tile.png"),
 		textures_path("transition_animations/noses_spritesheet.png"),
 		textures_path("transition_animations/into_game_transition_sheet.png"),
 		textures_path("transition_animations/nose_accent_spritesheet.png"),
@@ -112,7 +110,13 @@ class RenderSystem
 		textures_path("enemies/boss/boss_arrow.png"),
 		textures_path("ui_art/victory_cutscene.png"),
 		textures_path("ui_art/thermometer_alone.png"),
-		textures_path("ui_art/circle.png")
+		textures_path("ui_art/circle.png"),
+		textures_path("tiles/biomes/red_tiles.png"),
+		textures_path("tiles/biomes/red_wall.png"),
+		textures_path("tiles/biomes/green_tiles.png"),
+		textures_path("tiles/biomes/green_wall.png"),
+		textures_path("tiles/biomes/blue_tiles.png"),
+		textures_path("tiles/biomes/blue_wall.png"),
 	};
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.

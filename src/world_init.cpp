@@ -596,16 +596,62 @@ Entity createChest(RenderSystem *renderer, vec2 position)
 	return entity;
 }
 
+
+Biome currentBiome = Biome::RED; // Default to red biome
+
+void setCurrentBiomeByLevel(unsigned int level) {
+    currentBiome = getBiomeForLevel(level);
+}
+
+Biome getBiomeForLevel(unsigned int level) {
+    // tutorial and level 1 are red
+    if (level == 0 || level == 1) {
+        return Biome::RED;
+    }
+    
+    // cycle through biomes for other levels
+    unsigned int biomeIndex = (level - 1) % static_cast<unsigned int>(Biome::BIOME_COUNT);
+    return static_cast<Biome>(biomeIndex);
+}
+
+TEXTURE_ASSET_ID getTileTextureForBiome(Biome biome) {
+    switch (biome) {
+        case Biome::RED:
+            return TEXTURE_ASSET_ID::RED_TILES;
+        case Biome::GREEN:
+            return TEXTURE_ASSET_ID::GREEN_TILES;
+        case Biome::BLUE:
+            return TEXTURE_ASSET_ID::BLUE_TILES;
+        // add more
+        default:
+            return TEXTURE_ASSET_ID::RED_TILES; 
+    }
+}
+
+TEXTURE_ASSET_ID getWallTextureForBiome(Biome biome) {
+    switch (biome) {
+        case Biome::RED:
+            return TEXTURE_ASSET_ID::RED_WALL;
+        case Biome::GREEN:
+            return TEXTURE_ASSET_ID::GREEN_WALL;
+        case Biome::BLUE:
+            return TEXTURE_ASSET_ID::BLUE_WALL;
+        // add mroe here
+        default:
+            return TEXTURE_ASSET_ID::RED_WALL; 
+    }
+}
+
 Entity addParalaxTile(vec2 gridCoord)
 {
-	return addTile(gridCoord, TEXTURE_ASSET_ID::PARALAX_TILE, 3);
+    return addTile(gridCoord, getTileTextureForBiome(currentBiome), 3);
 }
 
 Entity addWallTile(vec2 gridCoord)
 {
-	auto tile = addTile(gridCoord, TEXTURE_ASSET_ID::WALL_TILE, 1);
-	registry.walls.emplace(tile);
-	return tile;
+    auto tile = addTile(gridCoord, getWallTextureForBiome(currentBiome), 1);
+    registry.walls.emplace(tile);
+    return tile;
 }
 
 Entity addPortalTile(vec2 gridCoord) {
