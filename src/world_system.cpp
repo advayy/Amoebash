@@ -595,6 +595,7 @@ void WorldSystem::triggerGameOver() {
 				previous_state = current_state;
 				current_state = GameState::GAME_OVER;
 				createGameOverScreen();	
+				currentBiome = Biome::RED; 
 }
 
 // Handle player movement
@@ -1148,6 +1149,8 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 				current_state = GameState::GAME_OVER;
                 clearVignetteEffect();
 				createGameOverScreen();
+
+				currentBiome = Biome::RED;
 			}
 		}
 	}
