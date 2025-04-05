@@ -185,5 +185,5 @@ private:
 
 	// text related
 	Entity player_germoney_count;
-	void setPlayerGermoneyCount(Entity& entity) { this->player_germoney_count = entity; };
+	void setPlayerGermoneyCount(Entity entity) { this->player_germoney_count = entity; };
 };

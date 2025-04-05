@@ -966,7 +966,7 @@ Entity createBuffPopup(BUFF_TYPE type)
 
 	Entity buffPopup = Entity();
 
-	Entity& buffImage = createPopupBuffUI(BUFF_POPUP_POS + vec2(BUFF_POPUP_GAP, BUFF_POPUP_GAP), type);
+	Entity buffImage = createPopupBuffUI(BUFF_POPUP_POS + vec2(BUFF_POPUP_GAP, BUFF_POPUP_GAP), type);
 	Motion& buffImageMotion = registry.motions.get(buffImage);
 
 	auto buff_test = BUFF_TYPE_TO_TEXT.at(type);

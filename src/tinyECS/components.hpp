@@ -715,13 +715,8 @@ struct PopupWithImage {
 	Entity image;
 	float duration;
 
-	PopupWithImage(Entity& text, Entity& description, Entity& image, float duration = POPUP_DURATION)
-	{
-		this->text = text;
-		this->description = description;
-		this->image = image;
-		this->duration = duration;
-	}
+	PopupWithImage(Entity text, Entity description, Entity image, float duration = POPUP_DURATION)
+	: text(text), description(description), image(image), duration(duration) {}
 };
 
 // MACROS for "to_json" and "from_json" on user-defined structs
