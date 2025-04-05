@@ -463,21 +463,39 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 	map.map.resize(map.height, std::vector<tileType>(map.width, tileType::EMPTY));
 
 	if (tutorial_on) {
-		int hall_x = map.height / 2;
-
-		for (int y = 0; y < map.height; y++) {
-			map.map[y][hall_x] = tileType::EMPTY;
-		}
-
-		for (int x = 0; x < map.width; x++) {
-			if (x < hall_x - 1 || x > hall_x) {
-				for (int y = 0; y < map.height; y++) {
+		std::vector<std::vector<int>> tutorial_map = {
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,2,0,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,1},		
+			{1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},		
+			{1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1},		
+			{1,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1},		
+			{1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,1},		
+			{1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,1},		
+			{1,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,1},		
+			{1,1,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1},		
+			{1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1},		
+			{1,1,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1},		
+			{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1},		
+			{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1},		
+			{1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1},		
+			{1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1}		
+		};
+	
+		for (int y = 0; y < tutorial_map[0].size(); y++) {
+			for (int x = 0; x < tutorial_map.size(); x++) {
+				if (tutorial_map[x][y] == 1) {
 					map.map[y][x] = tileType::WALL;
+				} else if (tutorial_map[x][y] == 2) {
+					map.map[y][x] = tileType::PORTAL;
+				} else {
+					map.map[y][x] = tileType::EMPTY;
 				}
-			} else {
-                map.map[0][x] = tileType::WALL;
-                map.map[map.height - 1][x] = tileType::WALL;
-            }
+			}
 		}
 
 	} else {
@@ -515,21 +533,6 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
                 map.map[y][0] = tileType::WALL;
                 map.map[y][map.width - 1] = tileType::WALL;
             }
-
-            // print map
-            // for (int y = 0; y < map.height; ++y) {
-            //     for (int x = 0; x < map.width; ++x) {
-            //         if (x == playerTile.first && y == playerTile.second) {
-            //             std::cout << "!!";
-            //         } else if (x == portalTile.first && y == portalTile.second) {
-            //             std::cout << "P";
-            //         } else {
-            //             std::cout << (map.map[y][x] == tileType::WALL ? "X" : ".");
-            //         }
-            //     }
-            //     std::cout << std::endl;
-            // }
-
             if (getDistance(map.map, playerTile, portalTile) < 15) {
                 // std::cout << "PATH DOES NOT EXIST OR NOT ENOUGH DISTANCE, TRYING AGAIN." << std::endl;
                 continue;

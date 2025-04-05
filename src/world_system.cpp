@@ -443,6 +443,8 @@ bool WorldSystem::checkPortalCollision(){
 
         if (distance < portal_radius) {
             // go to black screen
+
+			if (progress_map["tutorial_mode"]) progress_map["tutorial_mode"] = false;
 			return true;
         }
     }
@@ -468,10 +470,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	updateDangerLevel(elapsed_ms_since_last_update);
 
 	updateCamera(elapsed_ms_since_last_update);
-
-	if (progress_map["tutorial_mode"] && registry.infoBoxes.size() == 0) {
-		createInfoBoxes();
-	}
 	
     updateMouseCoords(); 
 	updateHuds();
@@ -630,9 +628,6 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 
 void WorldSystem::goToNextLevel()
 {
-    // print go to next level
-    // std::cout << "Going to next level" << std::endl;
-
 	current_speed = 1.f;
 	level += 1;
 	next_enemy_spawn = 0;
@@ -666,23 +661,17 @@ void WorldSystem::goToNextLevel()
 	} else {
 		createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
 		createBoss(renderer, gridCellToPosition({10, 10}));
-		// std::cout << "Boss created" << std::endl;
 	}
 
 	Player &player = registry.players.get(registry.players.entities[0]);
 	Motion &playerMotion = registry.motions.get(registry.players.entities[0]);
-	// Progression &prog = registry.progressions.get(registry.progressions.entities[0]);
 
 	playerMotion.position = gridCellToPosition(vec2(playerPosition.second, playerPosition.first));
 
-	// for(int i = 0; i < prog.pickedInNucleus.size(); i++) {
-	// 	applyBuff(player, prog.pickedInNucleus[i]);
-	// }
 	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
 	camera.position = playerMotion.position;
 	bacteriophage_idx.clear();
-    // print exiting
-    // std::cout << "Exiting createProceduralMap" << std::endl;
+
 	emptyMiniMap();
 	return;
 }
@@ -749,10 +738,7 @@ void WorldSystem::restart_game()
 	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
 		
 	if (progress_map["tutorial_mode"]) {
-		createPlayer(renderer, gridCellToPosition({1, 10}));
-		createSpikeEnemy(renderer, gridCellToPosition({12, 10}));
-		createKey(renderer, gridCellToPosition({15, 10}));
-		createChest(renderer, gridCellToPosition({18, 10}));
+		createPlayer(renderer, gridCellToPosition({1, 17}));
 	} else {
 		createPlayer(renderer, gridCellToPosition(vec2(playerPosition.second, playerPosition.first)));
 	}
@@ -830,61 +816,60 @@ void WorldSystem::handle_collisions()
 				// registry.remove_all_components_of(entity2);
 			}
 		}
-		else if (registry.keys.has(entity2))
-		{
-			if (registry.players.has(entity))
-			{
-				float predictionTime = 0.001f; // 100 ms = 0.1s
+		// else if (registry.keys.has(entity2))
+		// {
+		// 	if (registry.players.has(entity))
+		// 	{
+		// 		float predictionTime = 0.001f; // 100 ms = 0.1s
 
-				if (physics_system.willMeshCollideSoon(entity, entity2, predictionTime))
-				{
-					Motion& keyMotion = registry.motions.get(entity2);
-					Motion& playerMotion = registry.motions.get(entity);
+		// 		if (physics_system.willMeshCollideSoon(entity, entity2, predictionTime))
+		// 		{
+		// 			Motion& keyMotion = registry.motions.get(entity2);
+		// 			Motion& playerMotion = registry.motions.get(entity);
 
-					if (glm::length(playerMotion.velocity) > 0.0f) 
-					{
-						keyMotion.velocity = playerMotion.velocity * 3.0f;
-					}
-					else 
-					{
-						keyMotion.velocity = vec2(0.0f, 0.0f);
-					}
-					// std::cout << "Mesh collision imminent between player and hexagon" << std::endl;
-				}
-				else 
-				{
-					// std::cout << "No mesh collision predicted soon" << std::endl;
-				}
-			}
-			else if (registry.chests.has(entity))
-			{
-				Motion& keyMotion = registry.motions.get(entity2);
-				Motion& chestMotion = registry.motions.get(entity);
+		// 			if (glm::length(playerMotion.velocity) > 0.0f) 
+		// 			{
+		// 				keyMotion.velocity = playerMotion.velocity * 3.0f;
+		// 			}
+		// 			else 
+		// 			{
+		// 				keyMotion.velocity = vec2(0.0f, 0.0f);
+		// 			}
+		// 			// std::cout << "Mesh collision imminent between player and hexagon" << std::endl;
+		// 		}
+		// 		else 
+		// 		{
+		// 			// std::cout << "No mesh collision predicted soon" << std::endl;
+		// 		}
+		// 	}
+		// 	else if (registry.chests.has(entity))
+		// 	{
+		// 		Motion& keyMotion = registry.motions.get(entity2);
+		// 		Motion& chestMotion = registry.motions.get(entity);
 
-				Mesh& chestMesh = *registry.meshPtrs.get(entity);
+		// 		Mesh& chestMesh = *registry.meshPtrs.get(entity);
 
-				std::vector<vec2> chestWorldVertices = physics_system.getWorldVertices(chestMesh.textured_vertices, chestMotion.position, chestMotion.scale);
+		// 		std::vector<vec2> chestWorldVertices = physics_system.getWorldVertices(chestMesh.textured_vertices, chestMotion.position, chestMotion.scale);
 
-				if (physics_system.pointInPolygon(keyMotion.position, chestWorldVertices))
-				{
-					// remove chest
-					// registry.remove_all_components_of(entity);
-					// registry.remove_all_components_of(entity2);
+		// 		if (physics_system.pointInPolygon(keyMotion.position, chestWorldVertices))
+		// 		{
+		// 			// remove chest
+		// 			// registry.remove_all_components_of(entity);
+		// 			// registry.remove_all_components_of(entity2);
 
-                    removals.push_back(entity);
-                    removals.push_back(entity2);
+        //             removals.push_back(entity);
+        //             removals.push_back(entity2);
                 
-					if (progress_map["tutorial_mode"]) {
-						current_state = GameState::NEXT_LEVEL;
-						progress_map["tutorial_mode"] = false;
-						removeInfoBoxes();
-						goToNextLevel();
-						current_state = GameState::NEXT_LEVEL;
-						emptyMiniMap();
-					}
-				}
-			}
-		}
+		// 			if (progress_map["tutorial_mode"]) {
+		// 				current_state = GameState::NEXT_LEVEL;
+		// 				progress_map["tutorial_mode"] = false;
+		// 				goToNextLevel();
+		// 				current_state = GameState::NEXT_LEVEL;
+		// 				emptyMiniMap();
+		// 			}
+		// 		}
+		// 	}
+		// }
 		else if (registry.enemies.has(entity2))
 		{
 			Enemy& enemy = registry.enemies.get(entity2);
@@ -1950,8 +1935,6 @@ void WorldSystem::loadProgress() {
 	std::string progress_filename = std::string(PROJECT_SOURCE_DIR) + "/data/save/progress.json";
 
 	std::ifstream p(progress_filename);
-
-	removeInfoBoxes();
 
 	if (registry.keys.size() != 0) {
 		registry.remove_all_components_of(registry.keys.entities[0]);
