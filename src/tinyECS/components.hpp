@@ -36,26 +36,25 @@ using json = nlohmann::json;
 
 // asked gpt for this
 namespace nlohmann {
-    template <>
-    struct adl_serializer<glm::vec2>
-    {
-        static void to_json(json& j, const glm::vec2& v) {
-            j = json{{"x", v.x}, {"y", v.y}};
-        }
+	template <>
+	struct adl_serializer<glm::vec2>
+	{
+		static void to_json(json& j, const glm::vec2& v) {
+			j = json{ {"x", v.x}, {"y", v.y} };
+		}
 
-        static void from_json(const json& j, glm::vec2& v) {
-            j.at("x").get_to(v.x);
-            j.at("y").get_to(v.y);
-        }
-    };
-}
+		static void from_json(const json& j, glm::vec2& v) {
+			j.at("x").get_to(v.x);
+			j.at("y").get_to(v.y);
+		}
+	};
+};
 
 struct Progression {
-	std::vector<BUFF_TYPE> buffsFromLastRun;
+	std::unordered_map<BUFF_TYPE, int> buffsFromLastRun;
 	std::vector<BUFF_TYPE> pickedInNucleus;
 	int slots_unlocked = 9;
 };
-
 
 struct Slot {
 	int number = 0;
@@ -79,7 +78,8 @@ struct Player
 	int dash_damage = PLAYER_DASH_DAMAGE;
 	float healing_rate = PLAYER_BASE_HEALING_RATE;
 	float healing_timer_ms = PLAYER_DEFAULT_HEALING_TIMER_MS;
-	
+	float default_healing_timer = PLAYER_DEFAULT_HEALING_TIMER_MS;
+
 	// Active cooldown timer and the default cooldown time
 	int dash_count = DASH_RECHARGE_COUNT;
 	int max_dash_count = DASH_RECHARGE_COUNT;
@@ -89,15 +89,32 @@ struct Player
 	float dash_speed = PLAYER_DASH_SPEED;
 	float dash_range = PLAYER_DASH_RANGE;
 
+	float minimapViewRange = 3.0;
+	float dashDecay = VELOCITY_DECAY_RATE;
+
+	int shields = 0;
+
+	float gun_projectile_damage = GUN_PROJECTILE_DAMAGE;
+	int bulletsPerShot = 1;
+	float angleConeRadius = 30;
+	float bulletSpeed = GUN_PROJECTILE_SPEED;
+
+	int extra_lives = 0;
+
+
 	// Detection range for enemies
 	float detection_range = 1.0f;
 
 	float knockback_duration = 0.0f;
 
 	vec2 grid_position = {0, 0};
-	std::vector<BUFF_TYPE> buffsCollected;
+
+	std::unordered_map<BUFF_TYPE, int> buffsCollected;
 
     int germoney_count = 0;
+
+	float dangerFactor = DEFAULT_DANGER_LEVEL;
+	float dangerTimer = 0.0f;
 };
 
 struct Dashing
@@ -135,6 +152,8 @@ enum class tileType {
 	WALL = 1,
     PORTAL = 2
 };
+
+struct Thermometer {};
 
 struct ProceduralMap {
 	// 2D array of numbers representing the map
@@ -234,8 +253,9 @@ extern Debug debugging;
 // Sets the brightness of the screen
 struct ScreenState
 {
-	float darken_screen_factor = -1;
-	float vignette_screen_factor = -1;
+	float darken_screen_factor = -1.f;
+	float vignette_screen_factor = 0.f;
+    float vignette_timer_ms = 0.f;
 };
 
 // A struct to refer to debugging graphics in the ECS
@@ -294,10 +314,11 @@ enum ButtonType
 	STARTBUTTON = 0,
 	SHOPBUTTON = STARTBUTTON + 1,
 	INFOBUTTON = SHOPBUTTON + 1,
-	BACKBUTTON = INFOBUTTON,
+	BACKBUTTON = INFOBUTTON + 1,
 	SAVEBUTTON = BACKBUTTON + 1,
-	PROCEED_BUTTON = SAVEBUTTON + 1,
-	NONE = PROCEED_BUTTON + 1
+	PROCEEDBUTTON = SAVEBUTTON + 1,
+	RESUMEBUTTON = PROCEEDBUTTON + 1,
+	NONE = RESUMEBUTTON + 1
 };
 
 // Coordinates and bounding box of start button on start screen
@@ -452,7 +473,8 @@ enum class TEXTURE_ASSET_ID
 	BUTTON = GAMEOVER + 1,
 	PAUSE = BUTTON + 1,
 	SHOP_BUTTON = PAUSE + 1,
-	NUCLEUS = SHOP_BUTTON + 1,
+	SHOP_BUTTON_ON_HOVER = SHOP_BUTTON + 1,
+	NUCLEUS = SHOP_BUTTON_ON_HOVER + 1,
 	SHOPSCREEN = NUCLEUS + 1,
 	INFOSCREEN = SHOPSCREEN + 1,
 	WALL_TILE = INFOSCREEN + 1,
@@ -466,9 +488,10 @@ enum class TEXTURE_ASSET_ID
 	GERMONEY_UI = DASH_UI + 1,
 	WEAPON_PILL_UI = GERMONEY_UI + 1,
 	INFO_BUTTON = WEAPON_PILL_UI + 1,
-	START_SCREEN_BG = INFO_BUTTON + 1,
-	BACK_BUTTON = START_SCREEN_BG + 1,
-	KEY = BACK_BUTTON + 1,
+	INFO_BUTTON_ON_HOVER = INFO_BUTTON + 1,
+	START_SCREEN_BG = INFO_BUTTON_ON_HOVER + 1,
+	OUTLINE_BUTTON = START_SCREEN_BG + 1,
+	KEY = OUTLINE_BUTTON + 1,
 	BUFFS_SHEET = KEY + 1,
 	PORTAL = BUFFS_SHEET + 1,
 	MOUSE_CONTROL_INFO = PORTAL + 1,
@@ -478,8 +501,9 @@ enum class TEXTURE_ASSET_ID
 	RESTART_INFO = ENEMY_INFO + 1,
 	LEAVE_TUTORIAL = RESTART_INFO + 1,
 	CHEST = LEAVE_TUTORIAL + 1,
-	PARTICLE = CHEST + 1,
-	GUN = PARTICLE + 1,
+	DEATH_PARTICLE = CHEST + 1,
+	PIXEL_PARTICLE = DEATH_PARTICLE + 1,
+	GUN = PIXEL_PARTICLE + 1,
 	GUN_STILL = GUN + 1,
 	GUN_PROJECTILE = GUN_STILL + 1,
 	BOSS_PROJECTILE = GUN_PROJECTILE + 1,
@@ -489,9 +513,20 @@ enum class TEXTURE_ASSET_ID
 	BOSS_STAGE_2 = BOSS_STAGE_1 + 1,
 	BOSS_STAGE_3 = BOSS_STAGE_2 + 1,
 	BOSS_STAGE_4 = BOSS_STAGE_3 + 1,
-	BOSS_ARROW = BOSS_STAGE_4 + 1,
+	START_BUTTON = BOSS_STAGE_4 + 1,
+	START_BUTTON_ON_HOVER = START_BUTTON + 1,
+	BACK_BUTTON = START_BUTTON_ON_HOVER + 1,
+	BACK_BUTTON_ON_HOVER = BACK_BUTTON + 1,
+	PROCEED_BUTTON = BACK_BUTTON_ON_HOVER + 1,
+	PROCEED_BUTTON_ON_HOVER = PROCEED_BUTTON + 1,
+	SAVE_BUTTON = PROCEED_BUTTON_ON_HOVER + 1,
+	SAVE_BUTTON_ON_HOVER = SAVE_BUTTON + 1,
+	RESUME_BUTTON = SAVE_BUTTON_ON_HOVER + 1,
+	RESUME_BUTTON_ON_HOVER = RESUME_BUTTON + 1,
+	BOSS_ARROW = RESUME_BUTTON_ON_HOVER + 1,
 	WINSCREEN = BOSS_ARROW + 1,
-	TEXTURE_COUNT = WINSCREEN + 1
+	THERMOMETER = WINSCREEN + 1,
+	TEXTURE_COUNT = THERMOMETER + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -511,7 +546,8 @@ enum class EFFECT_ASSET_ID
 	HEXAGON = DASH_UI + 1,
 	PARTICLE_EFFECT = HEXAGON + 1,
     FONT = PARTICLE_EFFECT + 1,
-	EFFECT_COUNT = FONT + 1,
+    THERMOMETER_EFFECT = FONT + 1,
+	EFFECT_COUNT = THERMOMETER_EFFECT + 1,
 
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
@@ -620,6 +656,12 @@ enum class SpikeEnemyState
 struct SpikeEnemyAI : EnemyAI
 {
 	SpikeEnemyState state = SpikeEnemyState::PATROLLING;
+	
+	// Simple position tracking for collision detection
+	float previousPositionX = 0.0f;
+	bool hasPreviousPosition = false;
+	
+	float bombTimer = SPIKE_ENEMY_BOMB_TIMER;
 };
 
 enum class RBCEnemyState
@@ -683,6 +725,7 @@ enum class PARTICLE_TYPE
 {
     DEATH_PARTICLE = 0,
     // add more particle types here
+	RIPPLE_PARTICLE = 1,
     PARTICLE_TYPE_COUNT
 };
 
@@ -723,6 +766,8 @@ struct PopupWithImage {
 		this->duration = duration;
 	}
 };
+
+struct PopupElement {};
 
 // MACROS for "to_json" and "from_json" on user-defined structs
 

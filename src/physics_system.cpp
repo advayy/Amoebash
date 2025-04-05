@@ -68,7 +68,7 @@ void PhysicsSystem::step(float elapsed_ms)
 			motion.velocity = dash.velocity;
 
 			// Gradually change the velocity
-			dash.velocity *= VELOCITY_DECAY_RATE; // FLAG MIGHT NEED TO SWAP THIS ONE OUT TOO.
+			dash.velocity *= player.dashDecay; // FLAG MIGHT NEED TO SWAP THIS ONE OUT TOO.
 		}
 	}
 

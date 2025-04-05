@@ -14,6 +14,7 @@
 #include <SDL_mixer.h>
 
 #include "render_system.hpp"
+#include "ui_system.hpp"
 #include "particle_system.hpp"
 #include "physics_system.hpp"
 
@@ -50,7 +51,7 @@ public:
 	void close_window();
 
 	// starts the game
-	void init(RenderSystem *renderer);
+	void init(RenderSystem *renderer, UISystem *ui_system);
 
 	// releases all associated resources
 	~WorldSystem();
@@ -91,6 +92,9 @@ public:
 	void spawnEnemies(float elapsed_ms_since_last_update);
 	void handleProjectiles(float elapsed_ms_since_last_update);
 	bool checkPortalCollision();
+	void startTheme();
+	void triggerGameOver();
+
 
 private:
 	bool gameOver = false;
@@ -123,7 +127,10 @@ private:
 	void updateBossArrows();
 
 	void handlePlayerMovement(float elapsed_ms_since_last_update);
-	
+
+    void handleVignetteEffect(float elapsed_ms_since_last_update);
+	void handleRippleEffect(float elapsed_ms_since_last_update);
+
 	// OpenGL window handle
 	GLFWwindow *window;
 
@@ -141,6 +148,7 @@ private:
 
 	// Game state
 	RenderSystem* renderer;
+	UISystem* ui_system;
 	float current_speed;
 
 	// particle
@@ -154,12 +162,14 @@ private:
 
 	// music references
 	Mix_Music *background_music;
-	Mix_Chunk *dash_sound_a;
-	Mix_Chunk *dash_sound_b;
+	Mix_Music *boss_background_music;
+	Mix_Chunk *dash_sound;
+	Mix_Chunk *player_shoot_sound;
 	Mix_Chunk *damage_sound;
 	Mix_Chunk *enemy_shoot_sound;
 	Mix_Chunk *enemy_death_sound;
 	Mix_Chunk *click_sound;
+	Mix_Chunk *portal_sound;
 
 	// debugging (fps etc..)
 	void toggleFPSDisplay();
@@ -183,7 +193,5 @@ private:
 	void moveSelectedBuffsToProgression();
 	void applyBuff(Player& player, BUFF_TYPE buff_type);
 
-	// text related
-	Entity player_germoney_count;
-	void setPlayerGermoneyCount(Entity& entity) { this->player_germoney_count = entity; };
+	void updateDangerLevel(float elapsed_ms_since_last_update);
 };

@@ -24,6 +24,7 @@ int main()
 	AISystem ai_system;
 	AnimationSystem animation_system;
 	WorldSystem world_system;
+	UISystem ui_system;
 	RenderSystem renderer_system;
 	PhysicsSystem physics_system;
     ParticleSystem particle_system;
@@ -45,7 +46,7 @@ int main()
 
 	// initialize the main systems
 	renderer_system.init(window);
-	world_system.init(&renderer_system);
+	world_system.init(&renderer_system, &ui_system);
 
 	GameState &current_state = world_system.current_state;
 	GameState &previous_state = world_system.previous_state;
@@ -86,6 +87,7 @@ int main()
 			break;
 
 		case GameState::START_SCREEN:
+			Mix_PauseMusic();
 			renderer_system.drawStartScreen();
 			break;
 
@@ -95,6 +97,7 @@ int main()
 			ai_system.step(elapsed_ms);
 			physics_system.step(elapsed_ms);
 			world_system.handle_collisions();
+			ui_system.step(elapsed_ms);
             particle_system.step(elapsed_ms);
 			animation_system.step(elapsed_ms);
 			renderer_system.draw();
@@ -114,18 +117,21 @@ int main()
 			break;
 		case GameState::GAME_OVER:
 			renderer_system.drawGameOverScreen();
+			Mix_PauseMusic();
 			break;
 
-		case GameState::GAMEPLAY_CUTSCENE:
+		case GameState::GAMEPLAY_CUTSCENE: // intro cutscene
+			Mix_PauseMusic();
 			stateTimer -= elapsed_ms;
 			renderer_system.drawCutScreneAnimation();
 			animation_system.step(elapsed_ms);
 
             if (stateTimer <= 0.f) {
                 stateTimer = BOOT_CUTSCENE_DURATION_MS;
-				removeCutScene();
+				ui_system.removeCutScene();
                 previous_state = current_state;
                 current_state = GameState::GAME_PLAY;
+				world_system.startTheme();
             }
             break;
 

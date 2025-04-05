@@ -5,13 +5,13 @@
 #include <iostream>
 
 // create info boxes in tutorial mode
-void createInfoBoxes() {
+void UISystem::createInfoBoxes() {
 
 	TEXTURE_ASSET_ID baseTexture = TEXTURE_ASSET_ID::MOUSE_CONTROL_INFO;
 
 	for (int i = 0; i < 6; i ++) {
 		auto entity1 = Entity();
-		int x = (3  *  i)  + 1;
+		int x = (3  *  i) + 2;
 		int y = (i % 2 == 0) ? 11 : 8;
 		vec2 infoPosition = gridCellToPosition({x, y});
 	
@@ -36,7 +36,7 @@ void createInfoBoxes() {
 }
 
 // remove info boxes in tutorial mode
-void removeInfoBoxes() {
+void UISystem::removeInfoBoxes() {
 	std::vector<Entity> entityList;
 
 	for (auto e : registry.infoBoxes.entities) {
@@ -50,7 +50,7 @@ void removeInfoBoxes() {
 	return;
 }
 
-Entity createMiniMap(RenderSystem *renderer, vec2 size)
+Entity UISystem::createMiniMap(RenderSystem *renderer, vec2 size)
 {
 	auto entity = Entity();
 
@@ -77,7 +77,7 @@ Entity createMiniMap(RenderSystem *renderer, vec2 size)
 }
 
 // create start screen and buttons
-Entity createStartScreen(vec2 position)
+Entity UISystem::createStartScreen(vec2 position)
 {
 	Entity startScreenEntity = Entity();
 	
@@ -126,7 +126,7 @@ Entity createStartScreen(vec2 position)
 }
 
 // create shop screen and buttons
-Entity createShopScreen()
+Entity UISystem::createShopScreen()
 {
 	Entity shopScreenEntity = Entity();
 
@@ -156,7 +156,7 @@ Entity createShopScreen()
 }
 
 // create info screen and buttons
-Entity createInfoScreen()
+Entity UISystem::createInfoScreen()
 {
 	Entity infoScreenEntity = Entity();
 
@@ -186,13 +186,13 @@ Entity createInfoScreen()
 }
 
 // create game over screen with nucleus menu
-Entity createGameOverScreen()
+Entity UISystem::createGameOverScreen()
 {
 	return createNucleusMenuScreen();
 }
 
 // create nucleus menu nucleus
-Entity createNucleusMenuNucleus() {
+Entity UISystem::createNucleusMenuNucleus() {
 	Entity e = Entity();
 
 	registry.renderRequests.insert(e,
@@ -213,7 +213,7 @@ Entity createNucleusMenuNucleus() {
 }
 
 // create nucleus menu slot for buff carry on
-Entity createNucleusMenuSlot(vec2 position, int slotNumber){
+Entity UISystem::createNucleusMenuSlot(vec2 position, int slotNumber){
 	Entity e = Entity();
 
 	Slot& s = registry.slots.emplace(e);
@@ -235,7 +235,7 @@ Entity createNucleusMenuSlot(vec2 position, int slotNumber){
 }
 
 // create nucleus menu screen with slots and menu
-Entity createNucleusMenuScreen() {
+Entity UISystem::createNucleusMenuScreen() {
 	// Add all buffs collected to the screen,
 	// Add the number of cups
 	// add the nucleus thing
@@ -262,8 +262,8 @@ Entity createNucleusMenuScreen() {
 	Camera &camera = registry.cameras.components[0];
 	motion.position = camera.position;
 
-	Entity nextButtonEntity = createNextButton(vec2({origin_position.x + 180, origin_position.y + NUCLEUS_MENU_NUCLEUS_HEIGHT}));
-	o.buttons = {nextButtonEntity};
+	Entity proceedButtonEntity = createProceedButton(vec2({origin_position.x + 180, origin_position.y + NUCLEUS_MENU_NUCLEUS_HEIGHT}));
+	o.buttons = {proceedButtonEntity};
 
 
 	if(p.slots_unlocked == 1) { // upgrade 1...
@@ -314,23 +314,25 @@ Entity createNucleusMenuScreen() {
 	vec2 startPos = {screenLeft + padding + BUFF_WIDTH, screenTop + padding + BUFF_HEIGHT};
 	vec2 currentPos = startPos;
 
-	for(int i = 0; i < p.buffsFromLastRun.size(); i++) {
+    for (auto &buff : registry.players.components[0].buffsCollected) {
+        if (buff.second == 0) continue;
 
-		registry.overs.emplace(createClickableBuffUI(currentPos, p.buffsFromLastRun[i]));
-		currentPos.y += padding + BUFF_HEIGHT;
+        for (int i = 0; i < buff.second; i++) {
+            registry.overs.emplace(createClickableBuffUI(currentPos, buff.first));
+            currentPos.y += padding + BUFF_HEIGHT;
 
-		if((currentPos.y + padding + BUFF_HEIGHT) >= screenBottom) // forecast next position will fit otherwise shift start right and update current to start...
-		{
-			startPos.x += padding + BUFF_WIDTH;
-			currentPos = startPos;
-		}
-	}
+            if ((currentPos.y + padding + BUFF_HEIGHT) >= screenBottom) {
+                startPos.x += padding + BUFF_WIDTH;
+                currentPos = startPos;
+            }
+        }
+    }
 
 	return nucleusMenuScreen;
 }
 
 // create the buff UI for carry on
-Entity createClickableBuffUI(vec2 position, BUFF_TYPE buffType)
+Entity UISystem::createClickableBuffUI(vec2 position, BUFF_TYPE buffType)
 {
 	Entity buff = Entity();
 
@@ -344,7 +346,7 @@ Entity createClickableBuffUI(vec2 position, BUFF_TYPE buffType)
 	Motion &motion = registry.motions.emplace(buff);
 	motion.position = position;
 
-	motion.scale = {BUFF_WIDTH, BUFF_HEIGHT};
+	motion.scale = { BUFF_WIDTH, BUFF_HEIGHT };
 
 	registry.renderRequests.insert(buff,
 								   {TEXTURE_ASSET_ID::BUFFS_SHEET,
@@ -365,7 +367,7 @@ Entity createClickableBuffUI(vec2 position, BUFF_TYPE buffType)
 }
 
 // create pause screen and buttons
-Entity createPauseScreen()
+Entity UISystem::createPauseScreen()
 {
 	Entity pauseScreenEntity = Entity();
 
@@ -388,21 +390,25 @@ Entity createPauseScreen()
 	motion.position = camera.position;
 	motion.scale = scale;
 
-	vec2 buttonPosition = camera.position + vec2(0, 100.f);
+	vec2 saveButtonPosition = camera.position + vec2(-BACK_BUTTON_SCALE.x/2.0f - WORK_SCALE_FACTOR * UI_MARGIN_X, -WINDOW_HEIGHT_PX/2.0f + WORK_SCALE_FACTOR* UI_MARGIN_Y);
+	vec2 resumeButtonPosition = camera.position + vec2(BACK_BUTTON_SCALE.x/2.0f + WORK_SCALE_FACTOR * UI_MARGIN_X, -WINDOW_HEIGHT_PX/2.0f + WORK_SCALE_FACTOR* UI_MARGIN_Y);
 
-	
+	Entity saveButtonEntity = createSaveButton(saveButtonPosition);
+	Entity resumeButtonEntity = createResumeButton(resumeButtonPosition);
 
-	Entity saveButtonEntity = createButton(ButtonType::SAVEBUTTON, buttonPosition, BACK_BUTTON_SCALE, TEXTURE_ASSET_ID::BACK_BUTTON);
 	
 	ButtonType type = registry.buttons.get(saveButtonEntity).type;
+	ButtonType resumeType = registry.buttons.get(resumeButtonEntity).type;
 
 	Pause &saveButton = registry.pauses.emplace(saveButtonEntity);
+	Pause &resumeButton = registry.pauses.emplace(resumeButtonEntity);
+	
 
 	return pauseScreenEntity;
 }
 
 // add components for cut scene animation
-void createGameplayCutScene()
+void UISystem::createGameplayCutScene()
 {
 	Entity backGround = createCutSceneBackGround();
 	Entity nose = createNose();
@@ -416,7 +422,7 @@ void createGameplayCutScene()
 }
 
 // removing all cutscrene components
-void removeCutScene()
+void UISystem::removeCutScene()
 {
     std::vector<Entity> cutSceneList;
 
@@ -431,7 +437,7 @@ void removeCutScene()
     }
 }
 
-Entity createEndingWinScene() {
+Entity UISystem::createEndingWinScene() {
 	Entity winScreenEntity = Entity();
 
 	Motion& motion = registry.motions.emplace(winScreenEntity);
@@ -465,7 +471,7 @@ Entity createEndingWinScene() {
 	return winScreenEntity;
 }
 
-Entity createCutSceneBackGround()
+Entity UISystem::createCutSceneBackGround()
 {
 	Entity backGroundEntity = Entity();
 
@@ -498,7 +504,7 @@ Entity createCutSceneBackGround()
 	return backGroundEntity;
 }
 
-Entity createNose()
+Entity UISystem::createNose()
 {
 	Entity noseEntity = Entity();
 
@@ -535,7 +541,7 @@ Entity createNose()
 	return noseEntity;
 }
 
-Entity createNoseAccent()
+Entity UISystem::createNoseAccent()
 {
 	Entity accentEntity = Entity();
 
@@ -574,7 +580,7 @@ Entity createNoseAccent()
 	return accentEntity;
 }
 
-Entity createEnteringNucleus()
+Entity UISystem::createEnteringNucleus()
 {
 	Entity nucleusEntity = Entity();
 
@@ -609,7 +615,7 @@ Entity createEnteringNucleus()
 }
 
 // remove Pause Screen and buttons
-void removePauseScreen()
+void UISystem::removePauseScreen()
 {
 	if (registry.pauses.size() == 0)
 		return;
@@ -631,7 +637,7 @@ void removePauseScreen()
 }
 
 // remove game over screen and related UI
-void removeGameOverScreen()
+void UISystem::removeGameOverScreen()
 {
 	if (registry.overs.size() == 0)
 		return;
@@ -648,7 +654,7 @@ void removeGameOverScreen()
 }
 
 // remove start screen and related UI
-void removeStartScreen()
+void UISystem::removeStartScreen()
 {
 	if (registry.starts.size() == 0)
 		return;
@@ -669,7 +675,7 @@ void removeStartScreen()
 }
 
 // remove shop screen and related UI
-void removeShopScreen()
+void UISystem::removeShopScreen()
 {
 	if (registry.shops.size() == 0)
 		return;
@@ -687,7 +693,7 @@ void removeShopScreen()
 }
 
 // remove info screen and related UI
-void removeInfoScreen()
+void UISystem::removeInfoScreen()
 {
 	if (registry.infos.size() == 0)
 		return;
@@ -706,7 +712,7 @@ void removeInfoScreen()
 }
 
 // Button Creater
-Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID texture)
+Entity UISystem::createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID texture)
 {
 	Entity buttonEntity = Entity();
 
@@ -730,7 +736,7 @@ Entity createButton(ButtonType type, vec2 position, vec2 scale, TEXTURE_ASSET_ID
 	return buttonEntity;
 }
 
-Entity createStartButton()
+Entity UISystem::createStartButton()
 {
 	vec2 position = START_BUTTON_COORDINATES;
 	vec2 scale = START_BUTTON_SCALE;
@@ -738,10 +744,10 @@ Entity createStartButton()
 	return createButton(ButtonType::STARTBUTTON,
 						position,
 						scale,
-						TEXTURE_ASSET_ID::BUTTON);
+						TEXTURE_ASSET_ID::START_BUTTON);
 }
 
-Entity createShopButton()
+Entity UISystem::createShopButton()
 {
 	vec2 scale = SHOP_BUTTON_SCALE;
 	vec2 position = SHOP_BUTTON_COORDINATES;
@@ -752,7 +758,7 @@ Entity createShopButton()
 						TEXTURE_ASSET_ID::SHOP_BUTTON);
 }
 
-Entity createInfoButton()
+Entity UISystem::createInfoButton()
 {
 	vec2 scale = INFO_BUTTON_SCALE; // currently same scale as shop button
 	vec2 position = INFO_BUTTON_COORDINATES;
@@ -763,9 +769,13 @@ Entity createInfoButton()
 						TEXTURE_ASSET_ID::INFO_BUTTON);
 }
 
-Entity createBackButton() {
+Entity UISystem::createBackButton() {
 	vec2 scale = BACK_BUTTON_SCALE;
 	vec2 position = BACK_BUTTON_COORDINATES;
+
+	for (auto e : registry.buttons.entities) {
+			registry.buttons.remove(e);
+	}
 
 	return createButton(ButtonType::BACKBUTTON,
 						position,
@@ -773,16 +783,34 @@ Entity createBackButton() {
 						TEXTURE_ASSET_ID::BACK_BUTTON);
 }
 
-Entity createNextButton(vec2 position) {
-	vec2 scale = BACK_BUTTON_SCALE;
+Entity UISystem::createProceedButton(vec2 position) {
+	vec2 scale = PROCEED_BUTTON_SCALE;
 
-	return createButton(ButtonType::PROCEED_BUTTON,
+	return createButton(ButtonType::PROCEEDBUTTON,
 						position,
 						scale,
-						TEXTURE_ASSET_ID::BACK_BUTTON);
+						TEXTURE_ASSET_ID::PROCEED_BUTTON);
 }
 
-Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, EFFECT_ASSET_ID effect_id)
+Entity UISystem::createResumeButton(vec2 position) {
+	vec2 scale = RESUME_BUTTON_SCALE;
+
+	return createButton(ButtonType::RESUMEBUTTON,
+						position,
+						scale,
+						TEXTURE_ASSET_ID::RESUME_BUTTON);
+}
+
+Entity UISystem::createSaveButton(vec2 position) {
+	vec2 scale = SAVE_BUTTON_SCALE;
+
+	return createButton(ButtonType::SAVEBUTTON,
+						position,
+						scale,
+						TEXTURE_ASSET_ID::SAVE_BUTTON);
+}
+
+Entity UISystem::createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, EFFECT_ASSET_ID effect_id)
 {
 	Entity entity = Entity();
 
@@ -801,7 +829,32 @@ Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, E
 	return entity;
 }
 
-Entity createHealthBar()
+Entity UISystem::createThermometer() {
+	Entity entity = Entity();
+
+	Motion &motion = registry.motions.emplace(entity);
+	motion.position = THERMOMETER_POS;
+	motion.scale = {THERMOMETER_WIDTH, THERMOMETER_HEIGHT};
+
+	Thermometer &t = registry.thermometers.emplace(entity);
+
+	vec2 screen_pos = worldToScreen(motion.position);
+	screen_pos.x -= THERMOMETER_WIDTH * .6f;
+	screen_pos.y -= THERMOMETER_HEIGHT * .55f;
+
+	setThermometerText(createText("", screen_pos, vec3(1.0f, 1.0f, 1.0f), 0.3f));
+	updateThermometerText();
+
+	registry.renderRequests.insert(
+		entity,
+		{TEXTURE_ASSET_ID::THERMOMETER,
+		 EFFECT_ASSET_ID::THERMOMETER_EFFECT,
+		 GEOMETRY_BUFFER_ID::SPRITE});
+
+	return entity;
+}
+
+Entity UISystem::createHealthBar()
 {
 	Entity entity = Entity();
 
@@ -823,13 +876,8 @@ Entity createHealthBar()
 	return entity;
 }
 
-void createDashRecharge()
+void UISystem::createDashRecharge()
 {
-	Player &player = registry.players.get(registry.players.entities[0]);
-	vec2 playerPos = registry.motions.get(registry.players.entities[0]).position;
-
-	for (int i = 0; i < DASH_RECHARGE_COUNT; i++)
-	{
 		Entity dash = Entity();
 
 		Animation &a = registry.animations.emplace(dash);
@@ -853,12 +901,11 @@ void createDashRecharge()
 			 GEOMETRY_BUFFER_ID::SPRITE});
 
 		
-		Motion &motion = registry.motions.emplace(dash);
-		registry.dashRecharges.emplace(dash);
-	}
+	Motion &motion = registry.motions.emplace(dash);
+	registry.dashRecharges.emplace(dash);
 }
 
-Entity createBuffUI(vec2 position, BUFF_TYPE type, vec2 scale)
+Entity UISystem::createBuffUI(vec2 position, BUFF_TYPE type, vec2 scale)
 {
 	Entity buffUI = Entity();
 
@@ -882,41 +929,89 @@ Entity createBuffUI(vec2 position, BUFF_TYPE type, vec2 scale)
 	sprite.width = scale.x;
 	sprite.height = scale.y;
 	
-	registry.uiElements.emplace(buffUI, UIElement{motion.position, motion.scale});
+	registry.u.emplace(buffUI, UIElement{motion.position, motion.scale});
 	
 	return buffUI;
 }
 
-Entity createRowBuffUI(vec2 position, BUFF_TYPE type)
+// creates with empty strings / values, will be filled in later by step
+Entity UISystem::createRowBuffUI(BUFF_TYPE type)
 {
-	return createBuffUI(position, type, { ROW_BUFF_UI_WIDTH, ROW_BUFF_UI_HEIGHT });
+	Entity& buff_entity = createBuffUI({ 0, 0 }, type, {ROW_BUFF_UI_WIDTH, ROW_BUFF_UI_HEIGHT});
+	buff_to_ui_entity.insert({ type, buff_entity });
+
+	Entity& buff_text = createText("", { 0, 0 }, vec3(1.f, 1.f, 1.f), 0.4f);
+	buff_to_text_entity.insert({ type, buff_text });
+
+	return buff_entity;
 }
 
-Entity createPopupBuffUI(vec2 position, BUFF_TYPE type)
+Entity UISystem::createPopupBuffUI(vec2 position, BUFF_TYPE type)
 {
 	return createBuffUI(position, type, { POPUP_BUFF_UI_WIDTH, POPUP_BUFF_UI_HEIGHT });
 }
 
 // Render collected buffs a certain amount per row that stacks
-void renderCollectedBuff(RenderSystem *renderer, BUFF_TYPE buffType, int index)
+void UISystem::renderCollectedBuffs()
 {
 	int buffsPerRow = BUFF_NUM / 2;
-	vec2 position;
-	if (index < buffsPerRow)
+	auto& buffs_collected = registry.players.get(registry.players.entities[0]).buffsCollected;
+
+	int count = 0;
+
+	for (auto& buff : buffs_collected)
 	{
-		position = {BUFF_START_POS.x + index * ROW_BUFF_SPACING, BUFF_START_POS.y};
-		Entity buffUI = createRowBuffUI(position, buffType);
-	}
-	else if (index >= buffsPerRow && index < BUFF_NUM)
-	{
-		position = {BUFF_START_POS.x + (index - buffsPerRow) * ROW_BUFF_SPACING,
-					BUFF_START_POS.y - ROW_BUFF_SPACING};
-		Entity buffUI = createRowBuffUI(position, buffType);
+		if (buff.second <= 0)
+		{
+			if (buff_to_ui_entity.find(buff.first) != buff_to_ui_entity.end())
+			{
+				registry.remove_all_components_of(buff_to_ui_entity.at(buff.first));
+				buff_to_ui_entity.erase(buff.first);
+				registry.remove_all_components_of(buff_to_text_entity.at(buff.first));
+				buff_to_text_entity.erase(buff.first);
+			}
+			
+			continue;
+		}
+		
+		if (buff_to_ui_entity.find(buff.first) == buff_to_ui_entity.end())
+		{
+			buff_to_ui_entity.insert({ buff.first, createRowBuffUI(buff.first) });
+		}
+
+		vec2 position;
+		if (count < buffsPerRow)
+		{
+			// position = { BUFF_START_POS.x + count * ROW_BUFF_SPACING, BUFF_START_POS.y };
+			position = BUFF_POPUP_POS + vec2(BUFF_POPUP_GAP, BUFF_POPUP_GAP);
+		}
+		else if (count >= buffsPerRow && count < BUFF_NUM)
+		{
+			position = { BUFF_START_POS.x + (count - buffsPerRow) * ROW_BUFF_SPACING,
+						BUFF_START_POS.y - ROW_BUFF_SPACING };
+		}
+
+		if (count < BUFF_NUM)
+		{
+			Motion& motion = registry.motions.get(buff_to_ui_entity[buff.first]);
+			motion.position.x = position.x;
+			motion.position.y = position.y;
+
+			vec2 screen_pos = worldToScreen(motion.position);
+			Motion& text_motion = registry.motions.get(buff_to_text_entity[buff.first]);
+			text_motion.position.x = screen_pos.x + 5.f;
+			text_motion.position.y = screen_pos.y - 15.f;
+
+			Text& text = registry.texts.get(buff_to_text_entity[buff.first]);
+			text.text = std::to_string(buff.second);
+		}
+
+		count++;
 	}
 }
 
 // HUD element update such has health etc.
-void updateHuds()
+void UISystem::updateHuds()
 {
 	vec2 offset = {WINDOW_WIDTH_PX / 2 - 100, -WINDOW_HEIGHT_PX / 2 + 100};
 
@@ -946,9 +1041,18 @@ void updateHuds()
 									camera.position.y + HEALTH_BAR_POS.y};
 
 	}
+
+	if (!registry.thermometers.entities.empty()) {
+		Thermometer& t = registry.thermometers.get(registry.thermometers.entities[0]);
+		Motion& m = registry.motions.get(registry.thermometers.entities[0]);
+		m.position = {
+			camera.position.x + THERMOMETER_POS.x,
+			camera.position.y + THERMOMETER_POS.y
+		};
+	}
 }
 
-Entity createText(std::string text, vec2 start_pos, vec3 color, float scale)
+Entity UISystem::createText(std::string text, vec2 start_pos, vec3 color, float scale)
 {
 	Entity entity = Entity();
 
@@ -960,13 +1064,14 @@ Entity createText(std::string text, vec2 start_pos, vec3 color, float scale)
 	return entity;
 }
 
-Entity createBuffPopup(BUFF_TYPE type)
+Entity UISystem::createBuffPopup(BUFF_TYPE type)
 {
 	removePopups([](Entity& entity) { return true;});
 
 	Entity buffPopup = Entity();
 
 	Entity& buffImage = createPopupBuffUI(BUFF_POPUP_POS + vec2(BUFF_POPUP_GAP, BUFF_POPUP_GAP), type);
+	registry.popupElements.emplace(buffImage);
 	Motion& buffImageMotion = registry.motions.get(buffImage);
 
 	auto buff_test = BUFF_TYPE_TO_TEXT.at(type);
@@ -981,12 +1086,54 @@ Entity createBuffPopup(BUFF_TYPE type)
 	return buffPopup;
 }
 
-vec2 imageCoordToTextCoord(vec2 imageCoord)
+vec2 UISystem::imageCoordToTextCoord(vec2 imageCoord)
 {
 	return vec2(imageCoord.x, -imageCoord.y) + vec2(WINDOW_WIDTH_PX / 2, WINDOW_HEIGHT_PX / 2);
 }
 
-void updatePopups(float elapsed_ms_since_last_update)
+vec2 UISystem::worldToScreen(vec2 world_pos) {
+	Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
+	float x = WINDOW_WIDTH_PX / 2.f - (camera.position.x - world_pos.x);
+	float y = WINDOW_HEIGHT_PX / 2.f - (world_pos.y - camera.position.y);
+	return { x, y };
+}
+
+void UISystem::step(float elapsed_ms_since_last_update)
+{
+	updatePopups(elapsed_ms_since_last_update);
+	updateHuds();
+	updateThermometerText();
+	renderCollectedBuffs();
+	updateGermoneyText();
+}
+
+void UISystem::createGermoneyText()
+{
+	setGermoneyText(createText(std::to_string(0), { 0, 0 }, vec3(1.f, 1.f, 1.f), 0.4f));
+	updateGermoneyText();
+}
+
+void UISystem::updateGermoneyText()
+{
+	Player& player = registry.players.get(registry.players.entities[0]);
+	int germoney_count = player.germoney_count;
+
+	vec2 screen_pos;
+	if (germoney_count >= 10) {
+		screen_pos = vec2(WINDOW_WIDTH_PX * .095f, WINDOW_HEIGHT_PX * .0685f);
+	}
+	else {
+		screen_pos = vec2(WINDOW_WIDTH_PX * .0975f, WINDOW_HEIGHT_PX * .0685f);
+	}
+
+	Motion& motion = registry.motions.get(germoney_text);
+	motion.position = screen_pos;
+
+	Text& text = registry.texts.get(germoney_text);
+	text.text = std::to_string(germoney_count);
+}
+
+void UISystem::updatePopups(float elapsed_ms_since_last_update)
 {
 	removePopups([&](Entity& entity)
 		{
@@ -996,7 +1143,33 @@ void updatePopups(float elapsed_ms_since_last_update)
 		});
 }
 
-void removePopups(std::function<bool(Entity&)> shouldRemove)
+void UISystem::updateThermometerText()
+{
+	Player& player = registry.players.get(registry.players.entities[0]);
+	float dangerLevel = player.dangerFactor;
+
+	std::string dangerText = "";
+	if (dangerLevel < 1.5f) {
+		dangerText = "Undetected";
+	}
+	else if (dangerLevel < 2.5f) {
+		dangerText = "Detected";
+	}
+	else if (dangerLevel < 3.5f) {
+		dangerText = "Threatned";
+	}
+	else if (dangerLevel < 4.5f) {
+		dangerText = "Immunoresponse";
+	}
+	else {
+		dangerText = "Meltdown!";
+	}
+
+	Text& thermometer = registry.texts.get(thermometer_text);
+	thermometer.text = dangerText;
+}
+
+void UISystem::removePopups(std::function<bool(Entity&)> shouldRemove)
 {
 	std::vector<Entity> removals;
 

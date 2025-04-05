@@ -44,4 +44,11 @@ Entity createBuff(vec2 position);
 
 void updateMiniMap(vec2 playerPos);
 void emptyMiniMap();
+
+void applyVignetteEffect();
+void clearVignetteEffect();
     
+void damagePlayer(float damageAmount);
+void removeBuff(BUFF_TYPE buff_type);
+void findAndRemove(std::unordered_map<BUFF_TYPE, int>& map, BUFF_TYPE N);
+BUFF_TYPE getRandomBuffType();

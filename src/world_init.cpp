@@ -5,7 +5,7 @@
 #include <ctime>
 #include <queue>
 #include "animation_system.hpp"
-
+#include "ui_system.hpp"
 
 void initializeProgression(){
 	auto entity = Entity();
@@ -252,6 +252,10 @@ Entity createPlayer(RenderSystem *renderer, vec2 position)
 	sprite.width = 32;
 	sprite.height = 32;
 
+    for (int i = 0; i < NUMBER_OF_BUFFS; i++) {
+        p.buffsCollected[(BUFF_TYPE)i] = 0;
+    }
+
     createGun(renderer, position);
 
 	return entity;
@@ -366,13 +370,16 @@ Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& pla
 	map.right = ceil(WORLD_ORIGIN.x + size.x / 2);
 	map.map.resize(map.height, std::vector<tileType>(map.width, tileType::EMPTY));
 
-	for (int x = 0; x < map.width; x ++) {
-		for (int y = 0; y < map.height; y++) {
-			map.map[y][x] = tileType::EMPTY;
-		}
-	}
+    for (int y = 0; y < map.height; y++) {
+        for (int x = 0; x < map.width; x++) {
+            if (x == 0 || x == map.width - 1 || y == 0 || y == map.height - 1)
+                map.map[y][x] = tileType::WALL;
+            else
+                map.map[y][x] = tileType::EMPTY;
+        }
+    }
 
-	playerPosition.first = 19;
+	playerPosition.first = 18;
 	playerPosition.second = 10;
 
 	return entity;
@@ -380,7 +387,7 @@ Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& pla
 
 void updateMiniMap(vec2 playerPos) {
 
-	float minimapViewRange = 3.0;
+	float minimapViewRange = registry.players.get(registry.players.entities[0]).minimapViewRange;
 	Entity e = registry.miniMaps.entities[0];
 	MiniMap& m = registry.miniMaps.get(e);
 
@@ -443,8 +450,12 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 				for (int y = 0; y < map.height; y++) {
 					map.map[y][x] = tileType::WALL;
 				}
-			}
+			} else {
+                map.map[0][x] = tileType::WALL;
+                map.map[map.height - 1][x] = tileType::WALL;
+            }
 		}
+
 	} else {
 		// Initialize map to random walls / floors
         std::random_device rd;
@@ -471,19 +482,29 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
             // assign portal to random empty tile
             std::pair<int, int> portalTile = getRandomEmptyTile(map.map);
 
-            // print map
-            for (int y = 0; y < map.height; ++y) {
-                for (int x = 0; x < map.width; ++x) {
-                    if (x == playerTile.first && y == playerTile.second) {
-                        // std::cout << "!!";
-                    } else if (x == portalTile.first && y == portalTile.second) {
-                        // std::cout << "P";
-                    } else {
-                        // std::cout << (map.map[y][x] == tileType::WALL ? "X" : ".");
-                    }
-                }
-                // std::cout << std::endl;
+            // make outer edges of map all walls
+            for (int x = 0; x < map.width; ++x) {
+                map.map[0][x] = tileType::WALL;
+                map.map[map.height - 1][x] = tileType::WALL;
             }
+            for (int y = 0; y < map.height; ++y) {
+                map.map[y][0] = tileType::WALL;
+                map.map[y][map.width - 1] = tileType::WALL;
+            }
+
+            // print map
+            // for (int y = 0; y < map.height; ++y) {
+            //     for (int x = 0; x < map.width; ++x) {
+            //         if (x == playerTile.first && y == playerTile.second) {
+            //             std::cout << "!!";
+            //         } else if (x == portalTile.first && y == portalTile.second) {
+            //             std::cout << "P";
+            //         } else {
+            //             std::cout << (map.map[y][x] == tileType::WALL ? "X" : ".");
+            //         }
+            //     }
+            //     std::cout << std::endl;
+            // }
 
             if (getDistance(map.map, playerTile, portalTile) < 15) {
                 // std::cout << "PATH DOES NOT EXIST OR NOT ENOUGH DISTANCE, TRYING AGAIN." << std::endl;
@@ -789,8 +810,8 @@ Entity createBuff(vec2 position)
 
 	Buff &buff = registry.buffs.emplace(entity);
 
-	// Currently only the first 5 buffs are active
-	buff.type = (BUFF_TYPE)(rand() % BUFFS_ENABLED);
+	// Currently only the first 15 buffs are active
+	buff.type = getRandomBuffType();
 
 	registry.renderRequests.insert(
 		entity,
@@ -807,4 +828,69 @@ Entity createBuff(vec2 position)
 	sprite.height = 20;
 
 	return entity;
+}
+
+void applyVignetteEffect() {
+    registry.screenStates.components[0].vignette_screen_factor = .5f;
+}
+
+void clearVignetteEffect() {
+    registry.screenStates.components[0].vignette_screen_factor = 0.f;
+}
+
+BUFF_TYPE getRandomBuffType() {
+	std::vector<BUFF_TYPE> commonBuffs = { TAIL, MITOCHONDRIA, HEMOGLOBIN, GOLGI, CELL_WALL, AMINO_ACID, VACUOLE };
+	std::vector<BUFF_TYPE> rareBuffs = { CHLOROPLAST, CYTOPLASM, PILLI, ENDOPLASMIC_RETICULUM };
+	std::vector<BUFF_TYPE> eliteBuffs = { LYSOSOME, SPARE_NUCLEUS, OVOID, SECRETOR };
+
+    int categoryRoll = rand() % 100;
+
+    std::vector<BUFF_TYPE>* selectedCategory;
+
+    if (categoryRoll < 50) {  // 50% chance for common
+        selectedCategory = &commonBuffs;
+    } else if (categoryRoll < 80) { // 30% chance for rare
+        selectedCategory = &rareBuffs;
+    } else { // 20% chance for elite
+        selectedCategory = &eliteBuffs;
+    }
+
+    int index = rand() % selectedCategory->size();
+    return (*selectedCategory)[index];
+}
+
+void damagePlayer(float damageAmount) {
+	Player& player = registry.players.get(registry.players.entities[0]);
+	if(player.shields > 0) {
+		player.shields--;
+		removeBuff(CELL_WALL); // PLANT CELL WALL/ SHEILD
+	} else {
+		player.current_health -= damageAmount * player.dangerFactor;
+		applyVignetteEffect();
+
+		if (player.current_health <= 0) {
+			if (player.extra_lives > 0) {
+				player.current_health = player.max_health/2;
+				player.extra_lives--;
+				removeBuff(SPARE_NUCLEUS);
+			} else {
+				// game over
+			}
+		} else {
+
+		}
+	}
+}
+
+void removeBuff(BUFF_TYPE buff_type)
+{
+	findAndRemove(registry.players.get(registry.players.entities[0]).buffsCollected, buff_type);
+}
+
+void findAndRemove(std::unordered_map<BUFF_TYPE, int>& map, BUFF_TYPE N) {
+	auto it = map.find(N);
+	if (it != map.end()) {
+		if (it->second == 0) return;
+		it->second--;
+	}
 }
