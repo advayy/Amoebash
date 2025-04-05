@@ -464,7 +464,7 @@ Entity createEndingWinScene() {
 
 	SpriteSize &sprite = registry.spritesSizes.emplace(winScreenEntity);
 	sprite.width = 128.f; 
-	sprite.height = 68.f; 
+	sprite.height = 72.f;  
 
 	registry.cutscenes.emplace(winScreenEntity);
 
