@@ -277,11 +277,11 @@ Entity 	createGunCooldown() {
 
 	Motion& m = registry.motions.emplace(e);
 	m.position = {pos.x, pos.y};
-	m.scale = {30, 30};
+	m.scale = {32, 32};
 
 	UIElement& u = registry.uiElements.emplace(e);
 	u.position = {pos.x, pos.y};
-	u.scale = {30, 30};
+	u.scale = {32, 32};
 	return e;
 }
 
