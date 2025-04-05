@@ -8,12 +8,18 @@ uniform float cooldown_ratio;
 
 void main() {
     vec4 texColor = texture(tex, fragTexCoord);
-    
-    float angle = atan(fragTexCoord.y - 0.5, fragTexCoord.x - 0.5);
-    angle = angle < 0.0 ? angle + 2.0 * 3.1415926 : angle;
-    float pct = 1.0 - cooldown_ratio;
+    vec2 centeredCoord = fragTexCoord - vec2(0.5);
 
-    if (length(fragTexCoord - vec2(0.5)) > 0.5 || angle > pct * 2.0 * 3.1415926) {
+    float angle = atan(centeredCoord.y, centeredCoord.x);
+    angle = angle + 3.1415926 / 2.0;
+    if (angle < 0.0)
+        angle += 2.0 * 3.1415926;
+    
+    float pct = cooldown_ratio;
+
+    float angleLimit = pct * 2.0 * 3.1415926;
+
+    if (length(centeredCoord) > 0.5 || angle < angleLimit) {
         discard;
     }
 
