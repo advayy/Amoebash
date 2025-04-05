@@ -7,6 +7,31 @@
 
 extern bool tutorial_mode;
 
+enum BUFF_TYPE
+{
+	TAIL = 0,
+	MITOCHONDRIA = TAIL + 1,
+	HEMOGLOBIN = MITOCHONDRIA + 1,
+	GOLGI = HEMOGLOBIN + 1,
+	CHLOROPLAST = GOLGI + 1,
+	CELL_WALL = CHLOROPLAST + 1,
+	AMINO_ACID = CELL_WALL + 1,
+	LYSOSOME = AMINO_ACID + 1,
+	CYTOPLASM = LYSOSOME + 1,
+	PILLI = CYTOPLASM + 1,
+	SPARE_NUCLEUS = PILLI + 1,
+	VACUOLE = SPARE_NUCLEUS + 1,
+	ENDOPLASMIC_RETICULUM = VACUOLE + 1,
+	OVOID = ENDOPLASMIC_RETICULUM + 1,
+	SECRETOR = OVOID + 1,
+	UNNAMED = SECRETOR + 1,
+	PEROXISOMES = UNNAMED + 1,
+	MUTATION = PEROXISOMES + 1,
+	FACEHUGGER = MUTATION + 1,
+	BLACK_GOO = FACEHUGGER + 1,
+	TOTAL_BUFF_COUNT = BLACK_GOO + 1
+};
+
 using json = nlohmann::json;
 
 // asked gpt for this
@@ -26,8 +51,8 @@ namespace nlohmann {
 }
 
 struct Progression {
-	std::vector<int> buffsFromLastRun;
-	std::vector<int> pickedInNucleus;
+	std::vector<BUFF_TYPE> buffsFromLastRun;
+	std::vector<BUFF_TYPE> pickedInNucleus;
 	int slots_unlocked = 9;
 };
 
@@ -38,7 +63,7 @@ struct Slot {
 };
 
 struct ClickableBuff {
-	int type;
+	BUFF_TYPE type;
 	bool picked = false;
 	vec2 returnPosition = {0, 0};
 	Entity slotEntity;
@@ -70,7 +95,7 @@ struct Player
 	float knockback_duration = 0.0f;
 
 	vec2 grid_position = {0, 0};
-	std::vector<int> buffsCollected;
+	std::vector<BUFF_TYPE> buffsCollected;
 
     int germoney_count = 0;
 };
@@ -167,10 +192,13 @@ struct Deadly
 	int dummy = 0;
 };
 
+const int NUMBER_OF_BUFFS = (int)BUFF_TYPE::TOTAL_BUFF_COUNT;
+const int BUFFS_ENABLED = (int)BUFF_TYPE::CYTOPLASM + 1;
+
 // Buff
 struct Buff
 {
-	int type = 0; // Type of buff (0-19, corresponding to the sprite sheet)
+	BUFF_TYPE type = TAIL; // Type of buff (0-19, corresponding to the sprite sheet)
 	bool collected = false;
 };
 
@@ -369,7 +397,7 @@ struct Chest
 
 struct BuffUI
 {
-	int buffType;
+	BUFF_TYPE buffType;
 };
 
 struct InfoBox
@@ -674,6 +702,26 @@ struct Particle
     float max_lifetime_ms = 2000.0f;
     float state_timer_ms = 0.0f;
     float speed_factor = 100.0f;
+};
+
+struct Text {
+	std::string text;
+	vec3 color;
+};
+
+struct PopupWithImage {
+	Entity text;
+	Entity description;
+	Entity image;
+	float duration;
+
+	PopupWithImage(Entity& text, Entity& description, Entity& image, float duration = POPUP_DURATION)
+	{
+		this->text = text;
+		this->description = description;
+		this->image = image;
+		this->duration = duration;
+	}
 };
 
 // MACROS for "to_json" and "from_json" on user-defined structs

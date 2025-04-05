@@ -330,7 +330,7 @@ Entity createNucleusMenuScreen() {
 }
 
 // create the buff UI for carry on
-Entity createClickableBuffUI(vec2 position, int buffType)
+Entity createClickableBuffUI(vec2 position, BUFF_TYPE buffType)
 {
 	Entity buff = Entity();
 
@@ -858,7 +858,7 @@ void createDashRecharge()
 	}
 }
 
-Entity createBuffUI(vec2 position, int type)
+Entity createBuffUI(vec2 position, BUFF_TYPE type, vec2 scale)
 {
 	Entity buffUI = Entity();
 
@@ -867,7 +867,7 @@ Entity createBuffUI(vec2 position, int type)
 
 	Motion &motion = registry.motions.emplace(buffUI);
 	motion.position = position;
-	motion.scale = {BUFF_UI_WIDTH, BUFF_UI_HEIGHT};
+	motion.scale = scale;
 
 	registry.renderRequests.insert(buffUI,
 								   {TEXTURE_ASSET_ID::BUFFS_SHEET,
@@ -879,30 +879,39 @@ Entity createBuffUI(vec2 position, int type)
 	spriteSheet.current_frame = type;
 								
 	SpriteSize &sprite = registry.spritesSizes.emplace(buffUI);
-	sprite.width = BUFF_UI_WIDTH;
-	sprite.height = BUFF_UI_HEIGHT;
+	sprite.width = scale.x;
+	sprite.height = scale.y;
 	
 	registry.uiElements.emplace(buffUI, UIElement{motion.position, motion.scale});
 	
 	return buffUI;
 }
 
-// Render collected buffs a certain amount per row that stacks
-void renderCollectedBuff(RenderSystem *renderer, int buffType)
+Entity createRowBuffUI(vec2 position, BUFF_TYPE type)
 {
-	int numCollectedBuffs = registry.buffUIs.size();
+	return createBuffUI(position, type, { ROW_BUFF_UI_WIDTH, ROW_BUFF_UI_HEIGHT });
+}
+
+Entity createPopupBuffUI(vec2 position, BUFF_TYPE type)
+{
+	return createBuffUI(position, type, { POPUP_BUFF_UI_WIDTH, POPUP_BUFF_UI_HEIGHT });
+}
+
+// Render collected buffs a certain amount per row that stacks
+void renderCollectedBuff(RenderSystem *renderer, BUFF_TYPE buffType, int index)
+{
 	int buffsPerRow = BUFF_NUM / 2;
 	vec2 position;
-	if (numCollectedBuffs < buffsPerRow)
+	if (index < buffsPerRow)
 	{
-		position = {BUFF_START_POS.x + numCollectedBuffs * BUFF_SPACING, BUFF_START_POS.y};
-		Entity buffUI = createBuffUI(position, buffType);
+		position = {BUFF_START_POS.x + index * ROW_BUFF_SPACING, BUFF_START_POS.y};
+		Entity buffUI = createRowBuffUI(position, buffType);
 	}
-	else if (numCollectedBuffs >= buffsPerRow && numCollectedBuffs < BUFF_NUM)
+	else if (index >= buffsPerRow && index < BUFF_NUM)
 	{
-		position = {BUFF_START_POS.x + (numCollectedBuffs - buffsPerRow) * BUFF_SPACING,
-					BUFF_START_POS.y - BUFF_SPACING};
-		Entity buffUI = createBuffUI(position, buffType);
+		position = {BUFF_START_POS.x + (index - buffsPerRow) * ROW_BUFF_SPACING,
+					BUFF_START_POS.y - ROW_BUFF_SPACING};
+		Entity buffUI = createRowBuffUI(position, buffType);
 	}
 }
 
@@ -939,3 +948,72 @@ void updateHuds()
 	}
 }
 
+Entity createText(std::string text, vec2 start_pos, vec3 color, float scale)
+{
+	Entity entity = Entity();
+
+	registry.texts.insert(entity, { text, color });
+	Motion& motion = registry.motions.emplace(entity);
+	motion.position = start_pos;
+	motion.scale = { scale, scale };
+
+	return entity;
+}
+
+Entity createBuffPopup(BUFF_TYPE type)
+{
+	removePopups([](Entity& entity) { return true;});
+
+	Entity buffPopup = Entity();
+
+	Entity& buffImage = createPopupBuffUI(BUFF_POPUP_POS + vec2(BUFF_POPUP_GAP, BUFF_POPUP_GAP), type);
+	Motion& buffImageMotion = registry.motions.get(buffImage);
+
+	auto buff_test = BUFF_TYPE_TO_TEXT.at(type);
+
+	registry.imagePopups.emplace(
+		buffPopup, 
+		createText(buff_test.first, imageCoordToTextCoord(buffImageMotion.position) + vec2(buffImageMotion.scale.x, 0) + vec2(BUFF_POPUP_GAP, 0), {1.0f, 1.0f, 1.0f}, 0.5),
+		createText(buff_test.second, imageCoordToTextCoord(buffImageMotion.position) + vec2(buffImageMotion.scale.x, 0) + vec2(BUFF_POPUP_GAP, -25), { 1.0f, 1.0f, 1.0f }, 0.3),
+		buffImage
+	);
+
+	return buffPopup;
+}
+
+vec2 imageCoordToTextCoord(vec2 imageCoord)
+{
+	return vec2(imageCoord.x, -imageCoord.y) + vec2(WINDOW_WIDTH_PX / 2, WINDOW_HEIGHT_PX / 2);
+}
+
+void updatePopups(float elapsed_ms_since_last_update)
+{
+	removePopups([&](Entity& entity)
+		{
+			PopupWithImage& popup = registry.imagePopups.get(entity);
+			popup.duration -= elapsed_ms_since_last_update;
+			return popup.duration < 0;
+		});
+}
+
+void removePopups(std::function<bool(Entity&)> shouldRemove)
+{
+	std::vector<Entity> removals;
+
+	for (auto& entity : registry.imagePopups.entities)
+	{
+		if (shouldRemove(entity))
+		{
+			PopupWithImage& popup = registry.imagePopups.get(entity);
+			registry.remove_all_components_of(popup.text);
+			registry.remove_all_components_of(popup.description);
+			registry.remove_all_components_of(popup.image);
+			removals.push_back(entity);
+		}
+	}
+
+	for (int i = 0; i < removals.size(); i++)
+	{
+		registry.remove_all_components_of(removals[i]);
+	}
+}

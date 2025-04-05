@@ -790,7 +790,7 @@ Entity createBuff(vec2 position)
 	Buff &buff = registry.buffs.emplace(entity);
 
 	// Currently only the first 5 buffs are active
-	buff.type = rand() % NUMBER_OF_BUFFS;
+	buff.type = (BUFF_TYPE)(rand() % BUFFS_ENABLED);
 
 	registry.renderRequests.insert(
 		entity,
@@ -800,7 +800,7 @@ Entity createBuff(vec2 position)
 
 	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(entity);
 	spriteSheet.total_frames = 20;	 
-	spriteSheet.current_frame = buff.type;
+	spriteSheet.current_frame = (int)buff.type;
 
 	SpriteSize &sprite = registry.spritesSizes.emplace(entity);
 	sprite.width = 20;

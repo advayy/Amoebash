@@ -181,5 +181,9 @@ private:
 	Entity getFreeSlot();
 	bool isFreeSlot();
 	void moveSelectedBuffsToProgression();
-	void applyBuff(Player& player, int buff_type);
+	void applyBuff(Player& player, BUFF_TYPE buff_type);
+
+	// text related
+	Entity player_germoney_count;
+	void setPlayerGermoneyCount(Entity& entity) { this->player_germoney_count = entity; };
 };

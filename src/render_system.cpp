@@ -240,10 +240,16 @@ void RenderSystem::setUpDefaultProgram(Entity &entity, const RenderRequest &rend
 	gl_has_errors();
 }
 
+void RenderSystem::drawToScreen()
+{
+	ScreenState& screen = registry.screenStates.get(screen_state_entity);
+	drawToScreen(screen.darken_screen_factor);
+}
+
 // first draw to an intermediate texture,
 // apply the "vignette" texture, when requested
 // then draw the intermediate texture
-void RenderSystem::drawToScreen()
+void RenderSystem::drawToScreen(float darken_screen_factor)
 {
     glBindVertexArray(default_vao);
     gl_has_errors();
@@ -288,7 +294,7 @@ void RenderSystem::drawToScreen()
 
 	ScreenState &screen = registry.screenStates.get(screen_state_entity);
 	// std::cout << "screen.darken_screen_factor: " << screen.darken_screen_factor << " entity id: " << screen_state_entity << std::endl;
-	glUniform1f(dead_timer_uloc, screen.darken_screen_factor);
+	glUniform1f(dead_timer_uloc, darken_screen_factor);
 	glUniform1f(vignette_timer_uloc, screen.vignette_screen_factor);
 	gl_has_errors();
 
@@ -373,7 +379,14 @@ void RenderSystem::draw()
 		}
 		else if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity) && !registry.portals.has(entity) && !registry.guns.has(entity))
 		{
-			drawTexturedMesh(entity, projection_2D);
+			if (registry.buffUIs.has(entity))
+			{
+				drawTexturedMesh(entity, projection_2D);
+			}
+			else
+			{
+				drawTexturedMesh(entity, projection_2D);
+			}
 		}
 	}
 
@@ -413,20 +426,14 @@ void RenderSystem::draw()
 
 	if (registry.pauses.size() != 0)
 	{
-		auto &pause = registry.pauses.entities[0];
+		auto& pause = registry.pauses.entities[0];
 		drawTexturedMesh(pause, projection_2D);
 	}
 
-    renderText("TESTING", 50.f, 500.f, 1.f, vec3(1.f, 1.f, 1.f));
-    renderText("TESTING", 50.f, 400.f, 1.f, vec3(1.f, 1.f, 1.f));
-    renderText("TESTING", 50.f, 300.f, 1.f, vec3(1.f, 1.f, 1.f));
-
-    // render player.germony
-    for (auto entity : registry.players.entities)
-    {
-        Player &player = registry.players.get(entity);
-        renderText(std::to_string(player.germoney_count), 160.f, 47.5f, .5f, vec3(1.f, 1.f, 1.f));
-    }
+	for (auto& entity : registry.texts.entities)
+	{
+		drawText(entity);
+	}
 
 	// INSTANCING: Draw instanced particles
 	drawInstancedParticles();
@@ -1121,8 +1128,10 @@ void RenderSystem::drawInstancedTiles(const mat3 &projection)
 	}
 }
 
-void RenderSystem::renderText(std::string text, float x, float y, float scale, const glm::vec3& color)
+void RenderSystem::drawText(Entity entity)
 {
+	Motion& motion = registry.motions.get(entity);
+	Text& text = registry.texts.get(entity);
     glm::mat4 trans = glm::mat4(1.0f);
 
     // ENABLE BLENDING
@@ -1134,7 +1143,7 @@ void RenderSystem::renderText(std::string text, float x, float y, float scale, c
     GLint textColor_location = glGetUniformLocation(m_font_shaderProgram, "textColor");
     assert(textColor_location > -1);
     // std::cout << "textColor_location: " << textColor_location << std::endl;
-    glUniform3f(textColor_location, color.x, color.y, color.z);
+    glUniform3f(textColor_location, text.color.x, text.color.y, text.color.z);
 
     auto transformLoc = glGetUniformLocation(m_font_shaderProgram, "transform");
     // std::cout << "transformLoc: " << transformLoc << std::endl;
@@ -1143,17 +1152,19 @@ void RenderSystem::renderText(std::string text, float x, float y, float scale, c
 
     glBindVertexArray(m_font_VAO);
 
+	float curr_x = motion.position.x;
+
     // iterate through each character
     std::string::const_iterator c;
-    for (c = text.begin(); c != text.end(); c++)
+    for (c = text.text.begin(); c != text.text.end(); c++)
     {
         Character ch = m_ftCharacters[*c];
 
-        float xpos = x + ch.Bearing.x * scale;
-        float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+        float xpos = curr_x + ch.Bearing.x * motion.scale.x;
+        float ypos = motion.position.y - (ch.Size.y - ch.Bearing.y) * motion.scale.y;
 
-        float w = ch.Size.x * scale;
-        float h = ch.Size.y * scale;
+        float w = ch.Size.x * motion.scale.x;
+        float h = ch.Size.y * motion.scale.y;
 
         float vertices[6][4] = {
             { xpos,     ypos + h,   0.0f, 0.0f },
@@ -1178,7 +1189,7 @@ void RenderSystem::renderText(std::string text, float x, float y, float scale, c
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
         // advance to next glyph (note that advance is number of 1/64 pixels)
-        x += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
+        curr_x += (ch.Advance >> 6) * motion.scale.x; // bitshift by 6 to get value in pixels (2^6 = 64)
     }
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);

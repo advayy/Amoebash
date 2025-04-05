@@ -452,6 +452,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
     updateMouseCoords(); 
 	updateHuds();
 
+	updatePopups(elapsed_ms_since_last_update);
+
 	handlePlayerMovement(elapsed_ms_since_last_update);
 	handlePlayerHealth(elapsed_ms_since_last_update);
 
@@ -514,6 +516,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
     gun_motion.velocity = player_motion.velocity;
 
 	updateMiniMap(registry.players.get(registry.players.entities[0]).grid_position);
+
 	return true;
 }
 
@@ -746,6 +749,8 @@ void WorldSystem::restart_game()
 	
 	createMiniMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
 	emptyMiniMap();
+
+	setPlayerGermoneyCount(createText(std::to_string(player.germoney_count), GERMONEY_UI_POS, vec3(1.f, 1.f, 1.f), 0.5f));
 }
 
 // Compute collisions between entities. Collisions are always in this order: (Player | Projectiles, Enemy | Wall | Buff)
@@ -862,6 +867,9 @@ void WorldSystem::handle_collisions()
                     Player& player = registry.players.get(registry.players.entities[0]);
                     player.germoney_count += 1;
 
+					Text& germoney_count_text = registry.texts.get(player_germoney_count);
+					germoney_count_text.text = std::to_string(player.germoney_count);
+
 					createBuff(vec2(enemy_position.x, enemy_position.y));
 					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15); 
 				}
@@ -947,6 +955,9 @@ void WorldSystem::handle_collisions()
 
                     Player& player = registry.players.get(registry.players.entities[0]);
                     player.germoney_count += 1;
+
+					Text& germoney_count_text = registry.texts.get(player_germoney_count);
+					germoney_count_text.text = std::to_string(player.germoney_count);
                     
                     createBuff(vec2(enemy_position.x, enemy_position.y));
                     particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
@@ -1034,17 +1045,22 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 	// Pausing Game
 	if (action == GLFW_RELEASE && key == GLFW_KEY_SPACE)
 	{
+		Entity screen_state_entity = renderer->get_screen_state_entity();
+		ScreenState& screen = registry.screenStates.get(screen_state_entity);
+
 		if (current_state == GameState::GAME_PLAY)
 		{
 			current_state = GameState::PAUSE;
 
 			// renderer.
 			createPauseScreen();
+			screen.darken_screen_factor = 0.3;
 		}
 		else if (current_state == GameState::PAUSE)
 		{
 			current_state = GameState::GAME_PLAY;
 			removePauseScreen();
+			screen.darken_screen_factor = 0;
 		}
 	}
 
@@ -1428,81 +1444,82 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 	buff.collected = true;
 
 	applyBuff(player, buff.type);
+	createBuffPopup(buff.type);
 }
 
-void WorldSystem::applyBuff(Player& player, int buff_type)
+void WorldSystem::applyBuff(Player& player, BUFF_TYPE buff_type)
 {
 
 	switch (buff_type)
 	{
-	case 0: // Tail
+	case TAIL: // Tail
 		player.speed += player.speed * 0.05f;
 		// std::cout << "Collected Tail: Player Speed increased by 5%" << std::endl;
 		break;
 
-	case 1: // Mitochondria
+	case MITOCHONDRIA: // Mitochondria
 		player.dash_cooldown_ms -= player.dash_cooldown_ms * 0.05f;
 		// std::cout << "Collected Mitochondria: Dash cooldown decreased by 5%" << std::endl;
 		break;
 
-	case 2: // Hemoglobin
-		player.detection_range -= player.dash_cooldown_ms * 0.05f;
+	case HEMOGLOBIN: // Hemoglobin
+		player.detection_range -= player.detection_range * 0.05f;
 		// std::cout << "Collected Hemoglobin: Enemies Detection range decreased by 5%" << std::endl;
 		break;
 
-	case 3: // Golgi Apparatus Buff (need to be implemented)
+	case GOLGI: // Golgi Apparatus Buff (need to be implemented)
 		player.current_health += 10;
 		// std::cout << "Collected Golgi Body: need to be implemented" << std::endl;
 		break;
 
-	case 4: // Chloroplast
+	case CHLOROPLAST: // Chloroplast
 		player.healing_rate += 0.03;
 		// std::cout << "Collected Chloroplast: Healing increased by 5% " << std::endl;
 		break;
-	case 5: // Cell Wall
+	case CELL_WALL: // Cell Wall
 		//	Defend next damage, remove cell wall on damage ... - sheild
 		break;
-	case 6: // Amino Acid
+	case AMINO_ACID: // Amino Acid
 		//	Increase Player Damage
 		player.dash_damage += 0.05;
 		break;
-	case 7: // Lysosyme
+	case LYSOSOME: // Lysosyme
 		//	Ammo has +1 piercing ...
 		break;
-	case 8: // CytoPlasm
+	case CYTOPLASM: // CytoPlasm
 		player.max_health += 10;
 		break;
-	case 9: // Pilli
+	case PILLI: // Pilli
 		//	Dash decay drop - turns off drift
 		break;
-	case 10: // Spare Nucleus
+	case SPARE_NUCLEUS: // Spare Nucleus
 		//	Adds +1 lives this run
 		break;
-	case 11: // Vacuole
+	case VACUOLE: // Vacuole
 		//	Should roughly do what golgi does...
 		break;
-	case 12: // Endoplasmic Reticulum
+	case ENDOPLASMIC_RETICULUM: // Endoplasmic Reticulum
 		//	IDK what it neess to do
 		break;
-	case 13: // Ovoid cell?
+	case OVOID: // Ovoid cell?
 		//	Eye ?
 		break;
-	case 14: // Secretor cell
+	case SECRETOR: // Secretor cell
 		//	reduces decauy for dash - more drift
 		break;
-	case 15: // IDK
+	case UNNAMED: // IDK
 		//	Adds +1 lives this run
 		break;
-	case 16: // Peroxisomes
+	case PEROXISOMES: // Peroxisomes
 		//	Removes a nerf
 		break;
-	case 17: // Mutation
+	case MUTATION: // Mutation
 		//	Some nerf?
 		break;
-	case 18: // Facehugger
+	case FACEHUGGER: // Facehugger
 		//	Some Poison?
 		break;
-	case 19: // Black Goo  - temp turn screen dark?
+	case BLACK_GOO: // Black Goo  - temp turn screen dark?
 		//	Some nerf?
 		break;
 
@@ -1513,7 +1530,7 @@ void WorldSystem::applyBuff(Player& player, int buff_type)
 	}
     
     player.buffsCollected.push_back(buff_type);
-	renderCollectedBuff(renderer, buff_type);
+	renderCollectedBuff(renderer, buff_type, player.buffsCollected.size() - 1);
 }
 
 
@@ -1742,8 +1759,8 @@ void WorldSystem::loadGame() {
 	// load buffs 
 	std::vector<BuffUI> buffs = gameData["buffs"].get<std::vector<BuffUI>>();
 
-	for (auto buff : buffs) {
-		renderCollectedBuff(renderer, buff.buffType);
+	for (int i = 0; i < buffs.size(); i++) {
+		renderCollectedBuff(renderer, buffs[i].buffType, i);
 	}
 
 	// load projectiles

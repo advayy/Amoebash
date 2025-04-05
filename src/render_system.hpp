@@ -195,6 +195,7 @@ private:
 	void drawTexturedMesh(Entity entity, const mat3 &projection);
 	void drawSpriteSheetTexturedMesh(Entity entity, const mat3 &projection);
 	void drawToScreen();
+	void drawToScreen(float darken_screen_factor);
 
 	void setUpDefaultProgram(Entity &entity, const RenderRequest &render_request, const GLuint program);
 	void setUpSpriteSheetTexture(Entity &entity, const GLuint program);
@@ -234,7 +235,7 @@ private:
 
     // freetype font rendering
     bool fontInit(GLFWwindow& window, const std::string& font_filename, unsigned int font_default_size);
-    void renderText(std::string text, float x, float y, float scale, const glm::vec3& color);
+    void drawText(Entity entity);
     
     // freetype font rendering
 	std::map<char, Character> m_ftCharacters;
