@@ -251,7 +251,7 @@ bool WorldSystem::updateBoss()
 		Enemy& enemy = registry.enemies.get(boss);
 		BossAI& bossAI = registry.bossAIs.get(boss);
 
-		if (bossAI.stage == 3) continue; // SMALLEST BOSS SIZE
+		if (bossAI.stage == 3) continue;
 
 		if (enemy.health < enemy.total_health / 2.f) {
 			bosses_to_split.push_back(boss);
@@ -270,19 +270,20 @@ bool WorldSystem::updateBoss()
 		vec2 offset = vec2(smallScale.x * 1.2f, 0.f);
 		vec2 pos1 = originalMotion.position - offset;
 		vec2 pos2 = originalMotion.position + offset;
+        
+		bosses_to_remove.push_back(boss);
+		bosses_to_remove.push_back(originalAI.associatedArrow);
 
 		Entity smallBoss1 = createBoss(renderer, pos1, BossState::IDLE, stage + 1);
 		Entity smallBoss2 = createBoss(renderer, pos2, BossState::IDLE, stage + 1);
-
-        bosses_to_remove.push_back(boss);
-		bosses_to_remove.push_back(originalAI.associatedArrow);
 	}
 
-    int size = bosses_to_remove.size();
-    for(int i = 0; i < size; i++) {
-        registry.remove_all_components_of(bosses_to_remove[i]);
-    }
-
+	for (int i = bosses_to_remove.size() - 1; i >= 0; --i) {
+		Entity boss = bosses_to_remove[i];
+		if (registry.motions.has(boss) || registry.enemies.has(boss) || registry.bossAIs.has(boss)) {
+			registry.remove_all_components_of(boss);
+		}
+	}
 	// terminal condition for the boss
 	return registry.bossAIs.size() == 0;
 }

@@ -715,11 +715,11 @@ struct FinalBossAI : EnemyAI
 {
 	FinalBossState state = FinalBossState::INITIAL;
 	unsigned int phase = 1;
-	float cool_down = 20000.f;
+	float cool_down = FINAL_BOSS_BASE_COOLDOWN;
 	bool has_spawned = false;
 
-	float shoot_cool_down = 300.f;
-	float spiral_duration = 15000.f; 
+	float shoot_cool_down = FINAL_BOSS_BASE_SHOOT_COOLDOWN;
+	float spiral_duration = FINAL_BOSS_SHOOT_DURATION; 
 
 	Entity associatedArrow;
 };

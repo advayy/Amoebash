@@ -402,7 +402,7 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 			if (playerDetected)
 			{
 				enemyBehavior.state = FinalBossState::SPAWN_1;
-				enemyBehavior.cool_down = 3000.f;
+				enemyBehavior.cool_down = FINAL_BOSS_BASE_COOLDOWN;
 			}
 			break;
 		}
@@ -440,6 +440,8 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 			} else {
 				if (registry.denderiteAIs.size() == 0) {
 					enemyBehavior.state = FinalBossState::SPIRAL_SHOOT_1;
+					enemyBehavior.shoot_cool_down = FINAL_BOSS_BASE_SHOOT_COOLDOWN;
+					enemyBehavior.cool_down = FINAL_BOSS_BASE_COOLDOWN;
 					enemyBehavior.has_spawned = false;
 				}
 			}
@@ -464,27 +466,33 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 					
 						vec2 dir = { cosf(angleRad), sinf(angleRad) };
 						vec2 velocity = dir * PROJECTILE_SPEED * 2.f;
-						vec2 spawnPos = enemyMotion.position + dir * enemyMotion.scale.x / 3.f;
+
+						Motion& refreshedMotion = registry.motions.get(enemyEntity); 
+						vec2 spawnPos = refreshedMotion.position + dir * refreshedMotion.scale.x / 3.f;
+
+						createFinalBossProjectile(spawnPos, FINAL_BOSS_PROJECTILE, velocity, enemyBehavior.phase);
 					
 						Entity spiralProjectile = createFinalBossProjectile(spawnPos, FINAL_BOSS_PROJECTILE, velocity, enemyBehavior.phase);
-						enemyBehavior.shoot_cool_down = 300.f;
+						enemyBehavior.shoot_cool_down = FINAL_BOSS_BASE_SHOOT_COOLDOWN;
 					}
 				} else {
+					Motion& refreshedMotion = registry.motions.get(enemyEntity); 
 					vec2 dir = direction;
 					vec2 velocity = dir * PROJECTILE_SPEED * 0.5f;
 
-					Entity eyeBallProjectile_1 = createFinalBossProjectile(enemyMotion.position - 50.f, FINAL_BOSS_PROJECTILE, velocity, 3);
-					Entity eyeBallProjectile_2 = createFinalBossProjectile(enemyMotion.position + 50.f, FINAL_BOSS_PROJECTILE, velocity, 3);
-					enemyBehavior.shoot_cool_down = 15000.f;
+					Entity eyeBallProjectile_1 = createFinalBossProjectile(refreshedMotion.position - 50.f, FINAL_BOSS_PROJECTILE, velocity, 3);
+					Entity eyeBallProjectile_2 = createFinalBossProjectile(refreshedMotion.position + 50.f, FINAL_BOSS_PROJECTILE, velocity, 3);
+					enemyBehavior.shoot_cool_down = FINAL_BOSS_EYEBALL_SHOOT_COOLDOWN;
 				}
 			}
 
 			if (enemyBehavior.spiral_duration <= 0.f) {
 				enemyBehavior.state = FinalBossState::TIRED;
 				changeAnimationFrames(enemyEntity, 11, 13);
-				enemyBehavior.spiral_duration = 15000.f;
-				enemyBehavior.shoot_cool_down = 0.f;
-				enemyBehavior.cool_down = 20000.f;
+
+				enemyBehavior.spiral_duration = FINAL_BOSS_SHOOT_DURATION;
+				enemyBehavior.shoot_cool_down = FINAL_BOSS_BASE_SHOOT_COOLDOWN;
+				enemyBehavior.cool_down = FINAL_BOSS_TIRED_COOLDOWN;
 			}
 
 			break;
@@ -496,20 +504,20 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 				std::cout << "New PHASE!" << std::endl;
 				enemyBehavior.phase = 2;
 				enemyBehavior.state = FinalBossState::SPAWN_1;
-				enemyBehavior.cool_down = 3000.f;
+				enemyBehavior.cool_down = FINAL_BOSS_BASE_COOLDOWN;
 				changeAnimationFrames(enemyEntity, 0, 10);
 			} else if (enemy.health <= 1/3.f * enemy.total_health && enemyBehavior.phase == 2) {
 				std::cout << "Last Phase" << std::endl;
 				enemyBehavior.phase = 3;
 				enemyBehavior.state = FinalBossState::SPAWN_1;
-				enemyBehavior.cool_down = 3000.f;
+				enemyBehavior.cool_down = FINAL_BOSS_BASE_COOLDOWN;
 				changeAnimationFrames(enemyEntity, 0, 10);
 			} else {
 				enemyBehavior.cool_down -= elapsed_ms;
 				if (enemyBehavior.cool_down <= 0.f) {
-					enemyBehavior.shoot_cool_down = 3000.f;
 					enemyBehavior.state = FinalBossState::SPAWN_1;
-					enemyBehavior.cool_down = 20000.f;
+					enemyBehavior.shoot_cool_down = FINAL_BOSS_BASE_SHOOT_COOLDOWN;
+					enemyBehavior.cool_down = FINAL_BOSS_BASE_COOLDOWN;
 					changeAnimationFrames(enemyEntity, 0, 10);
 				}
 			}
