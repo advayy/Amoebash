@@ -464,7 +464,7 @@ void WorldSystem::updateDangerLevel(float elapsed_ms_since_last_update) {
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
-	// // std::cout << "Level : " << level << std::endl;
+	// std::cout << "Level : " << level << std::endl;
 	updateDangerLevel(elapsed_ms_since_last_update);
 
 	updateCamera(elapsed_ms_since_last_update);
@@ -704,7 +704,11 @@ void WorldSystem::restart_game()
 	// Reset the game speed
 	current_speed = 1.f;
     
-	level = 0;
+	if (progress_map["tutorial_mode"]) {
+		level = 0;
+	} else {
+		level = 1;
+	}
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
 
