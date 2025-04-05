@@ -42,7 +42,9 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 Entity createRBCEnemy(RenderSystem* renderer, vec2 position)
 {
 	Entity entity = createEnemy(renderer, position);
+	
 	Entity hp_bar = createEnemyHPBar(entity);
+	registry.healthBars.get(hp_bar).owner = entity;
 
 	RBCEnemyAI& enemy_ai = registry.rbcEnemyAIs.emplace(entity);
 	enemy_ai.patrolOrigin = position;
@@ -79,7 +81,9 @@ Entity createRBCEnemy(RenderSystem* renderer, vec2 position)
 Entity createSpikeEnemy(RenderSystem* renderer, vec2 position)
 {
 	Entity entity = createEnemy(renderer, position);
+
 	Entity hp_bar = createEnemyHPBar(entity);
+	registry.healthBars.get(hp_bar).owner = entity;
 
 	SpikeEnemyAI& enemy_ai = registry.spikeEnemyAIs.emplace(entity);
 	enemy_ai.patrolOrigin = position;
@@ -114,7 +118,9 @@ Entity createSpikeEnemy(RenderSystem* renderer, vec2 position)
 Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_index)
 {
 	Entity entity = createEnemy(renderer, position);
+	
 	Entity hp_bar = createEnemyHPBar(entity);
+	registry.healthBars.get(hp_bar).owner = entity;
 
 	BacteriophageAI& enemy_ai = registry.bacteriophageAIs.emplace(entity);
 	enemy_ai.placement_index = placement_index;

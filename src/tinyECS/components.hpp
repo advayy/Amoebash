@@ -362,10 +362,9 @@ struct UIElement // default / static ui
 
 struct HealthBar
 {
-	vec2 position;
-	vec2 scale;
 	int health;
 	bool is_enemy_hp_bar = false;
+	Entity owner = {}; 
 };
 
 struct DashRecharge
@@ -898,9 +897,9 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UIElement,
 )
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(HealthBar,
-	position,
-	scale,
-	health
+	health,
+	is_enemy_hp_bar,
+	owner
 )
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(DashRecharge,

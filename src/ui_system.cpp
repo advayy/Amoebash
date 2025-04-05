@@ -828,8 +828,8 @@ Entity createHealthBar()
 	motion.scale = {HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT};
 
 	HealthBar &healthBar = registry.healthBars.emplace(entity);
-	healthBar.position = motion.position;
-	healthBar.scale = motion.scale;
+	// healthBar.position = motion.position;
+	// healthBar.scale = motion.scale;
 	healthBar.health = registry.players.get(registry.players.entities[0]).current_health;
 
 	registry.renderRequests.insert(
@@ -871,6 +871,13 @@ void createDashRecharge()
 }
 
 Entity createEnemyHPBar(Entity enemy) {
+    for (Entity hp : registry.healthBars.entities) {
+        if (registry.healthBars.get(hp).is_enemy_hp_bar &&
+            registry.healthBars.get(hp).owner == enemy) {
+            return hp;
+        }
+    }
+
     Entity hp = Entity();
 
     Motion& motion = registry.motions.emplace(hp);
@@ -878,10 +885,11 @@ Entity createEnemyHPBar(Entity enemy) {
     
     HealthBar& healthBar = registry.healthBars.emplace(hp);
     healthBar.is_enemy_hp_bar = true;
+	healthBar.owner = enemy; 
     
     if (registry.motions.has(enemy)) {
         Motion& enemy_motion = registry.motions.get(enemy);
-        motion.position = enemy_motion.position + vec2(0.f, 30.f);
+        motion.position = enemy_motion.position + vec2(0.f, ENEMY_BB_HEIGHT / 2.0f);
     }
 
     registry.renderRequests.insert(hp, {
@@ -894,11 +902,10 @@ Entity createEnemyHPBar(Entity enemy) {
 }
 
 void removeEnemyHPBar(Entity enemy) {
-    for (size_t i = 0; i < registry.healthBars.size(); ++i) {
-        Entity healthBarEntity = registry.healthBars.entities[i];
-        HealthBar &hb = registry.healthBars.get(healthBarEntity);
-        if (hb.is_enemy_hp_bar && registry.enemies.has(enemy)) {
-            registry.remove_all_components_of(healthBarEntity);
+    for (Entity e : registry.healthBars.entities) {
+        HealthBar& hb = registry.healthBars.get(e);
+        if (hb.is_enemy_hp_bar && hb.owner == enemy) {
+            registry.remove_all_components_of(e);
             break;
         }
     }
@@ -1085,37 +1092,34 @@ void updateHuds()
 	}
 
 	if (!registry.healthBars.entities.empty()) {
-        for (size_t i = 0; i < registry.healthBars.entities.size(); ++i) {
-            Entity healthBar = registry.healthBars.entities[i];
-            
-            if (!registry.motions.has(healthBar) || !registry.healthBars.has(healthBar))
-                continue;
-                
-            Motion& motion = registry.motions.get(healthBar);
-            HealthBar& hb = registry.healthBars.get(healthBar);
-            
-            if (hb.is_enemy_hp_bar) {
-                if (i < registry.enemies.entities.size()) {
-                    Entity enemy = registry.enemies.entities[i];
-                    
-                    if (registry.motions.has(enemy) && registry.enemies.has(enemy)) {
-                        Motion& enemy_motion = registry.motions.get(enemy);
-                        Enemy& enemy_data = registry.enemies.get(enemy);
+		for (Entity health_bar : registry.healthBars.entities) {
+			if (!registry.motions.has(health_bar) || !registry.healthBars.has(health_bar))
+				continue;
 
-                        motion.position = enemy_motion.position + vec2(0.f, -40.f);
-                    }
-                }
-            } else {
-                if (!registry.cameras.entities.empty()) {
-                    Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
-                    motion.position = {
-                        camera.position.x + HEALTH_BAR_POS.x,
-                        camera.position.y + HEALTH_BAR_POS.y
-                    };
-                }
-            }
-        }
-    }
+			Motion& bar_motion = registry.motions.get(health_bar);
+			HealthBar& hb = registry.healthBars.get(health_bar);
+
+			if (hb.is_enemy_hp_bar) {
+				Entity enemy = hb.owner;
+
+			if (!registry.enemies.has(enemy) || !registry.motions.has(enemy)) {
+				registry.remove_all_components_of(health_bar);
+				continue;
+			}	
+				Motion& enemy_motion = registry.motions.get(enemy);
+				bar_motion.position = enemy_motion.position + vec2(0.f, -40.f);
+			} else {
+				if (!registry.cameras.entities.empty()) {
+					Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
+					bar_motion.position = {
+						camera.position.x + HEALTH_BAR_POS.x,
+						camera.position.y + HEALTH_BAR_POS.y
+					};
+				}
+			}
+		}
+	}
+
 
 	if (!registry.thermometers.entities.empty()) {
 		Thermometer& t = registry.thermometers.get(registry.thermometers.entities[0]);
