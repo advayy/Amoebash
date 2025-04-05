@@ -7,6 +7,21 @@
 #include "tinyECS/components.hpp"
 #include "tinyECS/tiny_ecs.hpp"
 
+// fonts
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include <map>
+#include <glm/gtc/type_ptr.hpp>
+
+// fonts
+struct Character {
+	unsigned int TextureID;  // ID handle of the glyph texture
+	glm::ivec2   Size;       // Size of glyph
+	glm::ivec2   Bearing;    // Offset from baseline to left/top of glyph
+	unsigned int Advance;    // Offset to advance to next glyph
+	char character;
+};
+
 // System responsible for setting up OpenGL and for rendering all the
 // visual entities in the game
 class RenderSystem
@@ -41,9 +56,10 @@ class RenderSystem
 		textures_path("tiles/parallax_tile_1_128x.png"),
 		textures_path("ui_art/amoebash_logo.png"),
 		textures_path("ui_art/gameOver.png"),
-		textures_path("ui_art/start_button.png"),
+		textures_path("ui_art/button_outline.png"),
 		textures_path("ui_art/pausescreen.png"),
 		textures_path("ui_art/shop_button.png"),
+		textures_path("ui_art/shop_button_on_hover.png"),
 		textures_path("ui_art/nucleus_full_size.png"),
 		textures_path("ui_art/shopscreen.png"),
 		textures_path("ui_art/infoscreen.png"),
@@ -58,6 +74,7 @@ class RenderSystem
 		textures_path("ui_art/HUD_germoney_hud.png"),
 		textures_path("ui_art/HUD_weapons_pill.png"),
 		textures_path("ui_art/info_button.png"),
+		textures_path("ui_art/info_button_on_hover.png"),
 		textures_path("ui_art/start_screen.png"),
 		textures_path("ui_art/button_outline.png"),
 		textures_path("projectiles/key.png"),
@@ -82,9 +99,20 @@ class RenderSystem
 		textures_path("enemies/boss/mitosis_boss_64_transparent.png"),
 		textures_path("enemies/boss/mitosis_boss_32_transparent.png"),
 		textures_path("enemies/boss/mitosis_boss_16_transparent.png"),
+		textures_path("ui_art/start_button.png"),
+		textures_path("ui_art/start_button_on_hover.png"),
+		textures_path("ui_art/back_button.png"),
+		textures_path("ui_art/back_button_on_hover.png"),
+		textures_path("ui_art/proceed_button.png"), // exit button
+		textures_path("ui_art/proceed_button_on_hover.png"), // exit button
+		textures_path("ui_art/save_button.png"),
+		textures_path("ui_art/save_button_on_hover.png"),
+		textures_path("ui_art/resume_button.png"),
+		textures_path("ui_art/resume_button_on_hover.png"),
 		textures_path("enemies/boss/boss_arrow.png"),
 		textures_path("ui_art/victory_cutscene.png"),
 		textures_path("ui_art/thermometer_alone.png"),
+		//textures_path("ui_art/circle.png"),
 		textures_path("ui_art/enemy_hp_bar.png"),
 		textures_path("ui_art/mitosis_boss_16_enemy_hp_bar.png"),
 		textures_path("ui_art/mitosis_boss_128_enemy_hp_bar.png"),
@@ -104,7 +132,9 @@ class RenderSystem
 		shader_path("dash_ui"),
 		shader_path("hexagon"),
 		shader_path("particle_textured"),
-		shader_path("thermometer")
+        shader_path("font"),
+		shader_path("thermometer"),
+		shader_path("weapon_cooldown_indicator")
 	};
 
 	std::array<GLuint, geometry_count> vertex_buffers;
@@ -173,6 +203,9 @@ public:
 	void drawDashRecharge(const mat3 &projection);
 	void drawHexagon(Entity entity, const mat3 &projection);
 	void drawBuffUI();
+	void drawGunCooldownIndicator(const vec2& camera_position, const mat3& projection);
+	void drawHealthBar(Entity entity, const mat3 &projection);
+
 
 	// INSTANCING: instanced particle drawing
 	void drawInstancedParticles();
@@ -223,6 +256,20 @@ private:
 
 	// INSTANCING: Instance VBO for tiles
 	GLuint tile_instance_vbo;
+
+    // freetype font rendering
+    bool fontInit(GLFWwindow& window, const std::string& font_filename, unsigned int font_default_size);
+    void renderText(std::string text, float x, float y, float scale, const glm::vec3& color);
+    void drawText();
+    void drawBuffCountText();
+    void drawDangerFactorText();
+    void drawGermoneyText();
+    
+    // freetype font rendering
+	std::map<char, Character> m_ftCharacters;
+	GLuint m_font_shaderProgram;
+	GLuint m_font_VAO;
+	GLuint m_font_VBO;
 };
 
 bool loadEffectFromFile(

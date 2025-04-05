@@ -72,8 +72,9 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 					render_request.used_effect == EFFECT_ASSET_ID::UI ||
 					render_request.used_effect == EFFECT_ASSET_ID::HEALTH_BAR ||
 					render_request.used_effect == EFFECT_ASSET_ID::DASH_UI ||
-					render_request.used_effect == EFFECT_ASSET_ID::THERMOMETER_EFFECT) &&
-				 "Type of render request not supported");
+					render_request.used_effect == EFFECT_ASSET_ID::THERMOMETER_EFFECT ||
+					render_request.used_effect == EFFECT_ASSET_ID::WEAPON_COOLDOWN_INDICATOR) &&
+					"Type of render request not supported");
 
 	setUpDefaultProgram(entity, render_request, program);
 
@@ -165,6 +166,48 @@ void RenderSystem::drawTexturedMesh(Entity entity,
         gl_has_errors();
     }
 
+	if (render_request.used_effect == EFFECT_ASSET_ID::HEALTH_BAR)
+    {
+        GLint max_health_loc = glGetUniformLocation(program, "max_health");
+        GLint health_loc = glGetUniformLocation(program, "current_health");
+        GLint health_texture_loc = glGetUniformLocation(program, "health_texture");
+
+        float max_health = 100.f;
+        float current_health = 100.f;
+
+        if (registry.healthBars.has(entity))
+        {
+            HealthBar &hb = registry.healthBars.get(entity);
+            if (hb.is_enemy_hp_bar)
+            {
+                for (size_t i = 0; i < registry.healthBars.entities.size(); ++i)
+                {
+                    if (registry.healthBars.entities[i] == entity && i < registry.enemies.entities.size())
+                    {
+                        Entity enemy = registry.enemies.entities[i];
+                        if (registry.enemies.has(enemy)) {
+                            Enemy &e = registry.enemies.get(enemy);
+                            max_health = (float)e.total_health;
+                            current_health = (float)e.health;
+                        }
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                Player &player = registry.players.get(registry.players.entities[0]);
+                max_health = player.max_health;
+                current_health = player.current_health;
+            }
+        }
+
+        glUniform1f(max_health_loc, max_health);
+        glUniform1f(health_loc, current_health);
+        glUniform1i(health_texture_loc, 0);
+        gl_has_errors();
+    }
+
 	if (render_request.used_effect == EFFECT_ASSET_ID::THERMOMETER_EFFECT) {
 		// FEED THE VALUES FOR CURRENT DANGER LEVEL, AND MAX DANGER LEVEL
 		// RANGES FROM GREEN TO PURPLE (Green->Yellow->Orange->Red->Pink->Purple)
@@ -202,6 +245,14 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		vec2 cameraPos = camera.position;
 		GLint camera_position_uloc = glGetUniformLocation(program, "camera_position");
 		glUniform2fv(camera_position_uloc, 1, (float *)&cameraPos);
+	}
+
+	if (render_request.used_effect == EFFECT_ASSET_ID::WEAPON_COOLDOWN_INDICATOR) {
+		Gun &gun = registry.guns.get(registry.guns.entities[0]);
+		float ratio = 1.f - std::clamp(gun.cooldown_timer_ms / GUN_COOLDOWN_MS, 0.f, 1.f);
+		GLint ratio_uloc = glGetUniformLocation(program, "cooldown_ratio");
+		glUniform1f(ratio_uloc, ratio);
+		gl_has_errors();
 	}
 
 
@@ -308,6 +359,9 @@ void RenderSystem::setUpDefaultProgram(Entity &entity, const RenderRequest &rend
 // then draw the intermediate texture
 void RenderSystem::drawToScreen()
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	// Setting shaders
 	// get the vignette texture, sprite mesh, and program
 	glUseProgram(effects[(GLuint)EFFECT_ASSET_ID::VIGNETTE]);
@@ -484,6 +538,8 @@ void RenderSystem::draw()
 		drawTexturedMesh(pause, projection_2D);
 	}
 
+    drawText();
+
 	// INSTANCING: Draw instanced particles
 	drawInstancedParticles();
 
@@ -494,6 +550,74 @@ void RenderSystem::draw()
 	// flicker-free display with a double buffer
 	glfwSwapBuffers(window);
 	gl_has_errors();
+}
+
+vec2 worldToScreen(vec2 world_pos) {
+    Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+    float x = WINDOW_WIDTH_PX / 2.f - (camera.position.x - world_pos.x);
+    float y = WINDOW_HEIGHT_PX / 2.f - (world_pos.y - camera.position.y);
+    return {x, y};
+}
+
+void RenderSystem::drawText() {
+    drawBuffCountText();
+    drawDangerFactorText();
+    drawGermoneyText();
+}
+
+void RenderSystem::drawBuffCountText() {
+        for (auto entity : registry.buffUIs.entities) {
+        BuffUI &buffUI = registry.buffUIs.get(entity);
+        Motion &motion = registry.motions.get(entity);
+
+        vec2 screen_pos = worldToScreen(motion.position);
+
+        int buffCount = registry.players.get(registry.players.entities[0]).buffsCollected[buffUI.buffType];
+        if (buffCount > 0) {
+            renderText(std::to_string(buffCount), screen_pos.x + 5.f, screen_pos.y - 15.f, .4f, vec3(1.f, 1.f, 1.f));
+        } else {
+            continue;
+        }
+    }
+}
+
+void RenderSystem::drawDangerFactorText() {
+    Player &player = registry.players.get(registry.players.entities[0]);
+    float dangerLevel = player.dangerFactor;
+
+    std::string dangerText = "";
+    if (dangerLevel < 1.5f) {
+        dangerText = "Undetected";
+    } else if (dangerLevel < 2.5f) {
+        dangerText = "Detected";
+    } else if (dangerLevel < 3.5f) {
+        dangerText = "Threatned";
+    } else if (dangerLevel < 4.5f) {
+        dangerText = "Immunoresponse";
+    } else {
+        dangerText = "Meltdown!";
+    }
+
+    Motion& motion = registry.motions.get(registry.thermometers.entities[0]);
+    vec2 screen_pos = worldToScreen(motion.position);
+    screen_pos.x -= THERMOMETER_WIDTH * .6f;
+    screen_pos.y -= THERMOMETER_HEIGHT * .55f;
+
+    renderText(dangerText, screen_pos.x, screen_pos.y, .3f, vec3(1.f, 1.f, 1.f));
+}
+
+void RenderSystem::drawGermoneyText() {
+    Player &player = registry.players.get(registry.players.entities[0]);
+    int germoney_count = player.germoney_count;
+
+    vec2 screen_pos;
+    if (germoney_count >= 10) {
+        screen_pos = vec2(WINDOW_WIDTH_PX * .095f, WINDOW_HEIGHT_PX * .0685f);
+    } else {
+        screen_pos = vec2(WINDOW_WIDTH_PX * .0975f, WINDOW_HEIGHT_PX * .0685f);
+    }
+
+    renderText(std::to_string(player.germoney_count), screen_pos.x, screen_pos.y, .4f, vec3(1.f, 1.f, 1.f));
 }
 
 mat3 RenderSystem::createProjectionMatrix()
@@ -549,7 +673,7 @@ void RenderSystem::drawInfoScreen()
 void RenderSystem::drawGameOverScreen()
 {
 	std::vector<ButtonType> buttons = {
-			ButtonType::PROCEED_BUTTON}; // ACTS as a next button
+			ButtonType::PROCEEDBUTTON}; // ACTS as a next button
 
 	drawScreenAndButtons(ScreenType::GAMEOVER, buttons);
 }
@@ -565,6 +689,8 @@ void RenderSystem::drawScreenAndButtons(
 		ScreenType screenType,
 		const std::vector<ButtonType> &buttonTypes)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
 
 	int w, h;
 	glfwGetFramebufferSize(window, &w, &h);
@@ -650,7 +776,6 @@ void RenderSystem::drawScreenAndButtons(
 
 void RenderSystem::drawCutScreneAnimation()
 {
-
 	int w, h;
 	glfwGetFramebufferSize(window, &w, &h);
 	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
@@ -731,6 +856,9 @@ void RenderSystem::drawUI(Entity entity, const mat3 &projection)
 
 void RenderSystem::drawUIElements()
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	if (registry.uiElements.size() == 0)
 		return;
 
@@ -747,6 +875,9 @@ void RenderSystem::drawUIElements()
 
 void RenderSystem::drawHexagon(Entity entity, const mat3 &projection)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	if (!registry.keys.has(entity) && !registry.chests.has(entity))
 	{
 		return;
@@ -809,8 +940,81 @@ void RenderSystem::drawHexagon(Entity entity, const mat3 &projection)
 	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
 }
 
+void RenderSystem::drawHealthBar(Entity entity, const mat3 &projection)
+{
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
+	if (!registry.healthBars.has(entity))
+		return;
+
+	HealthBar &healthBar = registry.healthBars.get(entity);
+	Motion &motion = registry.motions.get(entity);
+	Player &player = registry.players.get(registry.players.entities[0]);
+
+	Transform transform;
+	transform.translate(motion.position);
+	transform.scale(motion.scale);
+
+	assert(registry.renderRequests.has(entity));
+	const RenderRequest &render_request = registry.renderRequests.get(entity);
+
+	GLuint program = effects[(GLuint)EFFECT_ASSET_ID::HEALTH_BAR];
+	glUseProgram(program);
+	gl_has_errors();
+
+	GLuint vbo = vertex_buffers[(GLuint)render_request.used_geometry];
+	GLuint ibo = index_buffers[(GLuint)render_request.used_geometry];
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	gl_has_errors();
+
+	GLint in_position_loc = glGetAttribLocation(program, "in_position");
+	GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+
+	glEnableVertexAttribArray(in_position_loc);
+	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)0);
+	glEnableVertexAttribArray(in_texcoord_loc);
+	glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)sizeof(vec3));
+
+	glActiveTexture(GL_TEXTURE0);
+	GLuint texture_id = texture_gl_handles[(GLuint)TEXTURE_ASSET_ID::HEALTH_BAR_UI];
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+	gl_has_errors();
+
+	GLint max_health_loc = glGetUniformLocation(program, "max_health");
+	glUniform1f(max_health_loc, player.max_health);
+	gl_has_errors();
+
+	GLint health_loc = glGetUniformLocation(program, "current_health");
+	glUniform1f(health_loc, player.current_health);
+	gl_has_errors();
+
+	GLint health_texture_loc = glGetUniformLocation(program, "health_texture");
+	glUniform1i(health_texture_loc, 0);
+	gl_has_errors();
+
+	GLint transform_loc = glGetUniformLocation(program, "transform");
+	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float *)&transform.mat);
+	gl_has_errors();
+
+	GLuint projection_loc = glGetUniformLocation(program, "projection");
+	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
+	gl_has_errors();
+
+	GLint size = 0;
+	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
+	GLsizei num_indices = size / sizeof(uint16_t);
+	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
+	gl_has_errors();
+}
+
 void RenderSystem::drawDashRecharge(const mat3 &projection)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	if (registry.dashes.size() == 0)
 	{
 		return;
@@ -877,6 +1081,9 @@ void RenderSystem::drawDashRecharge(const mat3 &projection)
 
 void RenderSystem::drawBuffUI()
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	if (registry.buffUIs.size() == 0)
 		return;
 
@@ -901,6 +1108,9 @@ void RenderSystem::drawInstancedParticles()
 
 void RenderSystem::drawParticlesByTexture(TEXTURE_ASSET_ID texture_id)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+    
 	// for debugging purposes, check for errors
 	while (glGetError() != GL_NO_ERROR)
 	{ /* clear errors */
@@ -1022,6 +1232,8 @@ struct TileInstance
 
 void RenderSystem::drawInstancedTiles(const mat3 &projection)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
 
 	// group tile instances by texture used.
 	std::unordered_map<GLuint, std::vector<TileInstance>> groups;
@@ -1122,4 +1334,67 @@ void RenderSystem::drawInstancedTiles(const mat3 &projection)
 			glDisableVertexAttribArray(i);
 		}
 	}
+}
+
+void RenderSystem::renderText(std::string text, float x, float y, float scale, const glm::vec3& color)
+{
+    glm::mat4 trans = glm::mat4(1.0f);
+
+    // ENABLE BLENDING
+    glEnable(GL_BLEND);
+
+    // activate corresponding render state
+    glUseProgram(m_font_shaderProgram);
+
+    GLint textColor_location = glGetUniformLocation(m_font_shaderProgram, "textColor");
+    assert(textColor_location > -1);
+    // std::cout << "textColor_location: " << textColor_location << std::endl;
+    glUniform3f(textColor_location, color.x, color.y, color.z);
+
+    auto transformLoc = glGetUniformLocation(m_font_shaderProgram, "transform");
+    // std::cout << "transformLoc: " << transformLoc << std::endl;
+    assert(transformLoc > -1);
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+
+    glBindVertexArray(m_font_VAO);
+
+    // iterate through each character
+    std::string::const_iterator c;
+    for (c = text.begin(); c != text.end(); c++)
+    {
+        Character ch = m_ftCharacters[*c];
+
+        float xpos = x + ch.Bearing.x * scale;
+        float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+
+        float w = ch.Size.x * scale;
+        float h = ch.Size.y * scale;
+
+        float vertices[6][4] = {
+            { xpos,     ypos + h,   0.0f, 0.0f },
+            { xpos,     ypos,       0.0f, 1.0f },
+            { xpos + w, ypos,       1.0f, 1.0f },
+
+            { xpos,     ypos + h,   0.0f, 0.0f },
+            { xpos + w, ypos,       1.0f, 1.0f },
+            { xpos + w, ypos + h,   1.0f, 0.0f }
+        };
+
+        // render glyph texture over quad
+        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+        // std::cout << "binding texture: " << ch.character << " = " << ch.TextureID << std::endl;
+
+        // update content of VBO memory
+        glBindBuffer(GL_ARRAY_BUFFER, m_font_VBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        // render quad
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        // advance to next glyph (note that advance is number of 1/64 pixels)
+        x += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
+    }
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }

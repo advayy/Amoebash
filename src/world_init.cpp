@@ -263,9 +263,37 @@ Entity createPlayer(RenderSystem *renderer, vec2 position)
 	sprite.width = 32;
 	sprite.height = 32;
 
-    createGun(renderer, position);
+    for (int i = 0; i < NUMBER_OF_BUFFS; i++) {
+        p.buffsCollected[i] = 0;
+    }
 
+    createGun(renderer, position);
 	return entity;
+}
+
+Entity 	createGunCooldown() {
+	Entity e = Entity();	
+	// camera position at window width and height - 50 each?
+	vec2 pos = WEAPON_PILL_UI_POS;
+	
+	pos.x += WEAPON_PILL_UI_WIDTH/4;
+
+	registry.renderRequests.insert(e,
+		{
+			TEXTURE_ASSET_ID::GUN_PROJECTILE,
+			EFFECT_ASSET_ID::WEAPON_COOLDOWN_INDICATOR,
+			GEOMETRY_BUFFER_ID::SPRITE
+		});
+
+
+	Motion& m = registry.motions.emplace(e);
+	m.position = {pos.x, pos.y};
+	m.scale = {32, 32};
+
+	UIElement& u = registry.uiElements.emplace(e);
+	u.position = {pos.x, pos.y};
+	u.scale = {32, 32};
+	return e;
 }
 
 Entity createGun(RenderSystem *renderer, vec2 position) {
@@ -377,13 +405,16 @@ Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& pla
 	map.right = ceil(WORLD_ORIGIN.x + size.x / 2);
 	map.map.resize(map.height, std::vector<tileType>(map.width, tileType::EMPTY));
 
-	for (int x = 0; x < map.width; x ++) {
-		for (int y = 0; y < map.height; y++) {
-			map.map[y][x] = tileType::EMPTY;
-		}
-	}
+    for (int y = 0; y < map.height; y++) {
+        for (int x = 0; x < map.width; x++) {
+            if (x == 0 || x == map.width - 1 || y == 0 || y == map.height - 1)
+                map.map[y][x] = tileType::WALL;
+            else
+                map.map[y][x] = tileType::EMPTY;
+        }
+    }
 
-	playerPosition.first = 19;
+	playerPosition.first = 18;
 	playerPosition.second = 10;
 
 	return entity;
@@ -454,8 +485,12 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 				for (int y = 0; y < map.height; y++) {
 					map.map[y][x] = tileType::WALL;
 				}
-			}
+			} else {
+                map.map[0][x] = tileType::WALL;
+                map.map[map.height - 1][x] = tileType::WALL;
+            }
 		}
+
 	} else {
 		// Initialize map to random walls / floors
         std::random_device rd;
@@ -482,19 +517,29 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
             // assign portal to random empty tile
             std::pair<int, int> portalTile = getRandomEmptyTile(map.map);
 
-            // print map
-            for (int y = 0; y < map.height; ++y) {
-                for (int x = 0; x < map.width; ++x) {
-                    if (x == playerTile.first && y == playerTile.second) {
-                        // std::cout << "!!";
-                    } else if (x == portalTile.first && y == portalTile.second) {
-                        // std::cout << "P";
-                    } else {
-                        // std::cout << (map.map[y][x] == tileType::WALL ? "X" : ".");
-                    }
-                }
-                // std::cout << std::endl;
+            // make outer edges of map all walls
+            for (int x = 0; x < map.width; ++x) {
+                map.map[0][x] = tileType::WALL;
+                map.map[map.height - 1][x] = tileType::WALL;
             }
+            for (int y = 0; y < map.height; ++y) {
+                map.map[y][0] = tileType::WALL;
+                map.map[y][map.width - 1] = tileType::WALL;
+            }
+
+            // print map
+            // for (int y = 0; y < map.height; ++y) {
+            //     for (int x = 0; x < map.width; ++x) {
+            //         if (x == playerTile.first && y == playerTile.second) {
+            //             std::cout << "!!";
+            //         } else if (x == portalTile.first && y == portalTile.second) {
+            //             std::cout << "P";
+            //         } else {
+            //             std::cout << (map.map[y][x] == tileType::WALL ? "X" : ".");
+            //         }
+            //     }
+            //     std::cout << std::endl;
+            // }
 
             if (getDistance(map.map, playerTile, portalTile) < 15) {
                 // std::cout << "PATH DOES NOT EXIST OR NOT ENOUGH DISTANCE, TRYING AGAIN." << std::endl;
@@ -820,6 +865,13 @@ Entity createBuff(vec2 position)
 	return entity;
 }
 
+void applyVignetteEffect() {
+    registry.screenStates.components[0].vignette_screen_factor = .5f;
+}
+
+void clearVignetteEffect() {
+    registry.screenStates.components[0].vignette_screen_factor = 0.f;
+}
 
 int getRandomBuffType() {
 	std::vector<int> commonBuffs = {0, 1, 2, 3, 5, 6, 11};
@@ -849,6 +901,7 @@ void damagePlayer(float damageAmount) {
 		removeBuffUI(5); // PLANT CELL WALL/ SHEILD
 	} else {
 		player.current_health -= damageAmount * player.dangerFactor;
+		applyVignetteEffect();
 
 		if (player.current_health <= 0) {
 			if (player.extra_lives > 0) {
@@ -859,7 +912,7 @@ void damagePlayer(float damageAmount) {
 				// game over
 			}
 		} else {
-			// normally took damage
+
 		}
 	}
 }
