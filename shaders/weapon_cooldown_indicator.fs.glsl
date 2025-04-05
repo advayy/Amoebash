@@ -19,7 +19,7 @@ void main() {
 
     float angleLimit = pct * 2.0 * 3.1415926;
 
-    if (angle < angleLimit) { // length(centeredCoord) > 0.5 || 
+    if (angle < angleLimit) {
         discard;
     }
 
