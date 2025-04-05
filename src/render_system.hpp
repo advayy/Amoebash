@@ -117,6 +117,8 @@ class RenderSystem
 		textures_path("tiles/biomes/green_wall.png"),
 		textures_path("tiles/biomes/blue_tiles.png"),
 		textures_path("tiles/biomes/blue_wall.png"),
+		textures_path("tiles/biomes/purple_tiles.png"),
+		textures_path("tiles/biomes/purple_wall.png"),
 	};
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.
