@@ -856,8 +856,6 @@ Entity createHealthBar()
 	motion.scale = {HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT};
 
 	HealthBar &healthBar = registry.healthBars.emplace(entity);
-	// healthBar.position = motion.position;
-	// healthBar.scale = motion.scale;
 	healthBar.health = registry.players.get(registry.players.entities[0]).current_health;
 
 	registry.renderRequests.insert(
@@ -1161,6 +1159,7 @@ void updateHuds()
 			}	
 				Motion& enemy_motion = registry.motions.get(enemy);
 				bar_motion.position = enemy_motion.position + vec2(0.f, -enemy_motion.scale.y / 1.5f);
+				hb.health = registry.enemies.get(enemy).health;
 			} else {
 				if (!registry.cameras.entities.empty()) {
 					Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
