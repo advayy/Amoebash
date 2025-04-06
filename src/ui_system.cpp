@@ -855,6 +855,10 @@ Entity createHealthBar()
 	motion.position = HEALTH_BAR_POS;
 	motion.scale = {HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT};
 
+	UIElement& u = registry.uiElements.emplace(entity);
+	u.position = motion.position;
+	u.scale = motion.scale;
+
 	HealthBar &healthBar = registry.healthBars.emplace(entity);
 	healthBar.health = registry.players.get(registry.players.entities[0]).current_health;
 

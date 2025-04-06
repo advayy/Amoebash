@@ -1030,7 +1030,7 @@ void WorldSystem::handle_collisions()
 						Player& player = registry.players.get(entity);
 						// need to check the rumble cool down
 
-						if (!bossAI.is_charging) {
+						if (!bossAI.is_charging || !bossAI.is_fleeing) {
 							damagePlayer(BOSS_RUMBLE_DAMAGE);
 
                             Mix_PlayChannel(-1, damage_sound, 0);
