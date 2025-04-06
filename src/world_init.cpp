@@ -624,7 +624,8 @@ TEXTURE_ASSET_ID getTileTextureForBiome(Biome biome) {
             return TEXTURE_ASSET_ID::BLUE_TILES;
 		case Biome::PURPLE:
 			return TEXTURE_ASSET_ID::PURPLE_TILES;
-        // add more
+        case Biome::BOSS:
+            return TEXTURE_ASSET_ID::BOSS_TILES;
         default:
             return TEXTURE_ASSET_ID::RED_TILES; 
     }
@@ -640,7 +641,8 @@ TEXTURE_ASSET_ID getWallTextureForBiome(Biome biome) {
             return TEXTURE_ASSET_ID::BLUE_WALL;
 		case Biome::PURPLE: 
 			return TEXTURE_ASSET_ID::PURPLE_WALL;
-        // add mroe here
+        case Biome::BOSS:
+            return TEXTURE_ASSET_ID::BOSS_WALL;
         default:
             return TEXTURE_ASSET_ID::RED_WALL; 
     }

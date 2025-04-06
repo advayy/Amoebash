@@ -514,8 +514,10 @@ enum class TEXTURE_ASSET_ID
 	BLUE_WALL = BLUE_TILES + 1,
 	PURPLE_TILES = BLUE_WALL + 1,
 	PURPLE_WALL = PURPLE_TILES + 1,
+    BOSS_TILES = PURPLE_WALL + 1,
+    BOSS_WALL = BOSS_TILES + 1,
 
-	TEXTURE_COUNT = PURPLE_WALL + 1,
+	TEXTURE_COUNT = BOSS_WALL + 1,
 
 };
 
@@ -744,8 +746,8 @@ enum class Biome {
   GREEN = RED + 1,
   BLUE = GREEN + 1,
   PURPLE = BLUE + 1,
-  // add more
-  BIOME_COUNT = PURPLE + 1
+  BOSS = PURPLE + 1,
+  BIOME_COUNT = BOSS + 1
 };
 
 // MACROS for "to_json" and "from_json" on user-defined structs
