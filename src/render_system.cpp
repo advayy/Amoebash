@@ -555,7 +555,7 @@ void RenderSystem::drawInfoText() {
 		"",
 		"Advay Rajguru, Mercury Mcindoe, Shrey Gangwar, Dany Raihan, Hazel Chen & Saurav Banna",
 		"",
-		"With a special shoutout to Carter Woodworth (netcarrot) for the amazing sound design"};
+		"With a special shoutout to Carter Woodworth for the amazing sound design"};
 	
 	float init_padding = 130;
 	float line_padding = 40;
