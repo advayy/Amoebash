@@ -507,7 +507,7 @@ Entity createFinalBoss(RenderSystem* renderer, vec2 position) {
 	Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::MITOSIS_BOSS_128_HP_BAR);
 	if (registry.motions.has(hp_bar)) {
 		Motion& hp_bar_motion = registry.motions.get(hp_bar);
-		hp_bar_motion.position += vec2(0.f, - motion.scale.y);
+		hp_bar_motion.position += vec2(0.f, + motion.scale.y);
 	}
 
 	Enemy& enemy = registry.enemies.get(entity);
