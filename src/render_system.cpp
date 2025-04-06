@@ -554,17 +554,24 @@ void RenderSystem::drawShopText() {
         ClickableBuff &clickableBuff = registry.clickableBuffs.get(entity);
         Motion &motion = registry.motions.get(entity);
 
-        vec2 screen_pos = worldToScreen(motion.position);
-
+        vec2 screen_pos_cost = worldToScreen(motion.position);
+        screen_pos_cost.y -= 50.f;
+        
         if (clickableBuff.price >= 10 && clickableBuff.price < 100) {
-            screen_pos.x -= 12.5f;
+            screen_pos_cost.x -= 12.5f;
         } else if (clickableBuff.price >= 100 && clickableBuff.price < 1000) {
-            screen_pos.x -= 17.5f;
+            screen_pos_cost.x -= 17.5f;
         } else if (clickableBuff.price >= 1000) {
-            screen_pos.x -= 20.f;
+            screen_pos_cost.x -= 20.f;
         }
-    
-        renderText(std::to_string((int)clickableBuff.price), screen_pos.x, screen_pos.y - 50.f, .4f, vec3(0.f, 0.f, 0.f));
+        
+        renderText(std::to_string((int)clickableBuff.price), screen_pos_cost.x, screen_pos_cost.y, .4f, vec3(0.f, 0.f, 0.f));
+        
+        std::string buffName = BUFF_TYPE_TO_NAME.at(clickableBuff.type);
+        vec2 screen_pos_text = worldToScreen(motion.position);
+        screen_pos_text.x -= (buffName.length() * 4.f);
+        screen_pos_text.y -= 65.f;
+        renderText(buffName, screen_pos_text.x, screen_pos_text.y, .3f, vec3(0.f, 0.f, 0.f));
     }
 
     Motion motion;

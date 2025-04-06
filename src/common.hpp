@@ -264,6 +264,27 @@ const vec2 GUN_COOLDOWN_INDICATOR_SCALE = {20.f * UI_SCALE, 20.f * UI_SCALE};
 // GAME BALANCE
 const int NUMBER_OF_BUFFS = 15;
 
+const std::unordered_map<int, std::string> BUFF_TYPE_TO_NAME = {
+    {-1, "Level Skip"},
+    {-2, "Nucleus Slots"},
+    {0, "Tail"},
+    {1, "Mitochondria"},
+    {2, "Hemoglobin"},
+    {3, "Golgi"},
+    {4, "Chloroplash"},
+    {5, "Cell Wall"},
+    {6, "Amino Acid"},
+    {7, "Lysosyme"},
+    {8, "CytoPlasm"},
+    {9, "Virality"},
+    {10, "Spare Nucleus"},
+    {11, "Vacuole"},
+    {12, "Endoplasmic Reticulum"},
+    {13, "Oceloid"},
+    {14, "Secretor"},
+    {15, "Orange"}
+};
+
 const float BUFF_WIDTH = 20.0f * WORK_SCALE_FACTOR;
 const float BUFF_HEIGHT = 20.0f * WORK_SCALE_FACTOR;
 const float BUFF_UI_WIDTH = 20.0f * UI_SCALE;
