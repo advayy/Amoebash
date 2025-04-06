@@ -499,6 +499,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 			previous_state = current_state;
 			current_state = GameState::VICTORY;
 			stateTimer = WIN_CUTSCENE_DURATION_MS;
+            clearVignetteEffect();
 			createEndingWinScene();
 		}
 	}
