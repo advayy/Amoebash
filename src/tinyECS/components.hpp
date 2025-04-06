@@ -375,9 +375,9 @@ struct UIElement // default / static ui
 
 struct HealthBar
 {
-	vec2 position;
-	vec2 scale;
 	int health;
+	bool is_enemy_hp_bar = false;
+	Entity owner = {}; 
 };
 
 struct DashRecharge
@@ -506,8 +506,10 @@ enum class TEXTURE_ASSET_ID
 	BOSS_ARROW = RESUME_BUTTON_ON_HOVER + 1,
 	WINSCREEN = BOSS_ARROW + 1,
 	THERMOMETER = WINSCREEN + 1,
-	CIRCLE = THERMOMETER + 1,
-	TEXTURE_COUNT = CIRCLE + 1
+	ENEMY_HP_BAR = THERMOMETER + 1,
+	MITOSIS_BOSS_16_HP_BAR = ENEMY_HP_BAR + 1,
+	MITOSIS_BOSS_128_HP_BAR = MITOSIS_BOSS_16_HP_BAR + 1,
+	TEXTURE_COUNT = MITOSIS_BOSS_128_HP_BAR + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -931,9 +933,9 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UIElement,
 )
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(HealthBar,
-	position,
-	scale,
-	health
+	health,
+	is_enemy_hp_bar,
+	owner
 )
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(DashRecharge,

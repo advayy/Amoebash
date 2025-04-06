@@ -665,7 +665,7 @@ void WorldSystem::goToNextLevel()
 		createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
 	} else {
 		createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
-		createBoss(renderer, gridCellToPosition({10, 10}));
+	 	createBoss(renderer, gridCellToPosition({10, 10}));
 		// std::cout << "Boss created" << std::endl;
 	}
 
@@ -739,6 +739,7 @@ void WorldSystem::restart_game()
     // remove all tiles
     while (registry.tiles.entities.size() > 0)
         registry.remove_all_components_of(registry.tiles.entities.back());
+
 
 	// debugging for memory/component leaks
 	registry.list_all_components();
@@ -915,6 +916,8 @@ void WorldSystem::handle_collisions()
 
 					vec2 enemy_position = enemy_motion.position;
                     removals.push_back(entity2);
+					removeEnemyHPBar(entity2);
+
 					// level += 1;
 					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
                     
@@ -1005,6 +1008,7 @@ void WorldSystem::handle_collisions()
                     vec2 enemy_position = enemy_motion.position;
                     points += 1;
                     removals.push_back(entity2);
+					removeEnemyHPBar(entity2);
                     Mix_PlayChannel(-1, enemy_death_sound, 0);
 
                     Player& player = registry.players.get(registry.players.entities[0]);
