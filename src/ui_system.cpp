@@ -1133,7 +1133,7 @@ Entity UISystem::createBuffPopup(BUFF_TYPE type)
 
 	Entity buffPopup = Entity();
 
-	Entity& buffImage = createPopupBuffUI(BUFF_POPUP_POS + vec2(BUFF_POPUP_GAP, BUFF_POPUP_GAP), type);
+	const Entity& buffImage = createPopupBuffUI(BUFF_POPUP_POS + vec2(BUFF_POPUP_GAP, BUFF_POPUP_GAP), type);
 	registry.popupElements.emplace(buffImage);
 	Motion& buffImageMotion = registry.motions.get(buffImage);
 
