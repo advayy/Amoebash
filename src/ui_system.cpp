@@ -1264,6 +1264,7 @@ void updateHuds()
 	}
 
 	if (!registry.healthBars.entities.empty()) {
+		std::vector<Entity> removals;
 		for (Entity health_bar : registry.healthBars.entities) {
 			if (!registry.motions.has(health_bar) || !registry.healthBars.has(health_bar))
 				continue;
@@ -1274,13 +1275,14 @@ void updateHuds()
 			if (hb.is_enemy_hp_bar) {
 				Entity enemy = hb.owner;
 
-			if (!registry.enemies.has(enemy) || !registry.motions.has(enemy)) {
-				registry.remove_all_components_of(health_bar);
-				continue;
-			}	
-				Motion& enemy_motion = registry.motions.get(enemy);
-				bar_motion.position = enemy_motion.position + vec2(0.f, -enemy_motion.scale.y / 1.5f);
-				hb.health = registry.enemies.get(enemy).health;
+				if (!registry.enemies.has(enemy) || !registry.motions.has(enemy)) {
+					removals.push_back(health_bar);
+					// registry.remove_all_components_of(health_bar);
+					continue;
+				}	
+					Motion& enemy_motion = registry.motions.get(enemy);
+					bar_motion.position = enemy_motion.position + vec2(0.f, -enemy_motion.scale.y / 1.5f);
+					hb.health = registry.enemies.get(enemy).health;
 			} else {
 				if (!registry.cameras.entities.empty()) {
 					Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
@@ -1290,6 +1292,12 @@ void updateHuds()
 					};
 				}
 			}
+		}
+
+
+		int size = removals.size();
+		for (int i = 0; i < size; i++) {
+			registry.remove_all_components_of(removals[i]);
 		}
 	}
 
