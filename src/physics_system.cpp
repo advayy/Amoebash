@@ -514,6 +514,8 @@ bool PhysicsSystem::find_path(std::vector<ivec2> & path, vec2 start_world, vec2 
 {	
 	const auto& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map;
 	int map_height = map.size();
+	
+	std::vector<ivec2> boss_locs = {{9, 9}, {10, 9}, {9, 10}, {9, 10}};
 
 	ivec2 start_pos = positionToGridCell(start_world);
 	ivec2 end_pos = positionToGridCell(end_world);
@@ -559,11 +561,7 @@ bool PhysicsSystem::find_path(std::vector<ivec2> & path, vec2 start_world, vec2 
 	while(!open.empty()) {
 		Node* current = open.top();
 		open.pop();
-		
-		// std::cout << "All known nodes:" << std::endl;
-		// for (auto& [pos, node] : all_nodes) {
-		// 	std::cout << "  (" << pos.x << ", " << pos.y << ") - f: " << node->f_cost() << std::endl;
-		// }
+
 
 		if (current->position == end_pos) {
 			while (current) {
@@ -581,6 +579,7 @@ bool PhysicsSystem::find_path(std::vector<ivec2> & path, vec2 start_world, vec2 
 
             if (closed.find(neighbor_pos) != closed.end()) continue;
             if (!isTraversable(neighbor_pos)) continue;
+			if (std::find(boss_locs.begin(), boss_locs.end(), neighbor_pos) != boss_locs.end()) continue;
 
             int g_cost = current->g_cost + 1;
             int h_cost = heuristic(neighbor_pos, end_pos);

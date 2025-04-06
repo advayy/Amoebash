@@ -44,7 +44,8 @@ std::vector<std::vector<tileType>> applyCellularAutomataRules(const std::vector<
 std::pair<int, int> getRandomEmptyTile(const std::vector<std::vector<tileType>>& grid);
 int getDistance(const std::vector<std::vector<tileType>>& grid, std::pair<int,int> start, std::pair<int,int> end);
 
-Entity createBuff(vec2 position);
+Entity createBuff(vec2 position, BUFF_TYPE buffType = TAIL);
+Entity createBuffWithChanceToFail(vec2 pos);
 
 void updateMiniMap(vec2 playerPos);
 void emptyMiniMap();
@@ -53,7 +54,7 @@ void applyVignetteEffect();
 void clearVignetteEffect();
     
 void damagePlayer(float damageAmount);
-int getRandomBuffType();
+BUFF_TYPE getRandomBuffType();
 Entity 	createGunCooldown();
 
 extern Biome currentBiome;

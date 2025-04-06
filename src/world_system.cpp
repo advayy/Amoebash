@@ -53,7 +53,10 @@ WorldSystem::~WorldSystem()
 		Mix_FreeMusic(boss_background_music);
 	if (portal_sound != nullptr)
 		Mix_FreeChunk(portal_sound);
-		
+	if (buy_sound != nullptr)
+		Mix_FreeChunk(buy_sound);
+	if (buff_pickup != nullptr)
+		Mix_FreeChunk(buff_pickup);	
 	
 	Mix_CloseAudio();
 
@@ -171,7 +174,10 @@ bool WorldSystem::start_and_load_sounds()
 	enemy_death_sound = Mix_LoadWAV(audio_path("enemy_death.wav").c_str());
 	click_sound = Mix_LoadWAV(audio_path("click_1.wav").c_str());
 	portal_sound = Mix_LoadWAV(audio_path("portal.wav").c_str());
-
+	
+	// new sounds
+	buy_sound = Mix_LoadWAV(audio_path("money.wav").c_str());
+	buff_pickup = Mix_LoadWAV(audio_path("chomp.wav").c_str());
 
 	if (background_music == nullptr || dash_sound == nullptr) // IDK why we do this anymore
 	{
@@ -457,6 +463,8 @@ bool WorldSystem::checkPortalCollision(){
 
         if (distance < portal_radius) {
             // go to black screen
+
+			if (progress_map["tutorial_mode"]) progress_map["tutorial_mode"] = false;
 			return true;
         }
     }
@@ -490,13 +498,11 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	// // std::cout << "Level : " << level << std::endl;
 	updateDangerLevel(elapsed_ms_since_last_update);
 	updateCamera(elapsed_ms_since_last_update);
-
-	if (progress_map["tutorial_mode"] && registry.infoBoxes.size() == 0) {
-		createInfoBoxes();
-	}
 	
     updateMouseCoords(); 
 	updateHuds();
+
+	updatePopups(elapsed_ms_since_last_update);
 
 	handlePlayerMovement(elapsed_ms_since_last_update);
 	handlePlayerHealth(elapsed_ms_since_last_update);
@@ -539,7 +545,12 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
                 }
             }
 		}
+	} else if (progress_map["tutorial_mode"] && !firstEnemySpawned) {
+		// SPAWN A BUFF and SPAWN AN ENEMY
+		firstEnemySpawned = true;
+		createSpikeEnemy(renderer, gridCellToPosition({5,8}));
 	}
+
 	handleProjectiles(elapsed_ms_since_last_update);
 	handleRippleEffect(elapsed_ms_since_last_update);
 
@@ -554,6 +565,12 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
             current_state = GameState::NEXT_LEVEL;
             Mix_PlayChannel(-1, portal_sound, 0);
             goToNextLevel();
+
+			if(level == 3 || level == 5) {
+				switchMusicThemeToBoss();
+			} else {
+				switchMusicBossToTheme();
+			}
             return true;
         } else {
             clearVignetteEffect();
@@ -650,7 +667,7 @@ void WorldSystem::triggerGameOver() {
     current_state = GameState::GAME_OVER;
     currentBiome = Biome::RED; 
     createGameOverScreen();
-
+    clearVignetteEffect();
 }
 
 // Handle player movement
@@ -687,9 +704,6 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 
 void WorldSystem::goToNextLevel()
 {
-    // print go to next level
-    // std::cout << "Going to next level" << std::endl;
-
 	current_speed = 1.f;
 	level += 1;
 	next_enemy_spawn = 0;
@@ -734,7 +748,7 @@ void WorldSystem::goToNextLevel()
 		createBoss(renderer, gridCellToPosition({10, 10}));
 	} else if (level == FINAL_BOSS_LEVEL) {
 		createFinalBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
-		createFinalBoss(renderer, gridCellToPosition({9, 2}));
+		createFinalBoss(renderer, gridCellToPosition({9, 9}));
 	} 
 
 	if (level == FINAL_BOSS_LEVEL - 1) {
@@ -743,18 +757,13 @@ void WorldSystem::goToNextLevel()
 
 	Player &player = registry.players.get(registry.players.entities[0]);
 	Motion &playerMotion = registry.motions.get(registry.players.entities[0]);
-	// Progression &prog = registry.progressions.get(registry.progressions.entities[0]);
 
 	playerMotion.position = gridCellToPosition(vec2(playerPosition.second, playerPosition.first));
 
-	// for(int i = 0; i < prog.pickedInNucleus.size(); i++) {
-	// 	applyBuff(player, prog.pickedInNucleus[i]);
-	// }
 	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
 	camera.position = playerMotion.position;
 	bacteriophage_idx.clear();
-    // print exiting
-    // std::cout << "Exiting createProceduralMap" << std::endl;
+
 	emptyMiniMap();
 	return;
 }
@@ -824,14 +833,12 @@ void WorldSystem::restart_game()
 	// std::cout << "Creating Procedural Map, tutorial mode status :" << tutorial_mode << std::endl;
 
 	std::pair<int, int> playerPosition;
-	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
-		
+    
 	if (progress_map["tutorial_mode"]) {
-		createPlayer(renderer, gridCellToPosition({1, 10}));
-		createSpikeEnemy(renderer, gridCellToPosition({12, 10}));
-		createKey(renderer, gridCellToPosition({15, 10}));
-		createChest(renderer, gridCellToPosition({18, 10}));
+        createPlayer(renderer, gridCellToPosition({1, 17}));
+        createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
 	} else {
+        createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
 		createPlayer(renderer, gridCellToPosition(vec2(playerPosition.second, playerPosition.first)));
 	}
 
@@ -926,51 +933,60 @@ void WorldSystem::handle_collisions()
 				// registry.remove_all_components_of(entity2);
 			}
 		}
-		else if (registry.keys.has(entity2))
-		{
-			if (registry.players.has(entity))
-			{
-				float predictionTime = 0.001f; // 100 ms = 0.1s
+		// else if (registry.keys.has(entity2))
+		// {
+		// 	if (registry.players.has(entity))
+		// 	{
+		// 		float predictionTime = 0.001f; // 100 ms = 0.1s
 
-				if (physics_system.willMeshCollideSoon(entity, entity2, predictionTime))
-				{
-					Motion& keyMotion = registry.motions.get(entity2);
-					Motion& playerMotion = registry.motions.get(entity);
+		// 		if (physics_system.willMeshCollideSoon(entity, entity2, predictionTime))
+		// 		{
+		// 			Motion& keyMotion = registry.motions.get(entity2);
+		// 			Motion& playerMotion = registry.motions.get(entity);
 
-					if (glm::length(playerMotion.velocity) > 0.0f) 
-					{
-						keyMotion.velocity = playerMotion.velocity * 3.0f;
-					}
-					else 
-					{
-						keyMotion.velocity = vec2(0.0f, 0.0f);
-					}
-				}
-			}
-			else if (registry.chests.has(entity))
-			{
-				Motion& keyMotion = registry.motions.get(entity2);
-				Motion& chestMotion = registry.motions.get(entity);
+		// 			if (glm::length(playerMotion.velocity) > 0.0f) 
+		// 			{
+		// 				keyMotion.velocity = playerMotion.velocity * 3.0f;
+		// 			}
+		// 			else 
+		// 			{
+		// 				keyMotion.velocity = vec2(0.0f, 0.0f);
+		// 			}
+		// 			// std::cout << "Mesh collision imminent between player and hexagon" << std::endl;
+		// 		}
+		// 		else 
+		// 		{
+		// 			// std::cout << "No mesh collision predicted soon" << std::endl;
+		// 		}
+		// 	}
+		// 	else if (registry.chests.has(entity))
+		// 	{
+		// 		Motion& keyMotion = registry.motions.get(entity2);
+		// 		Motion& chestMotion = registry.motions.get(entity);
 
-				Mesh& chestMesh = *registry.meshPtrs.get(entity);
+		// 		Mesh& chestMesh = *registry.meshPtrs.get(entity);
 
-				std::vector<vec2> chestWorldVertices = physics_system.getWorldVertices(chestMesh.textured_vertices, chestMotion.position, chestMotion.scale);
+		// 		std::vector<vec2> chestWorldVertices = physics_system.getWorldVertices(chestMesh.textured_vertices, chestMotion.position, chestMotion.scale);
 
-				if (physics_system.pointInPolygon(keyMotion.position, chestWorldVertices))
-				{
-                    removals.push_back(entity);
-                    removals.push_back(entity2);
+		// 		if (physics_system.pointInPolygon(keyMotion.position, chestWorldVertices))
+		// 		{
+		// 			// remove chest
+		// 			// registry.remove_all_components_of(entity);
+		// 			// registry.remove_all_components_of(entity2);
+
+        //             removals.push_back(entity);
+        //             removals.push_back(entity2);
                 
-					if (progress_map["tutorial_mode"]) {
-						current_state = GameState::NEXT_LEVEL;
-						progress_map["tutorial_mode"] = false;
-						removeInfoBoxes();
-						goToNextLevel();
-						emptyMiniMap();
-					}
-				}
-			}
-		}
+		// 			if (progress_map["tutorial_mode"]) {
+		// 				current_state = GameState::NEXT_LEVEL;
+		// 				progress_map["tutorial_mode"] = false;
+		// 				goToNextLevel();
+		// 				current_state = GameState::NEXT_LEVEL;
+		// 				emptyMiniMap();
+		// 			}
+		// 		}
+		// 	}
+		// }
 		else if (registry.enemies.has(entity2))
 		{
 			Enemy& enemy = registry.enemies.get(entity2);
@@ -1020,10 +1036,12 @@ void WorldSystem::handle_collisions()
 					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
             
                     Player& player = registry.players.get(registry.players.entities[0]);
-                    player.germoney_count += 1;
+                    player.germoney_count += 10;
 
 					if (level != FINAL_BOSS_LEVEL) {
-						createBuff(vec2(enemy_position.x, enemy_position.y));
+
+						// add a chance to fail?
+						createBuffWithChanceToFail(vec2(enemy_position.x, enemy_position.y));
 					}
 					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15); 
                     removals.push_back(entity2);
@@ -1065,7 +1083,9 @@ void WorldSystem::handle_collisions()
 							for (auto e : registry.dashes.entities) {
 								removals.push_back(e);
 							}
-							playerMotion.velocity = -1.f * glm::normalize(playerMotion.velocity) * PLAYER_DASH_SPEED;
+							vec2 new_velocity = glm::length(playerMotion.velocity) > 0.1f ? playerMotion.velocity : vec2(0, 5.f);
+
+							playerMotion.velocity = -1.f * glm::normalize(new_velocity) * PLAYER_DASH_SPEED * 2.f;
 							player.knockback_duration = 500.f;
 						}
 
@@ -1078,10 +1098,64 @@ void WorldSystem::handle_collisions()
 							if (finalBossAI.state != FinalBossState::TIRED) {
 								enemy.health += PLAYER_DASH_DAMAGE;
 							}
-							playerMotion.velocity = -1.f * glm::normalize(playerMotion.velocity) * PLAYER_DASH_SPEED;
+
+							// velocity safe guard
+							vec2 new_velocity = glm::length(playerMotion.velocity) > 0.1f ? playerMotion.velocity : vec2(0, 5.f);
+
+							playerMotion.velocity = -1.f * glm::normalize(new_velocity) * PLAYER_DASH_SPEED * 2.f;
 							player.knockback_duration = 500.f;
 						}
                     }
+				} 
+				else if (registry.bossAIs.has(entity2)) 
+				{
+					BossAI& bossAI = registry.bossAIs.get(entity2);
+
+					if (bossAI.state == BossState::RUMBLE && registry.players.has(entity))
+					{
+						Motion& bossMotion = registry.motions.get(entity2);
+						Motion& playerMotion = registry.motions.get(entity);
+
+						Player& player = registry.players.get(entity);
+						uint current_time = SDL_GetTicks();
+
+
+						if (!bossAI.is_charging) {
+							if (!registry.damageCooldowns.has(entity))
+							{
+								registry.damageCooldowns.insert(entity, { current_time });
+								damagePlayer(BOSS_RUMBLE_DAMAGE);;
+							}
+							else
+							{
+								DamageCooldown& dc = registry.damageCooldowns.get(entity);
+								std::cout << current_time << std::endl;
+								std::cout << dc.last_damage_time << std::endl;
+								if (current_time - dc.last_damage_time >= 500)
+								{
+									dc.last_damage_time = current_time;
+									damagePlayer(BOSS_RUMBLE_DAMAGE);;
+								}
+							}
+							
+
+                            Mix_PlayChannel(-1, damage_sound, 0);
+						}
+
+						if (player.knockback_duration > 0.f )
+						{
+							vec2 bossDirection = glm::length(bossMotion.velocity) > 0.0001f
+							? glm::normalize(bossMotion.velocity)
+							: vec2(1.f, 0.f); // default direction, rightwards
+						
+							vec2 knockBackDirection = bossDirection;
+                            
+                            // check if playermotion velocity is zero or very very low
+                            playerMotion.velocity = glm::length(playerMotion.velocity) < 0.00001f ? vec2(0.1f, 0.0f) : playerMotion.velocity;
+							playerMotion.velocity = knockBackDirection * 1000.f;
+							bossMotion.velocity = {0.f, 0.f};						
+						}
+					}
 				}
 				else
 				{
@@ -1114,9 +1188,9 @@ void WorldSystem::handle_collisions()
 				
                 if (enemy.health <= 0)
                 {
-                    if (registry.bacteriophageAIs.has(entity2))
+					if (registry.bacteriophageAIs.has(entity2))
                     {
-                        bacteriophage_idx.erase(registry.bacteriophageAIs.get(entity2).placement_index);
+						bacteriophage_idx.erase(registry.bacteriophageAIs.get(entity2).placement_index);
                     }
                     
                     vec2 enemy_position = enemy_motion.position;
@@ -1132,7 +1206,7 @@ void WorldSystem::handle_collisions()
 					if (registry.bossAIs.has(entity2) || registry.finalBossAIs.has(entity2)) {
 						player.germoney_count += 100;
 					} else {
-						player.germoney_count += 1;
+						player.germoney_count += 15;
 					}
 
 					if (level != FINAL_BOSS_LEVEL) {
@@ -1140,46 +1214,13 @@ void WorldSystem::handle_collisions()
 					}
                     particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
                 } 
-
-				if (registry.bossAIs.has(entity2)) 
-				{
-					BossAI& bossAI = registry.bossAIs.get(entity2);
-
-					if (bossAI.state == BossState::RUMBLE && registry.players.has(entity))
-					{
-						Motion& bossMotion = registry.motions.get(entity2);
-						Motion& playerMotion = registry.motions.get(entity);
-
-						Player& player = registry.players.get(entity);
-						// need to check the rumble cool down
-
-						if (!bossAI.is_charging || !bossAI.is_fleeing) {
-							damagePlayer(BOSS_RUMBLE_DAMAGE);
-
-                            Mix_PlayChannel(-1, damage_sound, 0);
-						}
-
-						if (player.knockback_duration > 0.f )
-						{
-							vec2 bossDirection = glm::length(bossMotion.velocity) > 0.0001f
-							? glm::normalize(bossMotion.velocity)
-							: vec2(1.f, 0.f); // default direction, rightwards
-						
-							vec2 knockBackDirection = bossDirection;
-                            
-                            // check if playermotion velocity is zero or very very low
-                            playerMotion.velocity = glm::length(playerMotion.velocity) < 0.00001f ? vec2(0.1f, 0.0f) : playerMotion.velocity;
-							playerMotion.velocity = knockBackDirection * 1000.f;
-							bossMotion.velocity = {0.f, 0.f};						
-						}
-					}
-				}
 			
 			}
 		}
 		else if (registry.buffs.has(entity2) && registry.players.has(entity))
 		{
 			collectBuff(entity, entity2);
+			Mix_PlayChannel(-1, buff_pickup, 0);
             removals.push_back(entity2);
 		}
 	}
@@ -1203,24 +1244,24 @@ bool WorldSystem::is_over() const
 // on key callback
 void WorldSystem::on_key(int key, int, int action, int mod)
 {
-    // if (action == GLFW_RELEASE && key == GLFW_KEY_N) {
-    //     if (progress_map["tutorial_mode"]) {
-    //         current_state = GameState::NEXT_LEVEL;
-    //         progress_map["tutorial_mode"] = false;
-    //         removeInfoBoxes();
-    //         goToNextLevel();
-    //         emptyMiniMap();
-    //     } else {
-    //         Entity screen_state_entity = renderer->get_screen_state_entity();
-    //         ScreenState &screen = registry.screenStates.get(screen_state_entity);
-    //         screen.darken_screen_factor = 1;
-    //         darken_screen_timer = 0.0f;
-    //         current_state = GameState::NEXT_LEVEL;
-    //         Mix_PlayChannel(-1, portal_sound, 0);
-    //         goToNextLevel();
-    //     }
-    // }
-
+	if (action == GLFW_RELEASE && key == GLFW_KEY_N) {
+        if (progress_map["tutorial_mode"]) {
+            current_state = GameState::NEXT_LEVEL;
+            progress_map["tutorial_mode"] = false;
+            removeInfoBoxes();
+            goToNextLevel();
+            emptyMiniMap();
+        } else {
+            Entity screen_state_entity = renderer->get_screen_state_entity();
+            ScreenState &screen = registry.screenStates.get(screen_state_entity);
+            screen.darken_screen_factor = 1;
+            darken_screen_timer = 0.0f;
+            current_state = GameState::NEXT_LEVEL;
+            Mix_PlayChannel(-1, portal_sound, 0);
+            goToNextLevel();
+        }
+    }
+	
 	// exit game w/ ESC
 	if (action == GLFW_RELEASE && key == GLFW_KEY_ESCAPE)
 	{
@@ -1287,16 +1328,7 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 		{
 			if (current_state == GameState::GAME_PLAY)
 			{
-				Progression& p = registry.progressions.get(registry.progressions.entities[0]);
-
-				p.buffsFromLastRun = registry.players.get(registry.players.entities[0]).buffsCollected;		
-				previous_state = GameState::GAME_PLAY;
-				current_state = GameState::GAME_OVER;
                 triggerGameOver();
-                clearVignetteEffect();
-				createGameOverScreen();
-
-				currentBiome = Biome::RED;
 			}
 		}
 	}
@@ -1460,6 +1492,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				current_state = GameState::INFO;
 				removeStartScreen();
 				createInfoScreen();
+				createInfoBoxes();
 			}
 			else if (clickedButton == ButtonType::STARTBUTTON) 
 			{
@@ -1490,6 +1523,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 
 				if(c.price <= p.germoney_savings) {
 					// MONEY SOUND {s}
+					Mix_PlayChannel(-1, buy_sound, 0);
 
 					// BUY AND APPLY
 					p.germoney_savings -= c.price;
@@ -1529,6 +1563,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			{
 				Mix_PlayChannel(-1, click_sound, 0);
 				removeInfoScreen();
+				removeInfoBoxes();
 				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
 				current_state = previous_state;
@@ -1575,10 +1610,8 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 
 		else if (current_state == GameState::VICTORY && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
-			previous_state = current_state;
-			current_state = GameState::START_SCREEN_ANIMATION;
 			removeCutScene();
-			restart_game();
+			triggerGameOver();
 		}
 	}
 }
@@ -1764,9 +1797,10 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 	buff.collected = true;
 
 	applyBuff(player, buff.type);
+	createBuffPopup(buff.type);
 }
 
-void WorldSystem::applyBuff(Player& player, int buff_type)
+void WorldSystem::applyBuff(Player& player, BUFF_TYPE buff_type)
 {
 	bool skipUIRender = false;
 
@@ -1782,15 +1816,15 @@ void WorldSystem::applyBuff(Player& player, int buff_type)
 		break;
 
 	case 2: // Hemoglobin
-		player.detection_range -= player.dash_cooldown_ms * 0.05f;
+		player.detection_range -= player.detection_range * 0.05f;
+		player.detection_range = std::max(MIN_DETECTION_RANGE, player.detection_range);
 		break;
 
 	case 3: // Golgi Apparatus Buff (need to be implemented)
 		player.dash_cooldown_ms = player.dash_cooldown_ms * 0.95;
 		break;
-
 	case 4: // Chloroplast
-		player.healing_rate += 0.03;
+		player.healing_rate += 0.05;
 		break;
 	case 5: // Plant Cell Wall
 		player.sheilds += 1;
@@ -1804,18 +1838,20 @@ void WorldSystem::applyBuff(Player& player, int buff_type)
 		player.bulletsPerShot++;
 		break;
 	case 8: // CytoPlasm
-		player.max_health += 10;
+		player.max_health += 30;
 		break;
 	case 9: // Pilli OR Virality
 		//	increases bullet area cone // projectile speed instead?
-		player.bulletSpeed += 200;
+		player.bulletSpeed += 100;
+		player.bulletSpeed = std::min(MAX_PROJECTILE_SPEED, player.bulletSpeed);
 		break;
 	case 10: // Spare Nucleus
 		player.extra_lives++;
 		break;
 	case 11: // Vacuole
 		//	 - doesnt render in the ui... - Heals hp -------------------------------> POPUP CALL HERE
-		player.current_health += 50;
+		player.current_health += 0.25 * player.max_health;
+		player.current_health = std::min(player.max_health, player.current_health);
 		skipUIRender = true;
 		break;
 	case 12: // Endoplasmic Reticulum 
@@ -1826,6 +1862,7 @@ void WorldSystem::applyBuff(Player& player, int buff_type)
 		break;
 	case 14: // Secretor cell
 		player.dashDecay += 0.005; // SUPER OP
+		player.dashDecay = std::min(MAX_VELOCITY_DECAY_RATE, player.dashDecay);
 		break;
 	case 15: // IDK some weird orange and pink shit	
 		player.angleConeRadius += 30;
@@ -1842,11 +1879,9 @@ void WorldSystem::applyBuff(Player& player, int buff_type)
 	case 19: // Black Goo  - temp turn screen dark?
 		//	Some nerf?
 		break;
-
-
-		default:
-		std::cerr << "Unknown buff type: " << buff_type << std::endl;
-		break;
+    default: // INFO BUFF (tutorial)
+        skipUIRender = true;
+        break;
 	}
     
 	if(!skipUIRender) {
@@ -1998,9 +2033,13 @@ void WorldSystem::saveGame() {
 	gameData["player"]["motion"] = json(playerMotion);
 
 	// save buff status
-	std::vector<BuffUI> buffs = registry.buffUIs.components;
+	std::vector<BuffUI> to_save;
+	for (auto& buffUI : registry.buffUIs.entities)
+	{
+		if (!registry.popupElements.has(buffUI)) to_save.push_back(registry.buffUIs.get(buffUI));
+	}
 
-	gameData["buffs"] = json(buffs);
+	gameData["buffs"] = json(to_save);
 
 	// save progress
 	Entity progressEntity = registry.progressions.entities[0];
@@ -2147,8 +2186,6 @@ void WorldSystem::loadProgress() {
 
 	std::ifstream p(progress_filename);
 
-	removeInfoBoxes();
-
 	if (registry.keys.size() != 0) {
 		registry.remove_all_components_of(registry.keys.entities[0]);
 	}
@@ -2203,24 +2240,24 @@ void WorldSystem::placeBuffsOnShopScreen() {
 		vec2 position = registry.motions.get(registry.shops.entities[i]).position;
 
 		if(placed == 0) {
-			ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, -1));
-			c.price = 1000.0;
+			ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, INJECTION));
+			c.price = 5000.0;
 		} else {
 			if(offerSlotBoost) {
-				ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, -2));
+				ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, SLOT_INCREASE));
 				c.price = 200.0 * unlocked;	// dynamic pricing
 				offerSlotBoost = false; // OFFERED NOW.
 			} else {
 				// GET RANDOM TYPE
 				// GET PRICE PER TYPE
-				int buffType = getRandomBuffType();
-				if(buffType == 11) {
-					buffType = 10;
+				BUFF_TYPE buffType = getRandomBuffType();
+				if(buffType == VACUOLE) {
+					buffType = SPARE_NUCLEUS;
 				}
 
-				std::vector<int> commonBuffs = {0, 1, 2, 3, 5, 6, 11};
-				std::vector<int> rareBuffs = {4, 8, 9, 12};
-				std::vector<int> eliteBuffs = {7, 10, 13, 14};
+				std::vector<BUFF_TYPE> commonBuffs = { TAIL, MITOCHONDRIA, HEMOGLOBIN, GOLGI, CELL_WALL, AMINO_ACID, VACUOLE };
+				std::vector<BUFF_TYPE> rareBuffs = { CHLOROPLAST, CYTOPLASM, PILLI, ENDOPLASMIC_RETICULUM };
+				std::vector<BUFF_TYPE> eliteBuffs = { LYSOSOME, SPARE_NUCLEUS, OCELOID, SECRETOR };
 
 				ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, buffType));
 				c.price = 1000;
@@ -2237,4 +2274,24 @@ void WorldSystem::placeBuffsOnShopScreen() {
 
 		placed++;
 	}
+}
+
+void WorldSystem::switchMusicThemeToBoss() {
+	Mix_FadeOutMusic(2000);
+
+	// while (Mix_FadingMusic() == MIX_FADING_OUT) {
+	// 	SDL_Delay(100);
+	// }
+
+	Mix_FadeInMusic(boss_background_music, -1, 2000); // 2-second fade in
+}
+
+void WorldSystem::switchMusicBossToTheme() {
+	Mix_FadeOutMusic(2000);
+
+	// while (Mix_FadingMusic() == MIX_FADING_OUT) {
+	// 	SDL_Delay(100);
+	// }
+
+	Mix_FadeInMusic(background_music, -1, 2000); // 2-second fade in
 }

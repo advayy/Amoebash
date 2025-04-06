@@ -432,20 +432,14 @@ void RenderSystem::draw()
 	}
 
 	// draw the mini map
-	drawTexturedMesh(registry.miniMaps.entities[0], projection_2D);
-	drawTexturedMesh(registry.thermometers.entities[0], projection_2D);
+	// drawTexturedMesh(registry.miniMaps.entities[0], projection_2D);
+	// drawTexturedMesh(registry.thermometers.entities[0], projection_2D);
 
 	// for (Entity entity : registry.healthBars.entities) {
     // 	if (registry.renderRequests.has(entity)) {
     //     	drawTexturedMesh(entity, projection_2D);
     // 	}
 	// }
-
-	// draw static ui elemments
-	for (Entity entity : registry.uiElements.entities)
-	{
-		drawTexturedMesh(entity, projection_2D);
-	}
 
 	for (Entity entity : registry.bossArrows.entities)
 	{
@@ -466,7 +460,20 @@ void RenderSystem::draw()
 		drawTexturedMesh(pause, projection_2D);
 	}
 
+	// draw static ui elemments
+	for (Entity entity : registry.uiElements.entities)
+	{
+		drawTexturedMesh(entity, projection_2D);
+	}
+
     drawText();
+
+	for (auto& entity : registry.texts.entities)
+	{
+		Text& text = registry.texts.get(entity);
+		Motion& motion = registry.motions.get(entity);
+		renderText(text.text, motion.position.x, motion.position.y, motion.scale.x, text.color); 
+	}
 
 	// INSTANCING: Draw instanced particles
 	drawInstancedParticles();
@@ -496,17 +503,19 @@ void RenderSystem::drawText() {
 
 void RenderSystem::drawBuffCountText() {
         for (auto entity : registry.buffUIs.entities) {
-        BuffUI &buffUI = registry.buffUIs.get(entity);
-        Motion &motion = registry.motions.get(entity);
+			if (registry.popupElements.has(entity)) continue;
 
-        vec2 screen_pos = worldToScreen(motion.position);
+			BuffUI &buffUI = registry.buffUIs.get(entity);
+			Motion &motion = registry.motions.get(entity);
 
-        int buffCount = registry.players.get(registry.players.entities[0]).buffsCollected[buffUI.buffType];
-        if (buffCount > 0) {
-            renderText(std::to_string(buffCount), screen_pos.x + 5.f, screen_pos.y - 15.f, .4f, vec3(1.f, 1.f, 1.f));
-        } else {
-            continue;
-        }
+			vec2 screen_pos = worldToScreen(motion.position);
+
+			int buffCount = registry.players.get(registry.players.entities[0]).buffsCollected[buffUI.buffType];
+			if (buffCount > 0) {
+				renderText(std::to_string(buffCount), screen_pos.x + 5.f, screen_pos.y - 15.f, .4f, vec3(1.f, 1.f, 1.f));
+			} else {
+				continue;
+			}
     }
 }
 
@@ -533,6 +542,29 @@ void RenderSystem::drawDangerFactorText() {
     screen_pos.y -= THERMOMETER_HEIGHT * .55f;
 
     renderText(dangerText, screen_pos.x, screen_pos.y, .3f, vec3(1.f, 1.f, 1.f));
+}
+
+void RenderSystem::drawInfoText() {
+	if (registry.infoBoxes.size() == 0) return;
+	vec2 screen_pos = worldToScreen(vec2(0, 0));
+	std::vector<std::string> infoText = {
+		"Welcome to the Amoebash!", "Our game is a top-down roguelike, with a focus on interesting movement.",
+		"Our game was made to be accessable with majority of the experience only needing one hand!", 
+		"We hope you enjoy the experience", 
+		"Sincerely, the Devs,",
+		"",
+		"Advay Rajguru, Mercury Mcindoe, Shrey Gangwar, Dany Raihan, Hazel Chen & Saurav Banna",
+		"",
+		"With a special shoutout to Carter Woodworth (netcarrot) for the amazing sound design"};
+	
+	float init_padding = 130;
+	float line_padding = 40;
+	screen_pos.x -= WINDOW_WIDTH_PX/2- init_padding;
+	screen_pos.y += WINDOW_HEIGHT_PX/2 - init_padding;
+
+	for (int i = 0; i < infoText.size(); i++) {
+		renderText(infoText[i], screen_pos.x, screen_pos.y - (line_padding * i), .5f, vec3(0.f, 0.f, 0.f));
+	}
 }
 
 void RenderSystem::drawGermoneyText() {
@@ -768,6 +800,7 @@ void RenderSystem::drawScreenAndButtons(
 				drawTexturedMesh(e, projection_matrix);
 			}
 		}
+		drawInfoText();
 	}
 
 	if (buttonTypes.size() != 0)
