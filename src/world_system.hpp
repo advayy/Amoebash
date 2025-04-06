@@ -194,6 +194,4 @@ private:
 
 	void updateDangerLevel(float elapsed_ms_since_last_update);
 	void placeBuffsOnShopScreen();
-
-    int tutorialInfoBuffCount = 0;
 };

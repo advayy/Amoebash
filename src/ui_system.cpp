@@ -1066,20 +1066,57 @@ Entity createBuffUI(vec2 position, BUFF_TYPE type, vec2 scale)
 
 	Motion &motion = registry.motions.emplace(buffUI);
 	motion.position = position;
-	motion.scale = {BUFF_UI_WIDTH, BUFF_UI_HEIGHT};
+	motion.scale = scale;
 
-	registry.renderRequests.insert(buffUI,
-								   {TEXTURE_ASSET_ID::BUFFS_SHEET,
-									EFFECT_ASSET_ID::SPRITE_SHEET,
-									GEOMETRY_BUFFER_ID::SPRITE});
+    if (type == INFO_BOSS1) {
+        TEXTURE_ASSET_ID texture = static_cast<TEXTURE_ASSET_ID>(static_cast<int>(TEXTURE_ASSET_ID::BOSS_STAGE_1));
 
-	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(buffUI);
-	spriteSheet.total_frames = 20;	 
-	spriteSheet.current_frame = type;
-								
-	SpriteSize &sprite = registry.spritesSizes.emplace(buffUI);
-	sprite.width = scale.x;
-	sprite.height = scale.y;
+        registry.renderRequests.insert(
+            buffUI,
+            {
+                texture,
+                EFFECT_ASSET_ID::SPRITE_SHEET,
+                GEOMETRY_BUFFER_ID::SPRITE
+            }
+        );
+
+        Animation& a = registry.animations.emplace(buffUI);
+        a.start_frame = 0;
+        a.end_frame = 7;
+        a.time_per_frame = 100.0f;
+        a.loop = ANIM_LOOP_TYPES::LOOP;
+
+        SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(buffUI);
+        spriteSheet.total_frames = 7;
+        spriteSheet.current_frame = 0;
+
+        SpriteSize& sprite = registry.spritesSizes.emplace(buffUI);
+        sprite.width = motion.scale.x;
+        sprite.height = motion.scale.y;
+    } else if (type > BLACK_GOO) {
+        registry.renderRequests.insert(
+            buffUI,
+            {
+                TEXTURE_ASSET_ID::INFO_BUFF,
+                EFFECT_ASSET_ID::TEXTURED,
+                GEOMETRY_BUFFER_ID::SPRITE
+            }
+        );
+    } else {
+        registry.renderRequests.insert(buffUI,
+                                       {TEXTURE_ASSET_ID::BUFFS_SHEET,
+                                        EFFECT_ASSET_ID::SPRITE_SHEET,
+                                        GEOMETRY_BUFFER_ID::SPRITE});
+    
+        SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(buffUI);
+        spriteSheet.total_frames = 20;	 
+        spriteSheet.current_frame = type;
+                                    
+        SpriteSize &sprite = registry.spritesSizes.emplace(buffUI);
+        sprite.width = scale.x;
+        sprite.height = scale.y;
+    }
+
 	
 	registry.uiElements.emplace(buffUI, UIElement{motion.position, motion.scale});
 	
@@ -1111,7 +1148,7 @@ void renderCollectedBuff(RenderSystem *renderer, BUFF_TYPE buffType)
         }
     }
 
-	int freeSlot = registry.buffUIs.size(); // Assume that we will never leave a buff on there with a gap when removing.
+	int freeSlot = registry.buffUIs.size() - registry.popupElements.size(); // Assume that we will never leave a buff on there with a gap when removing.
 	int buffsPerRow = BUFF_NUM / 2;
 	vec2 position;
 	

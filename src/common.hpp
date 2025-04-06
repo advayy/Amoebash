@@ -280,22 +280,11 @@ const std::unordered_map<int, std::string> BUFF_TYPE_TO_NAME = {
     {12, "Endoplasmic Reticulum"},
     {13, "Oceloid"},
     {14, "Secretor"},
-    {15, "Orange"}
-};
-
-const std::unordered_map<int, std::string> INFO_BUFF_TO_POPUP = {
-    {1, {"Movement", "Use mouse to move around"}},
-    {2, {"Movement", "Left click to dash"}},
-    {3, {"Pause", "Use 'Space' to pause the game"}},
-    {4, {"Save/Load", "Save on pause, use 'L' to load game in the main menu"}},
-    {5, {"Attack", "Dash into enemies to damage them"}},
-    {6, {"Attack", "Use 'S' to shoot enemies"}},
-    {7, {"Buffs", "Collect buffs by killing enemies"}},
-    {8, {"Nucleus Menu", "Select buffs to take into your next run when you die"}},
-    {9, {"Germoney", "Kill enemies to collect Germoney"}},
-    {10, {"Shop", "Use germoney to purchase goods"}},
-    {11, {"Game", "5 levels and 2 bosses await"}},
-    {12, {"Portal", "Enter the portal to go to the next level"}},
+    {15, "Orange"},
+    {16, "Peroxisomes"},
+    {17, "Mutation"},
+    {18, "Facehugger"},
+    {19, "Black Goo"}
 };
 
 const float BUFF_WIDTH = 20.0f * WORK_SCALE_FACTOR;
