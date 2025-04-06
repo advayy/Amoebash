@@ -2085,6 +2085,20 @@ bool WorldSystem::checkLoadFileExists() {
 // load the game from the file, after initialization we over-write the info we want to load to the game
 // happens on press L in the game start screen
 void WorldSystem::loadGame() {
+	std::vector<Entity> removals;
+	// remove all buffs with buffType above INFOBUFF1
+	for (uint i = 0; i < registry.buffs.size(); i++) {
+		Buff& buff = registry.buffs.get(registry.buffs.entities[i]);
+		if (buff.type >= INFO_BUFF0) {
+			removals.push_back(registry.buffs.entities[i]);
+		}
+	}
+
+	int size = removals.size();
+	for (int i = 0; i < size; i++) {
+		registry.remove_all_components_of(removals[i]);
+	}
+
 	std::cout << "Loading Game!" << std::endl;
 
 	std::string filename = std::string(PROJECT_SOURCE_DIR) + "/data/save/world_status.json";

@@ -375,7 +375,6 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 					vec2 spawnPos = enemyMotion.position + dir * enemyMotion.scale.x / 3.f;
 
 					createBossProjectile(spawnPos, enemyBehavior.projectile_size, velocity);
-
 				}
 
 				enemyBehavior.shoot_cool_down = 500.f;	
