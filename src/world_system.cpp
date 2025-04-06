@@ -486,6 +486,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
     updateMouseCoords(); 
 	updateHuds();
 
+	updatePopups(elapsed_ms_since_last_update);
+
 	handlePlayerMovement(elapsed_ms_since_last_update);
 	handlePlayerHealth(elapsed_ms_since_last_update);
 
@@ -1666,9 +1668,10 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 	buff.collected = true;
 
 	applyBuff(player, buff.type);
+	createBuffPopup(buff.type);
 }
 
-void WorldSystem::applyBuff(Player& player, int buff_type)
+void WorldSystem::applyBuff(Player& player, BUFF_TYPE buff_type)
 {
 	bool skipUIRender = false;
 
@@ -1903,9 +1906,13 @@ void WorldSystem::saveGame() {
 	gameData["player"]["motion"] = json(playerMotion);
 
 	// save buff status
-	std::vector<BuffUI> buffs = registry.buffUIs.components;
+	std::vector<BuffUI> to_save;
+	for (auto& buffUI : registry.buffUIs.entities)
+	{
+		if (!registry.popupElements.has(buffUI)) to_save.push_back(registry.buffUIs.get(buffUI));
+	}
 
-	gameData["buffs"] = json(buffs);
+	gameData["buffs"] = json(to_save);
 
 	// save progress
 	Entity progressEntity = registry.progressions.entities[0];
@@ -2107,24 +2114,24 @@ void WorldSystem::placeBuffsOnShopScreen() {
 		vec2 position = registry.motions.get(registry.shops.entities[i]).position;
 
 		if(placed == 0) {
-			ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, -1));
+			ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, INJECTION));
 			c.price = 1000.0;
 		} else {
 			if(offerSlotBoost) {
-				ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, -2));
+				ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, SLOT_INCREASE));
 				c.price = 200.0 * unlocked;	// dynamic pricing
 				offerSlotBoost = false; // OFFERED NOW.
 			} else {
 				// GET RANDOM TYPE
 				// GET PRICE PER TYPE
-				int buffType = getRandomBuffType();
-				if(buffType == 11) {
-					buffType = 10;
+				BUFF_TYPE buffType = getRandomBuffType();
+				if(buffType == VACUOLE) {
+					buffType = SPARE_NUCLEUS;
 				}
 
-				std::vector<int> commonBuffs = {0, 1, 2, 3, 5, 6, 11};
-				std::vector<int> rareBuffs = {4, 8, 9, 12};
-				std::vector<int> eliteBuffs = {7, 10, 13, 14};
+				std::vector<BUFF_TYPE> commonBuffs = { TAIL, MITOCHONDRIA, HEMOGLOBIN, GOLGI, CELL_WALL, AMINO_ACID, VACUOLE };
+				std::vector<BUFF_TYPE> rareBuffs = { CHLOROPLAST, CYTOPLASM, PILLI, ENDOPLASMIC_RETICULUM };
+				std::vector<BUFF_TYPE> eliteBuffs = { LYSOSOME, SPARE_NUCLEUS, OVOID, SECRETOR };
 
 				ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, buffType));
 				c.price = 1000;

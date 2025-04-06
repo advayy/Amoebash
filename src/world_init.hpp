@@ -49,7 +49,7 @@ void applyVignetteEffect();
 void clearVignetteEffect();
     
 void damagePlayer(float damageAmount);
-int getRandomBuffType();
+BUFF_TYPE getRandomBuffType();
 Entity 	createGunCooldown();
 
 extern Biome currentBiome;

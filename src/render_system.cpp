@@ -468,6 +468,13 @@ void RenderSystem::draw()
 
     drawText();
 
+	for (auto& entity : registry.texts.entities)
+	{
+		Text& text = registry.texts.get(entity);
+		Motion& motion = registry.motions.get(entity);
+		renderText(text.text, motion.position.x, motion.position.y, motion.scale.x, text.color); 
+	}
+
 	// INSTANCING: Draw instanced particles
 	drawInstancedParticles();
 
@@ -496,17 +503,19 @@ void RenderSystem::drawText() {
 
 void RenderSystem::drawBuffCountText() {
         for (auto entity : registry.buffUIs.entities) {
-        BuffUI &buffUI = registry.buffUIs.get(entity);
-        Motion &motion = registry.motions.get(entity);
+			if (registry.popupElements.has(entity)) continue;
 
-        vec2 screen_pos = worldToScreen(motion.position);
+			BuffUI &buffUI = registry.buffUIs.get(entity);
+			Motion &motion = registry.motions.get(entity);
 
-        int buffCount = registry.players.get(registry.players.entities[0]).buffsCollected[buffUI.buffType];
-        if (buffCount > 0) {
-            renderText(std::to_string(buffCount), screen_pos.x + 5.f, screen_pos.y - 15.f, .4f, vec3(1.f, 1.f, 1.f));
-        } else {
-            continue;
-        }
+			vec2 screen_pos = worldToScreen(motion.position);
+
+			int buffCount = registry.players.get(registry.players.entities[0]).buffsCollected[buffUI.buffType];
+			if (buffCount > 0) {
+				renderText(std::to_string(buffCount), screen_pos.x + 5.f, screen_pos.y - 15.f, .4f, vec3(1.f, 1.f, 1.f));
+			} else {
+				continue;
+			}
     }
 }
 

@@ -922,14 +922,14 @@ void clearVignetteEffect() {
 }
 
 
-int getRandomBuffType() {
-	std::vector<int> commonBuffs = {0, 1, 2, 3, 5, 6, 11};
-	std::vector<int> rareBuffs = {4, 8, 9, 12};
-	std::vector<int> eliteBuffs = {7, 10, 13, 14};
+BUFF_TYPE getRandomBuffType() {
+	std::vector<BUFF_TYPE> commonBuffs = { TAIL, MITOCHONDRIA, HEMOGLOBIN, GOLGI, CELL_WALL, AMINO_ACID, VACUOLE };
+	std::vector<BUFF_TYPE> rareBuffs = { CHLOROPLAST, CYTOPLASM, PILLI, ENDOPLASMIC_RETICULUM };
+	std::vector<BUFF_TYPE> eliteBuffs = { LYSOSOME, SPARE_NUCLEUS, OVOID, SECRETOR };
 
     int categoryRoll = rand() % 100;
 
-    std::vector<int>* selectedCategory;
+    std::vector<BUFF_TYPE>* selectedCategory;
 
     if (categoryRoll < 50) {  // 50% chance for common
         selectedCategory = &commonBuffs;
@@ -950,7 +950,7 @@ void damagePlayer(float damageAmount) {
 
 	if(player.sheilds > 0) {
 		player.sheilds --;
-		removeBuffUI(5); // PLANT CELL WALL/ SHEILD
+		removeBuffUI(CELL_WALL); // PLANT CELL WALL/ SHEILD
 	} else {
 		player.current_health -= damageAmount * player.dangerFactor;
         applyVignetteEffect();
@@ -959,7 +959,7 @@ void damagePlayer(float damageAmount) {
 			if (player.extra_lives > 0) {
 				player.current_health = player.max_health/2;
 				player.extra_lives--;
-				removeBuffUI(10);
+				removeBuffUI(SPARE_NUCLEUS);
 			} else {
 				// game over
 			}

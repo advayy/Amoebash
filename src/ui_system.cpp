@@ -231,7 +231,7 @@ Entity createShopKeeper() {
 	return shopKeeper;
 }
 
-Entity createClickableShopBuff(vec2 position, int buffType)
+Entity createClickableShopBuff(vec2 position, BUFF_TYPE buffType)
 {
 
 	if(buffType >= 0 && buffType < 15) {
@@ -242,10 +242,10 @@ Entity createClickableShopBuff(vec2 position, int buffType)
 
 	TEXTURE_ASSET_ID selectedTexture = TEXTURE_ASSET_ID::BUFFS_SHEET;
 
-	if(buffType == -1) {
+	if(buffType == INJECTION) {
 		// injection
 		selectedTexture = TEXTURE_ASSET_ID::INJECTION;
-	} else if (buffType == -2) {
+	} else if (buffType == SLOT_INCREASE) {
 		selectedTexture = TEXTURE_ASSET_ID::SLOT_INCREASE_BUFF;
 	}
 
@@ -444,7 +444,7 @@ Entity createNucleusMenuScreen() {
 }
 
 // create the buff UI for carry on
-Entity createClickableBuffUI(vec2 position, int buffType)
+Entity createClickableBuffUI(vec2 position, BUFF_TYPE buffType)
 {
 	Entity buff = Entity();
 
@@ -1057,7 +1057,7 @@ void removeEnemyHPBar(Entity enemy) {
 }
 
 
-Entity createBuffUI(vec2 position, int type)
+Entity createBuffUI(vec2 position, BUFF_TYPE type, vec2 scale)
 {
 	Entity buffUI = Entity();
 
@@ -1078,16 +1078,26 @@ Entity createBuffUI(vec2 position, int type)
 	spriteSheet.current_frame = type;
 								
 	SpriteSize &sprite = registry.spritesSizes.emplace(buffUI);
-	sprite.width = BUFF_UI_WIDTH;
-	sprite.height = BUFF_UI_HEIGHT;
+	sprite.width = scale.x;
+	sprite.height = scale.y;
 	
 	registry.uiElements.emplace(buffUI, UIElement{motion.position, motion.scale});
 	
 	return buffUI;
 }
 
+Entity createRowBuffUI(vec2 position, BUFF_TYPE type)
+{
+	return createBuffUI(position, type, { BUFF_UI_WIDTH, BUFF_UI_HEIGHT });
+}
+
+Entity createPopupBuffUI(vec2 position, BUFF_TYPE type)
+{
+	return createBuffUI(position, type, { POPUP_BUFF_UI_WIDTH, POPUP_BUFF_UI_HEIGHT });
+}
+
 // Render collected buffs a certain amount per row that stacks
-void renderCollectedBuff(RenderSystem *renderer, int buffType)
+void renderCollectedBuff(RenderSystem *renderer, BUFF_TYPE buffType)
 {
     auto &collectedBuffs = registry.players.get(registry.players.entities[0]).buffsCollected;
     if (collectedBuffs[buffType] == 0) {
@@ -1117,19 +1127,19 @@ void renderCollectedBuff(RenderSystem *renderer, int buffType)
         if (freeSlot < buffsPerRow) // if the free slot id is larger than collected buffs 
         {
             position = {BUFF_START_POS.x + freeSlot * BUFF_SPACING, BUFF_START_POS.y};
-            Entity buffUI = createBuffUI(position, buffType);
+            Entity buffUI = createRowBuffUI(position, buffType);
         }
         else if (freeSlot >= buffsPerRow && freeSlot < BUFF_NUM)
         {
             position = {BUFF_START_POS.x + (freeSlot - buffsPerRow) * BUFF_SPACING,
                         BUFF_START_POS.y - BUFF_SPACING};
-            Entity buffUI = createBuffUI(position, buffType);
+            Entity buffUI = createRowBuffUI(position, buffType);
         }
     }
 
 }
 
-vec2 getBuffSlot (int buffType) {
+vec2 getBuffSlot (BUFF_TYPE buffType) {
 	vec2 position = {0, 0};
 
 	for(int i = 0; i < registry.buffUIs.size(); i++) {
@@ -1144,7 +1154,7 @@ vec2 getBuffSlot (int buffType) {
 	return position;
 }
 
-vec2 getBuffSlot_uiPos (int buffType) {
+vec2 getBuffSlot_uiPos (BUFF_TYPE buffType) {
 	vec2 position = {0, 0};
 
 	for(int i = 0; i < registry.buffUIs.size(); i++) {
@@ -1159,7 +1169,7 @@ vec2 getBuffSlot_uiPos (int buffType) {
 	return position;
 }
 
-void removeBuffUI(int buffType) {
+void removeBuffUI(BUFF_TYPE buffType) {
 	// After you find the position to remove, then first remove the buff, and for all motions that are greater than it, move them back + think of the wrap around case
 	// this ensures that the buff no and slot no are always paired.
 
@@ -1230,7 +1240,7 @@ void removeBuffUI(int buffType) {
 }
 
 
-void findAndRemove(std::unordered_map<int, int>& map, int N) {
+void findAndRemove(std::unordered_map<BUFF_TYPE, int>& map, BUFF_TYPE N) {
     auto it = map.find(N);
     if (it != map.end()) {
         if (it->second == 0) return;
@@ -1311,4 +1321,78 @@ void updateHuds()
 		};
 	}
 
+}
+
+void updatePopups(float elapsed_ms_since_last_update)
+{
+	removePopups([&](Entity& entity)
+		{
+			PopupWithImage& popup = registry.imagePopups.get(entity);
+			popup.duration -= elapsed_ms_since_last_update;
+			return popup.duration < 0;
+		});
+}
+
+void removePopups(std::function<bool(Entity&)> shouldRemove)
+{
+	std::vector<Entity> removals;
+
+	for (auto& entity : registry.imagePopups.entities)
+	{
+		if (shouldRemove(entity))
+		{
+			PopupWithImage& popup = registry.imagePopups.get(entity);
+			registry.remove_all_components_of(popup.text);
+			registry.remove_all_components_of(popup.description);
+			registry.remove_all_components_of(popup.image);
+			removals.push_back(entity);
+		}
+	}
+
+	for (int i = 0; i < removals.size(); i++)
+	{
+		registry.remove_all_components_of(removals[i]);
+	}
+}
+
+Entity createText(std::string text, vec2 start_pos, vec3 color, float scale)
+{
+	Entity entity = Entity();
+
+	registry.texts.insert(entity, { text, color });
+	Motion& motion = registry.motions.emplace(entity);
+	motion.position = start_pos;
+	motion.scale = { scale, scale };
+
+	return entity;
+}
+
+Entity createBuffPopup(BUFF_TYPE type)
+{
+	removePopups([](Entity& entity) { return true;});
+
+	Entity buffPopup = Entity();
+
+	const Entity& buffImage = createPopupBuffUI(BUFF_POPUP_POS + vec2(BUFF_POPUP_GAP, BUFF_POPUP_GAP), type);
+	registry.popupElements.emplace(buffImage);
+	Motion& buffImageMotion = registry.motions.get(buffImage);
+
+	auto buff_test = BUFF_TYPE_TO_TEXT.at(type);
+
+	registry.imagePopups.insert(
+		buffPopup,
+		PopupWithImage(
+			createText(buff_test.first, imageCoordToTextCoord(buffImageMotion.position) + vec2(buffImageMotion.scale.x, 0) + vec2(BUFF_POPUP_GAP, 0), { 1.0f, 1.0f, 1.0f }, 0.5),
+			createText(buff_test.second, imageCoordToTextCoord(buffImageMotion.position) + vec2(buffImageMotion.scale.x, 0) + vec2(BUFF_POPUP_GAP, -25), { 1.0f, 1.0f, 1.0f }, 0.3),
+			buffImage,
+			POPUP_DURATION
+		)
+	);
+
+	return buffPopup;
+}
+
+vec2 imageCoordToTextCoord(vec2 imageCoord)
+{
+	return vec2(imageCoord.x, -imageCoord.y) + vec2(WINDOW_WIDTH_PX / 2, WINDOW_HEIGHT_PX / 2);
 }

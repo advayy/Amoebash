@@ -15,7 +15,7 @@ Entity createNucleusMenuNucleus();
 Entity createNucleusMenuSlot(vec2 position, int slotNumber);
 Entity createNucleusMenuScreen();
 Entity createPauseScreen();
-Entity createClickableBuffUI(vec2 position, int buffType);
+Entity createClickableBuffUI(vec2 position, BUFF_TYPE buffType);
 
 void createGameplayCutScene();
 Entity createEndingWinScene();
@@ -46,16 +46,49 @@ void createDashRecharge();
 Entity createEnemyHPBar(Entity enemy, TEXTURE_ASSET_ID texture_id);
 void removeEnemyHPBar(Entity enemy);
 
-Entity createBuffUI(vec2 position, int type);
-void renderCollectedBuff(RenderSystem *renderer, int buffType);
+Entity createBuffUI(vec2 position, BUFF_TYPE type, vec2 scale);
+Entity createRowBuffUI(vec2 position, BUFF_TYPE type);
+Entity createPopupBuffUI(vec2 position, BUFF_TYPE type);
+void renderCollectedBuff(RenderSystem *renderer, BUFF_TYPE buffType);
+
+Entity createText(std::string text, vec2 start_pos, vec3 color, float scale);
 
 void updateHuds();
-vec2 getBuffSlot (int buffType);
-void removeBuffUI(int buffType);
-vec2 getBuffSlot_uiPos (int buffType);
-void findAndRemove(std::unordered_map<int, int>& map, int N);
+vec2 getBuffSlot (BUFF_TYPE buffType);
+void removeBuffUI(BUFF_TYPE buffType);
+vec2 getBuffSlot_uiPos (BUFF_TYPE buffType);
+void findAndRemove(std::unordered_map<BUFF_TYPE, int>& map, BUFF_TYPE N);
 
 Entity createShopKeeper();
 Entity createShopBox();
 Entity createShopPlate(vec2 pos);
-Entity createClickableShopBuff(vec2 position, int buffType);
+Entity createClickableShopBuff(vec2 position, BUFF_TYPE buffType);
+
+void updatePopups(float elapsed_ms_since_last_update);
+void removePopups(std::function<bool(Entity&)> shouldRemove);
+Entity createBuffPopup(BUFF_TYPE type);
+vec2 imageCoordToTextCoord(vec2 imageCoord);
+
+const std::map<BUFF_TYPE, std::pair<std::string, std::string>> BUFF_TYPE_TO_TEXT =
+{
+	{TAIL, {"Flagella", "Gives you a 5% speed boost"}},
+	{MITOCHONDRIA, {"Mitochondria", "Reduces Dash cooldown by 5%"}},
+	{HEMOGLOBIN, {"Hemoglobin", "Reduces enemy detection range by 5%"}},
+	{GOLGI, {"Golgi Apparatus", "Increases your health by 10"}},
+	{CHLOROPLAST, {"Chloroplast", "Increases your healing rate"}},
+	{CELL_WALL, {"Cell Wall", "Negate the next time you take damage"}},
+	{AMINO_ACID, {"Amino Acid", "Increases your Dash damage"}},
+	{LYSOSOME, {"Lysosome", "Shoot 1 more projectile"}},
+	{CYTOPLASM, {"Cytoplasm", "Increases your health by 10"}},
+	{PILLI, {"Pilli", "Projectile Speed Bost"}},
+	{SPARE_NUCLEUS, {"Spare Nucleus", "1+ Lives"}},
+	{VACUOLE, {"Vacuole", "Heals some health instantly"}},
+	{ENDOPLASMIC_RETICULUM, {"Endoplasmic Reticulum", "Not Implemented"}},
+	{OVOID, {"Oceloid", "Increases mini-map view range"}},
+	{SECRETOR, {"Secretor", "Increases dash drift"}},
+	{UNNAMED, {"Pilli", "Not Implemented"}},
+	{PEROXISOMES, {"Pilli", "Not Implemented"}},
+	{MUTATION, {"Pilli", "Not Implemented"}},
+	{FACEHUGGER, {"Pilli", "Not Implemented"}},
+	{BLACK_GOO, {"Pilli", "Not Implemented"}},
+};
