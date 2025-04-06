@@ -1077,7 +1077,9 @@ void WorldSystem::handle_collisions()
 							for (auto e : registry.dashes.entities) {
 								removals.push_back(e);
 							}
-							playerMotion.velocity = -1.f * glm::normalize(playerMotion.velocity) * PLAYER_DASH_SPEED;
+							vec2 new_velocity = glm::length(playerMotion.velocity) > 0.1f ? playerMotion.velocity : vec2(0, 5.f);
+
+							playerMotion.velocity = -1.f * glm::normalize(new_velocity) * PLAYER_DASH_SPEED * 2.f;
 							player.knockback_duration = 500.f;
 						}
 
@@ -1090,10 +1092,64 @@ void WorldSystem::handle_collisions()
 							if (finalBossAI.state != FinalBossState::TIRED) {
 								enemy.health += PLAYER_DASH_DAMAGE;
 							}
-							playerMotion.velocity = -1.f * glm::normalize(playerMotion.velocity) * PLAYER_DASH_SPEED;
+
+							// velocity safe guard
+							vec2 new_velocity = glm::length(playerMotion.velocity) > 0.1f ? playerMotion.velocity : vec2(0, 5.f);
+
+							playerMotion.velocity = -1.f * glm::normalize(new_velocity) * PLAYER_DASH_SPEED * 2.f;
 							player.knockback_duration = 500.f;
 						}
                     }
+				} 
+				else if (registry.bossAIs.has(entity2)) 
+				{
+					BossAI& bossAI = registry.bossAIs.get(entity2);
+
+					if (bossAI.state == BossState::RUMBLE && registry.players.has(entity))
+					{
+						Motion& bossMotion = registry.motions.get(entity2);
+						Motion& playerMotion = registry.motions.get(entity);
+
+						Player& player = registry.players.get(entity);
+						uint current_time = SDL_GetTicks();
+
+
+						if (!bossAI.is_charging) {
+							if (!registry.damageCooldowns.has(entity))
+							{
+								registry.damageCooldowns.insert(entity, { current_time });
+								damagePlayer(BOSS_RUMBLE_DAMAGE);;
+							}
+							else
+							{
+								DamageCooldown& dc = registry.damageCooldowns.get(entity);
+								std::cout << current_time << std::endl;
+								std::cout << dc.last_damage_time << std::endl;
+								if (current_time - dc.last_damage_time >= 500)
+								{
+									dc.last_damage_time = current_time;
+									damagePlayer(BOSS_RUMBLE_DAMAGE);;
+								}
+							}
+							
+
+                            Mix_PlayChannel(-1, damage_sound, 0);
+						}
+
+						if (player.knockback_duration > 0.f )
+						{
+							vec2 bossDirection = glm::length(bossMotion.velocity) > 0.0001f
+							? glm::normalize(bossMotion.velocity)
+							: vec2(1.f, 0.f); // default direction, rightwards
+						
+							vec2 knockBackDirection = bossDirection;
+                            
+                            // check if playermotion velocity is zero or very very low
+                            playerMotion.velocity = glm::length(playerMotion.velocity) < 0.00001f ? vec2(0.1f, 0.0f) : playerMotion.velocity;
+							playerMotion.velocity = knockBackDirection * 1000.f;
+							bossMotion.velocity = {0.f, 0.f};						
+						}
+					}
 				}
 				else
 				{
@@ -1126,9 +1182,9 @@ void WorldSystem::handle_collisions()
 				
                 if (enemy.health <= 0)
                 {
-                    if (registry.bacteriophageAIs.has(entity2))
+					if (registry.bacteriophageAIs.has(entity2))
                     {
-                        bacteriophage_idx.erase(registry.bacteriophageAIs.get(entity2).placement_index);
+						bacteriophage_idx.erase(registry.bacteriophageAIs.get(entity2).placement_index);
                     }
                     
                     vec2 enemy_position = enemy_motion.position;
@@ -1152,40 +1208,6 @@ void WorldSystem::handle_collisions()
 					}
                     particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
                 } 
-
-				if (registry.bossAIs.has(entity2)) 
-				{
-					BossAI& bossAI = registry.bossAIs.get(entity2);
-
-					if (bossAI.state == BossState::RUMBLE && registry.players.has(entity))
-					{
-						Motion& bossMotion = registry.motions.get(entity2);
-						Motion& playerMotion = registry.motions.get(entity);
-
-						Player& player = registry.players.get(entity);
-						// need to check the rumble cool down
-
-						if (!bossAI.is_charging || !bossAI.is_fleeing) {
-							damagePlayer(BOSS_RUMBLE_DAMAGE);
-
-                            Mix_PlayChannel(-1, damage_sound, 0);
-						}
-
-						if (player.knockback_duration > 0.f )
-						{
-							vec2 bossDirection = glm::length(bossMotion.velocity) > 0.0001f
-							? glm::normalize(bossMotion.velocity)
-							: vec2(1.f, 0.f); // default direction, rightwards
-						
-							vec2 knockBackDirection = bossDirection;
-                            
-                            // check if playermotion velocity is zero or very very low
-                            playerMotion.velocity = glm::length(playerMotion.velocity) < 0.00001f ? vec2(0.1f, 0.0f) : playerMotion.velocity;
-							playerMotion.velocity = knockBackDirection * 1000.f;
-							bossMotion.velocity = {0.f, 0.f};						
-						}
-					}
-				}
 			
 			}
 		}

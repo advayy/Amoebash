@@ -353,7 +353,7 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 				}
 				else if (enemyBehavior.state == BossState::FLEE)
 				{
-					enemyBehavior.flee_timer = 1500.f;
+					enemyBehavior.flee_timer = 500.f;
 					enemyBehavior.is_fleeing = true;
 				}
 			}		
