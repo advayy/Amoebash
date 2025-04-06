@@ -12,7 +12,7 @@ bool AISystem::isPlayerInRadius(vec2 player, vec2 enemy, float& distance, vec2& 
 	vec2 diff = player - enemy;
 	distance = glm::length(diff);
 	direction = glm::normalize(diff);
-	return distance < detectionRadius;
+	return distance < detectionRadius * registry.players.get(registry.players.entities[0]).detection_range;
 }
 
 SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity &enemyEntity, SpikeEnemyAI &enemyBehavior, float dist, vec2 direction, bool playerDetected, float elapsed_ms)

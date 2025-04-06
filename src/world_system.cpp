@@ -1808,15 +1808,15 @@ void WorldSystem::applyBuff(Player& player, BUFF_TYPE buff_type)
 		break;
 
 	case 2: // Hemoglobin
-		player.detection_range -= player.dash_cooldown_ms * 0.05f;
+		player.detection_range -= player.detection_range * 0.05f;
+		player.detection_range = std::max(MIN_DETECTION_RANGE, player.detection_range);
 		break;
 
 	case 3: // Golgi Apparatus Buff (need to be implemented)
 		player.dash_cooldown_ms = player.dash_cooldown_ms * 0.95;
 		break;
-
 	case 4: // Chloroplast
-		player.healing_rate += 0.03;
+		player.healing_rate += 0.05;
 		break;
 	case 5: // Plant Cell Wall
 		player.sheilds += 1;
@@ -1830,18 +1830,20 @@ void WorldSystem::applyBuff(Player& player, BUFF_TYPE buff_type)
 		player.bulletsPerShot++;
 		break;
 	case 8: // CytoPlasm
-		player.max_health += 10;
+		player.max_health += 30;
 		break;
 	case 9: // Pilli OR Virality
 		//	increases bullet area cone // projectile speed instead?
-		player.bulletSpeed += 200;
+		player.bulletSpeed += 100;
+		player.bulletSpeed = std::min(MAX_PROJECTILE_SPEED, player.bulletSpeed);
 		break;
 	case 10: // Spare Nucleus
 		player.extra_lives++;
 		break;
 	case 11: // Vacuole
 		//	 - doesnt render in the ui... - Heals hp -------------------------------> POPUP CALL HERE
-		player.current_health += 50;
+		player.current_health += 0.25 * player.max_health;
+		player.current_health = std::min(player.max_health, player.current_health);
 		skipUIRender = true;
 		break;
 	case 12: // Endoplasmic Reticulum 
@@ -1852,6 +1854,7 @@ void WorldSystem::applyBuff(Player& player, BUFF_TYPE buff_type)
 		break;
 	case 14: // Secretor cell
 		player.dashDecay += 0.005; // SUPER OP
+		player.dashDecay = std::min(MAX_VELOCITY_DECAY_RATE, player.dashDecay);
 		break;
 	case 15: // IDK some weird orange and pink shit	
 		player.angleConeRadius += 30;
