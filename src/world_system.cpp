@@ -499,6 +499,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 			previous_state = current_state;
 			current_state = GameState::VICTORY;
 			stateTimer = WIN_CUTSCENE_DURATION_MS;
+            clearVignetteEffect();
 			createEndingWinScene();
 		}
 	}
@@ -569,7 +570,7 @@ void WorldSystem::handleVignetteEffect(float elapsed_ms_since_last_update) {
                 screen.vignette_screen_factor = 0;
             }
         }
-    }
+	}
 }
 
 // Handle player health
@@ -605,6 +606,7 @@ void WorldSystem::triggerGameOver() {
     p.germoney_savings = player.germoney_count;
     previous_state = current_state;
     current_state = GameState::GAME_OVER;
+    currentBiome = Biome::RED; 
     createGameOverScreen();
 
 }
@@ -649,6 +651,9 @@ void WorldSystem::goToNextLevel()
 	level += 1;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
+
+	// update biome for the new level
+	setCurrentBiomeByLevel(level); 
 	
 	initializedMap = false;
 	currentTiles.clear();
@@ -703,17 +708,17 @@ void WorldSystem::goToNextLevel()
 // Reset the world state to its initial state
 void WorldSystem::restart_game()
 {
-
-	// std::cout << "Restarting..." << std::endl;
-    // std::cout << "Leve fl: " << level + 1 << std::endl;
-    
 	// Debugging for memory/component leaks
 	registry.list_all_components();
     
 	// Reset the game speed
 	current_speed = 1.f;
     
-	level = 0;
+	if (progress_map["tutorial_mode"]) {
+		level = 0;
+	} else {
+		level = 1;
+	}
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
 
@@ -1022,6 +1027,7 @@ void WorldSystem::handle_collisions()
 						}
 					}
 				}
+				
                 if (enemy.health <= 0)
                 {
                     if (registry.bacteriophageAIs.has(entity2))
@@ -1175,6 +1181,9 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 				current_state = GameState::GAME_OVER;
                 triggerGameOver();
                 clearVignetteEffect();
+				createGameOverScreen();
+
+				currentBiome = Biome::RED;
 			}
 		}
 	}
