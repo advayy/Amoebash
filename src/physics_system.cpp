@@ -3,7 +3,7 @@
 #include "world_init.hpp"
 #include "animation_system.hpp"
 #include <iostream>
-
+#include <queue>
 #include <glm/gtx/normalize_dot.hpp>
 // include lerp
 #include <glm/gtx/compatibility.hpp>
@@ -79,8 +79,76 @@ void PhysicsSystem::step(float elapsed_ms)
 		Motion &motion = motion_registry.components[i];
 
 
-		// std::cout << "Player Velocity " << motion.velocity.x << " " << motion.velocity.y << std::endl;
 		motion.position += motion.velocity * step_seconds;
+
+		if (registry.denderiteAIs.has(entity)) {
+			
+			DenderiteAI& denderiteAI = registry.denderiteAIs.get(entity);
+
+			if (denderiteAI.state == DenderiteState::HUNT) {
+				denderiteAI.timeSinceLastRecalc += elapsed_ms;
+
+				bool needsRecalc = denderiteAI.path.empty() ||
+                           denderiteAI.timeSinceLastRecalc > denderiteAI.recalcTimeThreshold;
+
+				if (needsRecalc) {
+					denderiteAI.path.clear();
+            		denderiteAI.currentNodeIndex = 0;
+
+					if(find_path(denderiteAI.path, motion.position, player_motion.position)) {
+						denderiteAI.timeSinceLastRecalc = 0;
+					} else {
+						motion.velocity = {0.f, 0.f};
+						motion.angle = 0.f;
+					}
+				}
+
+				if (!denderiteAI.path.empty()) {
+					if (denderiteAI.currentNodeIndex >= (int)denderiteAI.path.size()) {
+						motion.velocity = {0.f, 0.f};
+						motion.angle = 0.f;
+						denderiteAI.path.clear();
+						denderiteAI.currentNodeIndex = 0;
+					} else {
+						ivec2 currentTargetTile = denderiteAI.path[denderiteAI.currentNodeIndex];
+						vec2 targetWorldPos = gridCellToPosition(currentTargetTile);
+						vec2 offset = targetWorldPos - motion.position;
+						float dist = glm::length(offset);
+						
+						if (dist > 0.0001f) {
+							vec2 dir = offset / dist;
+							motion.velocity = dir * 300.f;
+							motion.angle = atan2f(dir.y, dir.x) * 180.f / M_PI + 90.f;
+						} else {
+							motion.velocity = {0.f, 0.f};
+							motion.angle = 0.f;
+						}
+		
+						float reachThreshold = 5.f;
+						if (dist < reachThreshold) {
+							denderiteAI.currentNodeIndex++;
+						}
+					}
+				}
+			}
+		}
+
+		if (registry.spiralProjectiles.has(entity)) {
+			float spiral_speed = 0.5f;
+			float angle = spiral_speed * step_seconds;
+
+			// 2D Rotation Matrix
+			float new_x = motion.velocity.x * cos(angle) - motion.velocity.y * sin(angle);
+			float new_y = motion.velocity.x * sin(angle) + motion.velocity.y * cos(angle);
+			motion.velocity = { new_x, new_y };
+		}
+
+		if (registry.followingProjectiles.has(entity)) {
+			float speed = glm::length(motion.velocity);
+			vec2 direction = glm::normalize(player_motion.position - motion.position);
+			motion.velocity = direction * speed;
+			motion.angle = atan2f(direction.y, direction.x) * 180 / M_PI + 90.f;
+		}
 
 		if (registry.keys.has(entity)) {
 			float dampingFactor = 0.8f;
@@ -106,8 +174,6 @@ void PhysicsSystem::step(float elapsed_ms)
             if (player.knockback_duration > 0.0f) {
 			    player.knockback_duration -= elapsed_ms;
             }
-			// std::cout << "Knock back duration " << player.knockback_duration << std::endl;
-			// std::cout << "Velocity " << motion.velocity.x << " " << motion.velocity.y << std::endl; 
  
 			if (player.knockback_duration < 0.f) {
 				motion.velocity = vec2(0.0f, 0.0f);
@@ -134,11 +200,29 @@ void PhysicsSystem::step(float elapsed_ms)
 					{
 						motion.velocity *= -1;
 						motion.angle -= 180;
-					} else if (registry.bossAIs.has(entity)) {
+					} else if (registry.bossAIs.has(entity) || registry.denderiteAIs.has(entity)) {	
                         motion.velocity = vec2(0.f, 0.f);
-                    }
+                    } 
 				}
 			}
+
+            // precompute boundaries for player motion
+            float newLeftBound = gridCellToPosition({0, 0}).x + GRID_CELL_WIDTH_PX / 2.f;
+            float newRightBound = gridCellToPosition({19, 0}).x - GRID_CELL_WIDTH_PX / 2.f;
+            float newTopBound = gridCellToPosition({0, 0}).y + GRID_CELL_HEIGHT_PX / 2.f;
+            float newBottomBound = gridCellToPosition({0, 19}).y - GRID_CELL_HEIGHT_PX / 2.f;
+
+            if (motion.position.x >= newRightBound + 1 || motion.position.x <= newLeftBound ||
+				motion.position.y <= newTopBound || motion.position.y >= newBottomBound + 1)
+			{
+
+                if (registry.bossAIs.has(entity) && registry.denderiteAIs.has(entity)) {
+                    motion.position.x = glm::clamp(motion.position.x, newLeftBound, newRightBound);
+                    motion.position.y = glm::clamp(motion.position.y, newTopBound, newBottomBound);
+
+                    motion.velocity *= -0.5f;
+                } 
+            }
 		}
 
 		// buff drops and slides
@@ -246,9 +330,9 @@ void PhysicsSystem::step(float elapsed_ms)
 		if (detector.hasCollided(player_motion, e_motion))
 		{
 			// to make sure the player doesn't get locked to the enemy 
-			if (registry.bossAIs.has(e_entity) && glm::length(e_motion.velocity) > 0.1f) {
+			if ((registry.bossAIs.has(e_entity) || registry.finalBossAIs.has(e_entity)) && glm::length(e_motion.velocity) > 0.1f) {
 				player.knockback_duration = 500.f;
-			}
+			} 
 
 			registry.collisions.emplace_with_duplicates(player_entity, e_entity);
 		}
@@ -256,7 +340,6 @@ void PhysicsSystem::step(float elapsed_ms)
 		 handleWallCollision(e_entity);
 	}
 
-	// for (auto& proj_entity : registry.bacteriophageProjectiles.entities)
 	for (auto& proj_entity : registry.projectiles.entities)
 	{
 		Motion& proj_motion = registry.motions.get(proj_entity);
@@ -425,4 +508,113 @@ std::vector<vec2> PhysicsSystem::getWorldVertices(const std::vector<TexturedVert
         worldVertices.push_back(worldVertex);
     }
     return worldVertices;
+}
+
+bool PhysicsSystem::find_path(std::vector<ivec2> & path, vec2 start_world, vec2 end_world)
+{	
+	const auto& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map;
+	int map_height = map.size();
+
+	ivec2 start_pos = positionToGridCell(start_world);
+	ivec2 end_pos = positionToGridCell(end_world);
+	
+	struct Node {
+		ivec2 position;
+		int g_cost;
+		int h_cost;
+		Node* parent;
+		int f_cost() const { return g_cost + h_cost; }
+	};
+
+	struct CompareNode {
+		bool operator()(const Node* a, const Node* b) const {
+			return a->f_cost() >= b->f_cost(); 
+		}
+	};
+	
+	struct CompareVec2 {
+		bool operator()(const glm::ivec2& a, const glm::ivec2& b) const {
+			if (a.x == b.x) return a.y < b.y;
+			return a.x < b.x;
+		}
+	};
+
+	std::priority_queue<Node*, std::vector<Node*>, CompareNode> open;
+    std::set<ivec2, CompareVec2> closed;
+    std::map<ivec2, Node*, CompareVec2> all_nodes;
+
+	auto heuristic = [](ivec2 a, ivec2 b) {
+        return abs(a.x - b.x) + abs(a.y - b.y); 
+    };
+
+	
+	Node* start = new Node{ start_pos, 0, heuristic(start_pos, end_pos), nullptr };
+    open.push(start);
+    all_nodes[start_pos] = start;
+
+    const std::vector<ivec2> directions = {
+        {1, 0}, {-1, 0}, {0, 1}, {0, -1}
+    };
+
+	while(!open.empty()) {
+		Node* current = open.top();
+		open.pop();
+		
+		// std::cout << "All known nodes:" << std::endl;
+		// for (auto& [pos, node] : all_nodes) {
+		// 	std::cout << "  (" << pos.x << ", " << pos.y << ") - f: " << node->f_cost() << std::endl;
+		// }
+
+		if (current->position == end_pos) {
+			while (current) {
+				path.push_back(ivec2(current->position));
+				current = current->parent;	
+			}
+			std::reverse(path.begin(), path.end());
+			return true;
+		}
+
+		closed.insert(current->position);
+		
+		for (auto& dir : directions) {
+			ivec2 neighbor_pos = current->position + dir;
+
+            if (closed.find(neighbor_pos) != closed.end()) continue;
+            if (!isTraversable(neighbor_pos)) continue;
+
+            int g_cost = current->g_cost + 1;
+            int h_cost = heuristic(neighbor_pos, end_pos);
+            int f_cost = g_cost + h_cost;
+
+            if (all_nodes.find(neighbor_pos) == all_nodes.end() || f_cost < all_nodes[neighbor_pos]->f_cost()) {
+                Node* neighbor = new Node{ neighbor_pos, g_cost, h_cost, current };
+                open.push(neighbor);
+                all_nodes[neighbor_pos] = neighbor;
+            }
+		}
+	}
+
+	return false;
+}
+
+bool PhysicsSystem::isTraversable(ivec2 pos) {
+	const auto& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map;
+
+	int map_width = map.size();
+    if (map_width == 0)
+        return false; // map is empty
+
+    int map_height = map[0].size();
+
+	int x = pos.x;
+    int y = pos.y;
+
+    // Check bounds
+    if (x < 0 || x >= map_width ||
+        y < 0 || y >= map_height)
+    {
+        return false;
+    }
+
+	return map[x][y] != tileType::WALL;
 }

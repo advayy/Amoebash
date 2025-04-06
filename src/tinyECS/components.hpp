@@ -182,11 +182,20 @@ struct Projectile
 	bool from_enemy = true;
 };
 
+struct SpiralProjectile
+{
+};
+
+struct FollowingProjectile
+{
+};
+
 struct BacteriophageProjectile {
 	int dummy = 0;
 };
 
 struct BossProjectile {};
+struct FinalBossProjectile {};
 
 // used for Entities that cause damage
 struct Deadly
@@ -523,9 +532,10 @@ enum class TEXTURE_ASSET_ID
 	PURPLE_WALL = PURPLE_TILES + 1,
     BOSS_TILES = PURPLE_WALL + 1,
     BOSS_WALL = BOSS_TILES + 1,
-
-	TEXTURE_COUNT = BOSS_WALL + 1,
-
+    EYE_BALL_PROJECTILE = BOSS_WALL + 1,
+	DENDERITE = EYE_BALL_PROJECTILE + 1,
+	FINAL_BOSS = DENDERITE + 1,
+	TEXTURE_COUNT = FINAL_BOSS + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -691,6 +701,28 @@ struct BacteriophageAI
 	int placement_index = 0;
 };
 
+enum class DenderiteState
+{
+	HUNT = 0,
+	PIERCE = HUNT + 1,
+	SHOOT = PIERCE + 1
+};
+
+struct DenderiteAI : EnemyAI
+{
+	// store whole path to follow 
+	std::vector<ivec2> path;
+	bool isCharging = false;
+	float chargeTime = 100.0f;
+	float chargeDuration = 500.0f;
+	float shootCoolDown = 200.0f;
+	int currentNodeIndex = 0;
+	DenderiteState state = DenderiteState::HUNT;
+
+	float timeSinceLastRecalc = 0.f;
+    float recalcTimeThreshold = DENDERITE_RECALC_DURATION;
+};
+
 enum class BossState
 {
 	INITIAL = 0,
@@ -699,6 +731,15 @@ enum class BossState
 	RUMBLE = SHOOT_PARADE + 1,
 	FLEE = RUMBLE + 1,
 	NUM_STATES = FLEE + 1
+};
+
+enum class FinalBossState
+{
+	INITIAL = 0,
+	SPAWN_1 = INITIAL + 1,
+	SPIRAL_SHOOT_1 = SPAWN_1 + 1,
+	TIRED = SPIRAL_SHOOT_1 + 1,
+	SPAWN_2 = TIRED + 1,
 };
 
 struct BossAI : EnemyAI
@@ -717,6 +758,19 @@ struct BossAI : EnemyAI
 	float flee_duration = 1000.f;    // Arbitrary duration in ms
 	float flee_timer = 0.f;
 	bool is_fleeing = false;
+
+	Entity associatedArrow;
+};
+
+struct FinalBossAI : EnemyAI
+{
+	FinalBossState state = FinalBossState::INITIAL;
+	unsigned int phase = 1;
+	float cool_down = FINAL_BOSS_BASE_COOLDOWN;
+	bool has_spawned = false;
+
+	float shoot_cool_down = FINAL_BOSS_BASE_SHOOT_COOLDOWN;
+	float spiral_duration = FINAL_BOSS_SHOOT_DURATION; 
 
 	Entity associatedArrow;
 };

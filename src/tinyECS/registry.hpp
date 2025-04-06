@@ -30,6 +30,7 @@ public:
 	ComponentContainer<Projectile> projectiles;
 	ComponentContainer<BacteriophageProjectile> bacteriophageProjectiles;
 	ComponentContainer<BossProjectile> bossProjectiles;
+	ComponentContainer<FinalBossProjectile> finalBossProjectiles;
     ComponentContainer<Portal> portals;
 
 	// mine
@@ -75,8 +76,12 @@ public:
 	ComponentContainer<SpikeEnemyAI> spikeEnemyAIs;
 	ComponentContainer<RBCEnemyAI> rbcEnemyAIs;
 	ComponentContainer<BacteriophageAI> bacteriophageAIs;
+	ComponentContainer<DenderiteAI> denderiteAIs;
 	ComponentContainer<BossAI> bossAIs;
+	ComponentContainer<FinalBossAI> finalBossAIs;
 	ComponentContainer<BossArrow> bossArrows;
+	ComponentContainer<SpiralProjectile> spiralProjectiles;
+	ComponentContainer<FollowingProjectile> followingProjectiles;
 
 	// particle
 	ComponentContainer<Particle> particles;
@@ -146,6 +151,11 @@ public:
         registry_list.push_back(&clickableBuffs);
 		registry_list.push_back(&bossArrows);
 		registry_list.push_back(&thermometers);
+		registry_list.push_back(&finalBossAIs);
+		registry_list.push_back(&finalBossProjectiles);
+		registry_list.push_back(&spiralProjectiles);
+		registry_list.push_back(&followingProjectiles);
+		registry_list.push_back(&denderiteAIs);
 		registry_list.push_back(&texts);
 	}
 

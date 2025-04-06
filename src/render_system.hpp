@@ -110,7 +110,7 @@ class RenderSystem
 		textures_path("enemies/boss/boss_arrow.png"),
 		textures_path("ui_art/victory_cutscene.png"),
 		textures_path("ui_art/thermometer_alone.png"),
-        textures_path("ui_art/injection.png"),
+		textures_path("ui_art/injection.png"),
 		textures_path("ui_art/purchase_box.png"),
 		textures_path("ui_art/Shop_ui_plate.png"),
 		textures_path("ui_art/shopkeeper.png"),
@@ -118,7 +118,7 @@ class RenderSystem
         textures_path("ui_art/enemy_hp_bar.png"),
 		textures_path("ui_art/mitosis_boss_16_enemy_hp_bar.png"),
 		textures_path("ui_art/mitosis_boss_128_enemy_hp_bar.png"),
-		textures_path("ui_art/circle.png"),
+        textures_path("ui_art/circle.png"),
 		textures_path("tiles/biomes/red_tiles.png"),
 		textures_path("tiles/biomes/red_wall.png"),
 		textures_path("tiles/biomes/green_tiles.png"),
@@ -129,6 +129,9 @@ class RenderSystem
 		textures_path("tiles/biomes/purple_wall.png"),
         textures_path("tiles/biomes/boss_tiles.png"),
         textures_path("tiles/biomes/boss_wall.png"),
+        textures_path("enemies/boss/eyeball_projectile.png"),
+		textures_path("enemies/dendrite.png"),
+		textures_path("enemies/finalBoss/brainBoss.png")
 	};
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.

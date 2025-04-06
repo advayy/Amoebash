@@ -246,43 +246,45 @@ bool WorldSystem::updateBoss()
 	std::vector<Entity> bosses_to_split;
     std::vector<Entity> bosses_to_remove;
 
-	for (auto boss : registry.bossAIs.entities) 
-	{
-		Enemy& enemy = registry.enemies.get(boss);
-		BossAI& bossAI = registry.bossAIs.get(boss);
+    std::vector<Entity> bossEntities =  registry.bossAIs.entities;
 
-		if (bossAI.stage == 3) continue; // SMALLEST BOSS SIZE
+	for (auto boss : bossEntities) 
+	{
+
+		if (!registry.enemies.has(boss) || !registry.motions.has(boss) || !registry.bossAIs.has(boss))
+			continue;
+
+		Enemy enemy = registry.enemies.get(boss);
+		BossAI bossAI = registry.bossAIs.get(boss);
+		Motion motion = registry.motions.get(boss);
+
+		if (bossAI.stage == 3) continue;
 
 		if (enemy.health < enemy.total_health / 2.f) {
-			bosses_to_split.push_back(boss);
+			// bosses_to_split.push_back(boss);
+			Motion originalMotion = registry.motions.get(boss);
+			vec2 position = originalMotion.position;
+			vec2 scale = originalMotion.scale;
+			int stage = bossAI.stage;
+			Entity arrow = bossAI.associatedArrow;
+
+
+			vec2 smallScale = scale * 0.5f;
+			vec2 offset = vec2(smallScale.x * 1.2f, 0.f);
+			vec2 pos1 = originalMotion.position - offset;
+			vec2 pos2 = originalMotion.position + offset;
+			
+			createBoss(renderer, pos1, BossState::IDLE, stage + 1);
+			createBoss(renderer, pos2, BossState::IDLE, stage + 1);
+			
+			bosses_to_remove.push_back(boss);
+			bosses_to_remove.push_back(arrow);
 		}
-	}
-
-	for (auto boss : bosses_to_split) 
-	{
-		Motion& originalMotion = registry.motions.get(boss);
-		BossAI& originalAI = registry.bossAIs.get(boss);
-
-        int stage = originalAI.stage;
-
-		vec2 smallScale = originalMotion.scale * 0.5f;
-
-		vec2 offset = vec2(smallScale.x * 1.2f, 0.f);
-		vec2 pos1 = originalMotion.position - offset;
-		vec2 pos2 = originalMotion.position + offset;
-        
-		bosses_to_remove.push_back(boss);
-		bosses_to_remove.push_back(originalAI.associatedArrow);
-
-		Entity smallBoss1 = createBoss(renderer, pos1, BossState::IDLE, stage + 1);
-		Entity smallBoss2 = createBoss(renderer, pos2, BossState::IDLE, stage + 1);
 	}
 
 	for (int i = bosses_to_remove.size() - 1; i >= 0; --i) {
 		Entity boss = bosses_to_remove[i];
-		if (registry.motions.has(boss) || registry.enemies.has(boss) || registry.bossAIs.has(boss)) {
-			registry.remove_all_components_of(boss);
-		}
+		registry.remove_all_components_of(boss);
 	}
 	// terminal condition for the boss
 	return registry.bossAIs.size() == 0;
@@ -290,12 +292,11 @@ bool WorldSystem::updateBoss()
 
 void WorldSystem::updateBossArrows() {
 	std::vector<Entity> removals;
-
+	
 	for (uint i = 0; i < registry.bossArrows.size(); i++) {
 		Entity arrow = registry.bossArrows.entities[i];
 		BossArrow& arrowComp = registry.bossArrows.get(arrow);
-
-		if (!registry.bossAIs.has(arrowComp.associatedBoss)) {
+		if (!registry.bossAIs.has(arrowComp.associatedBoss) && !registry.finalBossAIs.has(arrowComp.associatedBoss)) {
 			removals.push_back(arrow);
 			continue;
 		}
@@ -338,6 +339,18 @@ void WorldSystem::updateBossArrows() {
 	for (uint i = 0; i < size; i++) {
 		registry.remove_all_components_of(removals[i]);
 	}
+}
+
+void WorldSystem::spawnFourDenderitesOnMap() {
+	// spawn four on the map where the tiles are empty, but do not spawn if no valid path exists
+	ProceduralMap& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]);
+	if (map.map.size() == 0) return;
+
+    for (int i = 0; i < 4; i++) {
+        std::pair<int, int> denderitePosition = getRandomEmptyTile(map.map);
+        vec2 denderiteWorldPosition = gridCellToPosition({denderitePosition.second, denderitePosition.first});
+        createDenderite(renderer, denderiteWorldPosition);
+    }
 }
 
 void WorldSystem::spawnEnemies(float elapsed_ms_since_last_update)
@@ -476,7 +489,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
 	// // std::cout << "Level : " << level << std::endl;
 	updateDangerLevel(elapsed_ms_since_last_update);
-
 	updateCamera(elapsed_ms_since_last_update);
 
 	if (progress_map["tutorial_mode"] && registry.infoBoxes.size() == 0) {
@@ -489,36 +501,67 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	handlePlayerMovement(elapsed_ms_since_last_update);
 	handlePlayerHealth(elapsed_ms_since_last_update);
 
-	if (!progress_map["tutorial_mode"] && level < BOSS_LEVEL) {
+	if (!progress_map["tutorial_mode"] && level != BOSS_LEVEL && level != FINAL_BOSS_LEVEL) {
 		spawnEnemies(elapsed_ms_since_last_update);
 	} else if (level == BOSS_LEVEL) {
 		if (!updateBoss()) {
 			updateBossArrows();
-		} else { // WIN
-			previous_state = current_state;
-			current_state = GameState::VICTORY;
-            currentBiome = Biome::RED; 
-			stateTimer = WIN_CUTSCENE_DURATION_MS;
-            clearVignetteEffect();
-			createEndingWinScene();
+		} else {
+            if (registry.portals.size() == 0) {
+                Player& player = registry.players.get(registry.players.entities[0]);
+                Motion& player_motion = registry.motions.get(registry.players.entities[0]);
+                vec2 grid_pos = positionToGridCell(player_motion.position);
+                int x = grid_pos.x;
+                int y = grid_pos.y;
+    
+                if (x <= 10) {
+                    addPortalTile({x + 2, y});
+                } else {
+                    addPortalTile({x - 2, y});
+                }
+            }
+		}
+	} else if (level == FINAL_BOSS_LEVEL) {
+		if (registry.finalBossAIs.size() != 0) {
+			updateBossArrows();
+		} else {
+            if (registry.portals.size() == 0) {
+                Player& player = registry.players.get(registry.players.entities[0]);
+                Motion& player_motion = registry.motions.get(registry.players.entities[0]);
+                vec2 grid_pos = positionToGridCell(player_motion.position);
+                int x = grid_pos.x;
+                int y = grid_pos.y;
+    
+                if (x <= 10) {
+                    addPortalTile({x + 2, y});
+                } else {
+                    addPortalTile({x - 2, y});
+                }
+            }
 		}
 	}
 	handleProjectiles(elapsed_ms_since_last_update);
-
 	handleRippleEffect(elapsed_ms_since_last_update);
-
 
     tileProceduralMap();
 
 	if (checkPortalCollision()) {
-        Entity screen_state_entity = renderer->get_screen_state_entity();
-        ScreenState &screen = registry.screenStates.get(screen_state_entity);
-        screen.darken_screen_factor = 1;
-       	darken_screen_timer = 0.0f;
-        current_state = GameState::NEXT_LEVEL;
-		Mix_PlayChannel(-1, portal_sound, 0);
-		goToNextLevel();
-		return true;
+        if (level != FINAL_BOSS_LEVEL) {
+            Entity screen_state_entity = renderer->get_screen_state_entity();
+            ScreenState &screen = registry.screenStates.get(screen_state_entity);
+            screen.darken_screen_factor = 1;
+               darken_screen_timer = 0.0f;
+            current_state = GameState::NEXT_LEVEL;
+            Mix_PlayChannel(-1, portal_sound, 0);
+            goToNextLevel();
+            return true;
+        } else {
+            clearVignetteEffect();
+			previous_state = current_state;
+			current_state = GameState::VICTORY;
+			stateTimer = WIN_CUTSCENE_DURATION_MS;
+			createEndingWinScene();
+        }
 	}
 
     if (darken_screen_timer >= 0.0f) {
@@ -620,6 +663,7 @@ void WorldSystem::handlePlayerMovement(float elapsed_ms_since_last_update) {
 		return;
 	}
 
+
 	Motion &player_motion = registry.motions.get(registry.players.entities[0]);
 	player_motion.angle = atan2(game_mouse_pos_y - player_motion.position.y, game_mouse_pos_x - player_motion.position.x) * 180.0f / M_PI + 90.0f;
 
@@ -674,15 +718,27 @@ void WorldSystem::goToNextLevel()
         registry.remove_all_components_of(registry.buffs.entities.back());
     }
 
+	// remove boss arrows in case not removed
+	int bossArrow_size = registry.bossArrows.size();
+	for (int i = 0; i < bossArrow_size; i++) {
+		registry.remove_all_components_of(registry.bossArrows.entities.back());
+	}
+
 	gameOver = false;
 	std::pair<int, int> playerPosition;
 
-	if (level < BOSS_LEVEL) {
+	if (level != BOSS_LEVEL && level != FINAL_BOSS_LEVEL) {
 		createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
-	} else {
+	} else if (level == BOSS_LEVEL) {
 		createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
-	 	createBoss(renderer, gridCellToPosition({10, 10}));
-		// std::cout << "Boss created" << std::endl;
+		createBoss(renderer, gridCellToPosition({10, 10}));
+	} else if (level == FINAL_BOSS_LEVEL) {
+		createFinalBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
+		createFinalBoss(renderer, gridCellToPosition({9, 2}));
+	} 
+
+	if (level == FINAL_BOSS_LEVEL - 1) {
+		spawnFourDenderitesOnMap();
 	}
 
 	Player &player = registry.players.get(registry.players.entities[0]);
@@ -838,13 +894,28 @@ void WorldSystem::handle_collisions()
 		Collision& collision = registry.collisions.get(entity);
 		Entity entity2 = collision.other;
 
-		if (registry.bacteriophageProjectiles.has(entity2) || registry.bossProjectiles.has(entity2))
-		{
-			if (registry.players.has(entity)) // HANDLE PROJECTILE/PLAYER COLLISION
-			{
-				Player& player = registry.players.get(entity);
-				Projectile& projectile = registry.projectiles.get(entity2);
+		// if (registry.bacteriophageProjectiles.has(entity2) || registry.bossProjectiles.has(entity2) 
+		// 	|| registry.finalBossProjectiles.has(entity2) || registry.denderiteProjectile.has(entity2))
+		// {
+		// 	if (registry.players.has(entity)) // HANDLE PROJECTILE/PLAYER COLLISION
+		// 	{
+		// 		Player& player = registry.players.get(entity);
+		// 		Projectile& projectile = registry.projectiles.get(entity2);
 
+		// 		// Player takes damage
+		// 		damagePlayer(projectile.damage);
+
+		// 		// remove projectile
+        //         removals.push_back(entity2);
+		// 	}
+		// }
+
+		if (registry.projectiles.has(entity2)) 
+		{
+			if (registry.players.has(entity))
+			{
+				Projectile& projectile = registry.projectiles.get(entity2);
+				if (!projectile.from_enemy) continue;
 				// Player takes damage
 				damagePlayer(projectile.damage);
 
@@ -874,11 +945,6 @@ void WorldSystem::handle_collisions()
 					{
 						keyMotion.velocity = vec2(0.0f, 0.0f);
 					}
-					// std::cout << "Mesh collision imminent between player and hexagon" << std::endl;
-				}
-				else 
-				{
-					// std::cout << "No mesh collision predicted soon" << std::endl;
 				}
 			}
 			else if (registry.chests.has(entity))
@@ -892,10 +958,6 @@ void WorldSystem::handle_collisions()
 
 				if (physics_system.pointInPolygon(keyMotion.position, chestWorldVertices))
 				{
-					// remove chest
-					// registry.remove_all_components_of(entity);
-					// registry.remove_all_components_of(entity2);
-
                     removals.push_back(entity);
                     removals.push_back(entity2);
                 
@@ -918,15 +980,28 @@ void WorldSystem::handle_collisions()
 				Projectile& projectile = registry.projectiles.get(entity);
 
 				if (projectile.from_enemy) continue;
-				if (enemy.health <= 0) continue; // prevent multy buff drop
+				if (enemy.health < 0) continue; // prevent multy buff drop
 
 				// Invader takes damage
 
 				enemy.health -= projectile.damage;
 
-				// remove projectile
-				// registry.remove_all_components_of(entity);
-                removals.push_back(entity);
+				// reflect projectile if hitting final boss in non-tired state
+				if (registry.finalBossAIs.has(entity2)) {
+					FinalBossAI & finalBossAI = registry.finalBossAIs.get(entity2);
+					if (finalBossAI.state != FinalBossState::TIRED) {
+						enemy.health += projectile.damage;
+						Motion& projectile_motion = registry.motions.get(entity);
+						vec2 direction = glm::normalize(projectile_motion.velocity);
+						projectile_motion.velocity = -direction * GUN_PROJECTILE_SPEED;
+						projectile.from_enemy = !projectile.from_enemy;
+					} else {
+						removals.push_back(entity);
+					}
+				} else {
+					removals.push_back(entity);
+				}
+
 				// if invader health is below 0
 				// remove invader and increase points
 				// buff created
@@ -939,20 +1014,19 @@ void WorldSystem::handle_collisions()
 
 					vec2 enemy_position = enemy_motion.position;
 
-					if(!registry.bossAIs.has(entity2)) {
-                    	removals.push_back(entity2);
-					}
-					
                     removeEnemyHPBar(entity2);
-
-					// level += 1;
-					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
                     
+					// level += 1; 
+					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
+            
                     Player& player = registry.players.get(registry.players.entities[0]);
                     player.germoney_count += 1;
 
-					createBuff(vec2(enemy_position.x, enemy_position.y));
+					if (level != FINAL_BOSS_LEVEL) {
+						createBuff(vec2(enemy_position.x, enemy_position.y));
+					}
 					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15); 
+                    removals.push_back(entity2);
 				}
 			}
 			else if (registry.players.has(entity))
@@ -983,18 +1057,30 @@ void WorldSystem::handle_collisions()
                     } else {
 						if (enemy.health < 0.f) continue; // prevent multy buff drop
                         enemy.health -= PLAYER_DASH_DAMAGE;
+						Player& player = registry.players.get(entity);
+						Motion& playerMotion = registry.motions.get(entity);
 
                         if (registry.bossAIs.has(entity2)) {
-                        Player& player = registry.players.get(entity);
-                        Motion& playerMotion = registry.motions.get(entity);
-                        
-                        for (auto e : registry.dashes.entities) {
-                            removals.push_back(e);
-                        }
-                        playerMotion.velocity = -1.f * glm::normalize(playerMotion.velocity) * PLAYER_DASH_SPEED;
+							
+							for (auto e : registry.dashes.entities) {
+								removals.push_back(e);
+							}
+							playerMotion.velocity = -1.f * glm::normalize(playerMotion.velocity) * PLAYER_DASH_SPEED;
+							player.knockback_duration = 500.f;
+						}
 
-                        player.knockback_duration = 500.f;
-                    }
+						if (registry.finalBossAIs.has(entity2)) {
+							FinalBossAI & finalBossAI = registry.finalBossAIs.get(entity2);
+							for (auto e : registry.dashes.entities) {
+								removals.push_back(e);
+							}
+							// prevent damage in non-tired mode
+							if (finalBossAI.state != FinalBossState::TIRED) {
+								enemy.health += PLAYER_DASH_DAMAGE;
+							}
+							playerMotion.velocity = -1.f * glm::normalize(playerMotion.velocity) * PLAYER_DASH_SPEED;
+							player.knockback_duration = 500.f;
+						}
                     }
 				}
 				else
@@ -1034,15 +1120,24 @@ void WorldSystem::handle_collisions()
                     }
                     
                     vec2 enemy_position = enemy_motion.position;
+
+					
                     points += 1;
                     removals.push_back(entity2);
 					removeEnemyHPBar(entity2);
                     Mix_PlayChannel(-1, enemy_death_sound, 0);
-
+					
                     Player& player = registry.players.get(registry.players.entities[0]);
-                    player.germoney_count += 1;
                     
-                    createBuff(vec2(enemy_position.x, enemy_position.y));
+					if (registry.bossAIs.has(entity2) || registry.finalBossAIs.has(entity2)) {
+						player.germoney_count += 100;
+					} else {
+						player.germoney_count += 1;
+					}
+
+					if (level != FINAL_BOSS_LEVEL) {
+						createBuff(vec2(enemy_position.x, enemy_position.y));
+					}
                     particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15);
                 } 
 
@@ -1064,13 +1159,16 @@ void WorldSystem::handle_collisions()
                             Mix_PlayChannel(-1, damage_sound, 0);
 						}
 
-						if (player.knockback_duration > 0.f && glm::length(bossMotion.velocity) > 0.1f)
+						if (player.knockback_duration > 0.f )
 						{
 							vec2 bossDirection = glm::length(bossMotion.velocity) > 0.0001f
 							? glm::normalize(bossMotion.velocity)
 							: vec2(1.f, 0.f); // default direction, rightwards
 						
 							vec2 knockBackDirection = bossDirection;
+                            
+                            // check if playermotion velocity is zero or very very low
+                            playerMotion.velocity = glm::length(playerMotion.velocity) < 0.00001f ? vec2(0.1f, 0.0f) : playerMotion.velocity;
 							playerMotion.velocity = knockBackDirection * 1000.f;
 							bossMotion.velocity = {0.f, 0.f};						
 						}
@@ -1838,9 +1936,6 @@ void WorldSystem::tileProceduralMap() {
 				currentTiles[x][y] = 1;
 				addWallTile(gridCoord);
 			} else { // if (glm::distance(gridCoord, {cameraGrid_x, cameraGrid_y}) <= CHUNK_DISTANCE)
-				
-				// print here
-				// std::cout << "x: " << x << " y: " << y << std::endl;
 				if (map.map[x][y] == tileType::EMPTY) 
 				{
 					// if its being tiled what tile to put

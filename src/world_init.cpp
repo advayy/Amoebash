@@ -148,6 +148,43 @@ Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_
 	return entity;
 }
 
+Entity createDenderite(RenderSystem* renderer, vec2 position)
+{
+	Entity entity = createEnemy(renderer, position);
+
+	Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::ENEMY_HP_BAR);
+
+	DenderiteAI& enemy_ai = registry.denderiteAIs.emplace(entity);
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			TEXTURE_ASSET_ID::DENDERITE,
+			EFFECT_ASSET_ID::SPRITE_SHEET,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	Motion& motion = registry.motions.get(entity);
+	motion.scale = DENDERITE_SIZE;
+
+	Animation& a = registry.animations.emplace(entity);
+	a.start_frame = 0;
+	a.end_frame = 6;
+	a.time_per_frame = 100.0f;
+	a.loop = ANIM_LOOP_TYPES::PING_PONG;
+
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 6;
+	spriteSheet.current_frame = 0;
+
+	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
+	sprite.width = 64;
+	sprite.height = 64;
+
+	return entity;
+}
+
 Entity createBoss(RenderSystem* renderer, vec2 position, BossState state, int bossStage)
 {
 	Entity entity = createEnemy(renderer, position);
@@ -387,6 +424,46 @@ Entity createBossProjectile(vec2 position, vec2 size, vec2 velocity)
 	return projectile;
 }
 
+Entity createFinalBossProjectile(vec2 position, vec2 size, vec2 velocity, int phase)
+{
+	Entity projectile = createProjectile(position, size, velocity);
+	RenderRequest& render_request = registry.renderRequests.get(projectile);
+	render_request.used_texture = TEXTURE_ASSET_ID::BOSS_PROJECTILE;
+	Projectile& p = registry.projectiles.get(projectile);
+	p.damage = BOSS_PROJECTILE_DAMAGE;
+	p.ms_until_despawn = 7500.f;
+
+	registry.finalBossProjectiles.emplace(projectile);
+
+	if (phase == 2) {
+		registry.spiralProjectiles.emplace(projectile);
+	} else if (phase == 3) {
+		p.ms_until_despawn = 15000.f;
+		Motion& motion = registry.motions.get(projectile);
+		motion.velocity *= 2.f;
+
+		registry.followingProjectiles.emplace(projectile);
+		render_request.used_texture = TEXTURE_ASSET_ID::EYE_BALL_PROJECTILE;
+		render_request.used_effect = EFFECT_ASSET_ID::SPRITE_SHEET;
+
+		Animation& a = registry.animations.emplace(projectile);
+		a.start_frame = 0;
+		a.end_frame = 8;
+		a.time_per_frame = 100.0f;
+		a.loop = ANIM_LOOP_TYPES::LOOP;
+
+		SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(projectile);
+		spriteSheet.total_frames = 9;
+		spriteSheet.current_frame = 0;
+
+		SpriteSize& sprite = registry.spritesSizes.emplace(projectile);
+		sprite.width = 32.f;
+		sprite.height = 32.f;
+	}
+
+	return projectile;
+}
+
 Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& playerPosition) {
 	for (Entity& entity : registry.proceduralMaps.entities) {
         registry.remove_all_components_of(entity);
@@ -408,15 +485,125 @@ Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& pla
 
 	for (int x = 0; x < map.width; x ++) {
 		for (int y = 0; y < map.height; y++) {
-			map.map[y][x] = tileType::EMPTY;
+			if (x == 0 || y == 0 || x == map.width - 1 || y == map.height - 1) {
+				map.map[y][x] = tileType::WALL;
+			} else {
+				map.map[y][x] = tileType::EMPTY;
+			}
 		}
 	}
 
-	playerPosition.first = 19;
+	playerPosition.first = 18;
 	playerPosition.second = 10;
 
 	return entity;
 }
+
+Entity createFinalBoss(RenderSystem* renderer, vec2 position) {
+	Entity entity = createEnemy(renderer, position);
+
+	Motion & motion = registry.motions.get(entity);
+	motion.scale = {FINAL_BOSS_BB_WIDTH, FINAL_BOSS_BB_HEIGHT};
+	
+	FinalBossAI& enemy_ai = registry.finalBossAIs.emplace(entity);
+	enemy_ai.detectionRadius = BOSS_DETECTION_RADIUS;
+	
+	Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::MITOSIS_BOSS_128_HP_BAR);
+	if (registry.motions.has(hp_bar)) {
+		Motion& hp_bar_motion = registry.motions.get(hp_bar);
+		hp_bar_motion.position += vec2(0.f, + motion.scale.y);
+	}
+
+	Enemy& enemy = registry.enemies.get(entity);
+	enemy.health = FINAL_BOSS_HEALTH;
+	enemy.total_health = FINAL_BOSS_HEALTH;
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			TEXTURE_ASSET_ID::FINAL_BOSS,
+			EFFECT_ASSET_ID::SPRITE_SHEET,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	Animation& a = registry.animations.emplace(entity);
+	a.start_frame = 0;
+	a.end_frame = 10;
+	a.time_per_frame = 100.0f;
+	a.loop = ANIM_LOOP_TYPES::PING_PONG;
+
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 14;
+	spriteSheet.current_frame = 0;
+
+	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
+	sprite.width = motion.scale.x;
+	sprite.height = motion.scale.y;
+
+	enemy_ai.associatedArrow = createBossArrow(entity);
+	return entity;
+}
+
+Entity createFinalBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& playerPosition) {
+	for (Entity& entity : registry.proceduralMaps.entities) {
+		registry.remove_all_components_of(entity);
+	}
+	for (Entity& entity : registry.portals.entities) {
+		registry.remove_all_components_of(entity);
+	}
+	auto entity = Entity();
+
+	ProceduralMap& map = registry.proceduralMaps.emplace(entity);
+	
+	map.width = size.x;
+	map.height = size.y;
+	map.top = floor(WORLD_ORIGIN.y - size.y / 2);
+	map.left = floor(WORLD_ORIGIN.x - size.x / 2);
+	map.bottom = ceil(WORLD_ORIGIN.y + size.y / 2);
+	map.right = ceil(WORLD_ORIGIN.x + size.x / 2);
+	
+	map.map.resize(map.height, std::vector<tileType>(map.width, tileType::EMPTY));
+	
+	std::vector<std::vector<int>> rawMap = {
+		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+		{1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1},
+		{1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1},
+		{1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1},
+		{1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1},
+		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+	};
+
+	for (int i = 0; i < rawMap.size(); i++) {
+		for (int j = 0; j < rawMap[i].size(); j++) {
+			if (rawMap[i][j] == 1) {
+				map.map[i][j] = tileType::WALL;
+			} else {
+				map.map[i][j] = tileType::EMPTY;
+			}
+		}
+	}
+	
+	playerPosition.first = 18;
+	playerPosition.second = 9;
+
+	return entity;
+}
+
 
 void updateMiniMap(vec2 playerPos) {
 
