@@ -29,7 +29,7 @@ struct Progression {
 	std::unordered_map<int, int> buffsFromLastRun;
 	std::vector<int> pickedInNucleus;
 	int slots_unlocked = 1;
-	int germoney_savings = 222220;
+	int germoney_savings = 0;
 };
 
 struct Slot {

@@ -886,6 +886,7 @@ void damagePlayer(float damageAmount) {
 		removeBuffUI(5); // PLANT CELL WALL/ SHEILD
 	} else {
 		player.current_health -= damageAmount * player.dangerFactor;
+        applyVignetteEffect();
 
 		if (player.current_health <= 0) {
 			if (player.extra_lives > 0) {
