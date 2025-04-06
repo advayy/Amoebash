@@ -511,6 +511,15 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
             // assign portal to random empty tile
             std::pair<int, int> portalTile = getRandomEmptyTile(map.map);
 
+            for (int x = 0; x < map.width; ++x) {
+                map.map[0][x] = tileType::WALL;
+                map.map[map.height - 1][x] = tileType::WALL;
+            }
+            for (int y = 0; y < map.height; ++y) {
+                map.map[y][0] = tileType::WALL;
+                map.map[y][map.width - 1] = tileType::WALL;
+            }
+
             // print map
             for (int y = 0; y < map.height; ++y) {
                 for (int x = 0; x < map.width; ++x) {
@@ -740,8 +749,8 @@ std::pair<int, int> getRandomEmptyTile(const std::vector<std::vector<tileType>>&
     int height = grid.size();
     int width = grid[0].size();
 
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
+    for (int y = 1; y < height - 1; ++y) {
+        for (int x = 1; x < width - 1; ++x) {
             if (grid[y][x] == tileType::EMPTY) {
                 emptyTiles.emplace_back(x, y);
             }
@@ -886,6 +895,7 @@ void damagePlayer(float damageAmount) {
 		removeBuffUI(5); // PLANT CELL WALL/ SHEILD
 	} else {
 		player.current_health -= damageAmount * player.dangerFactor;
+        applyVignetteEffect();
 
 		if (player.current_health <= 0) {
 			if (player.extra_lives > 0) {

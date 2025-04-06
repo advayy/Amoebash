@@ -28,9 +28,9 @@ namespace nlohmann {
 struct Progression {
 	std::unordered_map<int, int> buffsFromLastRun;
 	std::vector<int> pickedInNucleus;
-	int slots_unlocked = 9;
+	int slots_unlocked = 1;
+	int germoney_savings = 0;
 };
-
 
 struct Slot {
 	int number = 0;
@@ -40,6 +40,7 @@ struct Slot {
 struct ClickableBuff {
 	int type;
 	bool picked = false;
+	float price = 0.0;
 	vec2 returnPosition = {0, 0};
 	Entity slotEntity;
 };
@@ -88,7 +89,6 @@ struct Player
     std::unordered_map<int, int> buffsCollected;
 
     int germoney_count = 0;
-
 	float dangerFactor = DEFAULT_DANGER_LEVEL;
 };
 
@@ -506,7 +506,12 @@ enum class TEXTURE_ASSET_ID
 	BOSS_ARROW = RESUME_BUTTON_ON_HOVER + 1,
 	WINSCREEN = BOSS_ARROW + 1,
 	THERMOMETER = WINSCREEN + 1,
-	ENEMY_HP_BAR = THERMOMETER + 1,
+	INJECTION = THERMOMETER + 1,
+	PURCHASE_BOX = INJECTION +1,
+	SHOP_PLATE = PURCHASE_BOX + 1,
+	SHOPKEEPER = SHOP_PLATE + 1,
+	SLOT_INCREASE_BUFF = SHOPKEEPER + 1,
+    ENEMY_HP_BAR = SLOT_INCREASE_BUFF + 1, 
 	MITOSIS_BOSS_16_HP_BAR = ENEMY_HP_BAR + 1,
 	MITOSIS_BOSS_128_HP_BAR = MITOSIS_BOSS_16_HP_BAR + 1,
 	TEXTURE_COUNT = MITOSIS_BOSS_128_HP_BAR + 1
@@ -531,7 +536,7 @@ enum class EFFECT_ASSET_ID
     FONT = PARTICLE_EFFECT + 1,
     THERMOMETER_EFFECT = FONT + 1,
 	WEAPON_COOLDOWN_INDICATOR = THERMOMETER_EFFECT + 1,
-	EFFECT_COUNT = WEAPON_COOLDOWN_INDICATOR + 1,
+    EFFECT_COUNT = WEAPON_COOLDOWN_INDICATOR + 1,
 
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;

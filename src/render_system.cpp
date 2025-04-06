@@ -10,54 +10,35 @@
 #include "world_system.hpp"
 #include <sstream>
 #include <iomanip>
+#include "ui_system.hpp"
 
 void RenderSystem::updateFPS(float elapsed_ms)
 {
-	// skip all calculations if FPS display is not enabled
-	if (!show_fps)
-		return;
+    if (!show_fps) return;
 
-	// update frame time sum and count
+    // update frame time sum and count
 	frame_time_sum += elapsed_ms;
 	frame_count++;
 
 	// update FPS calculation every second (1000ms)
-	if (frame_time_sum >= 1000.0f)
-	{
-		current_fps = static_cast<float>(frame_count) / (frame_time_sum / 1000.0f);
-		frame_time_sum = 0.0f;
-		frame_count = 0;
-
-		// update window title with FPS
-		std::stringstream title;
-		title << "Amoebash (Debug: ON, FPS: " << std::fixed << std::setprecision(1) << current_fps << ")";
-		glfwSetWindowTitle(window, title.str().c_str());
-	}
+	if (frame_time_sum >= 1000.0f) {
+        current_fps = static_cast<float>(frame_count) / (frame_time_sum / 1000.0f);
+        frame_time_sum = 0.0f;
+        frame_count = 0;
+    }
 }
 
 void RenderSystem::toggleFPSDisplay()
 {
 	show_fps = !show_fps;
-
-	// reset window title when FPS display is turned off
-	if (!show_fps)
-	{
-		glfwSetWindowTitle(window, "Amoebash");
-	}
-}
-
-void RenderSystem::drawFPS()
-{
-	if (!show_fps)
-		return;
-
-	// keeping this code in case we want to render the FPS on the screen instead
-	// of in the window title in the future.
 }
 
 void RenderSystem::drawTexturedMesh(Entity entity,
 																		const mat3 &projection)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	assert(registry.renderRequests.has(entity));
 	const RenderRequest &render_request = registry.renderRequests.get(entity);
 
@@ -510,6 +491,7 @@ void RenderSystem::drawText() {
     drawBuffCountText();
     drawDangerFactorText();
     drawGermoneyText();
+    drawFPSText();
 }
 
 void RenderSystem::drawBuffCountText() {
@@ -557,14 +539,74 @@ void RenderSystem::drawGermoneyText() {
     Player &player = registry.players.get(registry.players.entities[0]);
     int germoney_count = player.germoney_count;
 
-    vec2 screen_pos;
-    if (germoney_count >= 10) {
-        screen_pos = vec2(WINDOW_WIDTH_PX * .095f, WINDOW_HEIGHT_PX * .0685f);
-    } else {
-        screen_pos = vec2(WINDOW_WIDTH_PX * .0975f, WINDOW_HEIGHT_PX * .0685f);
+    vec2 screen_pos = vec2(WINDOW_WIDTH_PX * .09f, WINDOW_HEIGHT_PX * .0685f);
+    if (germoney_count < 100) {
+        screen_pos.x = WINDOW_WIDTH_PX * .095f;
+    } else if (germoney_count >= 100 && germoney_count < 1000) {
+        screen_pos.x = WINDOW_WIDTH_PX * .0925f;
     }
 
-    renderText(std::to_string(player.germoney_count), screen_pos.x, screen_pos.y, .4f, vec3(1.f, 1.f, 1.f));
+    renderText(std::to_string(germoney_count), screen_pos.x, screen_pos.y, .4f, vec3(1.f, 1.f, 1.f));
+}
+
+void RenderSystem::drawShopText() {
+    for (auto entity : registry.clickableBuffs.entities) {
+        ClickableBuff &clickableBuff = registry.clickableBuffs.get(entity);
+        Motion &motion = registry.motions.get(entity);
+
+        vec2 screen_pos_cost = worldToScreen(motion.position);
+        screen_pos_cost.y -= 50.f;
+        
+        if (clickableBuff.price >= 10 && clickableBuff.price < 100) {
+            screen_pos_cost.x -= 12.5f;
+        } else if (clickableBuff.price >= 100 && clickableBuff.price < 1000) {
+            screen_pos_cost.x -= 17.5f;
+        } else if (clickableBuff.price >= 1000) {
+            screen_pos_cost.x -= 20.f;
+        }
+        
+        renderText(std::to_string((int)clickableBuff.price), screen_pos_cost.x, screen_pos_cost.y, .4f, vec3(0.f, 0.f, 0.f));
+        
+        std::string buffName = BUFF_TYPE_TO_NAME.at(clickableBuff.type);
+        vec2 screen_pos_text = worldToScreen(motion.position);
+        screen_pos_text.x -= (buffName.length() * 4.f);
+        screen_pos_text.y -= 65.f;
+        renderText(buffName, screen_pos_text.x, screen_pos_text.y, .3f, vec3(0.f, 0.f, 0.f));
+    }
+
+    Motion motion;
+    for (auto entity : registry.uiElements.entities) {
+        if (registry.renderRequests.has(entity)) {
+            RenderRequest &renderRequest = registry.renderRequests.get(entity);
+            if (renderRequest.used_texture == TEXTURE_ASSET_ID::GERMONEY_UI) {
+                motion = registry.motions.get(entity);
+                drawTexturedMesh(entity, createProjectionMatrix());
+            }
+        }
+    }
+
+    Progression &progression = registry.progressions.get(registry.progressions.entities[0]);
+    int germoney_count = progression.germoney_savings;
+
+    vec2 screen_pos = worldToScreen(motion.position);
+    screen_pos.y -= 5.f;
+    if (germoney_count >= 10 && germoney_count < 100) {
+        screen_pos.x -= 7.f;
+    } else if (germoney_count >= 100 && germoney_count < 1000) {
+        screen_pos.x -= 12.f;
+    } else if (germoney_count >= 1000) {
+        screen_pos.x -= 15.f;
+    }
+
+    renderText(std::to_string(germoney_count), screen_pos.x, screen_pos.y, .4f, vec3(1.f, 1.f, 1.f));
+}
+
+void RenderSystem::drawFPSText() {
+    if (!show_fps) return;
+
+    std::ostringstream fps_stream;
+	fps_stream << std::fixed << std::setprecision(2) << current_fps;
+	renderText("FPS: " + fps_stream.str(), WINDOW_WIDTH_PX * .89f, WINDOW_HEIGHT_PX * .9625f, .35f, vec3(1.f, 1.f, 1.f));
 }
 
 mat3 RenderSystem::createProjectionMatrix()
@@ -689,6 +731,39 @@ void RenderSystem::drawScreenAndButtons(
 		for (uint i = 0; i < registry.overs.entities.size(); i++)
 		{
 			Entity e = registry.overs.entities[i];
+			if (registry.renderRequests.has(e))
+			{
+				drawTexturedMesh(e, projection_matrix);
+			}
+		}
+	}
+
+	if (screenType == ScreenType::SHOP) {
+		for (uint i = 0; i < registry.shops.entities.size(); i++)
+		{
+			Entity e = registry.shops.entities[i];
+			if (registry.renderRequests.has(e) && !registry.clickableBuffs.has(e))
+			{
+				drawTexturedMesh(e, projection_matrix);
+			}
+		}
+
+		for (uint i = 0; i < registry.shops.entities.size(); i++)
+		{
+			Entity e = registry.shops.entities[i];
+			if (registry.renderRequests.has(e) && registry.clickableBuffs.has(e))
+			{
+				drawTexturedMesh(e, projection_matrix);
+			}
+		}
+
+        drawShopText();
+	}
+
+	if (screenType == ScreenType::INFO) {
+		for (uint i = 0; i < registry.infos.entities.size(); i++)
+		{
+			Entity e = registry.infos.entities[i];
 			if (registry.renderRequests.has(e))
 			{
 				drawTexturedMesh(e, projection_matrix);
