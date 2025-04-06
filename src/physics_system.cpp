@@ -514,8 +514,8 @@ bool PhysicsSystem::find_path(std::vector<ivec2> & path, vec2 start_world, vec2 
 {	
 	const auto& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map;
 	int map_height = map.size();
-
-	std::vector<ivec2> boss_locs = {{10, 2},{9, 2},{10, 3},{9, 3}};
+	
+	std::vector<ivec2> boss_locs = {{9, 9}, {10, 9}, {9, 10}, {9, 10}};
 
 	ivec2 start_pos = positionToGridCell(start_world);
 	ivec2 end_pos = positionToGridCell(end_world);

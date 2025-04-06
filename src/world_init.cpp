@@ -530,10 +530,10 @@ Entity createFinalBoss(RenderSystem* renderer, vec2 position) {
 	);
 
 	Animation& a = registry.animations.emplace(entity);
-	a.start_frame = 0;
-	a.end_frame = 10;
+	a.start_frame = 1;
+	a.end_frame = 8;
 	a.time_per_frame = 100.0f;
-	a.loop = ANIM_LOOP_TYPES::PING_PONG;
+	a.loop = ANIM_LOOP_TYPES::LOOP;
 
 	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
 	spriteSheet.total_frames = 14;

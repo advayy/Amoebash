@@ -742,7 +742,7 @@ void WorldSystem::goToNextLevel()
 		createBoss(renderer, gridCellToPosition({10, 10}));
 	} else if (level == FINAL_BOSS_LEVEL) {
 		createFinalBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
-		createFinalBoss(renderer, gridCellToPosition({9, 2}));
+		createFinalBoss(renderer, gridCellToPosition({9, 9}));
 	} 
 
 	if (level == FINAL_BOSS_LEVEL - 1) {
@@ -1237,6 +1237,24 @@ bool WorldSystem::is_over() const
 // on key callback
 void WorldSystem::on_key(int key, int, int action, int mod)
 {
+	if (action == GLFW_RELEASE && key == GLFW_KEY_N) {
+        if (progress_map["tutorial_mode"]) {
+            current_state = GameState::NEXT_LEVEL;
+            progress_map["tutorial_mode"] = false;
+            removeInfoBoxes();
+            goToNextLevel();
+            emptyMiniMap();
+        } else {
+            Entity screen_state_entity = renderer->get_screen_state_entity();
+            ScreenState &screen = registry.screenStates.get(screen_state_entity);
+            screen.darken_screen_factor = 1;
+            darken_screen_timer = 0.0f;
+            current_state = GameState::NEXT_LEVEL;
+            Mix_PlayChannel(-1, portal_sound, 0);
+            goToNextLevel();
+        }
+    }
+	
 	// exit game w/ ESC
 	if (action == GLFW_RELEASE && key == GLFW_KEY_ESCAPE)
 	{
@@ -2211,7 +2229,7 @@ void WorldSystem::placeBuffsOnShopScreen() {
 
 		if(placed == 0) {
 			ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, INJECTION));
-			c.price = 1000.0;
+			c.price = 5000.0;
 		} else {
 			if(offerSlotBoost) {
 				ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, SLOT_INCREASE));

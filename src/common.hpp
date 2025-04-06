@@ -124,7 +124,7 @@ const float MAX_ENEMIES_COUNT = MAX_BACTERIOPHAGE_COUNT + 20;
 
 const float BOSS_HEALTH = 200;
 const float SMALLEST_BOSS_HEALTH = BOSS_HEALTH / 8.f;
-const float FINAL_BOSS_HEALTH = 200.f;
+const float FINAL_BOSS_HEALTH = 350.f;
 
 // LARGE ENEMY
 const float LARGE_ENEMY_BB_WIDTH = (float)LARGE_ENEMY_SIZE;
@@ -191,12 +191,12 @@ const float VELOCITY_DECAY_RATE = 1.01f; // 0.95f;
 
 // FINAL BOSS STATE TIMING
 const float FINAL_BOSS_BASE_COOLDOWN = 3000.f;
-const float FINAL_BOSS_TIRED_COOLDOWN = 15000.f;
-const float FINAL_BOSS_SHOOT_DURATION = 15000.f;
+const float FINAL_BOSS_SHOOT_DURATION = 7500.f; // how long it shoots
+const float FINAL_BOSS_TIRED_COOLDOWN = FINAL_BOSS_SHOOT_DURATION / 2.f; // how long you can attack boss
 
 // FINAL BOSS SHOOTING COOLDOWNS
-const float FINAL_BOSS_BASE_SHOOT_COOLDOWN = 300.f;
-const float FINAL_BOSS_EYEBALL_SHOOT_COOLDOWN = 5000.f;
+const float FINAL_BOSS_BASE_SHOOT_COOLDOWN = 750.f; // cooldown between shots
+const float FINAL_BOSS_EYEBALL_SHOOT_COOLDOWN = 5000.f; // cooldown between shooting eyes
 // LOGO
 const float LOGO_WIDTH_PX = 383 * WORK_SCALE_FACTOR;
 const float LOGO_HEIGHT_PX = 122 * WORK_SCALE_FACTOR;
