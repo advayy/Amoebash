@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <random>
 
-class ParticleSystem 
+class ParticleSystem
 {
 public:
     // unitialize the system
@@ -23,6 +23,9 @@ public:
     Entity createRippleParticle(vec2 position, float lifetime_scale);
     void createPlayerRipples(Entity player_entity);
 
+    // Simple metrics reporting function
+    void printPoolMetrics() const;
+
 private:
     // helper function to create a death particle
     Entity createDeathParticle(vec2 position);
@@ -35,6 +38,10 @@ private:
     // track spawned particles by type (for potential optimizations???)
     std::unordered_map<PARTICLE_TYPE, std::vector<Entity>> particlesByType;
     std::unordered_map<PARTICLE_TYPE, std::vector<Entity>> particlePools;
+
+    // Simple metrics counters
+    uint32_t total_particles_created = 0;
+    uint32_t particles_reused = 0;
 
     // random number generator for particle variations
     std::default_random_engine rng;

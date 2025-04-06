@@ -20,7 +20,7 @@ void ParticleSystem::step(float elapsed_ms)
     for (int i = (int)registry.particles.size() - 1; i >= 0; i--)
     {
         Entity entity = registry.particles.entities[i];
-        Particle& particle = registry.particles.components[i];
+        Particle &particle = registry.particles.components[i];
 
         // update lifetime
         particle.lifetime_ms -= elapsed_ms;
@@ -114,10 +114,12 @@ Entity ParticleSystem::getParticleFromPool(PARTICLE_TYPE type)
     {
         Entity entity = pool.back();
         pool.pop_back();
+        particles_reused++;
         return entity;
     }
 
     // If pool is empty, create a new entity
+    total_particles_created++;
     return Entity();
 }
 
@@ -130,7 +132,7 @@ void ParticleSystem::returnParticleToPool(Entity entity, PARTICLE_TYPE type)
         for (auto it = particles.begin(); it != particles.end();)
         {
             if (it->id() == entity.id())
-            { 
+            {
                 it = particles.erase(it);
             }
             else
@@ -174,7 +176,7 @@ Entity ParticleSystem::createDeathParticle(vec2 position)
     Entity entity = Entity();
 
     // create motion component
-    Motion& motion = registry.motions.emplace(entity);
+    Motion &motion = registry.motions.emplace(entity);
     motion.position = position;
     motion.angle = 0.0f;
 
@@ -185,19 +187,19 @@ Entity ParticleSystem::createDeathParticle(vec2 position)
 
     // random size variation
     float size_factor = 16.0f + uniform_dist(rng) * 10.0f;
-    motion.scale = {size_factor/2, size_factor};
+    motion.scale = {size_factor / 2, size_factor};
 
     // random color (temporary)
     // float r = 0.5f + uniform_dist(rng) * 0.2f;
     // float g = 0.7f + uniform_dist(rng) * 0.3f;
-    // float b = 0.2f + uniform_dist(rng) * 0.2f;    
+    // float b = 0.2f + uniform_dist(rng) * 0.2f;
     float r = 1.0f;
     float g = 1.0f;
     float b = 1.0f;
     registry.colors.emplace(entity, vec3(r, g, b));
 
     // add  componentss
-    Particle& particle = registry.particles.emplace(entity);
+    Particle &particle = registry.particles.emplace(entity);
     particle.type = PARTICLE_TYPE::DEATH_PARTICLE;
     particle.lifetime_ms = 1000.0f + uniform_dist(rng) * 500.0f;
     particle.max_lifetime_ms = particle.lifetime_ms;
@@ -208,7 +210,7 @@ Entity ParticleSystem::createDeathParticle(vec2 position)
     registry.renderRequests.insert(
         entity,
         {TEXTURE_ASSET_ID::DEATH_PARTICLE,
-         EFFECT_ASSET_ID::TEXTURED,  
+         EFFECT_ASSET_ID::TEXTURED,
          GEOMETRY_BUFFER_ID::SPRITE});
 
     return entity;
@@ -251,9 +253,10 @@ void ParticleSystem::createPlayerRipples(Entity player_entity)
     if (!registry.motions.has(player_entity))
         return;
 
-    Motion& player_motion = registry.motions.get(player_entity);
+    Motion &player_motion = registry.motions.get(player_entity);
     float player_speed = glm::length(player_motion.velocity);
-    if (glm::length(player_motion.velocity) < 1.0f) return;
+    if (glm::length(player_motion.velocity) < 1.0f)
+        return;
 
     vec2 velocity_direction = glm::normalize(player_motion.velocity);
     vec2 perpendicular = vec2(-velocity_direction.y, velocity_direction.x);
@@ -266,8 +269,7 @@ void ParticleSystem::createPlayerRipples(Entity player_entity)
     float random_factor = 5.0f;
     vec2 randomness = vec2(
         (uniform_dist(rng) - 0.5f) * random_factor,
-        (uniform_dist(rng) - 0.5f) * random_factor
-    );
+        (uniform_dist(rng) - 0.5f) * random_factor);
 
     vec2 left_position = tail_center - perpendicular * side_offset + randomness;
     vec2 right_position = tail_center + perpendicular * side_offset + randomness;
@@ -291,26 +293,59 @@ void ParticleSystem::createPlayerRipples(Entity player_entity)
     float sin_left = sin(angle_offset_left);
     vec2 left_direction = vec2(
         left_base_dir.x * cos_left - left_base_dir.y * sin_left,
-        left_base_dir.x * sin_left + left_base_dir.y * cos_left
-    );
+        left_base_dir.x * sin_left + left_base_dir.y * cos_left);
 
     float cos_right = cos(angle_offset_right);
     float sin_right = sin(angle_offset_right);
     vec2 right_direction = vec2(
         right_base_dir.x * cos_right - right_base_dir.y * sin_right,
-        right_base_dir.x * sin_right + right_base_dir.y * cos_right
-    );
+        right_base_dir.x * sin_right + right_base_dir.y * cos_right);
 
     float lifetime_scale = glm::clamp(player_speed / 100.f, 0.2f, 1.0f);
     Entity left_particle = createRippleParticle(left_position, lifetime_scale);
     Entity right_particle = createRippleParticle(right_position, lifetime_scale);
 
-    Motion& left_motion = registry.motions.get(left_particle);
-    Motion& right_motion = registry.motions.get(right_particle);
+    Motion &left_motion = registry.motions.get(left_particle);
+    Motion &right_motion = registry.motions.get(right_particle);
 
     left_motion.velocity = left_direction * left_speed;
     right_motion.velocity = right_direction * right_speed;
 
     particlesByType[PARTICLE_TYPE::RIPPLE_PARTICLE].push_back(left_particle);
     particlesByType[PARTICLE_TYPE::RIPPLE_PARTICLE].push_back(right_particle);
+}
+
+// FOR DEBUGGING
+void ParticleSystem::printPoolMetrics() const
+{
+    std::cout << "===== Particle Pool Metrics =====" << std::endl;
+    std::cout << "Total particles created: " << total_particles_created << std::endl;
+    std::cout << "Particles reused from pool: " << particles_reused << std::endl;
+
+    float reuse_rate = 0.0f;
+    if (total_particles_created + particles_reused > 0)
+    {
+        reuse_rate = (float)particles_reused / (float)(total_particles_created + particles_reused) * 100.0f;
+    }
+    std::cout << "Pool reuse rate: " << reuse_rate << "%" << std::endl;
+    std::cout << "Current pool contents:" << std::endl;
+    size_t total_pooled = 0;
+    for (const auto &pair : particlePools)
+    {
+        std::string type_name;
+        switch (pair.first)
+        {
+        case PARTICLE_TYPE::DEATH_PARTICLE:
+            type_name = "Death particles";
+            break;
+        case PARTICLE_TYPE::RIPPLE_PARTICLE:
+            type_name = "Ripple particles";
+            break;
+        default:
+            type_name = "Unknown";
+        }
+        std::cout << " - " << type_name << ": " << pair.second.size() << std::endl;
+        total_pooled += pair.second.size();
+    }
+    std::cout << "===============================" << std::endl;
 }
