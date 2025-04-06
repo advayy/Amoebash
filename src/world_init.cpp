@@ -740,8 +740,8 @@ std::pair<int, int> getRandomEmptyTile(const std::vector<std::vector<tileType>>&
     int height = grid.size();
     int width = grid[0].size();
 
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
+    for (int y = 1; y < height - 1; ++y) {
+        for (int x = 1; x < width - 1; ++x) {
             if (grid[y][x] == tileType::EMPTY) {
                 emptyTiles.emplace_back(x, y);
             }
