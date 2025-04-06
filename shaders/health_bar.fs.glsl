@@ -10,13 +10,11 @@ uniform float max_health;
 
 void main() {
     vec4 base_color = texture(health_texture, texcoord);
-    float grayscale = dot(base_color.rgb, vec3(0.299, 0.587, 0.114));
-    base_color.rgb = vec3(grayscale);
 
     color = base_color;
     float health = current_health / float(max_health);
 
-    if (grayscale > 0.90) {
+    if (base_color.r > 0.98 && base_color.g > 0.98 && base_color.b > 0.98) {
         
         vec4 bar_color;
 

@@ -42,6 +42,9 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 Entity createRBCEnemy(RenderSystem* renderer, vec2 position)
 {
 	Entity entity = createEnemy(renderer, position);
+	
+	Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::ENEMY_HP_BAR);
+
 	RBCEnemyAI& enemy_ai = registry.rbcEnemyAIs.emplace(entity);
 	enemy_ai.patrolOrigin = position;
 	enemy_ai.state = RBCEnemyState::FLOATING;
@@ -77,6 +80,9 @@ Entity createRBCEnemy(RenderSystem* renderer, vec2 position)
 Entity createSpikeEnemy(RenderSystem* renderer, vec2 position)
 {
 	Entity entity = createEnemy(renderer, position);
+
+	Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::ENEMY_HP_BAR);
+
 	SpikeEnemyAI& enemy_ai = registry.spikeEnemyAIs.emplace(entity);
 	enemy_ai.patrolOrigin = position;
 	enemy_ai.state = SpikeEnemyState::PATROLLING;
@@ -110,6 +116,9 @@ Entity createSpikeEnemy(RenderSystem* renderer, vec2 position)
 Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_index)
 {
 	Entity entity = createEnemy(renderer, position);
+	
+	Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::ENEMY_HP_BAR);
+
 	BacteriophageAI& enemy_ai = registry.bacteriophageAIs.emplace(entity);
 	enemy_ai.placement_index = placement_index;
 
@@ -142,6 +151,9 @@ Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_
 Entity createDenderite(RenderSystem* renderer, vec2 position)
 {
 	Entity entity = createEnemy(renderer, position);
+
+	Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::ENEMY_HP_BAR);
+
 	DenderiteAI& enemy_ai = registry.denderiteAIs.emplace(entity);
 
 	registry.renderRequests.insert(
@@ -198,6 +210,12 @@ Entity createBoss(RenderSystem* renderer, vec2 position, BossState state, int bo
 		enemy.total_health /= 2 * bossStage;
 		enemy_ai.projectile_size /= 2 * bossStage;
 		enemy_ai.detectionRadius = enemy_ai.detectionRadius * std::pow(0.75f, bossStage);
+	}
+
+	if (bossStage == 0) {
+		Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::MITOSIS_BOSS_128_HP_BAR);
+	} else {
+		Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::MITOSIS_BOSS_16_HP_BAR);
 	}
 
 	TEXTURE_ASSET_ID texture = static_cast<TEXTURE_ASSET_ID>(static_cast<int>(TEXTURE_ASSET_ID::BOSS_STAGE_1) + bossStage);
@@ -286,11 +304,8 @@ Entity createPlayer(RenderSystem *renderer, vec2 position)
 	sprite.width = 32;
 	sprite.height = 32;
 
-    for (int i = 0; i < NUMBER_OF_BUFFS; i++) {
-        p.buffsCollected[i] = 0;
-    }
-
     createGun(renderer, position);
+
 	return entity;
 }
 
@@ -468,16 +483,13 @@ Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& pla
 	map.right = ceil(WORLD_ORIGIN.x + size.x / 2);
 	map.map.resize(map.height, std::vector<tileType>(map.width, tileType::EMPTY));
 
-    for (int y = 0; y < map.height; y++) {
-        for (int x = 0; x < map.width; x++) {
-            if (x == 0 || x == map.width - 1 || y == 0 || y == map.height - 1)
-                map.map[y][x] = tileType::WALL;
-            else
-                map.map[y][x] = tileType::EMPTY;
-        }
-    }
+	for (int x = 0; x < map.width; x ++) {
+		for (int y = 0; y < map.height; y++) {
+			map.map[y][x] = tileType::EMPTY;
+		}
+	}
 
-	playerPosition.first = 18;
+	playerPosition.first = 19;
 	playerPosition.second = 10;
 
 	return entity;
@@ -488,10 +500,16 @@ Entity createFinalBoss(RenderSystem* renderer, vec2 position) {
 
 	Motion & motion = registry.motions.get(entity);
 	motion.scale = {FINAL_BOSS_BB_WIDTH, FINAL_BOSS_BB_HEIGHT};
-
+	
 	FinalBossAI& enemy_ai = registry.finalBossAIs.emplace(entity);
 	enemy_ai.detectionRadius = BOSS_DETECTION_RADIUS;
 	
+	Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::MITOSIS_BOSS_128_HP_BAR);
+	if (registry.motions.has(hp_bar)) {
+		std::cout << "HP BAR: " << hp_bar << std::endl;
+		Motion& hp_bar_motion = registry.motions.get(hp_bar);
+		hp_bar_motion.position += vec2(0.f, - motion.scale.y);
+	}
 
 	Enemy& enemy = registry.enemies.get(entity);
 	enemy.health = FINAL_BOSS_HEALTH;
@@ -649,12 +667,8 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 				for (int y = 0; y < map.height; y++) {
 					map.map[y][x] = tileType::WALL;
 				}
-			} else {
-                map.map[0][x] = tileType::WALL;
-                map.map[map.height - 1][x] = tileType::WALL;
-            }
+			}
 		}
-
 	} else {
 		// Initialize map to random walls / floors
         std::random_device rd;
@@ -681,29 +695,19 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
             // assign portal to random empty tile
             std::pair<int, int> portalTile = getRandomEmptyTile(map.map);
 
-            // make outer edges of map all walls
-            for (int x = 0; x < map.width; ++x) {
-                map.map[0][x] = tileType::WALL;
-                map.map[map.height - 1][x] = tileType::WALL;
-            }
-            for (int y = 0; y < map.height; ++y) {
-                map.map[y][0] = tileType::WALL;
-                map.map[y][map.width - 1] = tileType::WALL;
-            }
-
             // print map
-            // for (int y = 0; y < map.height; ++y) {
-            //     for (int x = 0; x < map.width; ++x) {
-            //         if (x == playerTile.first && y == playerTile.second) {
-            //             std::cout << "!!";
-            //         } else if (x == portalTile.first && y == portalTile.second) {
-            //             std::cout << "P";
-            //         } else {
-            //             std::cout << (map.map[y][x] == tileType::WALL ? "X" : ".");
-            //         }
-            //     }
-            //     std::cout << std::endl;
-            // }
+            for (int y = 0; y < map.height; ++y) {
+                for (int x = 0; x < map.width; ++x) {
+                    if (x == playerTile.first && y == playerTile.second) {
+                        // std::cout << "!!";
+                    } else if (x == portalTile.first && y == portalTile.second) {
+                        // std::cout << "P";
+                    } else {
+                        // std::cout << (map.map[y][x] == tileType::WALL ? "X" : ".");
+                    }
+                }
+                // std::cout << std::endl;
+            }
 
             if (getDistance(map.map, playerTile, portalTile) < 15) {
                 // std::cout << "PATH DOES NOT EXIST OR NOT ENOUGH DISTANCE, TRYING AGAIN." << std::endl;
@@ -1037,6 +1041,7 @@ void clearVignetteEffect() {
     registry.screenStates.components[0].vignette_screen_factor = 0.f;
 }
 
+
 int getRandomBuffType() {
 	std::vector<int> commonBuffs = {0, 1, 2, 3, 5, 6, 11};
 	std::vector<int> rareBuffs = {4, 8, 9, 12};
@@ -1065,7 +1070,6 @@ void damagePlayer(float damageAmount) {
 		removeBuffUI(5); // PLANT CELL WALL/ SHEILD
 	} else {
 		player.current_health -= damageAmount * player.dangerFactor;
-		applyVignetteEffect();
 
 		if (player.current_health <= 0) {
 			if (player.extra_lives > 0) {
@@ -1076,7 +1080,7 @@ void damagePlayer(float damageAmount) {
 				// game over
 			}
 		} else {
-
+			// normally took damage
 		}
 	}
 }

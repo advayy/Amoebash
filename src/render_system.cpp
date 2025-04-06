@@ -124,6 +124,42 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 		glUniform1iv(map_visited_array_uloc, MAP_WIDTH * MAP_HEIGHT, flat_visited_array.data());
 	}
 
+	if (render_request.used_effect == EFFECT_ASSET_ID::HEALTH_BAR)
+	{
+		GLint max_health_loc = glGetUniformLocation(program, "max_health");
+		GLint health_loc = glGetUniformLocation(program, "current_health");
+		GLint health_texture_loc = glGetUniformLocation(program, "health_texture");
+
+		float max_health = 0.f;
+		float current_health = 0.f;
+
+		HealthBar &hb = registry.healthBars.get(entity);
+		if (hb.is_enemy_hp_bar)
+		{
+			for (Entity enemy : registry.enemies.entities)
+			{
+				Entity enemy_entity = hb.owner;
+				if (registry.enemies.has(enemy_entity)) {
+					Enemy &enemy = registry.enemies.get(enemy_entity);
+					max_health = (float)enemy.total_health;
+					current_health = (float)enemy.health;
+				}
+			}
+		}
+		else
+		{
+			Player &player = registry.players.get(registry.players.entities[0]);
+			max_health = player.max_health;
+			current_health = player.current_health;
+		}
+
+		glUniform1f(max_health_loc, max_health);
+		glUniform1f(health_loc, current_health);
+		glUniform1i(health_texture_loc, 0);
+		gl_has_errors();
+	}
+
+
 	if (render_request.used_effect == EFFECT_ASSET_ID::THERMOMETER_EFFECT) {
 		// FEED THE VALUES FOR CURRENT DANGER LEVEL, AND MAX DANGER LEVEL
 		// RANGES FROM GREEN TO PURPLE (Green->Yellow->Orange->Red->Pink->Purple)
@@ -152,6 +188,7 @@ void RenderSystem::drawTexturedMesh(Entity entity,
 	{
 		setUpSpriteSheetTexture(entity, program);
 	}
+
 
 	if (render_request.used_effect == EFFECT_ASSET_ID::TILE)
 	{
@@ -417,17 +454,18 @@ void RenderSystem::draw()
 	drawTexturedMesh(registry.miniMaps.entities[0], projection_2D);
 	drawTexturedMesh(registry.thermometers.entities[0], projection_2D);
 
+	// for (Entity entity : registry.healthBars.entities) {
+    // 	if (registry.renderRequests.has(entity)) {
+    //     	drawTexturedMesh(entity, projection_2D);
+    // 	}
+	// }
+
 	// draw static ui elemments
 	for (Entity entity : registry.uiElements.entities)
 	{
 		drawTexturedMesh(entity, projection_2D);
 	}
 
-	// draw the health bar
-	for (Entity entity : registry.healthBars.entities)
-	{
-		drawHealthBar(entity, projection_2D);
-	}
 	for (Entity entity : registry.bossArrows.entities)
 	{
 		BossArrow &arrow = registry.bossArrows.get(entity);
@@ -847,76 +885,6 @@ void RenderSystem::drawHexagon(Entity entity, const mat3 &projection)
 	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
 	GLsizei num_indices = size / sizeof(uint16_t);
 	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
-}
-
-void RenderSystem::drawHealthBar(Entity entity, const mat3 &projection)
-{
-    glBindVertexArray(default_vao);
-    gl_has_errors();
-
-	if (!registry.healthBars.has(entity))
-		return;
-
-	HealthBar &healthBar = registry.healthBars.get(entity);
-	Motion &motion = registry.motions.get(entity);
-	Player &player = registry.players.get(registry.players.entities[0]);
-
-	Transform transform;
-	transform.translate(motion.position);
-	transform.scale(motion.scale);
-
-	assert(registry.renderRequests.has(entity));
-	const RenderRequest &render_request = registry.renderRequests.get(entity);
-
-	GLuint program = effects[(GLuint)EFFECT_ASSET_ID::HEALTH_BAR];
-	glUseProgram(program);
-	gl_has_errors();
-
-	GLuint vbo = vertex_buffers[(GLuint)render_request.used_geometry];
-	GLuint ibo = index_buffers[(GLuint)render_request.used_geometry];
-
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	gl_has_errors();
-
-	GLint in_position_loc = glGetAttribLocation(program, "in_position");
-	GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
-
-	glEnableVertexAttribArray(in_position_loc);
-	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)0);
-	glEnableVertexAttribArray(in_texcoord_loc);
-	glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex), (void *)sizeof(vec3));
-
-	glActiveTexture(GL_TEXTURE0);
-	GLuint texture_id = texture_gl_handles[(GLuint)TEXTURE_ASSET_ID::HEALTH_BAR_UI];
-	glBindTexture(GL_TEXTURE_2D, texture_id);
-	gl_has_errors();
-
-	GLint max_health_loc = glGetUniformLocation(program, "max_health");
-	glUniform1f(max_health_loc, player.max_health);
-	gl_has_errors();
-
-	GLint health_loc = glGetUniformLocation(program, "current_health");
-	glUniform1f(health_loc, player.current_health);
-	gl_has_errors();
-
-	GLint health_texture_loc = glGetUniformLocation(program, "health_texture");
-	glUniform1i(health_texture_loc, 0);
-	gl_has_errors();
-
-	GLint transform_loc = glGetUniformLocation(program, "transform");
-	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float *)&transform.mat);
-	gl_has_errors();
-
-	GLuint projection_loc = glGetUniformLocation(program, "projection");
-	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
-	gl_has_errors();
-
-	GLint size = 0;
-	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
-	GLsizei num_indices = size / sizeof(uint16_t);
-	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
-	gl_has_errors();
 }
 
 void RenderSystem::drawDashRecharge(const mat3 &projection)

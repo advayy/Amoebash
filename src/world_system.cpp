@@ -750,6 +750,7 @@ void WorldSystem::restart_game()
     while (registry.tiles.entities.size() > 0)
         registry.remove_all_components_of(registry.tiles.entities.back());
 
+
 	// debugging for memory/component leaks
 	registry.list_all_components();
     
@@ -944,6 +945,8 @@ void WorldSystem::handle_collisions()
 
 					vec2 enemy_position = enemy_motion.position;
                     removals.push_back(entity2);
+					removeEnemyHPBar(entity2);
+
 					// level += 1;
 					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
             
@@ -1048,6 +1051,7 @@ void WorldSystem::handle_collisions()
                     vec2 enemy_position = enemy_motion.position;
                     points += 1;
                     removals.push_back(entity2);
+					removeEnemyHPBar(entity2);
                     Mix_PlayChannel(-1, enemy_death_sound, 0);
 					
                     Player& player = registry.players.get(registry.players.entities[0]);
@@ -1071,7 +1075,7 @@ void WorldSystem::handle_collisions()
 						Player& player = registry.players.get(entity);
 						// need to check the rumble cool down
 
-						if (!bossAI.is_charging) {
+						if (!bossAI.is_charging || !bossAI.is_fleeing) {
 							damagePlayer(BOSS_RUMBLE_DAMAGE);
 
                             Mix_PlayChannel(-1, damage_sound, 0);
