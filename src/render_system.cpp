@@ -445,14 +445,7 @@ void RenderSystem::draw()
 		}
 		else if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity) && !registry.portals.has(entity) && !registry.guns.has(entity))
 		{
-			if (registry.buffUIs.has(entity))
-			{
-				drawTexturedMesh(entity, projection_2D);
-			}
-			else
-			{
-				drawTexturedMesh(entity, projection_2D);
-			}
+			drawTexturedMesh(entity, projection_2D);
 		}
 	}
 
