@@ -762,7 +762,7 @@ struct PopupWithImage {
 	Entity image;
 	float duration;
 
-	PopupWithImage(Entity& text, Entity& description, Entity& image, float duration)
+	PopupWithImage(const Entity& text, const Entity& description, const Entity& image, float duration)
 	: text(text), description(description), image(image), duration(duration) {}
 };
 
