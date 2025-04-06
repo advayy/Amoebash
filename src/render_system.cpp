@@ -538,7 +538,6 @@ void RenderSystem::drawDangerFactorText() {
 void RenderSystem::drawGermoneyText() {
     Player &player = registry.players.get(registry.players.entities[0]);
     int germoney_count = player.germoney_count;
-
     vec2 screen_pos = vec2(WINDOW_WIDTH_PX * .09f, WINDOW_HEIGHT_PX * .0685f);
     if (germoney_count < 100) {
         screen_pos.x = WINDOW_WIDTH_PX * .095f;

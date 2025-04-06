@@ -1470,7 +1470,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
                 // assign player germoney count progression gemoney savings
                 Progression& p = registry.progressions.get(registry.progressions.entities[0]);
                 Player& player = registry.players.get(registry.players.entities[0]);
-                player.germoney_count = p.germoney_savings;
+				player.germoney_count += p.germoney_savings;
 
 				removeStartScreen();
 				createGameplayCutScene();
@@ -2076,6 +2076,7 @@ void WorldSystem::loadGame() {
 	// load player motion & status
 	Motion& playerMotion = registry.motions.get(playerEntity);
 	player = gameData["player"]["playerStatus"].get<Player>();
+	std::cout << "gemoney count: " << player.germoney_count << std::endl;
 	playerMotion = gameData["player"]["motion"].get<Motion>();
 
 	if (registry.proceduralMaps.entities.size() > 0) {
