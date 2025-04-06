@@ -977,10 +977,10 @@ Entity UISystem::createBuffUI(vec2 position, BUFF_TYPE type, vec2 scale)
 // creates with empty strings / values, will be filled in later by step
 Entity UISystem::createRowBuffUI(BUFF_TYPE type)
 {
-	Entity& buff_entity = createBuffUI({ 0, 0 }, type, {ROW_BUFF_UI_WIDTH, ROW_BUFF_UI_HEIGHT});
+	const Entity& buff_entity = createBuffUI({ 0, 0 }, type, {ROW_BUFF_UI_WIDTH, ROW_BUFF_UI_HEIGHT});
 	buff_to_ui_entity.insert({ type, buff_entity });
 
-	Entity& buff_text = createText("", { 0, 0 }, vec3(1.f, 1.f, 1.f), 0.4f);
+	const Entity& buff_text = createText("", { 0, 0 }, vec3(1.f, 1.f, 1.f), 0.4f);
 	buff_to_text_entity.insert({ type, buff_text });
 
 	return buff_entity;
@@ -1144,7 +1144,8 @@ Entity UISystem::createBuffPopup(BUFF_TYPE type)
 		PopupWithImage(
 			createText(buff_test.first, imageCoordToTextCoord(buffImageMotion.position) + vec2(buffImageMotion.scale.x, 0) + vec2(BUFF_POPUP_GAP, 0), { 1.0f, 1.0f, 1.0f }, 0.5),
 			createText(buff_test.second, imageCoordToTextCoord(buffImageMotion.position) + vec2(buffImageMotion.scale.x, 0) + vec2(BUFF_POPUP_GAP, -25), { 1.0f, 1.0f, 1.0f }, 0.3),
-			buffImage
+			buffImage,
+			POPUP_DURATION
 		)
 	);
 
