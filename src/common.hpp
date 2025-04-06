@@ -209,7 +209,7 @@ const vec2 BACK_BUTTON_COORDINATES = {-WINDOW_WIDTH_PX / 3.1f, WINDOW_HEIGHT_PX 
 const vec2 BACKGROUND_SCALE = vec2(WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX);
 
 // UI
-const float UI_SCALE = 1;
+const float UI_SCALE = 1.0f;
 const float UI_MARGIN_X = 32;
 const float UI_MARGIN_Y = 32;
 const float UI_SPACING = 8;
@@ -264,6 +264,27 @@ const vec2 GUN_COOLDOWN_INDICATOR_SCALE = {20.f * UI_SCALE, 20.f * UI_SCALE};
 // GAME BALANCE
 const int NUMBER_OF_BUFFS = 15;
 
+const std::unordered_map<int, std::string> BUFF_TYPE_TO_NAME = {
+    {-1, "Level Skip"},
+    {-2, "Nucleus Slots"},
+    {0, "Tail"},
+    {1, "Mitochondria"},
+    {2, "Hemoglobin"},
+    {3, "Golgi"},
+    {4, "Chloroplash"},
+    {5, "Cell Wall"},
+    {6, "Amino Acid"},
+    {7, "Lysosyme"},
+    {8, "CytoPlasm"},
+    {9, "Virality"},
+    {10, "Spare Nucleus"},
+    {11, "Vacuole"},
+    {12, "Endoplasmic Reticulum"},
+    {13, "Oceloid"},
+    {14, "Secretor"},
+    {15, "Orange"}
+};
+
 const float BUFF_WIDTH = 20.0f * WORK_SCALE_FACTOR;
 const float BUFF_HEIGHT = 20.0f * WORK_SCALE_FACTOR;
 const float BUFF_UI_WIDTH = 20.0f * UI_SCALE;
@@ -286,6 +307,10 @@ const int THERMOMETER_WIDTH = 24 * WORK_SCALE_FACTOR;
 const int THERMOMETER_HEIGHT = 104 * WORK_SCALE_FACTOR;
 const vec2 THERMOMETER_POS = {20 -WINDOW_WIDTH_PX/2 +THERMOMETER_WIDTH/2, 20 -WINDOW_HEIGHT_PX/2 +THERMOMETER_HEIGHT/2};
 
+// ENEMY HP BAR
+const float ENEMY_HP_BAR_WIDTH = 34 * 1.5;
+const float ENEMY_HP_BAR_HEIGHT = 10 * 1.5;
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846f
 #endif
@@ -305,3 +330,7 @@ bool gl_has_errors();
 
 vec2 positionToGridCell(vec2 position);
 vec2 gridCellToPosition(vec2 gridCell);
+
+const vec2 SHOPKEEPER_SIZE = {274.f * WORK_SCALE_FACTOR, 203.f * WORK_SCALE_FACTOR};
+const vec2 PURCHASE_BOX_SCALE = {172.f * WORK_SCALE_FACTOR, 72.f * WORK_SCALE_FACTOR};
+const vec2 SHOP_PLATE_SCALE = {WORK_SCALE_FACTOR * 34.0, WORK_SCALE_FACTOR * 34.0};

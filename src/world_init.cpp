@@ -42,6 +42,9 @@ Entity createEnemy(RenderSystem* renderer, vec2 position)
 Entity createRBCEnemy(RenderSystem* renderer, vec2 position)
 {
 	Entity entity = createEnemy(renderer, position);
+	
+	Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::ENEMY_HP_BAR);
+
 	RBCEnemyAI& enemy_ai = registry.rbcEnemyAIs.emplace(entity);
 	enemy_ai.patrolOrigin = position;
 	enemy_ai.state = RBCEnemyState::FLOATING;
@@ -77,6 +80,9 @@ Entity createRBCEnemy(RenderSystem* renderer, vec2 position)
 Entity createSpikeEnemy(RenderSystem* renderer, vec2 position)
 {
 	Entity entity = createEnemy(renderer, position);
+
+	Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::ENEMY_HP_BAR);
+
 	SpikeEnemyAI& enemy_ai = registry.spikeEnemyAIs.emplace(entity);
 	enemy_ai.patrolOrigin = position;
 	enemy_ai.state = SpikeEnemyState::PATROLLING;
@@ -110,6 +116,9 @@ Entity createSpikeEnemy(RenderSystem* renderer, vec2 position)
 Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_index)
 {
 	Entity entity = createEnemy(renderer, position);
+	
+	Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::ENEMY_HP_BAR);
+
 	BacteriophageAI& enemy_ai = registry.bacteriophageAIs.emplace(entity);
 	enemy_ai.placement_index = placement_index;
 
@@ -164,6 +173,12 @@ Entity createBoss(RenderSystem* renderer, vec2 position, BossState state, int bo
 		enemy.total_health /= 2 * bossStage;
 		enemy_ai.projectile_size /= 2 * bossStage;
 		enemy_ai.detectionRadius = enemy_ai.detectionRadius * std::pow(0.75f, bossStage);
+	}
+
+	if (bossStage == 0) {
+		Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::MITOSIS_BOSS_128_HP_BAR);
+	} else {
+		Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::MITOSIS_BOSS_16_HP_BAR);
 	}
 
 	TEXTURE_ASSET_ID texture = static_cast<TEXTURE_ASSET_ID>(static_cast<int>(TEXTURE_ASSET_ID::BOSS_STAGE_1) + bossStage);
@@ -252,11 +267,8 @@ Entity createPlayer(RenderSystem *renderer, vec2 position)
 	sprite.width = 32;
 	sprite.height = 32;
 
-    for (int i = 0; i < NUMBER_OF_BUFFS; i++) {
-        p.buffsCollected[i] = 0;
-    }
-
     createGun(renderer, position);
+
 	return entity;
 }
 
@@ -394,16 +406,13 @@ Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& pla
 	map.right = ceil(WORLD_ORIGIN.x + size.x / 2);
 	map.map.resize(map.height, std::vector<tileType>(map.width, tileType::EMPTY));
 
-    for (int y = 0; y < map.height; y++) {
-        for (int x = 0; x < map.width; x++) {
-            if (x == 0 || x == map.width - 1 || y == 0 || y == map.height - 1)
-                map.map[y][x] = tileType::WALL;
-            else
-                map.map[y][x] = tileType::EMPTY;
-        }
-    }
+	for (int x = 0; x < map.width; x ++) {
+		for (int y = 0; y < map.height; y++) {
+			map.map[y][x] = tileType::EMPTY;
+		}
+	}
 
-	playerPosition.first = 18;
+	playerPosition.first = 19;
 	playerPosition.second = 10;
 
 	return entity;
@@ -465,25 +474,25 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 	if (tutorial_on) {
 		std::vector<std::vector<int>> tutorial_map = {
 			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},		
-			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1},		
-			{1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,2,0,1},		
-			{1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,1},		
-			{1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},		
-			{1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1},		
-			{1,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1},		
-			{1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,1},		
-			{1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,1},		
-			{1,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,1},		
-			{1,1,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,1},		
-			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1},		
-			{1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,1},		
-			{1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1},		
-			{1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1},		
-			{1,1,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1},		
-			{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1},		
-			{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,2,0,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,9,0,0,1,1},		
+			{1,1,1,1,0,0,0,0,0,0,9,0,0,0,0,0,1,1,1,1},		
+			{1,1,0,0,0,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1},		
+			{1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1},		
+			{1,1,1,0,9,0,1,1,1,1,1,0,0,0,0,0,0,1,1,1},		
+			{1,1,1,0,0,0,0,0,1,1,0,0,0,9,0,0,0,1,1,1},		
+			{1,1,1,1,1,0,0,9,0,0,0,1,1,1,0,0,0,1,1,1},		
+			{1,1,1,1,1,1,0,0,0,1,1,1,1,1,0,9,0,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,0,0,9,0,0,1,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,0,9,0,0,0,1,1,1,1,1,1},		
 			{1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1},		
-			{1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1}		
+			{1,0,0,9,0,0,0,9,0,0,0,0,1,1,1,1,1,1,1,1},		
+			{1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}		
 		};
 	
 		for (int y = 0; y < tutorial_map[0].size(); y++) {
@@ -492,15 +501,16 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 					map.map[y][x] = tileType::WALL;
 				} else if (tutorial_map[x][y] == 2) {
 					map.map[y][x] = tileType::PORTAL;
-				} else {
+				} else if (tutorial_map[x][y] == 9) {
+                    createBuff(gridCellToPosition({y,x}), 20);
+                    map.map[y][x] = tileType::EMPTY;
+                } else {
 					map.map[y][x] = tileType::EMPTY;
 				}
 			}
 		}
 
-        // place a buff on map at bottom left corner
-        vec2 buffPos = {5 * GRID_CELL_WIDTH_PX, 18 * GRID_CELL_HEIGHT_PX};
-        createBuff(buffPos, 2);
+        // Place 10 buffs at hardcoded positions along the player's path
 
 	} else {
 		// Initialize map to random walls / floors
@@ -528,7 +538,6 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
             // assign portal to random empty tile
             std::pair<int, int> portalTile = getRandomEmptyTile(map.map);
 
-            // make outer edges of map all walls
             for (int x = 0; x < map.width; ++x) {
                 map.map[0][x] = tileType::WALL;
                 map.map[map.height - 1][x] = tileType::WALL;
@@ -752,8 +761,8 @@ std::pair<int, int> getRandomEmptyTile(const std::vector<std::vector<tileType>>&
     int height = grid.size();
     int width = grid[0].size();
 
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
+    for (int y = 1; y < height - 1; ++y) {
+        for (int x = 1; x < width - 1; ++x) {
             if (grid[y][x] == tileType::EMPTY) {
                 emptyTiles.emplace_back(x, y);
             }
@@ -842,25 +851,33 @@ Entity createBuff(vec2 position, int buffType)
 	Buff &buff = registry.buffs.emplace(entity);
 
 	// Currently only the first 15 buffs are active
-    if (buffType == -1) {
-        buff.type = getRandomBuffType();
-    } else {
+    if (buffType != -1) {
         buff.type = buffType;
+        registry.renderRequests.insert(
+            entity,
+            {
+                TEXTURE_ASSET_ID::INFO_BUFF,
+                EFFECT_ASSET_ID::TEXTURED,
+                GEOMETRY_BUFFER_ID::SPRITE
+            }
+        );
+    } else {
+        buff.type = getRandomBuffType();
+        registry.renderRequests.insert(
+            entity,
+            {TEXTURE_ASSET_ID::BUFFS_SHEET,
+             EFFECT_ASSET_ID::SPRITE_SHEET,
+             GEOMETRY_BUFFER_ID::SPRITE});
+    
+        SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(entity);
+        spriteSheet.total_frames = 20;	 
+        spriteSheet.current_frame = buff.type;
+    
+        SpriteSize &sprite = registry.spritesSizes.emplace(entity);
+        sprite.width = 20;
+        sprite.height = 20;
     }
 
-	registry.renderRequests.insert(
-		entity,
-		{TEXTURE_ASSET_ID::BUFFS_SHEET,
-		 EFFECT_ASSET_ID::SPRITE_SHEET,
-		 GEOMETRY_BUFFER_ID::SPRITE});
-
-	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(entity);
-	spriteSheet.total_frames = 20;	 
-	spriteSheet.current_frame = buff.type;
-
-	SpriteSize &sprite = registry.spritesSizes.emplace(entity);
-	sprite.width = 20;
-	sprite.height = 20;
 
 	return entity;
 }
@@ -872,6 +889,7 @@ void applyVignetteEffect() {
 void clearVignetteEffect() {
     registry.screenStates.components[0].vignette_screen_factor = 0.f;
 }
+
 
 int getRandomBuffType() {
 	std::vector<int> commonBuffs = {0, 1, 2, 3, 5, 6, 11};
@@ -901,7 +919,7 @@ void damagePlayer(float damageAmount) {
 		removeBuffUI(5); // PLANT CELL WALL/ SHEILD
 	} else {
 		player.current_health -= damageAmount * player.dangerFactor;
-		applyVignetteEffect();
+        applyVignetteEffect();
 
 		if (player.current_health <= 0) {
 			if (player.extra_lives > 0) {
@@ -912,7 +930,7 @@ void damagePlayer(float damageAmount) {
 				// game over
 			}
 		} else {
-
+			// normally took damage
 		}
 	}
 }

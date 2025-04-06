@@ -43,6 +43,8 @@ Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, E
 Entity createHealthBar();
 Entity createThermometer();
 void createDashRecharge();
+Entity createEnemyHPBar(Entity enemy, TEXTURE_ASSET_ID texture_id);
+void removeEnemyHPBar(Entity enemy);
 
 Entity createBuffUI(vec2 position, int type);
 void renderCollectedBuff(RenderSystem *renderer, int buffType);
@@ -52,3 +54,8 @@ vec2 getBuffSlot (int buffType);
 void removeBuffUI(int buffType);
 vec2 getBuffSlot_uiPos (int buffType);
 void findAndRemove(std::unordered_map<int, int>& map, int N);
+
+Entity createShopKeeper();
+Entity createShopBox();
+Entity createShopPlate(vec2 pos);
+Entity createClickableShopBuff(vec2 position, int buffType);
