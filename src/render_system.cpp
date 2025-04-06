@@ -546,10 +546,25 @@ void RenderSystem::drawDangerFactorText() {
 
 void RenderSystem::drawInfoText() {
 	if (registry.infoBoxes.size() == 0) return;
-	vec2 screen_pos = worldToScreen(vec2(0.f, 0.f));
-	std::string infoText = "Welcome to the game";
+	vec2 screen_pos = worldToScreen(vec2(0, 0));
+	std::vector<std::string> infoText = {
+		"Welcome to the Amoebash!", "Our game is a top-down roguelike, with a focus on interesting movement.",
+		"Our game was made to be accessable with majority of the experience only needing one hand!", 
+		"We hope you enjoy the experience", 
+		"Sincerely, the Devs,",
+		"",
+		"Advay Rajguru, Mercury Mcindoe, Shrey Gangwar, Dany Raihan, Hazel Chen & Saurav Banna",
+		"",
+		"With a special shoutout to Carter Woodworth (netcarrot) for the amazing sound design"};
+	
+	float init_padding = 130;
+	float line_padding = 40;
+	screen_pos.x -= WINDOW_WIDTH_PX/2- init_padding;
+	screen_pos.y += WINDOW_HEIGHT_PX/2 - init_padding;
 
-	renderText(infoText, screen_pos.x, screen_pos.y, .4f, vec3(0.f, 0.f, 0.f));
+	for (int i = 0; i < infoText.size(); i++) {
+		renderText(infoText[i], screen_pos.x, screen_pos.y - (line_padding * i), .5f, vec3(0.f, 0.f, 0.f));
+	}
 }
 
 void RenderSystem::drawGermoneyText() {

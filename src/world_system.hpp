@@ -171,6 +171,8 @@ private:
 	Mix_Chunk *enemy_death_sound;
 	Mix_Chunk *click_sound;
 	Mix_Chunk *portal_sound;
+	Mix_Chunk *buy_sound;
+	Mix_Chunk *buff_pickup;
 
 	// debugging (fps etc..)
 	void toggleFPSDisplay();

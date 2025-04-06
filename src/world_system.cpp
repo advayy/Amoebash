@@ -53,7 +53,10 @@ WorldSystem::~WorldSystem()
 		Mix_FreeMusic(boss_background_music);
 	if (portal_sound != nullptr)
 		Mix_FreeChunk(portal_sound);
-		
+	if (buy_sound != nullptr)
+		Mix_FreeChunk(buy_sound);
+	if (buff_pickup != nullptr)
+		Mix_FreeChunk(buff_pickup);	
 	
 	Mix_CloseAudio();
 
@@ -171,7 +174,10 @@ bool WorldSystem::start_and_load_sounds()
 	enemy_death_sound = Mix_LoadWAV(audio_path("enemy_death.wav").c_str());
 	click_sound = Mix_LoadWAV(audio_path("click_1.wav").c_str());
 	portal_sound = Mix_LoadWAV(audio_path("portal.wav").c_str());
-
+	
+	// new sounds
+	buy_sound = Mix_LoadWAV(audio_path("money.wav").c_str());
+	buff_pickup = Mix_LoadWAV(audio_path("chomp.wav").c_str());
 
 	if (background_music == nullptr || dash_sound == nullptr) // IDK why we do this anymore
 	{
@@ -1214,6 +1220,7 @@ void WorldSystem::handle_collisions()
 		else if (registry.buffs.has(entity2) && registry.players.has(entity))
 		{
 			collectBuff(entity, entity2);
+			Mix_PlayChannel(-1, buff_pickup, 0);
             removals.push_back(entity2);
 		}
 	}
@@ -1516,6 +1523,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 
 				if(c.price <= p.germoney_savings) {
 					// MONEY SOUND {s}
+					Mix_PlayChannel(-1, buy_sound, 0);
 
 					// BUY AND APPLY
 					p.germoney_savings -= c.price;
