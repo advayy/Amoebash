@@ -494,17 +494,16 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	} else if (level == BOSS_LEVEL) {
 		if (!updateBoss()) {
 			updateBossArrows();
-			// std::cout << "apple pie" << std::endl;
 		} else { // WIN
 			previous_state = current_state;
 			current_state = GameState::VICTORY;
+            currentBiome = Biome::RED; 
 			stateTimer = WIN_CUTSCENE_DURATION_MS;
             clearVignetteEffect();
 			createEndingWinScene();
 		}
 	}
 	handleProjectiles(elapsed_ms_since_last_update);
-	// std::cout << "WS:step - f9" << std::endl;
 
 	handleRippleEffect(elapsed_ms_since_last_update);
 
@@ -905,7 +904,6 @@ void WorldSystem::handle_collisions()
 						progress_map["tutorial_mode"] = false;
 						removeInfoBoxes();
 						goToNextLevel();
-						current_state = GameState::NEXT_LEVEL;
 						emptyMiniMap();
 					}
 				}
@@ -1107,6 +1105,23 @@ bool WorldSystem::is_over() const
 // on key callback
 void WorldSystem::on_key(int key, int, int action, int mod)
 {
+    // if (action == GLFW_RELEASE && key == GLFW_KEY_N) {
+    //     if (progress_map["tutorial_mode"]) {
+    //         current_state = GameState::NEXT_LEVEL;
+    //         progress_map["tutorial_mode"] = false;
+    //         removeInfoBoxes();
+    //         goToNextLevel();
+    //         emptyMiniMap();
+    //     } else {
+    //         Entity screen_state_entity = renderer->get_screen_state_entity();
+    //         ScreenState &screen = registry.screenStates.get(screen_state_entity);
+    //         screen.darken_screen_factor = 1;
+    //         darken_screen_timer = 0.0f;
+    //         current_state = GameState::NEXT_LEVEL;
+    //         Mix_PlayChannel(-1, portal_sound, 0);
+    //         goToNextLevel();
+    //     }
+    // }
 
 	// exit game w/ ESC
 	if (action == GLFW_RELEASE && key == GLFW_KEY_ESCAPE)
