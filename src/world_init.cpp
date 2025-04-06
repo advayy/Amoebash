@@ -612,16 +612,68 @@ Entity createChest(RenderSystem *renderer, vec2 position)
 	return entity;
 }
 
+
+Biome currentBiome = Biome::RED; // Default to red biome
+
+void setCurrentBiomeByLevel(unsigned int level) {
+    currentBiome = getBiomeForLevel(level);
+}
+
+Biome getBiomeForLevel(unsigned int level) {
+    // tutorial and level 1 are red
+    if (level == 0 || level == 1) {
+        return Biome::RED;
+    }
+    
+    // cycle through biomes for other levels
+    unsigned int biomeIndex = (level - 1) % static_cast<unsigned int>(Biome::BIOME_COUNT);
+    return static_cast<Biome>(biomeIndex);
+}
+
+TEXTURE_ASSET_ID getTileTextureForBiome(Biome biome) {
+    switch (biome) {
+        case Biome::RED:
+            return TEXTURE_ASSET_ID::RED_TILES;
+        case Biome::GREEN:
+            return TEXTURE_ASSET_ID::GREEN_TILES;
+        case Biome::BLUE:
+            return TEXTURE_ASSET_ID::BLUE_TILES;
+		case Biome::PURPLE:
+			return TEXTURE_ASSET_ID::PURPLE_TILES;
+        case Biome::BOSS:
+            return TEXTURE_ASSET_ID::BOSS_TILES;
+        default:
+            return TEXTURE_ASSET_ID::RED_TILES; 
+    }
+}
+
+TEXTURE_ASSET_ID getWallTextureForBiome(Biome biome) {
+    switch (biome) {
+        case Biome::RED:
+            return TEXTURE_ASSET_ID::RED_WALL;
+        case Biome::GREEN:
+            return TEXTURE_ASSET_ID::GREEN_WALL;
+        case Biome::BLUE:
+            return TEXTURE_ASSET_ID::BLUE_WALL;
+		case Biome::PURPLE: 
+			return TEXTURE_ASSET_ID::PURPLE_WALL;
+        case Biome::BOSS:
+            return TEXTURE_ASSET_ID::BOSS_WALL;
+        default:
+            return TEXTURE_ASSET_ID::RED_WALL; 
+    }
+}
+
 Entity addParalaxTile(vec2 gridCoord)
 {
-	return addTile(gridCoord, TEXTURE_ASSET_ID::PARALAX_TILE, 3);
+    return addTile(gridCoord, getTileTextureForBiome(currentBiome), 3);
 }
 
 Entity addWallTile(vec2 gridCoord)
 {
-	auto tile = addTile(gridCoord, TEXTURE_ASSET_ID::WALL_TILE, 1);
-	registry.walls.emplace(tile);
-	return tile;
+    auto tile = addTile(gridCoord, getWallTextureForBiome(currentBiome), 1);
+    registry.walls.emplace(tile);
+    return tile;
 }
 
 Entity addPortalTile(vec2 gridCoord) {
@@ -887,18 +939,21 @@ void applyVignetteEffect() {
 }
 
 void clearVignetteEffect() {
+	std::cout << "clearing vignette effect" << std::endl;
     registry.screenStates.components[0].vignette_screen_factor = 0.f;
+	std::cout << "cleared vignette effect" << std::endl;
+	std::cout << registry.screenStates.components[0].vignette_screen_factor << std::endl;
 }
 
 
-int getRandomBuffType() {
-	std::vector<int> commonBuffs = {0, 1, 2, 3, 5, 6, 11};
-	std::vector<int> rareBuffs = {4, 8, 9, 12};
-	std::vector<int> eliteBuffs = {7, 10, 13, 14};
+BUFF_TYPE getRandomBuffType() {
+	std::vector<BUFF_TYPE> commonBuffs = { TAIL, MITOCHONDRIA, HEMOGLOBIN, GOLGI, CELL_WALL, AMINO_ACID, VACUOLE };
+	std::vector<BUFF_TYPE> rareBuffs = { CHLOROPLAST, CYTOPLASM, PILLI, ENDOPLASMIC_RETICULUM };
+	std::vector<BUFF_TYPE> eliteBuffs = { LYSOSOME, SPARE_NUCLEUS, OVOID, SECRETOR };
 
     int categoryRoll = rand() % 100;
 
-    std::vector<int>* selectedCategory;
+    std::vector<BUFF_TYPE>* selectedCategory;
 
     if (categoryRoll < 50) {  // 50% chance for common
         selectedCategory = &commonBuffs;
@@ -914,9 +969,12 @@ int getRandomBuffType() {
 
 void damagePlayer(float damageAmount) {
 	Player& player = registry.players.get(registry.players.entities[0]);
+	
+	if (player.current_health <= 0) return;
+
 	if(player.sheilds > 0) {
 		player.sheilds --;
-		removeBuffUI(5); // PLANT CELL WALL/ SHEILD
+		removeBuffUI(CELL_WALL); // PLANT CELL WALL/ SHEILD
 	} else {
 		player.current_health -= damageAmount * player.dangerFactor;
         applyVignetteEffect();
@@ -925,7 +983,7 @@ void damagePlayer(float damageAmount) {
 			if (player.extra_lives > 0) {
 				player.current_health = player.max_health/2;
 				player.extra_lives--;
-				removeBuffUI(10);
+				removeBuffUI(SPARE_NUCLEUS);
 			} else {
 				// game over
 			}

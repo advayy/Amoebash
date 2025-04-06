@@ -190,7 +190,7 @@ private:
 	Entity getFreeSlot();
 	bool isFreeSlot();
 	void moveSelectedBuffsToProgression();
-	void applyBuff(Player& player, int buff_type);
+	void applyBuff(Player& player, BUFF_TYPE buff_type);
 
 	void updateDangerLevel(float elapsed_ms_since_last_update);
 	void placeBuffsOnShopScreen();

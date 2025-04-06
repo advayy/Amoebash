@@ -49,5 +49,11 @@ void applyVignetteEffect();
 void clearVignetteEffect();
     
 void damagePlayer(float damageAmount);
-int getRandomBuffType();
+BUFF_TYPE getRandomBuffType();
 Entity 	createGunCooldown();
+
+extern Biome currentBiome;
+void setCurrentBiomeByLevel(unsigned int level);
+Biome getBiomeForLevel(unsigned int level);
+TEXTURE_ASSET_ID getTileTextureForBiome(Biome biome);
+TEXTURE_ASSET_ID getWallTextureForBiome(Biome biome);

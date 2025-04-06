@@ -484,6 +484,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
     updateMouseCoords(); 
 	updateHuds();
 
+	updatePopups(elapsed_ms_since_last_update);
+
 	handlePlayerMovement(elapsed_ms_since_last_update);
 	handlePlayerHealth(elapsed_ms_since_last_update);
 
@@ -492,16 +494,16 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	} else if (level == BOSS_LEVEL) {
 		if (!updateBoss()) {
 			updateBossArrows();
-			// std::cout << "apple pie" << std::endl;
 		} else { // WIN
 			previous_state = current_state;
 			current_state = GameState::VICTORY;
+            currentBiome = Biome::RED; 
 			stateTimer = WIN_CUTSCENE_DURATION_MS;
+            clearVignetteEffect();
 			createEndingWinScene();
 		}
 	}
 	handleProjectiles(elapsed_ms_since_last_update);
-	// std::cout << "WS:step - f9" << std::endl;
 
 	handleRippleEffect(elapsed_ms_since_last_update);
 
@@ -567,7 +569,7 @@ void WorldSystem::handleVignetteEffect(float elapsed_ms_since_last_update) {
                 screen.vignette_screen_factor = 0;
             }
         }
-    }
+	}
 }
 
 // Handle player health
@@ -603,6 +605,7 @@ void WorldSystem::triggerGameOver() {
     p.germoney_savings = player.germoney_count;
     previous_state = current_state;
     current_state = GameState::GAME_OVER;
+    currentBiome = Biome::RED; 
     createGameOverScreen();
 
 }
@@ -644,6 +647,9 @@ void WorldSystem::goToNextLevel()
 	level += 1;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
+
+	// update biome for the new level
+	setCurrentBiomeByLevel(level); 
 	
 	initializedMap = false;
 	currentTiles.clear();
@@ -692,17 +698,17 @@ void WorldSystem::goToNextLevel()
 // Reset the world state to its initial state
 void WorldSystem::restart_game()
 {
-
-	// std::cout << "Restarting..." << std::endl;
-    // std::cout << "Leve fl: " << level + 1 << std::endl;
-    
 	// Debugging for memory/component leaks
 	registry.list_all_components();
     
 	// Reset the game speed
 	current_speed = 1.f;
     
-	level = 0;
+	if (progress_map["tutorial_mode"]) {
+		level = 0;
+	} else {
+		level = 1;
+	}
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
 
@@ -1008,6 +1014,7 @@ void WorldSystem::handle_collisions()
 						}
 					}
 				}
+				
                 if (enemy.health <= 0)
                 {
                     if (registry.bacteriophageAIs.has(entity2))
@@ -1087,6 +1094,23 @@ bool WorldSystem::is_over() const
 // on key callback
 void WorldSystem::on_key(int key, int, int action, int mod)
 {
+    // if (action == GLFW_RELEASE && key == GLFW_KEY_N) {
+    //     if (progress_map["tutorial_mode"]) {
+    //         current_state = GameState::NEXT_LEVEL;
+    //         progress_map["tutorial_mode"] = false;
+    //         removeInfoBoxes();
+    //         goToNextLevel();
+    //         emptyMiniMap();
+    //     } else {
+    //         Entity screen_state_entity = renderer->get_screen_state_entity();
+    //         ScreenState &screen = registry.screenStates.get(screen_state_entity);
+    //         screen.darken_screen_factor = 1;
+    //         darken_screen_timer = 0.0f;
+    //         current_state = GameState::NEXT_LEVEL;
+    //         Mix_PlayChannel(-1, portal_sound, 0);
+    //         goToNextLevel();
+    //     }
+    // }
 
 	// exit game w/ ESC
 	if (action == GLFW_RELEASE && key == GLFW_KEY_ESCAPE)
@@ -1161,6 +1185,9 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 				current_state = GameState::GAME_OVER;
                 triggerGameOver();
                 clearVignetteEffect();
+				createGameOverScreen();
+
+				currentBiome = Biome::RED;
 			}
 		}
 	}
@@ -1628,9 +1655,10 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 	buff.collected = true;
 
 	applyBuff(player, buff.type);
+	createBuffPopup(buff.type);
 }
 
-void WorldSystem::applyBuff(Player& player, int buff_type)
+void WorldSystem::applyBuff(Player& player, BUFF_TYPE buff_type)
 {
 	bool skipUIRender = false;
 
@@ -1870,9 +1898,13 @@ void WorldSystem::saveGame() {
 	gameData["player"]["motion"] = json(playerMotion);
 
 	// save buff status
-	std::vector<BuffUI> buffs = registry.buffUIs.components;
+	std::vector<BuffUI> to_save;
+	for (auto& buffUI : registry.buffUIs.entities)
+	{
+		if (!registry.popupElements.has(buffUI)) to_save.push_back(registry.buffUIs.get(buffUI));
+	}
 
-	gameData["buffs"] = json(buffs);
+	gameData["buffs"] = json(to_save);
 
 	// save progress
 	Entity progressEntity = registry.progressions.entities[0];
@@ -2072,24 +2104,24 @@ void WorldSystem::placeBuffsOnShopScreen() {
 		vec2 position = registry.motions.get(registry.shops.entities[i]).position;
 
 		if(placed == 0) {
-			ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, -1));
+			ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, INJECTION));
 			c.price = 1000.0;
 		} else {
 			if(offerSlotBoost) {
-				ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, -2));
+				ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, SLOT_INCREASE));
 				c.price = 200.0 * unlocked;	// dynamic pricing
 				offerSlotBoost = false; // OFFERED NOW.
 			} else {
 				// GET RANDOM TYPE
 				// GET PRICE PER TYPE
-				int buffType = getRandomBuffType();
-				if(buffType == 11) {
-					buffType = 10;
+				BUFF_TYPE buffType = getRandomBuffType();
+				if(buffType == VACUOLE) {
+					buffType = SPARE_NUCLEUS;
 				}
 
-				std::vector<int> commonBuffs = {0, 1, 2, 3, 5, 6, 11};
-				std::vector<int> rareBuffs = {4, 8, 9, 12};
-				std::vector<int> eliteBuffs = {7, 10, 13, 14};
+				std::vector<BUFF_TYPE> commonBuffs = { TAIL, MITOCHONDRIA, HEMOGLOBIN, GOLGI, CELL_WALL, AMINO_ACID, VACUOLE };
+				std::vector<BUFF_TYPE> rareBuffs = { CHLOROPLAST, CYTOPLASM, PILLI, ENDOPLASMIC_RETICULUM };
+				std::vector<BUFF_TYPE> eliteBuffs = { LYSOSOME, SPARE_NUCLEUS, OVOID, SECRETOR };
 
 				ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, buffType));
 				c.price = 1000;

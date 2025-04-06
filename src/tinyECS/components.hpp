@@ -7,6 +7,38 @@
 
 extern bool tutorial_mode;
 
+enum BUFF_TYPE
+{
+	TAIL = 0,
+	MITOCHONDRIA = TAIL + 1,
+	HEMOGLOBIN = MITOCHONDRIA + 1,
+	GOLGI = HEMOGLOBIN + 1,
+	CHLOROPLAST = GOLGI + 1,
+	CELL_WALL = CHLOROPLAST + 1,
+	AMINO_ACID = CELL_WALL + 1,
+	LYSOSOME = AMINO_ACID + 1,
+	CYTOPLASM = LYSOSOME + 1,
+	PILLI = CYTOPLASM + 1,
+	SPARE_NUCLEUS = PILLI + 1,
+	VACUOLE = SPARE_NUCLEUS + 1,
+	ENDOPLASMIC_RETICULUM = VACUOLE + 1,
+	OVOID = ENDOPLASMIC_RETICULUM + 1,
+	SECRETOR = OVOID + 1,
+	UNNAMED = SECRETOR + 1,
+	PEROXISOMES = UNNAMED + 1,
+	MUTATION = PEROXISOMES + 1,
+	FACEHUGGER = MUTATION + 1,
+	BLACK_GOO = FACEHUGGER + 1,
+	TOTAL_BUFF_COUNT = BLACK_GOO + 1,
+
+	SLOT_INCREASE = TAIL - 2,
+	INJECTION = TAIL - 1,
+};
+
+const int NUMBER_OF_BUFFS = (int)BUFF_TYPE::TOTAL_BUFF_COUNT;
+// last enabled buff + 1
+const int BUFFS_ENABLED = (int)BUFF_TYPE::SECRETOR + 1;
+
 using json = nlohmann::json;
 
 // asked gpt for this
@@ -26,8 +58,8 @@ namespace nlohmann {
 }
 
 struct Progression {
-	std::unordered_map<int, int> buffsFromLastRun;
-	std::vector<int> pickedInNucleus;
+	std::unordered_map<BUFF_TYPE, int> buffsFromLastRun;
+	std::vector<BUFF_TYPE> pickedInNucleus;
 	int slots_unlocked = 1;
 	int germoney_savings = 0;
 };
@@ -38,7 +70,7 @@ struct Slot {
 };
 
 struct ClickableBuff {
-	int type;
+	BUFF_TYPE type;
 	bool picked = false;
 	float price = 0.0;
 	vec2 returnPosition = {0, 0};
@@ -86,7 +118,7 @@ struct Player
 
 	vec2 grid_position = {0, 0};
 	// std::vector<int> buffsCollected;
-    std::unordered_map<int, int> buffsCollected;
+    std::unordered_map<BUFF_TYPE, int> buffsCollected;
 
     int germoney_count = 0;
 	float dangerFactor = DEFAULT_DANGER_LEVEL;
@@ -95,8 +127,6 @@ struct Player
 struct Text
 {
 	std::string text;
-	float scale;
-	vec2 position;
 	vec3 color;
 };
 
@@ -197,7 +227,7 @@ struct Deadly
 // Buff
 struct Buff
 {
-	int type = 0; // Type of buff (0-19, corresponding to the sprite sheet)
+	BUFF_TYPE type = TAIL; // Type of buff (0-19, corresponding to the sprite sheet)
 	bool collected = false;
 };
 
@@ -398,7 +428,7 @@ struct Chest
 
 struct BuffUI
 {
-	int buffType;
+	BUFF_TYPE buffType;
 };
 
 struct InfoBox
@@ -447,8 +477,7 @@ enum class TEXTURE_ASSET_ID
 	PLAYER = BACTERIOPHAGE + 1,
 	PROJECTILE = PLAYER + 1,
 	TILE = PROJECTILE + 1,
-	PARALAX_TILE = TILE + 1,
-	GAME_LOGO = PARALAX_TILE + 1,
+	GAME_LOGO = TILE + 1,
 	GAMEOVER = GAME_LOGO + 1,
 	BUTTON = GAMEOVER + 1,
 	PAUSE = BUTTON + 1,
@@ -457,8 +486,7 @@ enum class TEXTURE_ASSET_ID
 	NUCLEUS = SHOP_BUTTON_ON_HOVER + 1,
 	SHOPSCREEN = NUCLEUS + 1,
 	INFOSCREEN = SHOPSCREEN + 1,
-	WALL_TILE = INFOSCREEN + 1,
-	NOSE = WALL_TILE + 1,
+	NOSE = INFOSCREEN + 1,
 	CUTSCENEBACKGROUND = NOSE + 1,
 	NOSEACCENT = CUTSCENEBACKGROUND + 1,
 	ENTERINGNUCLEUS = NOSEACCENT + 1,
@@ -506,7 +534,7 @@ enum class TEXTURE_ASSET_ID
 	BOSS_ARROW = RESUME_BUTTON_ON_HOVER + 1,
 	WINSCREEN = BOSS_ARROW + 1,
 	THERMOMETER = WINSCREEN + 1,
-	INJECTION = THERMOMETER + 1,
+    INJECTION = THERMOMETER + 1,
 	PURCHASE_BOX = INJECTION +1,
 	SHOP_PLATE = PURCHASE_BOX + 1,
 	SHOPKEEPER = SHOP_PLATE + 1,
@@ -515,7 +543,20 @@ enum class TEXTURE_ASSET_ID
 	MITOSIS_BOSS_16_HP_BAR = ENEMY_HP_BAR + 1,
 	MITOSIS_BOSS_128_HP_BAR = MITOSIS_BOSS_16_HP_BAR + 1,
     INFO_BUFF = MITOSIS_BOSS_128_HP_BAR + 1,
-	TEXTURE_COUNT = INFO_BUFF + 1
+	CIRCLE = INFO_BUFF + 1,
+	RED_TILES = CIRCLE + 1,
+	RED_WALL = RED_TILES + 1,
+	GREEN_TILES = RED_WALL + 1,
+	GREEN_WALL = GREEN_TILES + 1,
+	BLUE_TILES = GREEN_WALL + 1,
+	BLUE_WALL = BLUE_TILES + 1,
+	PURPLE_TILES = BLUE_WALL + 1,
+	PURPLE_WALL = PURPLE_TILES + 1,
+    BOSS_TILES = PURPLE_WALL + 1,
+    BOSS_WALL = BOSS_TILES + 1,
+
+	TEXTURE_COUNT = BOSS_WALL + 1,
+
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -736,6 +777,28 @@ struct Particle
     float state_timer_ms = 0.0f;
     float speed_factor = 100.0f;
 };
+
+//biomes
+enum class Biome {
+  RED = 0,
+  GREEN = RED + 1,
+  BLUE = GREEN + 1,
+  PURPLE = BLUE + 1,
+  BOSS = PURPLE + 1,
+  BIOME_COUNT = BOSS + 1
+};
+
+struct PopupWithImage {
+	Entity text;
+	Entity description;
+	Entity image;
+	float duration;
+
+	PopupWithImage(const Entity& text, const Entity& description, const Entity& image, float duration)
+		: text(text), description(description), image(image), duration(duration) {}
+};
+
+struct PopupElement {};
 
 // MACROS for "to_json" and "from_json" on user-defined structs
 

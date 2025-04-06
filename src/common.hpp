@@ -133,7 +133,8 @@ const float BUFF_MAP_SIZE = 20 * WORK_SCALE_FACTOR;
 const float BUFF_HUD_SIZE = 16 * WORK_SCALE_FACTOR; // DONT USE YET!!
 
 // AMOEBA STATS
-const float PLAYER_DEFAULT_HEALTH = 100;
+// const float PLAYER_DEFAULT_HEALTH = 100;
+const float PLAYER_DEFAULT_HEALTH = 1000000;
 const float PLAYER_SPEED = 200;
 const float PLAYER_DASH_SPEED = 500;
 const float PLAYER_DASH_RANGE = 200;
@@ -171,6 +172,7 @@ const float BOSS_DETECTION_RADIUS = SPIKE_ENEMY_DETECTION_RADIUS * 3.0f;
 const float BOSS_RUMBLE_DAMAGE = 10.f * 2.f;
 const float BOSS_PROJECTILE_DAMAGE = 5.f;
 const unsigned int BOSS_LEVEL = 3;
+// const unsigned int BOSS_LEVEL = 1;
 
 // OTHER CONSTANTS
 const float DASH_DURATION_MS = 500.0f;
@@ -260,10 +262,6 @@ const vec2 GUN_UI_POS = {WEAPON_PILL_UI_POS.x - WEAPON_PILL_UI_WIDTH / 4,
                          WEAPON_PILL_UI_POS.y};
 const vec2 GUN_COOLDOWN_INDICATOR_SCALE = {20.f * UI_SCALE, 20.f * UI_SCALE};
 
-
-// GAME BALANCE
-const int NUMBER_OF_BUFFS = 15;
-
 const std::unordered_map<int, std::string> BUFF_TYPE_TO_NAME = {
     {-1, "Level Skip"},
     {-2, "Nucleus Slots"},
@@ -312,6 +310,12 @@ const int BUFF_NUM = (static_cast<int>(std::floor(
 const vec2 BUFF_START_POS = {
 	-(BUFF_NUM / 2) / 2 * BUFF_SPACING,
 	WINDOW_HEIGHT_PX / 2 - UI_MARGIN_Y - NUCLEUS_UI_HEIGHT / 2 + UI_SPACING + GERMONEY_UI_HEIGHT / 2};
+
+const float POPUP_BUFF_UI_WIDTH = 40.0f * UI_SCALE;
+const float POPUP_BUFF_UI_HEIGHT = 40.0f * UI_SCALE;
+const vec2 BUFF_POPUP_POS = { -WINDOW_WIDTH_PX / 8, WINDOW_HEIGHT_PX / 3.5 };
+const float BUFF_POPUP_GAP = 10;
+const float POPUP_DURATION = 5000;
 
 // DANGER THERMOMETER 
 const float DEFAULT_DANGER_LEVEL = 1.0f;
