@@ -91,6 +91,7 @@ public:
 	void spawnEnemies(float elapsed_ms_since_last_update);
 	void handleProjectiles(float elapsed_ms_since_last_update);
 	bool checkPortalCollision();
+	void spawnFourDenderitesOnMap();
 	void startTheme();
 	void triggerGameOver();
 

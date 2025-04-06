@@ -1029,6 +1029,7 @@ Entity createEnemyHPBar(Entity enemy, TEXTURE_ASSET_ID texture_id) {
 
     Motion& motion = registry.motions.emplace(hp);
 	Motion& enemy_motion = registry.motions.get(enemy);
+
 	float scale_factor = enemy_motion.scale.x * 0.65f / ENEMY_HP_BAR_WIDTH;
     motion.scale = vec2(ENEMY_HP_BAR_WIDTH * scale_factor, ENEMY_HP_BAR_HEIGHT * scale_factor); 
 	motion.position = enemy_motion.position + vec2(0.f, enemy_motion.scale.y / 1.5f);
@@ -1047,6 +1048,7 @@ Entity createEnemyHPBar(Entity enemy, TEXTURE_ASSET_ID texture_id) {
 }
 
 void removeEnemyHPBar(Entity enemy) {
+    std::vector<Entity> toRemove;
     for (Entity e : registry.healthBars.entities) {
         HealthBar& hb = registry.healthBars.get(e);
         if (hb.is_enemy_hp_bar && hb.owner == enemy) {
