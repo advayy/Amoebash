@@ -53,7 +53,6 @@ class RenderSystem
 		textures_path("amoeba/player_dash.png"),
 		textures_path("projectiles/bacteriophage_projectile.png"),
 		textures_path("tiles/test_tile.png"),
-		textures_path("tiles/parallax_tile_1_128x.png"),
 		textures_path("ui_art/amoebash_logo.png"),
 		textures_path("ui_art/gameOver.png"),
 		textures_path("ui_art/button_outline.png"),
@@ -63,7 +62,6 @@ class RenderSystem
 		textures_path("ui_art/nucleus_full_size.png"),
 		textures_path("ui_art/shopscreen.png"),
 		textures_path("ui_art/infoscreen.png"),
-		textures_path("tiles/wall_tile.png"),
 		textures_path("transition_animations/noses_spritesheet.png"),
 		textures_path("transition_animations/into_game_transition_sheet.png"),
 		textures_path("transition_animations/nose_accent_spritesheet.png"),
@@ -112,10 +110,26 @@ class RenderSystem
 		textures_path("enemies/boss/boss_arrow.png"),
 		textures_path("ui_art/victory_cutscene.png"),
 		textures_path("ui_art/thermometer_alone.png"),
-		textures_path("ui_art/enemy_hp_bar.png"),
+		textures_path("ui_art/injection.png"),
+		textures_path("ui_art/purchase_box.png"),
+		textures_path("ui_art/Shop_ui_plate.png"),
+		textures_path("ui_art/shopkeeper.png"),
+		textures_path("ui_art/slots_increase_buff.png"),
+        textures_path("ui_art/enemy_hp_bar.png"),
 		textures_path("ui_art/mitosis_boss_16_enemy_hp_bar.png"),
 		textures_path("ui_art/mitosis_boss_128_enemy_hp_bar.png"),
-		textures_path("enemies/boss/eyeball_projectile.png"),
+        textures_path("ui_art/circle.png"),
+		textures_path("tiles/biomes/red_tiles.png"),
+		textures_path("tiles/biomes/red_wall.png"),
+		textures_path("tiles/biomes/green_tiles.png"),
+		textures_path("tiles/biomes/green_wall.png"),
+		textures_path("tiles/biomes/blue_tiles.png"),
+		textures_path("tiles/biomes/blue_wall.png"),
+		textures_path("tiles/biomes/purple_tiles.png"),
+		textures_path("tiles/biomes/purple_wall.png"),
+        textures_path("tiles/biomes/boss_tiles.png"),
+        textures_path("tiles/biomes/boss_wall.png"),
+        textures_path("enemies/boss/eyeball_projectile.png"),
 		textures_path("enemies/dendrite.png"),
 		textures_path("enemies/finalBoss/brainBoss.png")
 	};
@@ -192,7 +206,6 @@ public:
 	// FPS counter related methods
 	void updateFPS(float elapsed_ms);
 	void toggleFPSDisplay();
-	void drawFPS();
 
 	Entity get_screen_state_entity()
 	{
@@ -214,6 +227,8 @@ public:
 
 	// INSTANCING: instanced tile drawing
 	void drawInstancedTiles(const mat3 &projection);
+
+    void drawShopText();
 
 private:
 	// Internal drawing functions for each entity type
@@ -240,7 +255,7 @@ private:
 	float frame_time_sum = 0.0f;
 	int frame_count = 0;
 	float current_fps = 0.0f;
-	bool show_fps = true; // Start with FPS display enabled
+	bool show_fps = false; // Start with FPS display enabled
 
 	// INSTANCING: Particle effect shader
 	GLuint particle_effect;
@@ -264,6 +279,7 @@ private:
     void drawBuffCountText();
     void drawDangerFactorText();
     void drawGermoneyText();
+    void drawFPSText();
     
     // freetype font rendering
 	std::map<char, Character> m_ftCharacters;

@@ -98,6 +98,7 @@ public:
 
 private:
 	bool gameOver = false;
+	bool shopItemsPlaced = false;
 
 	float device_mouse_pos_x = 0.0f;
 	float device_mouse_pos_y = 0.0f;
@@ -193,4 +194,5 @@ private:
 	void applyBuff(Player& player, int buff_type);
 
 	void updateDangerLevel(float elapsed_ms_since_last_update);
+	void placeBuffsOnShopScreen();
 };

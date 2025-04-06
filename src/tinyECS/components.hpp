@@ -28,9 +28,9 @@ namespace nlohmann {
 struct Progression {
 	std::unordered_map<int, int> buffsFromLastRun;
 	std::vector<int> pickedInNucleus;
-	int slots_unlocked = 9;
+	int slots_unlocked = 1;
+	int germoney_savings = 0;
 };
-
 
 struct Slot {
 	int number = 0;
@@ -40,6 +40,7 @@ struct Slot {
 struct ClickableBuff {
 	int type;
 	bool picked = false;
+	float price = 0.0;
 	vec2 returnPosition = {0, 0};
 	Entity slotEntity;
 };
@@ -88,7 +89,6 @@ struct Player
     std::unordered_map<int, int> buffsCollected;
 
     int germoney_count = 0;
-
 	float dangerFactor = DEFAULT_DANGER_LEVEL;
 };
 
@@ -456,8 +456,7 @@ enum class TEXTURE_ASSET_ID
 	PLAYER = BACTERIOPHAGE + 1,
 	PROJECTILE = PLAYER + 1,
 	TILE = PROJECTILE + 1,
-	PARALAX_TILE = TILE + 1,
-	GAME_LOGO = PARALAX_TILE + 1,
+	GAME_LOGO = TILE + 1,
 	GAMEOVER = GAME_LOGO + 1,
 	BUTTON = GAMEOVER + 1,
 	PAUSE = BUTTON + 1,
@@ -466,8 +465,7 @@ enum class TEXTURE_ASSET_ID
 	NUCLEUS = SHOP_BUTTON_ON_HOVER + 1,
 	SHOPSCREEN = NUCLEUS + 1,
 	INFOSCREEN = SHOPSCREEN + 1,
-	WALL_TILE = INFOSCREEN + 1,
-	NOSE = WALL_TILE + 1,
+	NOSE = INFOSCREEN + 1,
 	CUTSCENEBACKGROUND = NOSE + 1,
 	NOSEACCENT = CUTSCENEBACKGROUND + 1,
 	ENTERINGNUCLEUS = NOSEACCENT + 1,
@@ -515,10 +513,26 @@ enum class TEXTURE_ASSET_ID
 	BOSS_ARROW = RESUME_BUTTON_ON_HOVER + 1,
 	WINSCREEN = BOSS_ARROW + 1,
 	THERMOMETER = WINSCREEN + 1,
-	ENEMY_HP_BAR = THERMOMETER + 1,
+    INJECTION = THERMOMETER + 1,
+	PURCHASE_BOX = INJECTION +1,
+	SHOP_PLATE = PURCHASE_BOX + 1,
+	SHOPKEEPER = SHOP_PLATE + 1,
+	SLOT_INCREASE_BUFF = SHOPKEEPER + 1,
+    ENEMY_HP_BAR = SLOT_INCREASE_BUFF + 1, 
 	MITOSIS_BOSS_16_HP_BAR = ENEMY_HP_BAR + 1,
 	MITOSIS_BOSS_128_HP_BAR = MITOSIS_BOSS_16_HP_BAR + 1,
-	EYE_BALL_PROJECTILE = MITOSIS_BOSS_128_HP_BAR + 1,
+	CIRCLE = MITOSIS_BOSS_128_HP_BAR + 1,
+	RED_TILES = CIRCLE + 1,
+	RED_WALL = RED_TILES + 1,
+	GREEN_TILES = RED_WALL + 1,
+	GREEN_WALL = GREEN_TILES + 1,
+	BLUE_TILES = GREEN_WALL + 1,
+	BLUE_WALL = BLUE_TILES + 1,
+	PURPLE_TILES = BLUE_WALL + 1,
+	PURPLE_WALL = PURPLE_TILES + 1,
+    BOSS_TILES = PURPLE_WALL + 1,
+    BOSS_WALL = BOSS_TILES + 1,
+    EYE_BALL_PROJECTILE = BOSS_WALL + 1,
 	DENDERITE = EYE_BALL_PROJECTILE + 1,
 	FINAL_BOSS = DENDERITE + 1,
 	TEXTURE_COUNT = FINAL_BOSS + 1
@@ -543,7 +557,7 @@ enum class EFFECT_ASSET_ID
     FONT = PARTICLE_EFFECT + 1,
     THERMOMETER_EFFECT = FONT + 1,
 	WEAPON_COOLDOWN_INDICATOR = THERMOMETER_EFFECT + 1,
-	EFFECT_COUNT = WEAPON_COOLDOWN_INDICATOR + 1,
+    EFFECT_COUNT = WEAPON_COOLDOWN_INDICATOR + 1,
 
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
@@ -785,6 +799,16 @@ struct Particle
     float max_lifetime_ms = 2000.0f;
     float state_timer_ms = 0.0f;
     float speed_factor = 100.0f;
+};
+
+//biomes
+enum class Biome {
+  RED = 0,
+  GREEN = RED + 1,
+  BLUE = GREEN + 1,
+  PURPLE = BLUE + 1,
+  BOSS = PURPLE + 1,
+  BIOME_COUNT = BOSS + 1
 };
 
 // MACROS for "to_json" and "from_json" on user-defined structs

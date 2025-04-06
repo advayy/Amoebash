@@ -129,6 +129,7 @@ Entity createStartScreen(vec2 position)
 Entity createShopScreen()
 {
 	Entity shopScreenEntity = Entity();
+	Shop& shop = registry.shops.emplace(shopScreenEntity);
 
 	registry.renderRequests.insert(
 		shopScreenEntity,
@@ -136,23 +137,139 @@ Entity createShopScreen()
 		 EFFECT_ASSET_ID::TEXTURED,
 		 GEOMETRY_BUFFER_ID::SPRITE});
 	
-	Shop& shop = registry.shops.emplace(shopScreenEntity);
 
 	GameScreen &screen = registry.gameScreens.emplace(shopScreenEntity);
 	screen.type = ScreenType::SHOP;
 
 	Motion &motion = registry.motions.emplace(shopScreenEntity);
-	vec2 position = WORLD_ORIGIN;
-	vec2 scale = BACKGROUND_SCALE;
-
-	motion.position = position;
-	motion.scale = scale;
+	motion.position = WORLD_ORIGIN;
+	motion.scale = BACKGROUND_SCALE;
 
 	Entity backButtonEntity = createBackButton();
-	
 	shop.buttons = std::vector{backButtonEntity};
 
+	// MAKE 6 SHOP SLOTS
+	float padding_plate = 150.0;
+	vec2 s = {WORLD_ORIGIN.x - WINDOW_WIDTH_PX/4, WORLD_ORIGIN.y - WINDOW_HEIGHT_PX/4};
+
+	for (int i = -1; i < 2; i ++) {
+		for (int j = 0; j < 2; j++) {
+			vec2 pos = {s.x + (i * padding_plate), s.y + (j * padding_plate)};
+			registry.shops.emplace(createShopPlate(pos));
+		}
+	}
+	
+	// MAKE SHOP BOX
+	registry.shops.emplace(createShopBox());
+
+	// MAKE SHOPKEEPER
+	registry.shops.emplace(createShopKeeper());
+
 	return shopScreenEntity;
+}
+
+Entity createShopPlate(vec2 pos) {
+	Entity plate = Entity();
+
+	registry.renderRequests.insert(
+		plate,
+		{TEXTURE_ASSET_ID::SHOP_PLATE,
+		 EFFECT_ASSET_ID::TEXTURED,
+		 GEOMETRY_BUFFER_ID::SPRITE});
+
+	Motion& m = registry.motions.emplace(plate);
+	m.position = pos;
+	m.scale = { SHOP_PLATE_SCALE.x, SHOP_PLATE_SCALE.y };
+
+	return plate;
+}
+
+Entity createShopBox() {
+	Entity box = Entity();
+	// TEXTURE, MOTION
+	registry.renderRequests.insert(
+		box,
+		{TEXTURE_ASSET_ID::PURCHASE_BOX,
+		 EFFECT_ASSET_ID::TEXTURED,
+		 GEOMETRY_BUFFER_ID::SPRITE});
+
+	Motion& m = registry.motions.emplace(box);
+	m.position = {WORLD_ORIGIN.x - WINDOW_WIDTH_PX/4, WORLD_ORIGIN.y + WINDOW_HEIGHT_PX/5};
+	m.scale = { PURCHASE_BOX_SCALE.x, PURCHASE_BOX_SCALE.y };
+
+	return box;
+}
+
+Entity createShopKeeper() {
+	Entity shopKeeper = Entity();
+
+	// TEXTURE, ANIMATION, SPRITESHEET, SPRITESIZE, MOTION
+	registry.renderRequests.insert(
+		shopKeeper,
+		{TEXTURE_ASSET_ID::SHOPKEEPER,
+		 EFFECT_ASSET_ID::SPRITE_SHEET,
+		 GEOMETRY_BUFFER_ID::SPRITE});
+
+	Motion& m = registry.motions.emplace(shopKeeper);
+	m.scale = {SHOPKEEPER_SIZE.x, SHOPKEEPER_SIZE.y};
+	m.position = {WORLD_ORIGIN.x + WINDOW_WIDTH_PX/4, WORLD_ORIGIN.y};
+		
+	Animation &animation = registry.animations.emplace(shopKeeper);
+	
+	animation.time_per_frame = 100.0;
+	animation.start_frame = 0;
+	animation.end_frame = 0;
+	animation.loop = ANIM_LOOP_TYPES::LOOP;
+	 
+	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(shopKeeper);
+	spriteSheet.total_frames = 3;
+	 
+	SpriteSize &sprite = registry.spritesSizes.emplace(shopKeeper);
+	sprite.width = SHOPKEEPER_SIZE.x; 
+	sprite.height = SHOPKEEPER_SIZE.y; 
+
+	return shopKeeper;
+}
+
+Entity createClickableShopBuff(vec2 position, int buffType)
+{
+
+	if(buffType >= 0 && buffType < 15) {
+		Entity e = createClickableBuffUI(position, buffType);
+		registry.shops.emplace(e);
+		return e;
+	}
+
+	TEXTURE_ASSET_ID selectedTexture = TEXTURE_ASSET_ID::BUFFS_SHEET;
+
+	if(buffType == -1) {
+		// injection
+		selectedTexture = TEXTURE_ASSET_ID::INJECTION;
+	} else if (buffType == -2) {
+		selectedTexture = TEXTURE_ASSET_ID::SLOT_INCREASE_BUFF;
+	}
+
+
+	Entity buff = Entity();
+
+	ClickableBuff& clickable = registry.clickableBuffs.emplace(buff);
+
+	clickable.picked = false;
+	clickable.returnPosition = position;
+	clickable.type = buffType;
+
+	Motion &motion = registry.motions.emplace(buff);
+	motion.position = position;
+
+	motion.scale = {BUFF_WIDTH, BUFF_HEIGHT};
+
+	registry.renderRequests.insert(buff,
+								   {selectedTexture,
+									EFFECT_ASSET_ID::TEXTURED,
+									GEOMETRY_BUFFER_ID::SPRITE});
+	
+	registry.shops.emplace(buff);
+	return buff;
 }
 
 // create info screen and buttons
@@ -172,16 +289,11 @@ Entity createInfoScreen()
 	screen.type = ScreenType::INFO;
 
 	Motion &motion = registry.motions.emplace(infoScreenEntity);
-	vec2 position = WORLD_ORIGIN;
-	vec2 scale = BACKGROUND_SCALE;
-
-	motion.position = position;
-	motion.scale = scale;
+	motion.position = WORLD_ORIGIN;
+	motion.scale = BACKGROUND_SCALE;
 
 	Entity backButtonEntity = createBackButton();
-
 	info.buttons = std::vector{backButtonEntity};
-
 	return infoScreenEntity;
 }
 
@@ -677,19 +789,24 @@ void removeStartScreen()
 // remove shop screen and related UI
 void removeShopScreen()
 {
-	if (registry.shops.size() == 0)
-		return;
 	
-	Entity shop_entity = registry.shops.entities[0];
-	Shop &shop = registry.shops.components[0];
-	std::vector<Entity> buttons_to_remove = shop.buttons;
-	
-    int size = buttons_to_remove.size();
+	std::vector<Entity> to_remove;
+	for(int i = 0; i < registry.shops.entities.size(); i++) {
+		if(!registry.clickableBuffs.has(registry.shops.entities[i])) {
+			to_remove.push_back(registry.shops.entities[i]);
 
-    for (int i = 0; i < size; i++) {
-        registry.remove_all_components_of(buttons_to_remove[i]);
-    }
-	registry.remove_all_components_of(shop_entity);
+			Entity shop_entity = registry.shops.entities[i];
+			Shop &shop = registry.shops.components[i];
+			if(shop.buttons.size() > 0) {
+				// add the button entities to the list too
+				to_remove.insert(to_remove.end(), shop.buttons.begin(), shop.buttons.end());
+			}
+		}
+	}
+
+	for(int i = 0; i < to_remove.size(); i++) {
+		registry.remove_all_components_of(to_remove[i]);
+	}
 }
 
 // remove info screen and related UI
@@ -931,6 +1048,7 @@ Entity createEnemyHPBar(Entity enemy, TEXTURE_ASSET_ID texture_id) {
 }
 
 void removeEnemyHPBar(Entity enemy) {
+    std::vector<Entity> toRemove;
     for (Entity e : registry.healthBars.entities) {
         HealthBar& hb = registry.healthBars.get(e);
         if (hb.is_enemy_hp_bar && hb.owner == enemy) {
