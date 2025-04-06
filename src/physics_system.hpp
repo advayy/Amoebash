@@ -24,6 +24,7 @@ public:
 
 	bool find_path(std::vector<ivec2> & path, vec2 start_world, vec2 end_world);
 	bool isTraversable(ivec2 pos);
+	
 private:
 	/*
 	* Handles wall collisions for the given entity

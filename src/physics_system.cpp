@@ -345,29 +345,29 @@ void PhysicsSystem::step(float elapsed_ms)
 		handleWallCollision(buff_entity);
 	}
 
-	for (auto& key_entity : registry.keys.entities)
-	{
-		// Handle player-key collisions
-		Motion& key_motion = registry.motions.get(key_entity);
+	// for (auto& key_entity : registry.keys.entities)
+	// {
+	// 	// Handle player-key collisions
+	// 	Motion& key_motion = registry.motions.get(key_entity);
 
-		if (detector.hasCollided(player_motion, key_motion))
-		{
-			registry.collisions.emplace_with_duplicates(player_entity, key_entity);
-		}
+	// 	if (detector.hasCollided(player_motion, key_motion))
+	// 	{
+	// 		registry.collisions.emplace_with_duplicates(player_entity, key_entity);
+	// 	}
 
-		for (auto& chest_entity : registry.chests.entities)
-		{
-			// Handle chest-key collisions
-			Motion& chest_motion = registry.motions.get(chest_entity);
+	// 	for (auto& chest_entity : registry.chests.entities)
+	// 	{
+	// 		// Handle chest-key collisions
+	// 		Motion& chest_motion = registry.motions.get(chest_entity);
 
-			if (detector.hasCollided(chest_motion, key_motion))
-			{
-				registry.collisions.emplace_with_duplicates(chest_entity, key_entity);
-			}
-		}
+	// 		if (detector.hasCollided(chest_motion, key_motion))
+	// 		{
+	// 			registry.collisions.emplace_with_duplicates(chest_entity, key_entity);
+	// 		}
+	// 	}
 
-		 handleWallCollision(key_entity);
-	}
+	// 	 handleWallCollision(key_entity);
+	// }
 
 	handleWallCollision(player_entity);
 }

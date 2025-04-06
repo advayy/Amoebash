@@ -81,7 +81,7 @@ public:
 	void handlePlayerHealth(float elapsed_ms);
 
 	std::map<std::string, bool> progress_map = {
-		{"tutorial_mode", true}
+		{"tutorial_mode", false}
 	};
 
     void initiatePlayerDash();
@@ -91,6 +91,7 @@ public:
 	void spawnEnemies(float elapsed_ms_since_last_update);
 	void handleProjectiles(float elapsed_ms_since_last_update);
 	bool checkPortalCollision();
+	void spawnFourDenderitesOnMap();
 	void startTheme();
 	void triggerGameOver();
 

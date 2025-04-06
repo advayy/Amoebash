@@ -248,41 +248,41 @@ bool WorldSystem::updateBoss()
 
 	for (auto boss : registry.bossAIs.entities) 
 	{
-		Enemy& enemy = registry.enemies.get(boss);
-		BossAI& bossAI = registry.bossAIs.get(boss);
+
+		if (!registry.enemies.has(boss) || !registry.motions.has(boss) || !registry.bossAIs.has(boss))
+			continue;
+
+		Enemy enemy = registry.enemies.get(boss);
+		BossAI bossAI = registry.bossAIs.get(boss);
+		Motion motion = registry.motions.get(boss);
 
 		if (bossAI.stage == 3) continue;
 
 		if (enemy.health < enemy.total_health / 2.f) {
-			bosses_to_split.push_back(boss);
+			// bosses_to_split.push_back(boss);
+			Motion& originalMotion = registry.motions.get(boss);
+			vec2 position = originalMotion.position;
+			vec2 scale = originalMotion.scale;
+			int stage = bossAI.stage;
+			Entity arrow = bossAI.associatedArrow;
+
+
+			vec2 smallScale = scale * 0.5f;
+			vec2 offset = vec2(smallScale.x * 1.2f, 0.f);
+			vec2 pos1 = originalMotion.position - offset;
+			vec2 pos2 = originalMotion.position + offset;
+			
+			createBoss(renderer, pos1, BossState::IDLE, stage + 1);
+			createBoss(renderer, pos2, BossState::IDLE, stage + 1);
+			
+			bosses_to_remove.push_back(boss);
+			bosses_to_remove.push_back(arrow);
 		}
-	}
-
-	for (auto boss : bosses_to_split) 
-	{
-		Motion& originalMotion = registry.motions.get(boss);
-		BossAI& originalAI = registry.bossAIs.get(boss);
-
-        int stage = originalAI.stage;
-
-		vec2 smallScale = originalMotion.scale * 0.5f;
-
-		vec2 offset = vec2(smallScale.x * 1.2f, 0.f);
-		vec2 pos1 = originalMotion.position - offset;
-		vec2 pos2 = originalMotion.position + offset;
-        
-		bosses_to_remove.push_back(boss);
-		bosses_to_remove.push_back(originalAI.associatedArrow);
-
-		Entity smallBoss1 = createBoss(renderer, pos1, BossState::IDLE, stage + 1);
-		Entity smallBoss2 = createBoss(renderer, pos2, BossState::IDLE, stage + 1);
 	}
 
 	for (int i = bosses_to_remove.size() - 1; i >= 0; --i) {
 		Entity boss = bosses_to_remove[i];
-		if (registry.motions.has(boss) || registry.enemies.has(boss) || registry.bossAIs.has(boss)) {
-			registry.remove_all_components_of(boss);
-		}
+		registry.remove_all_components_of(boss);
 	}
 	// terminal condition for the boss
 	return registry.bossAIs.size() == 0;
@@ -336,6 +336,28 @@ void WorldSystem::updateBossArrows() {
 	uint size = removals.size();
 	for (uint i = 0; i < size; i++) {
 		registry.remove_all_components_of(removals[i]);
+	}
+}
+
+void WorldSystem::spawnFourDenderitesOnMap() {
+	// spawn four on the map where the tiles are empty, but do not spawn if no valid path exists
+	ProceduralMap& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]);
+	if (map.map.size() == 0) return;
+	Player& player = registry.players.get(registry.players.entities[0]);
+	Motion& player_motion = registry.motions.get(registry.players.entities[0]);
+	// just spawn four
+	int i = 0;
+	while (i < 4) {
+		// get the denderite position with get random empty tile
+		// and convert to world position
+		std::pair<int, int> denderitePosition = getRandomEmptyTile(map.map);
+		vec2 denderiteWorldPosition = gridCellToPosition({ denderitePosition.second, denderitePosition.first });
+		std::vector<ivec2> path;
+		PhysicsSystem phys_sys;
+		if (phys_sys.find_path(path, denderiteWorldPosition, player_motion.position)) {
+			createDenderite(nullptr, denderiteWorldPosition);
+			i++;
+		} 
 	}
 }
 
@@ -682,6 +704,10 @@ void WorldSystem::goToNextLevel()
 		createFinalBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
 		createFinalBoss(renderer, gridCellToPosition({9, 2}));
 	} 
+
+	if (level == FINAL_BOSS_LEVEL - 1) {
+		spawnFourDenderitesOnMap();
+	}
 
 	Player &player = registry.players.get(registry.players.entities[0]);
 	Motion &playerMotion = registry.motions.get(registry.players.entities[0]);
@@ -1049,14 +1075,21 @@ void WorldSystem::handle_collisions()
                     }
                     
                     vec2 enemy_position = enemy_motion.position;
+
+					
                     points += 1;
                     removals.push_back(entity2);
 					removeEnemyHPBar(entity2);
                     Mix_PlayChannel(-1, enemy_death_sound, 0);
 					
                     Player& player = registry.players.get(registry.players.entities[0]);
-                    player.germoney_count += 1;
                     
+					if (registry.bossAIs.has(entity2) || registry.finalBossAIs.has(entity2)) {
+						player.germoney_count += 100;
+					} else {
+						player.germoney_count += 1;
+					}
+
 					if (level != FINAL_BOSS_LEVEL) {
 						createBuff(vec2(enemy_position.x, enemy_position.y));
 					}

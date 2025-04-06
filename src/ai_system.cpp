@@ -276,6 +276,11 @@ BacteriophageState AISystem::handleBacteriophageBehavior(Entity& enemyEntity, Ba
 
 BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavior, float dist, vec2 direction, bool playerDetected, float elapsed_ms)
 {
+
+	if (!registry.motions.has(enemyEntity) || !registry.enemies.has(enemyEntity)) {
+		return BossState::INITIAL;
+	}
+
 	Motion &enemyMotion = registry.motions.get(enemyEntity);
 
 	Enemy& enemy = registry.enemies.get(enemyEntity);
