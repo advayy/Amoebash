@@ -1167,6 +1167,23 @@ bool WorldSystem::is_over() const
 // on key callback
 void WorldSystem::on_key(int key, int, int action, int mod)
 {
+	// if (action == GLFW_RELEASE && key == GLFW_KEY_N) {
+    //     if (progress_map["tutorial_mode"]) {
+    //         current_state = GameState::NEXT_LEVEL;
+    //         progress_map["tutorial_mode"] = false;
+    //         removeInfoBoxes();
+    //         goToNextLevel();
+    //         emptyMiniMap();
+    //     } else {
+    //         Entity screen_state_entity = renderer->get_screen_state_entity();
+    //         ScreenState &screen = registry.screenStates.get(screen_state_entity);
+    //         screen.darken_screen_factor = 1;
+    //         darken_screen_timer = 0.0f;
+    //         current_state = GameState::NEXT_LEVEL;
+    //         Mix_PlayChannel(-1, portal_sound, 0);
+    //         goToNextLevel();
+    //     }
+    // }
 
     if (action == GLFW_RELEASE && key == GLFW_KEY_N) {
         if (progress_map["tutorial_mode"]) {
