@@ -925,7 +925,15 @@ void WorldSystem::handle_collisions()
                     player.germoney_count += 1;
 
 					createBuff(vec2(enemy_position.x, enemy_position.y));
-					createEffect(TEXTURE_ASSET_ID::SPIKE_ENEMY_EXPLOSION, enemy_position);
+
+					if (registry.spikeEnemyAIs.has(entity2)) {
+						createEffect(TEXTURE_ASSET_ID::SPIKE_ENEMY_EXPLOSION, enemy_position);
+					} else if (registry.rbcEnemyAIs.has(entity2)) {
+						createEffect(TEXTURE_ASSET_ID::RBC_ENEMY_EXPLOSION, enemy_position);
+					} else if (registry.bacteriophageAIs.has(entity2)) {
+						createEffect(TEXTURE_ASSET_ID::BACTERIOPHAGE_EXPLOSION, enemy_position);
+					}
+					
 					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15); 
 				}
 			}
