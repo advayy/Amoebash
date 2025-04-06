@@ -1030,7 +1030,7 @@ void WorldSystem::handle_collisions()
 					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
             
                     Player& player = registry.players.get(registry.players.entities[0]);
-                    player.germoney_count += 1;
+                    player.germoney_count += 10;
 
 					if (level != FINAL_BOSS_LEVEL) {
 
@@ -1144,7 +1144,7 @@ void WorldSystem::handle_collisions()
 					if (registry.bossAIs.has(entity2) || registry.finalBossAIs.has(entity2)) {
 						player.germoney_count += 100;
 					} else {
-						player.germoney_count += 1;
+						player.germoney_count += 15;
 					}
 
 					if (level != FINAL_BOSS_LEVEL) {
