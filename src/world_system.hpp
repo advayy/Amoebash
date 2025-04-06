@@ -194,4 +194,8 @@ private:
 	void applyBuff(Player& player, BUFF_TYPE buff_type);
 
 	void updateDangerLevel(float elapsed_ms_since_last_update);
+
+	// text related
+	Entity player_germoney_count;
+	void setPlayerGermoneyCount(Entity& entity) { this->player_germoney_count = entity; };
 };

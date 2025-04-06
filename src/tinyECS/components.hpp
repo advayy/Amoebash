@@ -759,12 +759,7 @@ struct PopupWithImage {
 	float duration;
 
 	PopupWithImage(Entity& text, Entity& description, Entity& image, float duration = POPUP_DURATION)
-	{
-		this->text = text;
-		this->description = description;
-		this->image = image;
-		this->duration = duration;
-	}
+	: text(text), description(description), image(image), duration(duration) {}
 };
 
 struct PopupElement {};

@@ -1892,17 +1892,6 @@ void WorldSystem::loadGame() {
 	ProceduralMap& map = registry.proceduralMaps.get(mapEntity);
 	map = gameData["map"].get<ProceduralMap>();
 
-	if (registry.buffUIs.entities.size() == 0) {
-		std::cout << "Buff UI should be empty" << std::endl;
-	}
-
-	// load buffs 
-	std::vector<BuffUI> buffs = gameData["buffs"].get<std::vector<BuffUI>>();
-
-	for (int i = 0; i < buffs.size(); i++) {
-		this->ui_system->createRowBuffUI(buffs[i].buffType);
-	}
-
 	// load projectiles
 	std::vector<Motion> projectiles = gameData["projectiles"].get<std::vector<Motion>>();
 

@@ -65,30 +65,6 @@ public:
 	void removePopups(std::function<bool(Entity&)> shouldRemove);
 
 	Entity createText(std::string text, vec2 start_pos, vec3 color, float scale);
-
-	const std::map<BUFF_TYPE, std::pair<std::string, std::string>> BUFF_TYPE_TO_TEXT =
-	{
-		{TAIL, {"Tail", "Gives you a 5% speed boost"}},
-		{MITOCHONDRIA, {"Mitochondria", "Reduces Dash cooldown by 5%"}},
-		{HEMOGLOBIN, {"Hemoglobin", "Reduces enemy detection range by 5%"}},
-		{GOLGI, {"Golgi Apparatus", "Increases your health by 10"}},
-		{CHLOROPLAST, {"Chloroplast", "Increases your healing rate"}},
-		{CELL_WALL, {"Cell Wall", "Not Implemented"}},
-		{AMINO_ACID, {"Amino Acid", "Increases your Dash damage"}},
-		{LYSOSOME, {"Lysosome", "Unimplemented"}},
-		{CYTOPLASM, {"Cytoplasm", "Increases your health by 10"}},
-		{PILLI, {"Pilli", "Not Implemented"}},
-		{SPARE_NUCLEUS, {"Pilli", "Not Implemented"}},
-		{VACUOLE, {"Pilli", "Not Implemented"}},
-		{ENDOPLASMIC_RETICULUM, {"Pilli", "Not Implemented"}},
-		{OVOID, {"Pilli", "Not Implemented"}},
-		{SECRETOR, {"Pilli", "Not Implemented"}},
-		{UNNAMED, {"Pilli", "Not Implemented"}},
-		{PEROXISOMES, {"Pilli", "Not Implemented"}},
-		{MUTATION, {"Pilli", "Not Implemented"}},
-		{FACEHUGGER, {"Pilli", "Not Implemented"}},
-		{BLACK_GOO, {"Pilli", "Not Implemented"}},
-	};
 	vec2 getBuffSlot(int buffType);
 	void removeBuffUI(int buffType);
 	vec2 getBuffSlot_uiPos(int buffType);
@@ -105,4 +81,27 @@ private:
 	std::map<BUFF_TYPE, Entity> buff_to_ui_entity;
 	std::map<BUFF_TYPE, Entity> buff_to_text_entity;
 
+	const std::map<BUFF_TYPE, std::pair<std::string, std::string>> BUFF_TYPE_TO_TEXT =
+	{
+		{TAIL, {"Flagella", "Gives you a 5% speed boost"}},
+		{MITOCHONDRIA, {"Mitochondria", "Reduces Dash cooldown by 5%"}},
+		{HEMOGLOBIN, {"Hemoglobin", "Reduces enemy detection range by 5%"}},
+		{GOLGI, {"Golgi Apparatus", "Increases your health by 10"}},
+		{CHLOROPLAST, {"Chloroplast", "Increases your healing rate"}},
+		{CELL_WALL, {"Cell Wall", "Negate the next time you take damage"}},
+		{AMINO_ACID, {"Amino Acid", "Increases your Dash damage"}},
+		{LYSOSOME, {"Lysosome", "Shoot 1 more projectile"}},
+		{CYTOPLASM, {"Cytoplasm", "Increases your health by 10"}},
+		{PILLI, {"Pilli", "Projectile Speed Bost"}},
+		{SPARE_NUCLEUS, {"Spare Nucleus", "1+ Lives"}},
+		{VACUOLE, {"Vacuole", "Heals some health instantly"}},
+		{ENDOPLASMIC_RETICULUM, {"Endoplasmic Reticulum", "Not Implemented"}},
+		{OVOID, {"Oceloid", "Increases mini-map view range"}},
+		{SECRETOR, {"Secretor", "Increases dash drift"}},
+		{UNNAMED, {"Pilli", "Not Implemented"}},
+		{PEROXISOMES, {"Pilli", "Not Implemented"}},
+		{MUTATION, {"Pilli", "Not Implemented"}},
+		{FACEHUGGER, {"Pilli", "Not Implemented"}},
+		{BLACK_GOO, {"Pilli", "Not Implemented"}},
+	};
 };
