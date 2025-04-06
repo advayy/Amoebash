@@ -135,7 +135,7 @@ const float BUFF_MAP_SIZE = 20 * WORK_SCALE_FACTOR;
 const float BUFF_HUD_SIZE = 16 * WORK_SCALE_FACTOR; // DONT USE YET!!
 
 // AMOEBA STATS
-const float PLAYER_DEFAULT_HEALTH = 100000;
+const float PLAYER_DEFAULT_HEALTH = 100;
 const float PLAYER_SPEED = 200;
 const float PLAYER_DASH_SPEED = 500;
 const float PLAYER_DASH_RANGE = 200;
@@ -304,6 +304,9 @@ const std::unordered_map<int, std::string> BUFF_TYPE_TO_NAME = {
     {18, "Facehugger"},
     {19, "Black Goo"}
 };
+
+const float BUFF_DROP_CHANCE = 0.6f;
+const float BUFF_DROP_FAIL_CHANCE = 1.0f - BUFF_DROP_CHANCE;
 
 const float BUFF_WIDTH = 20.0f * WORK_SCALE_FACTOR;
 const float BUFF_HEIGHT = 20.0f * WORK_SCALE_FACTOR;

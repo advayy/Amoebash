@@ -432,20 +432,14 @@ void RenderSystem::draw()
 	}
 
 	// draw the mini map
-	drawTexturedMesh(registry.miniMaps.entities[0], projection_2D);
-	drawTexturedMesh(registry.thermometers.entities[0], projection_2D);
+	// drawTexturedMesh(registry.miniMaps.entities[0], projection_2D);
+	// drawTexturedMesh(registry.thermometers.entities[0], projection_2D);
 
 	// for (Entity entity : registry.healthBars.entities) {
     // 	if (registry.renderRequests.has(entity)) {
     //     	drawTexturedMesh(entity, projection_2D);
     // 	}
 	// }
-
-	// draw static ui elemments
-	for (Entity entity : registry.uiElements.entities)
-	{
-		drawTexturedMesh(entity, projection_2D);
-	}
 
 	for (Entity entity : registry.bossArrows.entities)
 	{
@@ -464,6 +458,12 @@ void RenderSystem::draw()
 	{
 		auto &pause = registry.pauses.entities[0];
 		drawTexturedMesh(pause, projection_2D);
+	}
+
+	// draw static ui elemments
+	for (Entity entity : registry.uiElements.entities)
+	{
+		drawTexturedMesh(entity, projection_2D);
 	}
 
     drawText();

@@ -57,7 +57,11 @@ Entity createMiniMap(RenderSystem *renderer, vec2 size)
 	// create motion component
 	Motion &motion = registry.motions.emplace(entity);
 
-	motion.position = {0, 0};
+
+	vec2 offset = {WINDOW_WIDTH_PX / 2 - 100, -WINDOW_HEIGHT_PX / 2 + 100};
+	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+
+	motion.position = {camera.position.x + offset.x, camera.position.y + offset.y};
 	motion.angle = 0.f;
 	motion.velocity = {0, 0};
 	motion.scale = {32 * 2 * WORK_SCALE_FACTOR, 32 * 2 * WORK_SCALE_FACTOR};
@@ -72,6 +76,10 @@ Entity createMiniMap(RenderSystem *renderer, vec2 size)
 	// add entity to minimaps
 	MiniMap& m = registry.miniMaps.emplace(entity);
 	m.visited = std::vector<std::vector<int>>(MAP_HEIGHT, std::vector<int>(MAP_WIDTH, 0));
+	
+	UIElement& u = registry.uiElements.emplace(entity);
+	u.position = motion.position;
+	u.scale = motion.scale;
 
 	return entity;
 }
@@ -496,7 +504,7 @@ Entity createPauseScreen()
 
 	Motion &motion = registry.motions.emplace(pauseScreenEntity);
 
-	vec2 scale = {LOGO_WIDTH_PX, LOGO_HEIGHT_PX};
+	vec2 scale = {WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX};
 
 	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
 	motion.position = camera.position;
@@ -506,7 +514,9 @@ Entity createPauseScreen()
 	vec2 resumeButtonPosition = camera.position + vec2(BACK_BUTTON_SCALE.x/2.0f + WORK_SCALE_FACTOR * UI_MARGIN_X, -WINDOW_HEIGHT_PX/2.0f + WORK_SCALE_FACTOR* UI_MARGIN_Y);
 
 	Entity saveButtonEntity = createSaveButton(saveButtonPosition);
+	registry.uiElements.emplace(saveButtonEntity);
 	Entity resumeButtonEntity = createResumeButton(resumeButtonPosition);
+	registry.uiElements.emplace(resumeButtonEntity);
 
 	
 	ButtonType type = registry.buttons.get(saveButtonEntity).type;
@@ -952,6 +962,10 @@ Entity createThermometer() {
 	Motion &motion = registry.motions.emplace(entity);
 	motion.position = THERMOMETER_POS;
 	motion.scale = {THERMOMETER_WIDTH, THERMOMETER_HEIGHT};
+	
+	UIElement& u = registry.uiElements.emplace(entity);
+	u.position = motion.position;
+	u.scale = motion.scale;
 
 	Thermometer &t = registry.thermometers.emplace(entity);
 
@@ -1314,13 +1328,7 @@ void findAndRemove(std::unordered_map<BUFF_TYPE, int>& map, BUFF_TYPE N) {
 // HUD element update such has health etc.
 void updateHuds()
 {
-	vec2 offset = {WINDOW_WIDTH_PX / 2 - 100, -WINDOW_HEIGHT_PX / 2 + 100};
-
-	Entity minimapEntity = registry.miniMaps.entities[0];
-	Motion &minimapMotion = registry.motions.get(minimapEntity);
-
 	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
-	minimapMotion.position = {camera.position.x + offset.x, camera.position.y + offset.y};
 
 	if (!registry.uiElements.entities.empty())
 	{
@@ -1374,14 +1382,14 @@ void updateHuds()
 	}
 
 
-	if (!registry.thermometers.entities.empty()) {
-		Thermometer& t = registry.thermometers.get(registry.thermometers.entities[0]);
-		Motion& m = registry.motions.get(registry.thermometers.entities[0]);
-		m.position = {
-			camera.position.x + THERMOMETER_POS.x,
-			camera.position.y + THERMOMETER_POS.y
-		};
-	}
+	// if (!registry.thermometers.entities.empty()) {
+	// 	Thermometer& t = registry.thermometers.get(registry.thermometers.entities[0]);
+	// 	Motion& m = registry.motions.get(registry.thermometers.entities[0]);
+	// 	m.position = {
+	// 		camera.position.x + THERMOMETER_POS.x,
+	// 		camera.position.y + THERMOMETER_POS.y
+	// 	};
+	// }
 
 }
 

@@ -99,6 +99,7 @@ public:
 private:
 	bool gameOver = false;
 	bool shopItemsPlaced = false;
+	bool firstEnemySpawned = false;
 
 	float device_mouse_pos_x = 0.0f;
 	float device_mouse_pos_y = 0.0f;

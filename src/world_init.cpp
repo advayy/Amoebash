@@ -681,7 +681,7 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 			{1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1},		
 			{1,1,1,1,1,1,1,1,1,0,INFO_BUFF3,0,0,0,1,1,1,1,1,1},		
 			{1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1},		
-			{1,0,0,0,INFO_BUFF1,0,0,INFO_BUFF2,0,0,0,0,1,1,1,1,1,1,1,1},		
+			{1,0,INFO_BUFF0,0,INFO_BUFF1,0,0,INFO_BUFF2,0,0,0,0,1,1,1,1,1,1,1,1},		
 			{1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1},		
 			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}		
 		};
@@ -1125,6 +1125,16 @@ Entity createBuff(vec2 position, BUFF_TYPE buffType)
 	return entity;
 }
 
+Entity createBuffWithChanceToFail(vec2 pos) {
+	
+	float chance = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    if (chance < BUFF_DROP_FAIL_CHANCE) {
+        return {};
+    }
+
+	return createBuff(pos);
+}
+
 void applyVignetteEffect() {
     registry.screenStates.components[0].vignette_screen_factor = .5f;
 }
@@ -1140,7 +1150,7 @@ void clearVignetteEffect() {
 BUFF_TYPE getRandomBuffType() {
 	std::vector<BUFF_TYPE> commonBuffs = { TAIL, MITOCHONDRIA, HEMOGLOBIN, GOLGI, CELL_WALL, AMINO_ACID, VACUOLE };
 	std::vector<BUFF_TYPE> rareBuffs = { CHLOROPLAST, CYTOPLASM, PILLI, ENDOPLASMIC_RETICULUM };
-	std::vector<BUFF_TYPE> eliteBuffs = { LYSOSOME, SPARE_NUCLEUS, OVOID, SECRETOR };
+	std::vector<BUFF_TYPE> eliteBuffs = { LYSOSOME, SPARE_NUCLEUS, OCELOID, SECRETOR };
 
     int categoryRoll = rand() % 100;
 

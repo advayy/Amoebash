@@ -539,7 +539,12 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
                 }
             }
 		}
+	} else if (progress_map["tutorial_mode"] && !firstEnemySpawned) {
+		// SPAWN A BUFF and SPAWN AN ENEMY
+		firstEnemySpawned = true;
+		createSpikeEnemy(renderer, gridCellToPosition({5,8}));
 	}
+
 	handleProjectiles(elapsed_ms_since_last_update);
 	handleRippleEffect(elapsed_ms_since_last_update);
 
@@ -1022,7 +1027,9 @@ void WorldSystem::handle_collisions()
                     player.germoney_count += 1;
 
 					if (level != FINAL_BOSS_LEVEL) {
-						createBuff(vec2(enemy_position.x, enemy_position.y));
+
+						// add a chance to fail?
+						createBuffWithChanceToFail(vec2(enemy_position.x, enemy_position.y));
 					}
 					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15); 
                     removals.push_back(entity2);
@@ -2208,7 +2215,7 @@ void WorldSystem::placeBuffsOnShopScreen() {
 
 				std::vector<BUFF_TYPE> commonBuffs = { TAIL, MITOCHONDRIA, HEMOGLOBIN, GOLGI, CELL_WALL, AMINO_ACID, VACUOLE };
 				std::vector<BUFF_TYPE> rareBuffs = { CHLOROPLAST, CYTOPLASM, PILLI, ENDOPLASMIC_RETICULUM };
-				std::vector<BUFF_TYPE> eliteBuffs = { LYSOSOME, SPARE_NUCLEUS, OVOID, SECRETOR };
+				std::vector<BUFF_TYPE> eliteBuffs = { LYSOSOME, SPARE_NUCLEUS, OCELOID, SECRETOR };
 
 				ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, buffType));
 				c.price = 1000;
