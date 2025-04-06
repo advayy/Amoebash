@@ -598,7 +598,7 @@ Entity createFinalBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>
 		}
 	}
 	
-	playerPosition.first = 19;
+	playerPosition.first = 18;
 	playerPosition.second = 9;
 
 	return entity;
