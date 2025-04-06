@@ -167,7 +167,7 @@ Entity createDenderite(RenderSystem* renderer, vec2 position)
 	spriteSheet.current_frame = 0;
 
 	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
-	sprite.width = 32;
+	sprite.width = 64;
 	sprite.height = 64;
 
 	return entity;

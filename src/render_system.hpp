@@ -114,7 +114,7 @@ class RenderSystem
 		textures_path("ui_art/thermometer_alone.png"),
 		textures_path("ui_art/circle.png"),
 		textures_path("enemies/boss/eyeball_projectile.png"),
-		textures_path("enemies/dendrite_32x62.png"),
+		textures_path("enemies/dendrite.png"),
 		textures_path("enemies/finalBoss/brainBoss.png")
 	};
 	std::array<GLuint, effect_count> effects;
