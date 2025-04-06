@@ -246,7 +246,9 @@ bool WorldSystem::updateBoss()
 	std::vector<Entity> bosses_to_split;
     std::vector<Entity> bosses_to_remove;
 
-	for (auto boss : registry.bossAIs.entities) 
+    std::vector<Entity> bossEntities =  registry.bossAIs.entities;
+
+	for (auto boss : bossEntities) 
 	{
 
 		if (!registry.enemies.has(boss) || !registry.motions.has(boss) || !registry.bossAIs.has(boss))
@@ -343,30 +345,12 @@ void WorldSystem::spawnFourDenderitesOnMap() {
 	// spawn four on the map where the tiles are empty, but do not spawn if no valid path exists
 	ProceduralMap& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]);
 	if (map.map.size() == 0) return;
-	// Player& player = registry.players.get(registry.players.entities[0]);
-	// Motion& player_motion = registry.motions.get(registry.players.entities[0]);
-	// // just spawn four
-	// int i = 0;
-	// while (i < 4) {
-	// 	// get the denderite position with get random empty tile
-	// 	// and convert to world position
-	// 	std::pair<int, int> denderitePosition = getRandomEmptyTile(map.map);
-	// 	vec2 denderiteWorldPosition = gridCellToPosition({ denderitePosition.second, denderitePosition.first });
-	// 	std::vector<ivec2> path;
-	// 	PhysicsSystem phys_sys;
-	// 	if (phys_sys.find_path(path, denderiteWorldPosition, player_motion.position)) {
-	// 		createDenderite(nullptr, denderiteWorldPosition);
-	// 		i++;
-	// 	} 
-	// }
-
 
     for (int i = 0; i < 4; i++) {
         std::pair<int, int> denderitePosition = getRandomEmptyTile(map.map);
         vec2 denderiteWorldPosition = gridCellToPosition({denderitePosition.second, denderitePosition.first});
         createDenderite(renderer, denderiteWorldPosition);
     }
-    // std::cout << "Spawned four denderites on map" << std::endl;
 }
 
 void WorldSystem::spawnEnemies(float elapsed_ms_since_last_update)
