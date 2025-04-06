@@ -2243,9 +2243,9 @@ void WorldSystem::placeBuffsOnShopScreen() {
 void WorldSystem::switchMusicThemeToBoss() {
 	Mix_FadeOutMusic(2000);
 
-	while (Mix_FadingMusic() == MIX_FADING_OUT) {
-		SDL_Delay(100);
-	}
+	// while (Mix_FadingMusic() == MIX_FADING_OUT) {
+	// 	SDL_Delay(100);
+	// }
 
 	Mix_FadeInMusic(boss_background_music, -1, 2000); // 2-second fade in
 }
@@ -2253,9 +2253,9 @@ void WorldSystem::switchMusicThemeToBoss() {
 void WorldSystem::switchMusicBossToTheme() {
 	Mix_FadeOutMusic(2000);
 
-	while (Mix_FadingMusic() == MIX_FADING_OUT) {
-		SDL_Delay(100);
-	}
+	// while (Mix_FadingMusic() == MIX_FADING_OUT) {
+	// 	SDL_Delay(100);
+	// }
 
 	Mix_FadeInMusic(background_music, -1, 2000); // 2-second fade in
 }
