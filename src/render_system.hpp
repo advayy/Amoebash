@@ -118,7 +118,8 @@ class RenderSystem
         textures_path("ui_art/enemy_hp_bar.png"),
 		textures_path("ui_art/mitosis_boss_16_enemy_hp_bar.png"),
 		textures_path("ui_art/mitosis_boss_128_enemy_hp_bar.png"),
-        textures_path("ui_art/circle.png"),
+        textures_path("buffs/information_buff.png"),
+		textures_path("ui_art/circle.png"),
 		textures_path("tiles/biomes/red_tiles.png"),
 		textures_path("tiles/biomes/red_wall.png"),
 		textures_path("tiles/biomes/green_tiles.png"),
@@ -279,6 +280,7 @@ private:
     void drawBuffCountText();
     void drawDangerFactorText();
     void drawGermoneyText();
+	void drawInfoText();
     void drawFPSText();
     
     // freetype font rendering

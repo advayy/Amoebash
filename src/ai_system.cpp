@@ -12,7 +12,7 @@ bool AISystem::isPlayerInRadius(vec2 player, vec2 enemy, float& distance, vec2& 
 	vec2 diff = player - enemy;
 	distance = glm::length(diff);
 	direction = glm::normalize(diff);
-	return distance < detectionRadius;
+	return distance < detectionRadius * registry.players.get(registry.players.entities[0]).detection_range;
 }
 
 SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity &enemyEntity, SpikeEnemyAI &enemyBehavior, float dist, vec2 direction, bool playerDetected, float elapsed_ms)
@@ -353,7 +353,7 @@ BossState AISystem::handleBossBehaviour(Entity& enemyEntity, BossAI& enemyBehavi
 				}
 				else if (enemyBehavior.state == BossState::FLEE)
 				{
-					enemyBehavior.flee_timer = 1500.f;
+					enemyBehavior.flee_timer = 500.f;
 					enemyBehavior.is_fleeing = true;
 				}
 			}		
@@ -471,24 +471,28 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 				ProceduralMap& map = registry.proceduralMaps.components[0];
 				std::vector<std::vector<tileType>> rawMap = map.map;
 
-				int maxRow = 0;
-				if (enemyBehavior.phase == 1) maxRow = 8;
-				else if (enemyBehavior.phase == 2) maxRow = 11;
-				else maxRow = 14;
+				int width = rawMap[0].size(); 
+				int height = rawMap.size();   
 
-				int startRow = 4;
+				int contourThickness = 2;
+				if (enemyBehavior.phase == 2) contourThickness = 3;
+				else if (enemyBehavior.phase == 3) contourThickness = 4;
 
-				for (int row = startRow; row < maxRow; row++) {
-					for (int col = 0; col <= 3; col ++) {
-						if (rawMap[row][col] == tileType::EMPTY) {
-							createDenderite(nullptr, gridCellToPosition({ col, row }));
-						}
-					}
+				for (int row = 0; row < height; ++row) {
+					for (int col = 0; col < width; ++col) {
+						bool isOnContour = (
+							row < contourThickness || row >= height - contourThickness ||
+							col < contourThickness || col >= width - contourThickness
+						);
 
-					int lastCol = rawMap[row].size() - 1;
-					for (int col = lastCol; col >= lastCol - 3; col--) {
-						if (rawMap[row][col] == tileType::EMPTY) {
-							createDenderite(nullptr, gridCellToPosition({ col, row }));
+						if (isOnContour && rawMap[row][col] == tileType::EMPTY) {
+							float spawnChance = 0.4f;
+							if (enemyBehavior.phase == 2) spawnChance = 0.6f;
+							else if (enemyBehavior.phase == 3) spawnChance = 0.85f;
+
+							if ((float)rand() / RAND_MAX < spawnChance) {
+								createDenderite(nullptr, gridCellToPosition({ col, row }));
+							}
 						}
 					}
 				}
@@ -496,7 +500,7 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 				enemyBehavior.has_spawned = true;
 			} else {
 				if (registry.denderiteAIs.size() == 0) {
-					enemyBehavior.state = FinalBossState::SPIRAL_SHOOT_1;
+					enemyBehavior.state = FinalBossState::SPIRAL_SHOOT_1; // Just shooting
 					enemyBehavior.shoot_cool_down = FINAL_BOSS_BASE_SHOOT_COOLDOWN;
 					enemyBehavior.cool_down = FINAL_BOSS_BASE_COOLDOWN;
 					enemyBehavior.has_spawned = false;
@@ -529,7 +533,8 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 
 						createFinalBossProjectile(spawnPos, FINAL_BOSS_PROJECTILE, velocity, enemyBehavior.phase);
 					
-						Entity spiralProjectile = createFinalBossProjectile(spawnPos, FINAL_BOSS_PROJECTILE, velocity, enemyBehavior.phase);
+						if (enemyBehavior.phase == 2)
+							Entity spiralProjectile = createFinalBossProjectile(spawnPos, FINAL_BOSS_PROJECTILE, velocity, enemyBehavior.phase);
 						enemyBehavior.shoot_cool_down = FINAL_BOSS_BASE_SHOOT_COOLDOWN;
 					}
 				} else {
@@ -545,7 +550,7 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 
 			if (enemyBehavior.spiral_duration <= 0.f) {
 				enemyBehavior.state = FinalBossState::TIRED;
-				changeAnimationFrames(enemyEntity, 11, 13);
+				changeAnimationFrames(enemyEntity, 1, 8);
 
 				enemyBehavior.spiral_duration = FINAL_BOSS_SHOOT_DURATION;
 				enemyBehavior.shoot_cool_down = FINAL_BOSS_BASE_SHOOT_COOLDOWN;
@@ -558,24 +563,22 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 		case FinalBossState::TIRED: {
 
 			if (enemy.health <= 2/3.f * enemy.total_health && enemyBehavior.phase == 1) {
-				std::cout << "New PHASE!" << std::endl;
 				enemyBehavior.phase = 2;
 				enemyBehavior.state = FinalBossState::SPAWN_1;
 				enemyBehavior.cool_down = FINAL_BOSS_BASE_COOLDOWN;
-				changeAnimationFrames(enemyEntity, 0, 10);
+				changeAnimationFrames(enemyEntity, 9, 11);
 			} else if (enemy.health <= 1/3.f * enemy.total_health && enemyBehavior.phase == 2) {
-				std::cout << "Last Phase" << std::endl;
 				enemyBehavior.phase = 3;
 				enemyBehavior.state = FinalBossState::SPAWN_1;
 				enemyBehavior.cool_down = FINAL_BOSS_BASE_COOLDOWN;
-				changeAnimationFrames(enemyEntity, 0, 10);
+				changeAnimationFrames(enemyEntity, 9, 11);
 			} else {
 				enemyBehavior.cool_down -= elapsed_ms;
 				if (enemyBehavior.cool_down <= 0.f) {
 					enemyBehavior.state = FinalBossState::SPAWN_1;
 					enemyBehavior.shoot_cool_down = FINAL_BOSS_BASE_SHOOT_COOLDOWN;
 					enemyBehavior.cool_down = FINAL_BOSS_BASE_COOLDOWN;
-					changeAnimationFrames(enemyEntity, 0, 10);
+					changeAnimationFrames(enemyEntity, 9, 11);
 				}
 			}
 			break;
@@ -632,7 +635,6 @@ DenderiteState AISystem::handleDenderiteBehavior(Entity& enemyEntity, DenderiteA
 
 		case DenderiteState::SHOOT:
 		{
-
 			if (enemyMotion.angle != 0.f) {
 				const float smoothing_factor = 0.1f;
 
@@ -647,7 +649,7 @@ DenderiteState AISystem::handleDenderiteBehavior(Entity& enemyEntity, DenderiteA
 
 			enemyBehavior.shootCoolDown -= elapsed_ms;
 			if (enemyBehavior.shootCoolDown <= 0.f) {
-				createProjectile(enemyMotion.position, {PROJECTILE_SIZE, PROJECTILE_SIZE}, direction * PROJECTILE_SPEED, PROJECTILE_DAMAGE);
+				createProjectile(enemyMotion.position, {PROJECTILE_SIZE, PROJECTILE_SIZE}, direction * DENDERITE_PROJECTILE_SPEED, PROJECTILE_DAMAGE);
 				enemyBehavior.shootCoolDown = 1000.0f; 
 			}
 			break;

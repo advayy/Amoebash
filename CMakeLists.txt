@@ -56,7 +56,7 @@ if (OPENGL_FOUND)
 endif()
 
 # Find Freetype
-find_package(Freetype REQUIRED)
+find_package(freetype REQUIRED)
 
 if (FREETYPE_FOUND)
     target_include_directories(${PROJECT_NAME} PUBLIC ${FREETYPE_INCLUDE_DIRS})
@@ -104,6 +104,9 @@ elseif (IS_OS_WINDOWS)
     set(GLFW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3-x64.dll")
     set(SDL_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x64.dll")
     set(SDLMIXER_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x64.dll")
+    # FreeType - Windows-specific (x64 only)
+    set (FREETYPE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/include")
+    set (FREETYPE_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/release static/vs2015-2022/win64/freetype.lib")
 
     # copy DLLs to build folder and remove if necessary name
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -146,10 +149,12 @@ if (NOT GLFW_FOUND OR NOT SDL2_FOUND)
     endif()
 endif()
 
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/include")
+
 target_include_directories(${PROJECT_NAME} PUBLIC ${GLFW_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${SDL2_INCLUDE_DIRS})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${GLFW_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2MIXER_LIBRARIES} glm::glm)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${GLFW_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2MIXER_LIBRARIES} glm::glm ${FREETYPE_LIBRARY})
 
 # needed to add this for Linux
 if(IS_OS_LINUX)
@@ -157,7 +162,7 @@ if(IS_OS_LINUX)
 endif()
 
 
-# Memory Sanitize
+# # Memory Sanitize
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
