@@ -280,6 +280,7 @@ private:
     void drawBuffCountText();
     void drawDangerFactorText();
     void drawGermoneyText();
+	void drawInfoText();
     void drawFPSText();
     
     // freetype font rendering

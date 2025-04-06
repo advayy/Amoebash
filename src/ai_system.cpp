@@ -632,7 +632,6 @@ DenderiteState AISystem::handleDenderiteBehavior(Entity& enemyEntity, DenderiteA
 
 		case DenderiteState::SHOOT:
 		{
-
 			if (enemyMotion.angle != 0.f) {
 				const float smoothing_factor = 0.1f;
 
@@ -647,7 +646,7 @@ DenderiteState AISystem::handleDenderiteBehavior(Entity& enemyEntity, DenderiteA
 
 			enemyBehavior.shootCoolDown -= elapsed_ms;
 			if (enemyBehavior.shootCoolDown <= 0.f) {
-				createProjectile(enemyMotion.position, {PROJECTILE_SIZE, PROJECTILE_SIZE}, direction * PROJECTILE_SPEED, PROJECTILE_DAMAGE);
+				createProjectile(enemyMotion.position, {PROJECTILE_SIZE, PROJECTILE_SIZE}, direction * DENDERITE_PROJECTILE_SPEED, PROJECTILE_DAMAGE);
 				enemyBehavior.shootCoolDown = 1000.0f; 
 			}
 			break;

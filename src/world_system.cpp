@@ -1237,24 +1237,6 @@ bool WorldSystem::is_over() const
 // on key callback
 void WorldSystem::on_key(int key, int, int action, int mod)
 {
-    if (action == GLFW_RELEASE && key == GLFW_KEY_N) {
-        if (progress_map["tutorial_mode"]) {
-            current_state = GameState::NEXT_LEVEL;
-            progress_map["tutorial_mode"] = false;
-            removeInfoBoxes();
-            goToNextLevel();
-            emptyMiniMap();
-        } else {
-            Entity screen_state_entity = renderer->get_screen_state_entity();
-            ScreenState &screen = registry.screenStates.get(screen_state_entity);
-            screen.darken_screen_factor = 1;
-            darken_screen_timer = 0.0f;
-            current_state = GameState::NEXT_LEVEL;
-            Mix_PlayChannel(-1, portal_sound, 0);
-            goToNextLevel();
-        }
-    }
-
 	// exit game w/ ESC
 	if (action == GLFW_RELEASE && key == GLFW_KEY_ESCAPE)
 	{
@@ -1485,6 +1467,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				current_state = GameState::INFO;
 				removeStartScreen();
 				createInfoScreen();
+				createInfoBoxes();
 			}
 			else if (clickedButton == ButtonType::STARTBUTTON) 
 			{
@@ -1554,6 +1537,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			{
 				Mix_PlayChannel(-1, click_sound, 0);
 				removeInfoScreen();
+				removeInfoBoxes();
 				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
 				current_state = previous_state;

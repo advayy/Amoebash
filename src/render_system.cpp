@@ -544,6 +544,14 @@ void RenderSystem::drawDangerFactorText() {
     renderText(dangerText, screen_pos.x, screen_pos.y, .3f, vec3(1.f, 1.f, 1.f));
 }
 
+void RenderSystem::drawInfoText() {
+	if (registry.infoBoxes.size() == 0) return;
+	vec2 screen_pos = worldToScreen(vec2(0.f, 0.f));
+	std::string infoText = "Welcome to the game";
+
+	renderText(infoText, screen_pos.x, screen_pos.y, .4f, vec3(0.f, 0.f, 0.f));
+}
+
 void RenderSystem::drawGermoneyText() {
     Player &player = registry.players.get(registry.players.entities[0]);
     int germoney_count = player.germoney_count;
@@ -778,6 +786,7 @@ void RenderSystem::drawScreenAndButtons(
 				drawTexturedMesh(e, projection_matrix);
 			}
 		}
+		drawInfoText();
 	}
 
 	if (buttonTypes.size() != 0)
