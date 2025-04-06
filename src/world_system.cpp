@@ -497,36 +497,60 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 		if (!updateBoss()) {
 			updateBossArrows();
 		} else {
-			goToNextLevel();
-			return true;
+            if (registry.portals.size() == 0) {
+                Player& player = registry.players.get(registry.players.entities[0]);
+                Motion& player_motion = registry.motions.get(registry.players.entities[0]);
+                vec2 grid_pos = positionToGridCell(player_motion.position);
+                int x = grid_pos.x;
+                int y = grid_pos.y;
+    
+                if (x <= 10) {
+                    addPortalTile({x + 2, y});
+                } else {
+                    addPortalTile({x - 2, y});
+                }
+            }
 		}
-	
 	} else if (level == FINAL_BOSS_LEVEL) {
 		if (registry.finalBossAIs.size() != 0) {
 			updateBossArrows();
 		} else {
-			previous_state = current_state;
-			current_state = GameState::VICTORY;
-			stateTimer = WIN_CUTSCENE_DURATION_MS;
-			createEndingWinScene();
+            if (registry.portals.size() == 0) {
+                Player& player = registry.players.get(registry.players.entities[0]);
+                Motion& player_motion = registry.motions.get(registry.players.entities[0]);
+                vec2 grid_pos = positionToGridCell(player_motion.position);
+                int x = grid_pos.x;
+                int y = grid_pos.y;
+    
+                if (x <= 10) {
+                    addPortalTile({x + 2, y});
+                } else {
+                    addPortalTile({x - 2, y});
+                }
+            }
 		}
 	}
 	handleProjectiles(elapsed_ms_since_last_update);
-
 	handleRippleEffect(elapsed_ms_since_last_update);
-
 
     tileProceduralMap();
 
 	if (checkPortalCollision()) {
-        Entity screen_state_entity = renderer->get_screen_state_entity();
-        ScreenState &screen = registry.screenStates.get(screen_state_entity);
-        screen.darken_screen_factor = 1;
-       	darken_screen_timer = 0.0f;
-        current_state = GameState::NEXT_LEVEL;
-		Mix_PlayChannel(-1, portal_sound, 0);
-		goToNextLevel();
-		return true;
+        if (level != FINAL_BOSS_LEVEL) {
+            Entity screen_state_entity = renderer->get_screen_state_entity();
+            ScreenState &screen = registry.screenStates.get(screen_state_entity);
+            screen.darken_screen_factor = 1;
+               darken_screen_timer = 0.0f;
+            current_state = GameState::NEXT_LEVEL;
+            Mix_PlayChannel(-1, portal_sound, 0);
+            goToNextLevel();
+            return true;
+        } else {
+			previous_state = current_state;
+			current_state = GameState::VICTORY;
+			stateTimer = WIN_CUTSCENE_DURATION_MS;
+			createEndingWinScene();
+        }
 	}
 
     if (darken_screen_timer >= 0.0f) {
@@ -1143,6 +1167,24 @@ bool WorldSystem::is_over() const
 // on key callback
 void WorldSystem::on_key(int key, int, int action, int mod)
 {
+
+    if (action == GLFW_RELEASE && key == GLFW_KEY_N) {
+        if (progress_map["tutorial_mode"]) {
+            current_state = GameState::NEXT_LEVEL;
+            progress_map["tutorial_mode"] = false;
+            removeInfoBoxes();
+            goToNextLevel();
+            emptyMiniMap();
+        } else {
+            Entity screen_state_entity = renderer->get_screen_state_entity();
+            ScreenState &screen = registry.screenStates.get(screen_state_entity);
+            screen.darken_screen_factor = 1;
+            darken_screen_timer = 0.0f;
+            current_state = GameState::NEXT_LEVEL;
+            Mix_PlayChannel(-1, portal_sound, 0);
+            goToNextLevel();
+        }
+    }
 
 	// exit game w/ ESC
 	if (action == GLFW_RELEASE && key == GLFW_KEY_ESCAPE)
