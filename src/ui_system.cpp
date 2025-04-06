@@ -1095,6 +1095,29 @@ Entity createBuffUI(vec2 position, BUFF_TYPE type, vec2 scale)
         SpriteSize& sprite = registry.spritesSizes.emplace(buffUI);
         sprite.width = motion.scale.x;
         sprite.height = motion.scale.y;
+    } else if (type == INFO_BOSS2) {
+        registry.renderRequests.insert(
+            buffUI,
+            {
+                TEXTURE_ASSET_ID::FINAL_BOSS,
+                EFFECT_ASSET_ID::SPRITE_SHEET,
+                GEOMETRY_BUFFER_ID::SPRITE
+            }
+        );
+
+        Animation& a = registry.animations.emplace(buffUI);
+        a.start_frame = 0;
+        a.end_frame = 10;
+        a.time_per_frame = 100.0f;
+        a.loop = ANIM_LOOP_TYPES::PING_PONG;
+
+        SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(buffUI);
+        spriteSheet.total_frames = 14;
+        spriteSheet.current_frame = 0;
+
+        SpriteSize& sprite = registry.spritesSizes.emplace(buffUI);
+        sprite.width = motion.scale.x;
+        sprite.height = motion.scale.y;
     } else if (type > BLACK_GOO) {
         registry.renderRequests.insert(
             buffUI,

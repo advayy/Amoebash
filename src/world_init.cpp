@@ -603,6 +603,8 @@ Entity createFinalBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>
 	playerPosition.first = 18;
 	playerPosition.second = 9;
 
+    createBuff(gridCellToPosition({9,17}), INFO_BOSS2);
+
 	return entity;
 }
 
