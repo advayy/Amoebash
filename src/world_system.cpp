@@ -735,11 +735,12 @@ void WorldSystem::restart_game()
 	// std::cout << "Creating Procedural Map, tutorial mode status :" << tutorial_mode << std::endl;
 
 	std::pair<int, int> playerPosition;
-	createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
-		
+    
 	if (progress_map["tutorial_mode"]) {
-		createPlayer(renderer, gridCellToPosition({1, 17}));
+        createPlayer(renderer, gridCellToPosition({1, 17}));
+        createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
 	} else {
+        createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
 		createPlayer(renderer, gridCellToPosition(vec2(playerPosition.second, playerPosition.first)));
 	}
 

@@ -498,6 +498,10 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 			}
 		}
 
+        // place a buff on map at bottom left corner
+        vec2 buffPos = {5 * GRID_CELL_WIDTH_PX, 18 * GRID_CELL_HEIGHT_PX};
+        createBuff(buffPos, 2);
+
 	} else {
 		// Initialize map to random walls / floors
         std::random_device rd;
@@ -803,7 +807,7 @@ int getDistance(const std::vector<std::vector<tileType>>& grid, std::pair<int,in
     return -1;
 }
 
-Entity createBuff(vec2 position)
+Entity createBuff(vec2 position, int buffType)
 {
 	Entity entity = Entity();
 	Motion &motion = registry.motions.emplace(entity);
@@ -838,7 +842,11 @@ Entity createBuff(vec2 position)
 	Buff &buff = registry.buffs.emplace(entity);
 
 	// Currently only the first 15 buffs are active
-	buff.type = getRandomBuffType();
+    if (buffType == -1) {
+        buff.type = getRandomBuffType();
+    } else {
+        buff.type = buffType;
+    }
 
 	registry.renderRequests.insert(
 		entity,

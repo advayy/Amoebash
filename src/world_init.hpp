@@ -40,7 +40,7 @@ std::vector<std::vector<tileType>> applyCellularAutomataRules(const std::vector<
 std::pair<int, int> getRandomEmptyTile(const std::vector<std::vector<tileType>>& grid);
 int getDistance(const std::vector<std::vector<tileType>>& grid, std::pair<int,int> start, std::pair<int,int> end);
 
-Entity createBuff(vec2 position);
+Entity createBuff(vec2 position, int buffType = -1);
 
 void updateMiniMap(vec2 playerPos);
 void emptyMiniMap();
