@@ -3,6 +3,7 @@
 #include "tinyECS/tiny_ecs.hpp"
 #include "render_system.hpp"
 
+
 class UISystem {
 public:
 	void removeInfoBoxes();
@@ -105,3 +106,6 @@ private:
 		{BLACK_GOO, {"Pilli", "Not Implemented"}},
 	};
 };
+
+Entity createEnemyHPBar(Entity enemy, TEXTURE_ASSET_ID texture_id);
+void removeEnemyHPBar(Entity enemy);

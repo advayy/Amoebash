@@ -464,7 +464,7 @@ Entity UISystem::createEndingWinScene() {
 
 	SpriteSize &sprite = registry.spritesSizes.emplace(winScreenEntity);
 	sprite.width = 128.f; 
-	sprite.height = 68.f; 
+	sprite.height = 72.f;  
 
 	registry.cutscenes.emplace(winScreenEntity);
 
@@ -862,9 +862,11 @@ Entity UISystem::createHealthBar()
 	motion.position = HEALTH_BAR_POS;
 	motion.scale = {HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT};
 
+	UIElement& u = registry.uiElements.emplace(entity);
+	u.position = motion.position;
+	u.scale = motion.scale;
+
 	HealthBar &healthBar = registry.healthBars.emplace(entity);
-	healthBar.position = motion.position;
-	healthBar.scale = motion.scale;
 	healthBar.health = registry.players.get(registry.players.entities[0]).current_health;
 
 	registry.renderRequests.insert(
@@ -903,6 +905,44 @@ void UISystem::createDashRecharge()
 		
 	Motion &motion = registry.motions.emplace(dash);
 	registry.dashRecharges.emplace(dash);
+}
+Entity createEnemyHPBar(Entity enemy, TEXTURE_ASSET_ID texture_id) {
+	for (Entity hp : registry.healthBars.entities) {
+		if (registry.healthBars.get(hp).is_enemy_hp_bar &&
+			registry.healthBars.get(hp).owner == enemy) {
+			return hp;
+		}
+	}
+
+	Entity hp = Entity();
+
+	Motion& motion = registry.motions.emplace(hp);
+	Motion& enemy_motion = registry.motions.get(enemy);
+	float scale_factor = enemy_motion.scale.x * 0.65f / ENEMY_HP_BAR_WIDTH;
+	motion.scale = vec2(ENEMY_HP_BAR_WIDTH * scale_factor, ENEMY_HP_BAR_HEIGHT * scale_factor);
+	motion.position = enemy_motion.position + vec2(0.f, enemy_motion.scale.y / 1.5f);
+
+	HealthBar& healthBar = registry.healthBars.emplace(hp);
+	healthBar.is_enemy_hp_bar = true;
+	healthBar.owner = enemy;
+
+	registry.renderRequests.insert(hp, {
+		texture_id,
+		EFFECT_ASSET_ID::HEALTH_BAR,
+		GEOMETRY_BUFFER_ID::SPRITE
+		});
+
+	return hp;
+}
+
+void removeEnemyHPBar(Entity enemy) {
+	for (Entity e : registry.healthBars.entities) {
+		HealthBar& hb = registry.healthBars.get(e);
+		if (hb.is_enemy_hp_bar && hb.owner == enemy) {
+			registry.remove_all_components_of(e);
+			break;
+		}
+	}
 }
 
 Entity UISystem::createBuffUI(vec2 position, BUFF_TYPE type, vec2 scale)
@@ -1012,13 +1052,13 @@ void UISystem::renderCollectedBuffs()
 // make all ui elements camera tracked so they stay on screen as the player / camera moves
 void UISystem::cameraTrackUIElements()
 {
-	vec2 offset = {WINDOW_WIDTH_PX / 2 - 100, -WINDOW_HEIGHT_PX / 2 + 100};
+	vec2 offset = { WINDOW_WIDTH_PX / 2 - 100, -WINDOW_HEIGHT_PX / 2 + 100 };
 
 	Entity minimapEntity = registry.miniMaps.entities[0];
-	Motion &minimapMotion = registry.motions.get(minimapEntity);
+	Motion& minimapMotion = registry.motions.get(minimapEntity);
 
-	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
-	minimapMotion.position = {camera.position.x + offset.x, camera.position.y + offset.y};
+	Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
+	minimapMotion.position = { camera.position.x + offset.x, camera.position.y + offset.y };
 
 	if (!registry.uiElements.entities.empty())
 	{
@@ -1026,19 +1066,44 @@ void UISystem::cameraTrackUIElements()
 		{
 			if (!registry.motions.has(entity))
 				continue;
-			Motion &uiMotion = registry.motions.get(entity);
-			UIElement &uiElement = registry.uiElements.get(entity);
-			uiMotion.position = {camera.position.x + uiElement.position.x, camera.position.y + uiElement.position.y};
+			Motion& uiMotion = registry.motions.get(entity);
+			UIElement& uiElement = registry.uiElements.get(entity);
+			uiMotion.position = { camera.position.x + uiElement.position.x, camera.position.y + uiElement.position.y };
+		}
+
+	}
+
+	if (!registry.healthBars.entities.empty()) {
+		for (Entity health_bar : registry.healthBars.entities) {
+			if (!registry.motions.has(health_bar) || !registry.healthBars.has(health_bar))
+				continue;
+
+			Motion& bar_motion = registry.motions.get(health_bar);
+			HealthBar& hb = registry.healthBars.get(health_bar);
+
+			if (hb.is_enemy_hp_bar) {
+				Entity enemy = hb.owner;
+
+				if (!registry.enemies.has(enemy) || !registry.motions.has(enemy)) {
+					registry.remove_all_components_of(health_bar);
+					continue;
+				}
+				Motion& enemy_motion = registry.motions.get(enemy);
+				bar_motion.position = enemy_motion.position + vec2(0.f, -enemy_motion.scale.y / 1.5f);
+				hb.health = registry.enemies.get(enemy).health;
+			}
+			else {
+				if (!registry.cameras.entities.empty()) {
+					Camera& camera = registry.cameras.get(registry.cameras.entities[0]);
+					bar_motion.position = {
+						camera.position.x + HEALTH_BAR_POS.x,
+						camera.position.y + HEALTH_BAR_POS.y
+					};
+				}
+			}
 		}
 	}
 
-	if (!registry.healthBars.entities.empty())
-	{
-		HealthBar &healthBar = registry.healthBars.get(registry.healthBars.entities[0]);
-		Motion &healthBarMotion = registry.motions.get(registry.healthBars.entities[0]);
-		healthBarMotion.position = {camera.position.x + HEALTH_BAR_POS.x,
-									camera.position.y + HEALTH_BAR_POS.y};
-	}
 
 	if (!registry.thermometers.entities.empty()) {
 		Thermometer& t = registry.thermometers.get(registry.thermometers.entities[0]);
