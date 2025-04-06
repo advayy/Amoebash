@@ -1139,11 +1139,13 @@ Entity UISystem::createBuffPopup(BUFF_TYPE type)
 
 	auto buff_test = BUFF_TYPE_TO_TEXT.at(type);
 
-	registry.imagePopups.emplace(
+	registry.imagePopups.insert(
 		buffPopup, 
-		createText(buff_test.first, imageCoordToTextCoord(buffImageMotion.position) + vec2(buffImageMotion.scale.x, 0) + vec2(BUFF_POPUP_GAP, 0), {1.0f, 1.0f, 1.0f}, 0.5),
-		createText(buff_test.second, imageCoordToTextCoord(buffImageMotion.position) + vec2(buffImageMotion.scale.x, 0) + vec2(BUFF_POPUP_GAP, -25), { 1.0f, 1.0f, 1.0f }, 0.3),
-		buffImage
+		PopupWithImage(
+			createText(buff_test.first, imageCoordToTextCoord(buffImageMotion.position) + vec2(buffImageMotion.scale.x, 0) + vec2(BUFF_POPUP_GAP, 0), { 1.0f, 1.0f, 1.0f }, 0.5),
+			createText(buff_test.second, imageCoordToTextCoord(buffImageMotion.position) + vec2(buffImageMotion.scale.x, 0) + vec2(BUFF_POPUP_GAP, -25), { 1.0f, 1.0f, 1.0f }, 0.3),
+			buffImage
+		)
 	);
 
 	return buffPopup;

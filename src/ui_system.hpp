@@ -75,11 +75,11 @@ private:
 
 	Entity thermometer_text;
 	// pass by referce to ensure the actual object is saved here
-	void setThermometerText(Entity& entity) { this->thermometer_text = entity; };
+	void setThermometerText(const Entity& entity) { this->thermometer_text = entity; };
 
 	Entity germoney_text;
 	// pass by referce to ensure the actual object is saved here
-	void setGermoneyText(Entity& entity) { this->germoney_text = entity; };
+	void setGermoneyText(const Entity& entity) { this->germoney_text = entity; };
 
 	std::map<BUFF_TYPE, Entity> buff_to_ui_entity;
 	std::map<BUFF_TYPE, Entity> buff_to_text_entity;
