@@ -74,9 +74,11 @@ public:
 private:
 
 	Entity thermometer_text;
+	// pass by referce to ensure the actual object is saved here
 	void setThermometerText(Entity& entity) { this->thermometer_text = entity; };
 
 	Entity germoney_text;
+	// pass by referce to ensure the actual object is saved here
 	void setGermoneyText(Entity& entity) { this->germoney_text = entity; };
 
 	std::map<BUFF_TYPE, Entity> buff_to_ui_entity;

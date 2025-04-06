@@ -197,5 +197,6 @@ private:
 
 	// text related
 	Entity player_germoney_count;
+	// pass by referce to ensure the actual object is saved here
 	void setPlayerGermoneyCount(Entity& entity) { this->player_germoney_count = entity; };
 };
