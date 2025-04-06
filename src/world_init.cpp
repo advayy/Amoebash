@@ -928,8 +928,8 @@ Entity createEffect(TEXTURE_ASSET_ID texture, vec2 position) {
     spriteSheet.current_frame = 0;
 
     SpriteSize& sprite = registry.spritesSizes.emplace(e);
-    sprite.width = 175;
-    sprite.height = 60;
+    sprite.width = 96;
+    sprite.height = 32;
 
     return e;
 }
