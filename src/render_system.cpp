@@ -10,6 +10,7 @@
 #include "world_system.hpp"
 #include <sstream>
 #include <iomanip>
+#include "ui_system.hpp"
 
 void RenderSystem::updateFPS(float elapsed_ms)
 {
@@ -58,6 +59,9 @@ void RenderSystem::drawFPS()
 void RenderSystem::drawTexturedMesh(Entity entity,
 																		const mat3 &projection)
 {
+    glBindVertexArray(default_vao);
+    gl_has_errors();
+
 	assert(registry.renderRequests.has(entity));
 	const RenderRequest &render_request = registry.renderRequests.get(entity);
 
@@ -509,14 +513,59 @@ void RenderSystem::drawGermoneyText() {
     Player &player = registry.players.get(registry.players.entities[0]);
     int germoney_count = player.germoney_count;
 
-    vec2 screen_pos;
-    if (germoney_count >= 10) {
-        screen_pos = vec2(WINDOW_WIDTH_PX * .095f, WINDOW_HEIGHT_PX * .0685f);
-    } else {
-        screen_pos = vec2(WINDOW_WIDTH_PX * .0975f, WINDOW_HEIGHT_PX * .0685f);
+    vec2 screen_pos = vec2(WINDOW_WIDTH_PX * .09f, WINDOW_HEIGHT_PX * .0685f);
+    if (germoney_count < 100) {
+        screen_pos.x = WINDOW_WIDTH_PX * .095f;
+    } else if (germoney_count >= 100 && germoney_count < 1000) {
+        screen_pos.x = WINDOW_WIDTH_PX * .0925f;
     }
 
-    renderText(std::to_string(player.germoney_count), screen_pos.x, screen_pos.y, .4f, vec3(1.f, 1.f, 1.f));
+    renderText(std::to_string(germoney_count), screen_pos.x, screen_pos.y, .4f, vec3(1.f, 1.f, 1.f));
+}
+
+void RenderSystem::drawShopText() {
+    for (auto entity : registry.clickableBuffs.entities) {
+        ClickableBuff &clickableBuff = registry.clickableBuffs.get(entity);
+        Motion &motion = registry.motions.get(entity);
+
+        vec2 screen_pos = worldToScreen(motion.position);
+
+        if (clickableBuff.price >= 10 && clickableBuff.price < 100) {
+            screen_pos.x -= 12.5f;
+        } else if (clickableBuff.price >= 100 && clickableBuff.price < 1000) {
+            screen_pos.x -= 17.5f;
+        } else if (clickableBuff.price >= 1000) {
+            screen_pos.x -= 20.f;
+        }
+    
+        renderText(std::to_string((int)clickableBuff.price), screen_pos.x, screen_pos.y - 50.f, .4f, vec3(0.f, 0.f, 0.f));
+    }
+
+    Motion motion;
+    for (auto entity : registry.uiElements.entities) {
+        if (registry.renderRequests.has(entity)) {
+            RenderRequest &renderRequest = registry.renderRequests.get(entity);
+            if (renderRequest.used_texture == TEXTURE_ASSET_ID::GERMONEY_UI) {
+                motion = registry.motions.get(entity);
+                drawTexturedMesh(entity, createProjectionMatrix());
+            }
+        }
+    }
+
+    Progression &progression = registry.progressions.get(registry.progressions.entities[0]);
+    int germoney_count = progression.germoney_savings;
+
+    vec2 screen_pos = worldToScreen(motion.position);
+    screen_pos.y -= 5.f;
+    if (germoney_count >= 10 && germoney_count < 100) {
+        screen_pos.x -= 7.f;
+    } else if (germoney_count >= 100 && germoney_count < 1000) {
+        screen_pos.x -= 12.f;
+    } else if (germoney_count >= 1000) {
+        screen_pos.x -= 15.f;
+    }
+
+    renderText(std::to_string(germoney_count), screen_pos.x, screen_pos.y, .4f, vec3(1.f, 1.f, 1.f));
 }
 
 mat3 RenderSystem::createProjectionMatrix()
@@ -666,6 +715,8 @@ void RenderSystem::drawScreenAndButtons(
 				drawTexturedMesh(e, projection_matrix);
 			}
 		}
+
+        drawShopText();
 	}
 
 	if (screenType == ScreenType::INFO) {

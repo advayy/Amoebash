@@ -601,11 +601,12 @@ void WorldSystem::handlePlayerHealth(float elapsed_ms)
 void WorldSystem::triggerGameOver() {
 	Player& player = registry.players.get(registry.players.entities[0]);
 	Progression& p = registry.progressions.get(registry.progressions.entities[0]);
-				p.buffsFromLastRun = player.buffsCollected;
-				p.germoney_savings = player.germoney_count;
-				previous_state = current_state;
-				current_state = GameState::GAME_OVER;
-				createGameOverScreen();	
+    p.buffsFromLastRun = player.buffsCollected;
+    p.germoney_savings = player.germoney_count;
+    previous_state = current_state;
+    current_state = GameState::GAME_OVER;
+    createGameOverScreen();
+
 }
 
 // Handle player movement
@@ -816,7 +817,8 @@ void WorldSystem::restart_game()
 	// }
     // prog.pickedInNucleus.clear();
 
-	
+    player.germoney_count = prog.germoney_savings;
+
 	createMiniMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
 	emptyMiniMap();
 }
@@ -1160,19 +1162,6 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 	{
 		if (action == GLFW_RELEASE)
 		{
-
-			// std::cout<< "ON O_KEY PRESS" << std::endl;
-			// // print all of players components
-			// registry.list_all_components_of(registry.cameras.entities[0]);
-			// std::cout<< "cam x -" << registry.cameras.get(registry.cameras.entities[0]).position.x << std::endl;
-			// std::cout<< "cam y -" << registry.cameras.get(registry.cameras.entities[0]).position.y << std::endl;
-			// std::cout<< "player x -" << registry.motions.get(registry.players.entities[0]).position.x << std::endl;
-			// std::cout<< "player y -" << registry.motions.get(registry.players.entities[0]).position.y << std::endl;
-			// std::cout<< "player velocity x -" << registry.motions.get(registry.players.entities[0]).velocity.x << std::endl;
-			// std::cout<< "player velocity y -" << registry.motions.get(registry.players.entities[0]).velocity.y << std::endl;
-			// registry.list_all_components_of(registry.players.entities[0]);
-
-
 			if (current_state == GameState::GAME_PLAY)
 			{
 				Progression& p = registry.progressions.get(registry.progressions.entities[0]);
@@ -1180,18 +1169,8 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 				p.buffsFromLastRun = registry.players.get(registry.players.entities[0]).buffsCollected;		
 				previous_state = GameState::GAME_PLAY;
 				current_state = GameState::GAME_OVER;
+                triggerGameOver();
                 clearVignetteEffect();
-				createGameOverScreen();
-
-
-				// ON GAME OVER
-				// std::cout<< "ON GAME OVER PRESS" << std::endl;
-				// std::cout<< "cam x -" << registry.cameras.get(registry.cameras.entities[0]).position.x << std::endl;
-				// std::cout<< "cam y -" << registry.cameras.get(registry.cameras.entities[0]).position.y << std::endl;
-				// std::cout<< "player x -" << registry.motions.get(registry.players.entities[0]).position.x << std::endl;
-				// std::cout<< "player y -" << registry.motions.get(registry.players.entities[0]).position.y << std::endl;
-				// std::cout<< "player velocity x -" << registry.motions.get(registry.players.entities[0]).velocity.x << std::endl;
-				// std::cout<< "player velocity y -" << registry.motions.get(registry.players.entities[0]).velocity.y << std::endl;	
 			}
 		}
 	}
@@ -1361,6 +1340,12 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				Mix_PlayChannel(-1, click_sound, 0);
 				previous_state = current_state;
 				current_state = GameState::GAMEPLAY_CUTSCENE;
+
+                // assign player germoney count progression gemoney savings
+                Progression& p = registry.progressions.get(registry.progressions.entities[0]);
+                Player& player = registry.players.get(registry.players.entities[0]);
+                player.germoney_count = p.germoney_savings;
+
 				removeStartScreen();
 				createGameplayCutScene();
 			}

@@ -212,6 +212,8 @@ public:
 	// INSTANCING: instanced tile drawing
 	void drawInstancedTiles(const mat3 &projection);
 
+    void drawShopText();
+
 private:
 	// Internal drawing functions for each entity type
 	void drawTexturedMesh(Entity entity, const mat3 &projection);
