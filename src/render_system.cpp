@@ -14,46 +14,23 @@
 
 void RenderSystem::updateFPS(float elapsed_ms)
 {
-	// skip all calculations if FPS display is not enabled
-	if (!show_fps)
-		return;
+    if (!show_fps) return;
 
-	// update frame time sum and count
+    // update frame time sum and count
 	frame_time_sum += elapsed_ms;
 	frame_count++;
 
 	// update FPS calculation every second (1000ms)
-	if (frame_time_sum >= 1000.0f)
-	{
-		current_fps = static_cast<float>(frame_count) / (frame_time_sum / 1000.0f);
-		frame_time_sum = 0.0f;
-		frame_count = 0;
-
-		// update window title with FPS
-		std::stringstream title;
-		title << "Amoebash (Debug: ON, FPS: " << std::fixed << std::setprecision(1) << current_fps << ")";
-		glfwSetWindowTitle(window, title.str().c_str());
-	}
+	if (frame_time_sum >= 1000.0f) {
+        current_fps = static_cast<float>(frame_count) / (frame_time_sum / 1000.0f);
+        frame_time_sum = 0.0f;
+        frame_count = 0;
+    }
 }
 
 void RenderSystem::toggleFPSDisplay()
 {
 	show_fps = !show_fps;
-
-	// reset window title when FPS display is turned off
-	if (!show_fps)
-	{
-		glfwSetWindowTitle(window, "Amoebash");
-	}
-}
-
-void RenderSystem::drawFPS()
-{
-	if (!show_fps)
-		return;
-
-	// keeping this code in case we want to render the FPS on the screen instead
-	// of in the window title in the future.
 }
 
 void RenderSystem::drawTexturedMesh(Entity entity,
@@ -466,6 +443,7 @@ void RenderSystem::drawText() {
     drawBuffCountText();
     drawDangerFactorText();
     drawGermoneyText();
+    drawFPSText();
 }
 
 void RenderSystem::drawBuffCountText() {
@@ -566,6 +544,14 @@ void RenderSystem::drawShopText() {
     }
 
     renderText(std::to_string(germoney_count), screen_pos.x, screen_pos.y, .4f, vec3(1.f, 1.f, 1.f));
+}
+
+void RenderSystem::drawFPSText() {
+    if (!show_fps) return;
+
+    std::ostringstream fps_stream;
+	fps_stream << std::fixed << std::setprecision(2) << current_fps;
+	renderText("FPS: " + fps_stream.str(), WINDOW_WIDTH_PX * .89f, WINDOW_HEIGHT_PX * .9625f, .35f, vec3(1.f, 1.f, 1.f));
 }
 
 mat3 RenderSystem::createProjectionMatrix()

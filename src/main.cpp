@@ -38,6 +38,8 @@ int main()
 		return EXIT_FAILURE;
 	}
 
+    glfwSetWindowTitle(window, "Amoebash");
+
 	if (!world_system.start_and_load_sounds())
 	{
 		std::cerr << "ERROR: Failed to start or load sounds." << std::endl;
@@ -72,7 +74,6 @@ int main()
 
 		switch (current_state)
 		{
-
 		case GameState::START_SCREEN_ANIMATION:
 			stateTimer -= elapsed_ms;
 			renderer_system.drawStartScreen();

@@ -190,7 +190,6 @@ public:
 	// FPS counter related methods
 	void updateFPS(float elapsed_ms);
 	void toggleFPSDisplay();
-	void drawFPS();
 
 	Entity get_screen_state_entity()
 	{
@@ -239,7 +238,7 @@ private:
 	float frame_time_sum = 0.0f;
 	int frame_count = 0;
 	float current_fps = 0.0f;
-	bool show_fps = true; // Start with FPS display enabled
+	bool show_fps = false; // Start with FPS display enabled
 
 	// INSTANCING: Particle effect shader
 	GLuint particle_effect;
@@ -263,6 +262,7 @@ private:
     void drawBuffCountText();
     void drawDangerFactorText();
     void drawGermoneyText();
+    void drawFPSText();
     
     // freetype font rendering
 	std::map<char, Character> m_ftCharacters;
