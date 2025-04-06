@@ -454,12 +454,6 @@ void RenderSystem::draw()
 	drawTexturedMesh(registry.miniMaps.entities[0], projection_2D);
 	drawTexturedMesh(registry.thermometers.entities[0], projection_2D);
 
-	// for (Entity entity : registry.healthBars.entities) {
-    // 	if (registry.renderRequests.has(entity)) {
-    //     	drawTexturedMesh(entity, projection_2D);
-    // 	}
-	// }
-
 	// draw static ui elemments
 	for (Entity entity : registry.uiElements.entities)
 	{
