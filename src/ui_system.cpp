@@ -57,7 +57,11 @@ Entity createMiniMap(RenderSystem *renderer, vec2 size)
 	// create motion component
 	Motion &motion = registry.motions.emplace(entity);
 
-	motion.position = {0, 0};
+
+	vec2 offset = {WINDOW_WIDTH_PX / 2 - 100, -WINDOW_HEIGHT_PX / 2 + 100};
+	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
+
+	motion.position = {camera.position.x + offset.x, camera.position.y + offset.y};
 	motion.angle = 0.f;
 	motion.velocity = {0, 0};
 	motion.scale = {32 * 2 * WORK_SCALE_FACTOR, 32 * 2 * WORK_SCALE_FACTOR};
@@ -72,6 +76,10 @@ Entity createMiniMap(RenderSystem *renderer, vec2 size)
 	// add entity to minimaps
 	MiniMap& m = registry.miniMaps.emplace(entity);
 	m.visited = std::vector<std::vector<int>>(MAP_HEIGHT, std::vector<int>(MAP_WIDTH, 0));
+	
+	UIElement& u = registry.uiElements.emplace(entity);
+	u.position = motion.position;
+	u.scale = motion.scale;
 
 	return entity;
 }
@@ -231,7 +239,7 @@ Entity createShopKeeper() {
 	return shopKeeper;
 }
 
-Entity createClickableShopBuff(vec2 position, int buffType)
+Entity createClickableShopBuff(vec2 position, BUFF_TYPE buffType)
 {
 
 	if(buffType >= 0 && buffType < 15) {
@@ -242,10 +250,10 @@ Entity createClickableShopBuff(vec2 position, int buffType)
 
 	TEXTURE_ASSET_ID selectedTexture = TEXTURE_ASSET_ID::BUFFS_SHEET;
 
-	if(buffType == -1) {
+	if(buffType == INJECTION) {
 		// injection
 		selectedTexture = TEXTURE_ASSET_ID::INJECTION;
-	} else if (buffType == -2) {
+	} else if (buffType == SLOT_INCREASE) {
 		selectedTexture = TEXTURE_ASSET_ID::SLOT_INCREASE_BUFF;
 	}
 
@@ -444,7 +452,7 @@ Entity createNucleusMenuScreen() {
 }
 
 // create the buff UI for carry on
-Entity createClickableBuffUI(vec2 position, int buffType)
+Entity createClickableBuffUI(vec2 position, BUFF_TYPE buffType)
 {
 	Entity buff = Entity();
 
@@ -496,7 +504,7 @@ Entity createPauseScreen()
 
 	Motion &motion = registry.motions.emplace(pauseScreenEntity);
 
-	vec2 scale = {LOGO_WIDTH_PX, LOGO_HEIGHT_PX};
+	vec2 scale = {WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX};
 
 	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
 	motion.position = camera.position;
@@ -506,7 +514,9 @@ Entity createPauseScreen()
 	vec2 resumeButtonPosition = camera.position + vec2(BACK_BUTTON_SCALE.x/2.0f + WORK_SCALE_FACTOR * UI_MARGIN_X, -WINDOW_HEIGHT_PX/2.0f + WORK_SCALE_FACTOR* UI_MARGIN_Y);
 
 	Entity saveButtonEntity = createSaveButton(saveButtonPosition);
+	registry.uiElements.emplace(saveButtonEntity);
 	Entity resumeButtonEntity = createResumeButton(resumeButtonPosition);
+	registry.uiElements.emplace(resumeButtonEntity);
 
 	
 	ButtonType type = registry.buttons.get(saveButtonEntity).type;
@@ -952,6 +962,10 @@ Entity createThermometer() {
 	Motion &motion = registry.motions.emplace(entity);
 	motion.position = THERMOMETER_POS;
 	motion.scale = {THERMOMETER_WIDTH, THERMOMETER_HEIGHT};
+	
+	UIElement& u = registry.uiElements.emplace(entity);
+	u.position = motion.position;
+	u.scale = motion.scale;
 
 	Thermometer &t = registry.thermometers.emplace(entity);
 
@@ -1029,6 +1043,7 @@ Entity createEnemyHPBar(Entity enemy, TEXTURE_ASSET_ID texture_id) {
 
     Motion& motion = registry.motions.emplace(hp);
 	Motion& enemy_motion = registry.motions.get(enemy);
+
 	float scale_factor = enemy_motion.scale.x * 0.65f / ENEMY_HP_BAR_WIDTH;
     motion.scale = vec2(ENEMY_HP_BAR_WIDTH * scale_factor, ENEMY_HP_BAR_HEIGHT * scale_factor); 
 	motion.position = enemy_motion.position + vec2(0.f, enemy_motion.scale.y / 1.5f);
@@ -1047,6 +1062,7 @@ Entity createEnemyHPBar(Entity enemy, TEXTURE_ASSET_ID texture_id) {
 }
 
 void removeEnemyHPBar(Entity enemy) {
+    std::vector<Entity> toRemove;
     for (Entity e : registry.healthBars.entities) {
         HealthBar& hb = registry.healthBars.get(e);
         if (hb.is_enemy_hp_bar && hb.owner == enemy) {
@@ -1057,7 +1073,7 @@ void removeEnemyHPBar(Entity enemy) {
 }
 
 
-Entity createBuffUI(vec2 position, int type)
+Entity createBuffUI(vec2 position, BUFF_TYPE type, vec2 scale)
 {
 	Entity buffUI = Entity();
 
@@ -1066,28 +1082,98 @@ Entity createBuffUI(vec2 position, int type)
 
 	Motion &motion = registry.motions.emplace(buffUI);
 	motion.position = position;
-	motion.scale = {BUFF_UI_WIDTH, BUFF_UI_HEIGHT};
+	motion.scale = scale;
 
-	registry.renderRequests.insert(buffUI,
-								   {TEXTURE_ASSET_ID::BUFFS_SHEET,
-									EFFECT_ASSET_ID::SPRITE_SHEET,
-									GEOMETRY_BUFFER_ID::SPRITE});
+    if (type == INFO_BOSS1) {
+        TEXTURE_ASSET_ID texture = static_cast<TEXTURE_ASSET_ID>(static_cast<int>(TEXTURE_ASSET_ID::BOSS_STAGE_1));
 
-	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(buffUI);
-	spriteSheet.total_frames = 20;	 
-	spriteSheet.current_frame = type;
-								
-	SpriteSize &sprite = registry.spritesSizes.emplace(buffUI);
-	sprite.width = BUFF_UI_WIDTH;
-	sprite.height = BUFF_UI_HEIGHT;
+        registry.renderRequests.insert(
+            buffUI,
+            {
+                texture,
+                EFFECT_ASSET_ID::SPRITE_SHEET,
+                GEOMETRY_BUFFER_ID::SPRITE
+            }
+        );
+
+        Animation& a = registry.animations.emplace(buffUI);
+        a.start_frame = 0;
+        a.end_frame = 7;
+        a.time_per_frame = 100.0f;
+        a.loop = ANIM_LOOP_TYPES::LOOP;
+
+        SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(buffUI);
+        spriteSheet.total_frames = 7;
+        spriteSheet.current_frame = 0;
+
+        SpriteSize& sprite = registry.spritesSizes.emplace(buffUI);
+        sprite.width = motion.scale.x;
+        sprite.height = motion.scale.y;
+    } else if (type == INFO_BOSS2) {
+        registry.renderRequests.insert(
+            buffUI,
+            {
+                TEXTURE_ASSET_ID::FINAL_BOSS,
+                EFFECT_ASSET_ID::SPRITE_SHEET,
+                GEOMETRY_BUFFER_ID::SPRITE
+            }
+        );
+
+        Animation& a = registry.animations.emplace(buffUI);
+        a.start_frame = 0;
+        a.end_frame = 10;
+        a.time_per_frame = 100.0f;
+        a.loop = ANIM_LOOP_TYPES::PING_PONG;
+
+        SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(buffUI);
+        spriteSheet.total_frames = 14;
+        spriteSheet.current_frame = 0;
+
+        SpriteSize& sprite = registry.spritesSizes.emplace(buffUI);
+        sprite.width = motion.scale.x;
+        sprite.height = motion.scale.y;
+    } else if (type > BLACK_GOO) {
+        registry.renderRequests.insert(
+            buffUI,
+            {
+                TEXTURE_ASSET_ID::INFO_BUFF,
+                EFFECT_ASSET_ID::TEXTURED,
+                GEOMETRY_BUFFER_ID::SPRITE
+            }
+        );
+    } else {
+        registry.renderRequests.insert(buffUI,
+                                       {TEXTURE_ASSET_ID::BUFFS_SHEET,
+                                        EFFECT_ASSET_ID::SPRITE_SHEET,
+                                        GEOMETRY_BUFFER_ID::SPRITE});
+    
+        SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(buffUI);
+        spriteSheet.total_frames = 20;	 
+        spriteSheet.current_frame = type;
+                                    
+        SpriteSize &sprite = registry.spritesSizes.emplace(buffUI);
+        sprite.width = scale.x;
+        sprite.height = scale.y;
+    }
+
 	
 	registry.uiElements.emplace(buffUI, UIElement{motion.position, motion.scale});
 	
 	return buffUI;
 }
 
+Entity createRowBuffUI(vec2 position, BUFF_TYPE type)
+{
+	return createBuffUI(position, type, { BUFF_UI_WIDTH, BUFF_UI_HEIGHT });
+}
+
+Entity createPopupBuffUI(vec2 position, BUFF_TYPE type)
+{
+	return createBuffUI(position, type, { POPUP_BUFF_UI_WIDTH, POPUP_BUFF_UI_HEIGHT });
+}
+
 // Render collected buffs a certain amount per row that stacks
-void renderCollectedBuff(RenderSystem *renderer, int buffType)
+void renderCollectedBuff(RenderSystem *renderer, BUFF_TYPE buffType)
 {
     auto &collectedBuffs = registry.players.get(registry.players.entities[0]).buffsCollected;
     if (collectedBuffs[buffType] == 0) {
@@ -1101,7 +1187,7 @@ void renderCollectedBuff(RenderSystem *renderer, int buffType)
         }
     }
 
-	int freeSlot = registry.buffUIs.size(); // Assume that we will never leave a buff on there with a gap when removing.
+	int freeSlot = registry.buffUIs.size() - registry.popupElements.size(); // Assume that we will never leave a buff on there with a gap when removing.
 	int buffsPerRow = BUFF_NUM / 2;
 	vec2 position;
 	
@@ -1117,19 +1203,19 @@ void renderCollectedBuff(RenderSystem *renderer, int buffType)
         if (freeSlot < buffsPerRow) // if the free slot id is larger than collected buffs 
         {
             position = {BUFF_START_POS.x + freeSlot * BUFF_SPACING, BUFF_START_POS.y};
-            Entity buffUI = createBuffUI(position, buffType);
+            Entity buffUI = createRowBuffUI(position, buffType);
         }
         else if (freeSlot >= buffsPerRow && freeSlot < BUFF_NUM)
         {
             position = {BUFF_START_POS.x + (freeSlot - buffsPerRow) * BUFF_SPACING,
                         BUFF_START_POS.y - BUFF_SPACING};
-            Entity buffUI = createBuffUI(position, buffType);
+            Entity buffUI = createRowBuffUI(position, buffType);
         }
     }
 
 }
 
-vec2 getBuffSlot (int buffType) {
+vec2 getBuffSlot (BUFF_TYPE buffType) {
 	vec2 position = {0, 0};
 
 	for(int i = 0; i < registry.buffUIs.size(); i++) {
@@ -1144,7 +1230,7 @@ vec2 getBuffSlot (int buffType) {
 	return position;
 }
 
-vec2 getBuffSlot_uiPos (int buffType) {
+vec2 getBuffSlot_uiPos (BUFF_TYPE buffType) {
 	vec2 position = {0, 0};
 
 	for(int i = 0; i < registry.buffUIs.size(); i++) {
@@ -1159,7 +1245,7 @@ vec2 getBuffSlot_uiPos (int buffType) {
 	return position;
 }
 
-void removeBuffUI(int buffType) {
+void removeBuffUI(BUFF_TYPE buffType) {
 	// After you find the position to remove, then first remove the buff, and for all motions that are greater than it, move them back + think of the wrap around case
 	// this ensures that the buff no and slot no are always paired.
 
@@ -1230,7 +1316,7 @@ void removeBuffUI(int buffType) {
 }
 
 
-void findAndRemove(std::unordered_map<int, int>& map, int N) {
+void findAndRemove(std::unordered_map<BUFF_TYPE, int>& map, BUFF_TYPE N) {
     auto it = map.find(N);
     if (it != map.end()) {
         if (it->second == 0) return;
@@ -1242,13 +1328,7 @@ void findAndRemove(std::unordered_map<int, int>& map, int N) {
 // HUD element update such has health etc.
 void updateHuds()
 {
-	vec2 offset = {WINDOW_WIDTH_PX / 2 - 100, -WINDOW_HEIGHT_PX / 2 + 100};
-
-	Entity minimapEntity = registry.miniMaps.entities[0];
-	Motion &minimapMotion = registry.motions.get(minimapEntity);
-
 	Camera &camera = registry.cameras.get(registry.cameras.entities[0]);
-	minimapMotion.position = {camera.position.x + offset.x, camera.position.y + offset.y};
 
 	if (!registry.uiElements.entities.empty())
 	{
@@ -1302,13 +1382,87 @@ void updateHuds()
 	}
 
 
-	if (!registry.thermometers.entities.empty()) {
-		Thermometer& t = registry.thermometers.get(registry.thermometers.entities[0]);
-		Motion& m = registry.motions.get(registry.thermometers.entities[0]);
-		m.position = {
-			camera.position.x + THERMOMETER_POS.x,
-			camera.position.y + THERMOMETER_POS.y
-		};
+	// if (!registry.thermometers.entities.empty()) {
+	// 	Thermometer& t = registry.thermometers.get(registry.thermometers.entities[0]);
+	// 	Motion& m = registry.motions.get(registry.thermometers.entities[0]);
+	// 	m.position = {
+	// 		camera.position.x + THERMOMETER_POS.x,
+	// 		camera.position.y + THERMOMETER_POS.y
+	// 	};
+	// }
+
+}
+
+void updatePopups(float elapsed_ms_since_last_update)
+{
+	removePopups([&](Entity& entity)
+		{
+			PopupWithImage& popup = registry.imagePopups.get(entity);
+			popup.duration -= elapsed_ms_since_last_update;
+			return popup.duration < 0;
+		});
+}
+
+void removePopups(std::function<bool(Entity&)> shouldRemove)
+{
+	std::vector<Entity> removals;
+
+	for (auto& entity : registry.imagePopups.entities)
+	{
+		if (shouldRemove(entity))
+		{
+			PopupWithImage& popup = registry.imagePopups.get(entity);
+			registry.remove_all_components_of(popup.text);
+			registry.remove_all_components_of(popup.description);
+			registry.remove_all_components_of(popup.image);
+			removals.push_back(entity);
+		}
 	}
 
+	for (int i = 0; i < removals.size(); i++)
+	{
+		registry.remove_all_components_of(removals[i]);
+	}
+}
+
+Entity createText(std::string text, vec2 start_pos, vec3 color, float scale)
+{
+	Entity entity = Entity();
+
+	registry.texts.insert(entity, { text, color });
+	Motion& motion = registry.motions.emplace(entity);
+	motion.position = start_pos;
+	motion.scale = { scale, scale };
+
+	return entity;
+}
+
+Entity createBuffPopup(BUFF_TYPE type)
+{
+	removePopups([](Entity& entity) { return true;});
+
+	Entity buffPopup = Entity();
+
+	const Entity& buffImage = createPopupBuffUI(BUFF_POPUP_POS + vec2(BUFF_POPUP_GAP, BUFF_POPUP_GAP), type);
+	registry.popupElements.emplace(buffImage);
+	Motion& buffImageMotion = registry.motions.get(buffImage);
+
+	auto buff_test = BUFF_TYPE_TO_TEXT.at(type);
+
+	registry.imagePopups.insert(
+		buffPopup,
+		PopupWithImage(
+			createText(buff_test.first, imageCoordToTextCoord(buffImageMotion.position) + vec2(buffImageMotion.scale.x, 0) + vec2(BUFF_POPUP_GAP, 0), { 1.0f, 1.0f, 1.0f }, 0.5),
+			createText(buff_test.second, imageCoordToTextCoord(buffImageMotion.position) + vec2(buffImageMotion.scale.x, 0) + vec2(BUFF_POPUP_GAP, -25), { 1.0f, 1.0f, 1.0f }, 0.3),
+			buffImage,
+			POPUP_DURATION
+		)
+	);
+
+	return buffPopup;
+}
+
+vec2 imageCoordToTextCoord(vec2 imageCoord)
+{
+	return vec2(imageCoord.x, -imageCoord.y) + vec2(WINDOW_WIDTH_PX / 2, WINDOW_HEIGHT_PX / 2);
 }

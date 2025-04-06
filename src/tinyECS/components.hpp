@@ -7,6 +7,54 @@
 
 extern bool tutorial_mode;
 
+enum BUFF_TYPE {
+	TAIL = 0,
+	MITOCHONDRIA = TAIL + 1,
+	HEMOGLOBIN = MITOCHONDRIA + 1,
+	GOLGI = HEMOGLOBIN + 1,
+	CHLOROPLAST = GOLGI + 1,
+	CELL_WALL = CHLOROPLAST + 1,
+	AMINO_ACID = CELL_WALL + 1,
+	LYSOSOME = AMINO_ACID + 1,
+	CYTOPLASM = LYSOSOME + 1,
+	PILLI = CYTOPLASM + 1,
+	SPARE_NUCLEUS = PILLI + 1,
+	VACUOLE = SPARE_NUCLEUS + 1,
+	ENDOPLASMIC_RETICULUM = VACUOLE + 1,
+	OCELOID = ENDOPLASMIC_RETICULUM + 1,
+	SECRETOR = OCELOID + 1,
+	ORANGE = SECRETOR + 1,
+	PEROXISOMES = ORANGE + 1,
+	MUTATION = PEROXISOMES + 1,
+	FACEHUGGER = MUTATION + 1,
+	BLACK_GOO = FACEHUGGER + 1,
+   	INFO_BUFF0 = BLACK_GOO + 1,
+	INFO_BUFF1 = INFO_BUFF0 + 1,
+    INFO_BUFF2 = INFO_BUFF1 + 1,
+    INFO_BUFF3 = INFO_BUFF2 + 1,
+    INFO_BUFF4 = INFO_BUFF3 + 1,
+    INFO_BUFF5 = INFO_BUFF4 + 1,
+    INFO_BUFF6 = INFO_BUFF5 + 1,
+    INFO_BUFF7 = INFO_BUFF6 + 1,
+    INFO_BUFF8 = INFO_BUFF7 + 1,
+    INFO_BUFF9 = INFO_BUFF8 + 1,
+    INFO_BUFF10 = INFO_BUFF9 + 1,
+    INFO_BUFF11 = INFO_BUFF10 + 1,
+    INFO_BUFF12 = INFO_BUFF11 + 1,
+
+    INFO_BOSS1 = INFO_BUFF12 + 1,
+    INFO_BOSS2 = INFO_BOSS1 + 1,
+
+	TOTAL_BUFF_COUNT = INFO_BOSS2 + 1,
+
+	SLOT_INCREASE = TAIL - 2,
+	INJECTION = TAIL - 1,
+};
+
+const int NUMBER_OF_BUFFS = (int)BUFF_TYPE::TOTAL_BUFF_COUNT;
+// last enabled buff + 1
+const int BUFFS_ENABLED = (int)BUFF_TYPE::SECRETOR + 1;
+
 using json = nlohmann::json;
 
 // asked gpt for this
@@ -26,8 +74,8 @@ namespace nlohmann {
 }
 
 struct Progression {
-	std::unordered_map<int, int> buffsFromLastRun;
-	std::vector<int> pickedInNucleus;
+	std::unordered_map<BUFF_TYPE, int> buffsFromLastRun;
+	std::vector<BUFF_TYPE> pickedInNucleus;
 	int slots_unlocked = 1;
 	int germoney_savings = 0;
 };
@@ -38,7 +86,7 @@ struct Slot {
 };
 
 struct ClickableBuff {
-	int type;
+	BUFF_TYPE type;
 	bool picked = false;
 	float price = 0.0;
 	vec2 returnPosition = {0, 0};
@@ -86,7 +134,7 @@ struct Player
 
 	vec2 grid_position = {0, 0};
 	// std::vector<int> buffsCollected;
-    std::unordered_map<int, int> buffsCollected;
+    std::unordered_map<BUFF_TYPE, int> buffsCollected;
 
     int germoney_count = 0;
 	float dangerFactor = DEFAULT_DANGER_LEVEL;
@@ -95,8 +143,6 @@ struct Player
 struct Text
 {
 	std::string text;
-	float scale;
-	vec2 position;
 	vec3 color;
 };
 
@@ -182,11 +228,20 @@ struct Projectile
 	bool from_enemy = true;
 };
 
+struct SpiralProjectile
+{
+};
+
+struct FollowingProjectile
+{
+};
+
 struct BacteriophageProjectile {
 	int dummy = 0;
 };
 
 struct BossProjectile {};
+struct FinalBossProjectile {};
 
 // used for Entities that cause damage
 struct Deadly
@@ -197,7 +252,7 @@ struct Deadly
 // Buff
 struct Buff
 {
-	int type = 0; // Type of buff (0-19, corresponding to the sprite sheet)
+	BUFF_TYPE type = TAIL; // Type of buff (0-19, corresponding to the sprite sheet)
 	bool collected = false;
 };
 
@@ -398,7 +453,7 @@ struct Chest
 
 struct BuffUI
 {
-	int buffType;
+	BUFF_TYPE buffType;
 };
 
 struct InfoBox
@@ -512,7 +567,8 @@ enum class TEXTURE_ASSET_ID
     ENEMY_HP_BAR = SLOT_INCREASE_BUFF + 1, 
 	MITOSIS_BOSS_16_HP_BAR = ENEMY_HP_BAR + 1,
 	MITOSIS_BOSS_128_HP_BAR = MITOSIS_BOSS_16_HP_BAR + 1,
-	CIRCLE = MITOSIS_BOSS_128_HP_BAR + 1,
+    INFO_BUFF = MITOSIS_BOSS_128_HP_BAR + 1,
+	CIRCLE = INFO_BUFF + 1,
 	RED_TILES = CIRCLE + 1,
 	RED_WALL = RED_TILES + 1,
 	GREEN_TILES = RED_WALL + 1,
@@ -523,9 +579,10 @@ enum class TEXTURE_ASSET_ID
 	PURPLE_WALL = PURPLE_TILES + 1,
     BOSS_TILES = PURPLE_WALL + 1,
     BOSS_WALL = BOSS_TILES + 1,
-
-	TEXTURE_COUNT = BOSS_WALL + 1,
-
+    EYE_BALL_PROJECTILE = BOSS_WALL + 1,
+	DENDERITE = EYE_BALL_PROJECTILE + 1,
+	FINAL_BOSS = DENDERITE + 1,
+	TEXTURE_COUNT = FINAL_BOSS + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -691,6 +748,28 @@ struct BacteriophageAI
 	int placement_index = 0;
 };
 
+enum class DenderiteState
+{
+	HUNT = 0,
+	PIERCE = HUNT + 1,
+	SHOOT = PIERCE + 1
+};
+
+struct DenderiteAI : EnemyAI
+{
+	// store whole path to follow 
+	std::vector<ivec2> path;
+	bool isCharging = false;
+	float chargeTime = 100.0f;
+	float chargeDuration = 500.0f;
+	float shootCoolDown = 200.0f;
+	int currentNodeIndex = 0;
+	DenderiteState state = DenderiteState::HUNT;
+
+	float timeSinceLastRecalc = 0.f;
+    float recalcTimeThreshold = DENDERITE_RECALC_DURATION;
+};
+
 enum class BossState
 {
 	INITIAL = 0,
@@ -699,6 +778,15 @@ enum class BossState
 	RUMBLE = SHOOT_PARADE + 1,
 	FLEE = RUMBLE + 1,
 	NUM_STATES = FLEE + 1
+};
+
+enum class FinalBossState
+{
+	INITIAL = 0,
+	SPAWN_1 = INITIAL + 1,
+	SPIRAL_SHOOT_1 = SPAWN_1 + 1,
+	TIRED = SPIRAL_SHOOT_1 + 1,
+	SPAWN_2 = TIRED + 1,
 };
 
 struct BossAI : EnemyAI
@@ -717,6 +805,19 @@ struct BossAI : EnemyAI
 	float flee_duration = 1000.f;    // Arbitrary duration in ms
 	float flee_timer = 0.f;
 	bool is_fleeing = false;
+
+	Entity associatedArrow;
+};
+
+struct FinalBossAI : EnemyAI
+{
+	FinalBossState state = FinalBossState::INITIAL;
+	unsigned int phase = 1;
+	float cool_down = FINAL_BOSS_BASE_COOLDOWN;
+	bool has_spawned = false;
+
+	float shoot_cool_down = FINAL_BOSS_BASE_SHOOT_COOLDOWN;
+	float spiral_duration = FINAL_BOSS_SHOOT_DURATION; 
 
 	Entity associatedArrow;
 };
@@ -755,6 +856,56 @@ enum class Biome {
   PURPLE = BLUE + 1,
   BOSS = PURPLE + 1,
   BIOME_COUNT = BOSS + 1
+};
+
+struct PopupWithImage {
+	Entity text;
+	Entity description;
+	Entity image;
+	float duration;
+
+	PopupWithImage(const Entity& text, const Entity& description, const Entity& image, float duration)
+		: text(text), description(description), image(image), duration(duration) {}
+};
+
+struct PopupElement {};
+
+const std::map<BUFF_TYPE, std::pair<std::string, std::string>> BUFF_TYPE_TO_TEXT = {
+	{TAIL, {"Flagella", "Increases movement speed"}},
+	{MITOCHONDRIA, {"Mitochondria", "Gives you 1 more dash bubble"}},
+	{HEMOGLOBIN, {"Hemoglobin", "Reduces enemy detection range"}},
+	{GOLGI, {"Golgi Apparatus", "Increases dash recharge rate"}},
+	{CHLOROPLAST, {"Chloroplast", "Enables healing"}},
+	{CELL_WALL, {"Cell Wall", "Negate the next time you take damage"}},
+	{AMINO_ACID, {"Amino Acid", "Increases your Dash damage"}},
+	{LYSOSOME, {"Lysosome", "Shoot 1 more projectile"}},
+	{CYTOPLASM, {"Cytoplasm", "Increases your overall health"}},
+	{PILLI, {"Pilli", "Projectile Speed Bost"}},
+	{SPARE_NUCLEUS, {"Spare Nucleus", "1+ Lives"}},
+	{VACUOLE, {"Vacuole", "Heals some health instantly"}},
+	{ENDOPLASMIC_RETICULUM, {"Endoplasmic Reticulum", "Increase healing rate"}},
+	{OCELOID, {"Oceloid", "Increases mini-map view range"}},
+	{SECRETOR, {"Secretor", "Increases dash drift"}},
+	{ORANGE, {"Orange", "Reduce bullet spread"}},
+	{PEROXISOMES, {"Peroxisomes", "Not Implemented"}},
+	{MUTATION, {"Mutation", "Not Implemented"}},
+	{FACEHUGGER, {"Facehugger", "Not Implemented"}},
+	{BLACK_GOO, {"Black Goo", "Not Implemented"}},
+	{INFO_BUFF0, {"Story", "You're the nucleus of a brain eating Amoeba, and its time to get to work"}},
+    {INFO_BUFF1, {"Moving", "Use mouse to move around"}},
+    {INFO_BUFF2, {"Dashing", "Left-click to dash, the bubbles by you are your dash count"}},
+    {INFO_BUFF3, {"Pause", "Use 'Space' to pause the game"}},
+    {INFO_BUFF4, {"Save/Load", "Save on pause, use 'L' to load game in the main menu"}},
+    {INFO_BUFF6, {"Attack", "Dash into enemies to damage them"}},
+    {INFO_BUFF7, {"Shooting", "Use 'S', or right-click to shoot enemies from your pet bacteriophage"}},
+    {INFO_BUFF5, {"Buffs", "Collect buffs by killing enemies, buffs improve your abilities"}},
+    {INFO_BUFF8, {"Nucleus Menu", "Select buffs to take into your next run when you die"}},
+    {INFO_BUFF9, {"Germoney", "Kill enemies to collect Germoney, use it in the shop"}},
+    {INFO_BUFF10, {"Immunoresponse meter", "The thermometer on the top left shows the danger level"}},
+    {INFO_BUFF11, {"Game", "Five levels and Two bosses await"}},
+    {INFO_BUFF12, {"Portal", "Find and enter portals to go to the next level"}},
+    {INFO_BOSS1, {"Mitosis", "Kill the bosses before they kill you"}},
+    {INFO_BOSS2, {"Brain", "One last step to victory"}},
 };
 
 // MACROS for "to_json" and "from_json" on user-defined structs

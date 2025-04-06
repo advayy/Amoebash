@@ -91,6 +91,7 @@ public:
 	void spawnEnemies(float elapsed_ms_since_last_update);
 	void handleProjectiles(float elapsed_ms_since_last_update);
 	bool checkPortalCollision();
+	void spawnFourDenderitesOnMap();
 	void startTheme();
 	void triggerGameOver();
 
@@ -98,6 +99,7 @@ public:
 private:
 	bool gameOver = false;
 	bool shopItemsPlaced = false;
+	bool firstEnemySpawned = false;
 
 	float device_mouse_pos_x = 0.0f;
 	float device_mouse_pos_y = 0.0f;
@@ -169,6 +171,8 @@ private:
 	Mix_Chunk *enemy_death_sound;
 	Mix_Chunk *click_sound;
 	Mix_Chunk *portal_sound;
+	Mix_Chunk *buy_sound;
+	Mix_Chunk *buff_pickup;
 
 	// debugging (fps etc..)
 	void toggleFPSDisplay();
@@ -190,8 +194,10 @@ private:
 	Entity getFreeSlot();
 	bool isFreeSlot();
 	void moveSelectedBuffsToProgression();
-	void applyBuff(Player& player, int buff_type);
+	void applyBuff(Player& player, BUFF_TYPE buff_type);
 
 	void updateDangerLevel(float elapsed_ms_since_last_update);
 	void placeBuffsOnShopScreen();
+	void switchMusicThemeToBoss();
+	void switchMusicBossToTheme();
 };

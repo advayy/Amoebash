@@ -148,6 +148,43 @@ Entity createBacteriophage(RenderSystem* renderer, vec2 position, int placement_
 	return entity;
 }
 
+Entity createDenderite(RenderSystem* renderer, vec2 position)
+{
+	Entity entity = createEnemy(renderer, position);
+
+	Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::ENEMY_HP_BAR);
+
+	DenderiteAI& enemy_ai = registry.denderiteAIs.emplace(entity);
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			TEXTURE_ASSET_ID::DENDERITE,
+			EFFECT_ASSET_ID::SPRITE_SHEET,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	Motion& motion = registry.motions.get(entity);
+	motion.scale = DENDERITE_SIZE;
+
+	Animation& a = registry.animations.emplace(entity);
+	a.start_frame = 0;
+	a.end_frame = 6;
+	a.time_per_frame = 100.0f;
+	a.loop = ANIM_LOOP_TYPES::PING_PONG;
+
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 6;
+	spriteSheet.current_frame = 0;
+
+	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
+	sprite.width = 64;
+	sprite.height = 64;
+
+	return entity;
+}
+
 Entity createBoss(RenderSystem* renderer, vec2 position, BossState state, int bossStage)
 {
 	Entity entity = createEnemy(renderer, position);
@@ -387,6 +424,46 @@ Entity createBossProjectile(vec2 position, vec2 size, vec2 velocity)
 	return projectile;
 }
 
+Entity createFinalBossProjectile(vec2 position, vec2 size, vec2 velocity, int phase)
+{
+	Entity projectile = createProjectile(position, size, velocity);
+	RenderRequest& render_request = registry.renderRequests.get(projectile);
+	render_request.used_texture = TEXTURE_ASSET_ID::BOSS_PROJECTILE;
+	Projectile& p = registry.projectiles.get(projectile);
+	p.damage = BOSS_PROJECTILE_DAMAGE;
+	p.ms_until_despawn = 7500.f;
+
+	registry.finalBossProjectiles.emplace(projectile);
+
+	if (phase == 2) {
+		registry.spiralProjectiles.emplace(projectile);
+	} else if (phase == 3) {
+		p.ms_until_despawn = 15000.f;
+		Motion& motion = registry.motions.get(projectile);
+		motion.velocity *= 2.f;
+
+		registry.followingProjectiles.emplace(projectile);
+		render_request.used_texture = TEXTURE_ASSET_ID::EYE_BALL_PROJECTILE;
+		render_request.used_effect = EFFECT_ASSET_ID::SPRITE_SHEET;
+
+		Animation& a = registry.animations.emplace(projectile);
+		a.start_frame = 0;
+		a.end_frame = 8;
+		a.time_per_frame = 100.0f;
+		a.loop = ANIM_LOOP_TYPES::LOOP;
+
+		SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(projectile);
+		spriteSheet.total_frames = 9;
+		spriteSheet.current_frame = 0;
+
+		SpriteSize& sprite = registry.spritesSizes.emplace(projectile);
+		sprite.width = 32.f;
+		sprite.height = 32.f;
+	}
+
+	return projectile;
+}
+
 Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& playerPosition) {
 	for (Entity& entity : registry.proceduralMaps.entities) {
         registry.remove_all_components_of(entity);
@@ -408,15 +485,129 @@ Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& pla
 
 	for (int x = 0; x < map.width; x ++) {
 		for (int y = 0; y < map.height; y++) {
-			map.map[y][x] = tileType::EMPTY;
+			if (x == 0 || y == 0 || x == map.width - 1 || y == map.height - 1) {
+				map.map[y][x] = tileType::WALL;
+			} else {
+				map.map[y][x] = tileType::EMPTY;
+			}
 		}
 	}
 
-	playerPosition.first = 19;
+	playerPosition.first = 18;
 	playerPosition.second = 10;
+
+    createBuff(gridCellToPosition({10,17}), INFO_BOSS1);
 
 	return entity;
 }
+
+Entity createFinalBoss(RenderSystem* renderer, vec2 position) {
+	Entity entity = createEnemy(renderer, position);
+
+	Motion & motion = registry.motions.get(entity);
+	motion.scale = {FINAL_BOSS_BB_WIDTH, FINAL_BOSS_BB_HEIGHT};
+	
+	FinalBossAI& enemy_ai = registry.finalBossAIs.emplace(entity);
+	enemy_ai.detectionRadius = BOSS_DETECTION_RADIUS;
+	
+	Entity hp_bar = createEnemyHPBar(entity, TEXTURE_ASSET_ID::MITOSIS_BOSS_128_HP_BAR);
+	if (registry.motions.has(hp_bar)) {
+		Motion& hp_bar_motion = registry.motions.get(hp_bar);
+		hp_bar_motion.position += vec2(0.f, + motion.scale.y);
+	}
+
+	Enemy& enemy = registry.enemies.get(entity);
+	enemy.health = FINAL_BOSS_HEALTH;
+	enemy.total_health = FINAL_BOSS_HEALTH;
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			TEXTURE_ASSET_ID::FINAL_BOSS,
+			EFFECT_ASSET_ID::SPRITE_SHEET,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	Animation& a = registry.animations.emplace(entity);
+	a.start_frame = 1;
+	a.end_frame = 8;
+	a.time_per_frame = 100.0f;
+	a.loop = ANIM_LOOP_TYPES::LOOP;
+
+	SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+	spriteSheet.total_frames = 14;
+	spriteSheet.current_frame = 0;
+
+	SpriteSize& sprite = registry.spritesSizes.emplace(entity);
+	sprite.width = motion.scale.x;
+	sprite.height = motion.scale.y;
+
+	enemy_ai.associatedArrow = createBossArrow(entity);
+	return entity;
+}
+
+Entity createFinalBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& playerPosition) {
+	for (Entity& entity : registry.proceduralMaps.entities) {
+		registry.remove_all_components_of(entity);
+	}
+	for (Entity& entity : registry.portals.entities) {
+		registry.remove_all_components_of(entity);
+	}
+	auto entity = Entity();
+
+	ProceduralMap& map = registry.proceduralMaps.emplace(entity);
+	
+	map.width = size.x;
+	map.height = size.y;
+	map.top = floor(WORLD_ORIGIN.y - size.y / 2);
+	map.left = floor(WORLD_ORIGIN.x - size.x / 2);
+	map.bottom = ceil(WORLD_ORIGIN.y + size.y / 2);
+	map.right = ceil(WORLD_ORIGIN.x + size.x / 2);
+	
+	map.map.resize(map.height, std::vector<tileType>(map.width, tileType::EMPTY));
+	
+	std::vector<std::vector<int>> rawMap = {
+		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+		{1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1},
+		{1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1},
+		{1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1},
+		{1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1},
+		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+	};
+
+	for (int i = 0; i < rawMap.size(); i++) {
+		for (int j = 0; j < rawMap[i].size(); j++) {
+			if (rawMap[i][j] == 1) {
+				map.map[i][j] = tileType::WALL;
+			} else {
+				map.map[i][j] = tileType::EMPTY;
+			}
+		}
+	}
+	
+	playerPosition.first = 18;
+	playerPosition.second = 9;
+
+    createBuff(gridCellToPosition({9,17}), INFO_BOSS2);
+
+	return entity;
+}
+
 
 void updateMiniMap(vec2 playerPos) {
 
@@ -472,19 +663,46 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 	map.map.resize(map.height, std::vector<tileType>(map.width, tileType::EMPTY));
 
 	if (tutorial_on) {
-		int hall_x = map.height / 2;
-
-		for (int y = 0; y < map.height; y++) {
-			map.map[y][hall_x] = tileType::EMPTY;
-		}
-
-		for (int x = 0; x < map.width; x++) {
-			if (x < hall_x - 1 || x > hall_x) {
-				for (int y = 0; y < map.height; y++) {
+		std::vector<std::vector<int>> tutorial_map = {
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,2,0,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,INFO_BUFF12,0,0,1,1},		
+			{1,1,1,1,0,0,0,0,0,0,INFO_BUFF11,0,0,0,0,0,1,1,1,1},		
+			{1,1,0,0,0,0,INFO_BUFF10,0,1,0,0,0,1,1,1,1,1,1,1,1},		
+			{1,1,INFO_BUFF9,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1},		
+			{1,1,1,0,INFO_BUFF8,0,1,1,1,1,1,0,0,0,0,0,0,1,1,1},		
+			{1,1,1,0,0,0,0,0,1,1,0,0,0,INFO_BUFF6,0,0,0,1,1,1},		
+			{1,1,1,1,1,0,0,INFO_BUFF7,0,0,0,1,1,1,0,0,0,1,1,1},		
+			{1,1,1,1,1,1,0,0,0,1,1,1,1,1,0,INFO_BUFF5,0,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,0,0,INFO_BUFF4,0,0,1,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,0,INFO_BUFF3,0,0,0,1,1,1,1,1,1},		
+			{1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1},		
+			{1,0,INFO_BUFF0,0,INFO_BUFF1,0,0,INFO_BUFF2,0,0,0,0,1,1,1,1,1,1,1,1},		
+			{1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}		
+		};
+	
+        for (int y = 0; y < tutorial_map.size(); y++) {
+            for (int x = 0; x < tutorial_map.size(); x++) {
+				if (tutorial_map[x][y] == 1) {
 					map.map[y][x] = tileType::WALL;
+				} else if (tutorial_map[x][y] == 2) {
+					map.map[y][x] = tileType::PORTAL;
+				} else if (tutorial_map[x][y] == 0) {
+					map.map[y][x] = tileType::EMPTY;
+                } else {
+                    createBuff(gridCellToPosition({y,x}), static_cast<BUFF_TYPE>(tutorial_map[x][y]));
+                    map.map[y][x] = tileType::EMPTY;
 				}
 			}
 		}
+
+        // Place 10 buffs at hardcoded positions along the player's path
+
 	} else {
 		// Initialize map to random walls / floors
         std::random_device rd;
@@ -519,21 +737,6 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
                 map.map[y][0] = tileType::WALL;
                 map.map[y][map.width - 1] = tileType::WALL;
             }
-
-            // print map
-            for (int y = 0; y < map.height; ++y) {
-                for (int x = 0; x < map.width; ++x) {
-                    if (x == playerTile.first && y == playerTile.second) {
-                        // std::cout << "!!";
-                    } else if (x == portalTile.first && y == portalTile.second) {
-                        // std::cout << "P";
-                    } else {
-                        // std::cout << (map.map[y][x] == tileType::WALL ? "X" : ".");
-                    }
-                }
-                // std::cout << std::endl;
-            }
-
             if (getDistance(map.map, playerTile, portalTile) < 15) {
                 // std::cout << "PATH DOES NOT EXIST OR NOT ENOUGH DISTANCE, TRYING AGAIN." << std::endl;
                 continue;
@@ -856,7 +1059,7 @@ int getDistance(const std::vector<std::vector<tileType>>& grid, std::pair<int,in
     return -1;
 }
 
-Entity createBuff(vec2 position)
+Entity createBuff(vec2 position, BUFF_TYPE buffType)
 {
 	Entity entity = Entity();
 	Motion &motion = registry.motions.emplace(entity);
@@ -891,23 +1094,45 @@ Entity createBuff(vec2 position)
 	Buff &buff = registry.buffs.emplace(entity);
 
 	// Currently only the first 15 buffs are active
-	buff.type = getRandomBuffType();
+    if (buffType > BLACK_GOO) {
+        buff.type = buffType;
+        registry.renderRequests.insert(
+            entity,
+            {
+                TEXTURE_ASSET_ID::INFO_BUFF,
+                EFFECT_ASSET_ID::TEXTURED,
+                GEOMETRY_BUFFER_ID::SPRITE
+            }
+        );
+    } else {
+        buff.type = getRandomBuffType();
+        registry.renderRequests.insert(
+            entity,
+            {TEXTURE_ASSET_ID::BUFFS_SHEET,
+             EFFECT_ASSET_ID::SPRITE_SHEET,
+             GEOMETRY_BUFFER_ID::SPRITE});
+    
+        SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(entity);
+        spriteSheet.total_frames = 20;	 
+        spriteSheet.current_frame = buff.type;
+    
+        SpriteSize &sprite = registry.spritesSizes.emplace(entity);
+        sprite.width = 20;
+        sprite.height = 20;
+    }
 
-	registry.renderRequests.insert(
-		entity,
-		{TEXTURE_ASSET_ID::BUFFS_SHEET,
-		 EFFECT_ASSET_ID::SPRITE_SHEET,
-		 GEOMETRY_BUFFER_ID::SPRITE});
-
-	SpriteSheetImage &spriteSheet = registry.spriteSheetImages.emplace(entity);
-	spriteSheet.total_frames = 20;	 
-	spriteSheet.current_frame = buff.type;
-
-	SpriteSize &sprite = registry.spritesSizes.emplace(entity);
-	sprite.width = 20;
-	sprite.height = 20;
 
 	return entity;
+}
+
+Entity createBuffWithChanceToFail(vec2 pos) {
+	
+	float chance = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    if (chance < BUFF_DROP_FAIL_CHANCE) {
+        return {};
+    }
+
+	return createBuff(pos);
 }
 
 void applyVignetteEffect() {
@@ -922,14 +1147,14 @@ void clearVignetteEffect() {
 }
 
 
-int getRandomBuffType() {
-	std::vector<int> commonBuffs = {0, 1, 2, 3, 5, 6, 11};
-	std::vector<int> rareBuffs = {4, 8, 9, 12};
-	std::vector<int> eliteBuffs = {7, 10, 13, 14};
+BUFF_TYPE getRandomBuffType() {
+	std::vector<BUFF_TYPE> commonBuffs = { TAIL, MITOCHONDRIA, HEMOGLOBIN, GOLGI, CELL_WALL, AMINO_ACID, VACUOLE };
+	std::vector<BUFF_TYPE> rareBuffs = { CHLOROPLAST, CYTOPLASM, PILLI, ENDOPLASMIC_RETICULUM };
+	std::vector<BUFF_TYPE> eliteBuffs = { LYSOSOME, SPARE_NUCLEUS, OCELOID, SECRETOR };
 
     int categoryRoll = rand() % 100;
 
-    std::vector<int>* selectedCategory;
+    std::vector<BUFF_TYPE>* selectedCategory;
 
     if (categoryRoll < 50) {  // 50% chance for common
         selectedCategory = &commonBuffs;
@@ -950,7 +1175,7 @@ void damagePlayer(float damageAmount) {
 
 	if(player.sheilds > 0) {
 		player.sheilds --;
-		removeBuffUI(5); // PLANT CELL WALL/ SHEILD
+		removeBuffUI(CELL_WALL); // PLANT CELL WALL/ SHEILD
 	} else {
 		player.current_health -= damageAmount * player.dangerFactor;
         applyVignetteEffect();
@@ -959,7 +1184,7 @@ void damagePlayer(float damageAmount) {
 			if (player.extra_lives > 0) {
 				player.current_health = player.max_health/2;
 				player.extra_lives--;
-				removeBuffUI(10);
+				removeBuffUI(SPARE_NUCLEUS);
 			} else {
 				// game over
 			}
