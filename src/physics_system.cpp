@@ -205,6 +205,24 @@ void PhysicsSystem::step(float elapsed_ms)
                     } 
 				}
 			}
+
+            // precompute boundaries for player motion
+            float newLeftBound = gridCellToPosition({0, 0}).x + GRID_CELL_WIDTH_PX / 2.f;
+            float newRightBound = gridCellToPosition({19, 0}).x - GRID_CELL_WIDTH_PX / 2.f;
+            float newTopBound = gridCellToPosition({0, 0}).y + GRID_CELL_HEIGHT_PX / 2.f;
+            float newBottomBound = gridCellToPosition({0, 19}).y - GRID_CELL_HEIGHT_PX / 2.f;
+
+            if (motion.position.x >= newRightBound + 1 || motion.position.x <= newLeftBound ||
+				motion.position.y <= newTopBound || motion.position.y >= newBottomBound + 1)
+			{
+
+                if (registry.bossAIs.has(entity) && registry.denderiteAIs.has(entity)) {
+                    motion.position.x = glm::clamp(motion.position.x, newLeftBound, newRightBound);
+                    motion.position.y = glm::clamp(motion.position.y, newTopBound, newBottomBound);
+
+                    motion.velocity *= -0.5f;
+                } 
+            }
 		}
 
 		// buff drops and slides
@@ -345,29 +363,29 @@ void PhysicsSystem::step(float elapsed_ms)
 		handleWallCollision(buff_entity);
 	}
 
-	// for (auto& key_entity : registry.keys.entities)
-	// {
-	// 	// Handle player-key collisions
-	// 	Motion& key_motion = registry.motions.get(key_entity);
+	for (auto& key_entity : registry.keys.entities)
+	{
+		// Handle player-key collisions
+		Motion& key_motion = registry.motions.get(key_entity);
 
-	// 	if (detector.hasCollided(player_motion, key_motion))
-	// 	{
-	// 		registry.collisions.emplace_with_duplicates(player_entity, key_entity);
-	// 	}
+		if (detector.hasCollided(player_motion, key_motion))
+		{
+			registry.collisions.emplace_with_duplicates(player_entity, key_entity);
+		}
 
-	// 	for (auto& chest_entity : registry.chests.entities)
-	// 	{
-	// 		// Handle chest-key collisions
-	// 		Motion& chest_motion = registry.motions.get(chest_entity);
+		for (auto& chest_entity : registry.chests.entities)
+		{
+			// Handle chest-key collisions
+			Motion& chest_motion = registry.motions.get(chest_entity);
 
-	// 		if (detector.hasCollided(chest_motion, key_motion))
-	// 		{
-	// 			registry.collisions.emplace_with_duplicates(chest_entity, key_entity);
-	// 		}
-	// 	}
+			if (detector.hasCollided(chest_motion, key_motion))
+			{
+				registry.collisions.emplace_with_duplicates(chest_entity, key_entity);
+			}
+		}
 
-	// 	 handleWallCollision(key_entity);
-	// }
+		 handleWallCollision(key_entity);
+	}
 
 	handleWallCollision(player_entity);
 }

@@ -81,7 +81,7 @@ public:
 	void handlePlayerHealth(float elapsed_ms);
 
 	std::map<std::string, bool> progress_map = {
-		{"tutorial_mode", false}
+		{"tutorial_mode", true}
 	};
 
     void initiatePlayerDash();

@@ -177,6 +177,7 @@ const float BOSS_DETECTION_RADIUS = SPIKE_ENEMY_DETECTION_RADIUS * 3.0f;
 const float BOSS_RUMBLE_DAMAGE = 10.f * 2.f;
 const float BOSS_PROJECTILE_DAMAGE = 5.f;
 const unsigned int BOSS_LEVEL = 3;
+// const unsigned int BOSS_LEVEL = 1;
 const unsigned int FINAL_BOSS_LEVEL = 5;
 // const unsigned int FINAL_BOSS_LEVEL = 1;
 

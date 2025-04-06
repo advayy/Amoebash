@@ -260,7 +260,7 @@ bool WorldSystem::updateBoss()
 
 		if (enemy.health < enemy.total_health / 2.f) {
 			// bosses_to_split.push_back(boss);
-			Motion& originalMotion = registry.motions.get(boss);
+			Motion originalMotion = registry.motions.get(boss);
 			vec2 position = originalMotion.position;
 			vec2 scale = originalMotion.scale;
 			int stage = bossAI.stage;
@@ -343,22 +343,30 @@ void WorldSystem::spawnFourDenderitesOnMap() {
 	// spawn four on the map where the tiles are empty, but do not spawn if no valid path exists
 	ProceduralMap& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]);
 	if (map.map.size() == 0) return;
-	Player& player = registry.players.get(registry.players.entities[0]);
-	Motion& player_motion = registry.motions.get(registry.players.entities[0]);
-	// just spawn four
-	int i = 0;
-	while (i < 4) {
-		// get the denderite position with get random empty tile
-		// and convert to world position
-		std::pair<int, int> denderitePosition = getRandomEmptyTile(map.map);
-		vec2 denderiteWorldPosition = gridCellToPosition({ denderitePosition.second, denderitePosition.first });
-		std::vector<ivec2> path;
-		PhysicsSystem phys_sys;
-		if (phys_sys.find_path(path, denderiteWorldPosition, player_motion.position)) {
-			createDenderite(nullptr, denderiteWorldPosition);
-			i++;
-		} 
-	}
+	// Player& player = registry.players.get(registry.players.entities[0]);
+	// Motion& player_motion = registry.motions.get(registry.players.entities[0]);
+	// // just spawn four
+	// int i = 0;
+	// while (i < 4) {
+	// 	// get the denderite position with get random empty tile
+	// 	// and convert to world position
+	// 	std::pair<int, int> denderitePosition = getRandomEmptyTile(map.map);
+	// 	vec2 denderiteWorldPosition = gridCellToPosition({ denderitePosition.second, denderitePosition.first });
+	// 	std::vector<ivec2> path;
+	// 	PhysicsSystem phys_sys;
+	// 	if (phys_sys.find_path(path, denderiteWorldPosition, player_motion.position)) {
+	// 		createDenderite(nullptr, denderiteWorldPosition);
+	// 		i++;
+	// 	} 
+	// }
+
+
+    for (int i = 0; i < 4; i++) {
+        std::pair<int, int> denderitePosition = getRandomEmptyTile(map.map);
+        vec2 denderiteWorldPosition = gridCellToPosition({denderitePosition.second, denderitePosition.first});
+        createDenderite(renderer, denderiteWorldPosition);
+    }
+    // std::cout << "Spawned four denderites on map" << std::endl;
 }
 
 void WorldSystem::spawnEnemies(float elapsed_ms_since_last_update)
