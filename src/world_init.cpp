@@ -900,3 +900,36 @@ void damagePlayer(float damageAmount) {
 		}
 	}
 }
+
+Entity createEffect(TEXTURE_ASSET_ID texture, vec2 position) {
+    Entity e = Entity();
+
+    Motion& motion = registry.motions.emplace(e);
+    motion.position = position;
+    motion.scale = vec2({64, 64});
+
+    Effect& effect = registry.effects.emplace(e);
+    effect.death_timer_ms = 300.f;
+
+    registry.renderRequests.insert(
+        e,
+        { texture, 
+		EFFECT_ASSET_ID::SPRITE_SHEET, 
+		GEOMETRY_BUFFER_ID::SPRITE });
+
+    Animation& anim = registry.animations.emplace(e);
+    anim.start_frame = 0;
+    anim.end_frame = 2;
+    anim.time_per_frame = 100.f;
+    anim.loop = ANIM_LOOP_TYPES::NO_LOOP;
+
+    SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(e);
+    spriteSheet.total_frames = 3;
+    spriteSheet.current_frame = 0;
+
+    SpriteSize& sprite = registry.spritesSizes.emplace(e);
+    sprite.width = 175;
+    sprite.height = 60;
+
+    return e;
+}

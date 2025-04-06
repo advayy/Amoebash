@@ -51,3 +51,5 @@ void clearVignetteEffect();
 void damagePlayer(float damageAmount);
 int getRandomBuffType();
 Entity 	createGunCooldown();
+
+Entity createEffect(TEXTURE_ASSET_ID texture, vec2 position);
