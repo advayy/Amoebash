@@ -116,7 +116,10 @@ class RenderSystem
 		textures_path("ui_art/purchase_box.png"),
 		textures_path("ui_art/Shop_ui_plate.png"),
 		textures_path("ui_art/shopkeeper.png"),
-		textures_path("ui_art/slots_increase_buff.png")
+		textures_path("ui_art/slots_increase_buff.png"),
+        textures_path("ui_art/enemy_hp_bar.png"),
+		textures_path("ui_art/mitosis_boss_16_enemy_hp_bar.png"),
+		textures_path("ui_art/mitosis_boss_128_enemy_hp_bar.png"),
 	};
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.
@@ -134,7 +137,8 @@ class RenderSystem
 		shader_path("hexagon"),
 		shader_path("particle_textured"),
         shader_path("font"),
-		shader_path("thermometer")
+		shader_path("thermometer"),
+		shader_path("weapon_cooldown_indicator")
 	};
 
 	std::array<GLuint, geometry_count> vertex_buffers;
@@ -198,10 +202,11 @@ public:
 
 	void drawUI(Entity entity, const mat3 &projection);
 	void drawUIElements();
-	void drawHealthBar(Entity entity, const mat3 &projection);
 	void drawDashRecharge(const mat3 &projection);
 	void drawHexagon(Entity entity, const mat3 &projection);
 	void drawBuffUI();
+	void drawGunCooldownIndicator(const vec2& camera_position, const mat3& projection);
+
 
 	// INSTANCING: instanced particle drawing
 	void drawInstancedParticles();

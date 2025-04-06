@@ -375,9 +375,9 @@ struct UIElement // default / static ui
 
 struct HealthBar
 {
-	vec2 position;
-	vec2 scale;
 	int health;
+	bool is_enemy_hp_bar = false;
+	Entity owner = {}; 
 };
 
 struct DashRecharge
@@ -506,14 +506,15 @@ enum class TEXTURE_ASSET_ID
 	BOSS_ARROW = RESUME_BUTTON_ON_HOVER + 1,
 	WINSCREEN = BOSS_ARROW + 1,
 	THERMOMETER = WINSCREEN + 1,
-	
-	//Shop stuff
 	INJECTION = THERMOMETER + 1,
 	PURCHASE_BOX = INJECTION +1,
 	SHOP_PLATE = PURCHASE_BOX + 1,
 	SHOPKEEPER = SHOP_PLATE + 1,
 	SLOT_INCREASE_BUFF = SHOPKEEPER + 1,
-	TEXTURE_COUNT = SLOT_INCREASE_BUFF + 1
+    ENEMY_HP_BAR = SLOT_INCREASE_BUFF + 1, 
+	MITOSIS_BOSS_16_HP_BAR = ENEMY_HP_BAR + 1,
+	MITOSIS_BOSS_128_HP_BAR = MITOSIS_BOSS_16_HP_BAR + 1,
+	TEXTURE_COUNT = MITOSIS_BOSS_128_HP_BAR + 1
 };
 
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
@@ -534,7 +535,9 @@ enum class EFFECT_ASSET_ID
 	PARTICLE_EFFECT = HEXAGON + 1,
     FONT = PARTICLE_EFFECT + 1,
     THERMOMETER_EFFECT = FONT + 1,
-	EFFECT_COUNT = THERMOMETER_EFFECT + 1
+	WEAPON_COOLDOWN_INDICATOR = THERMOMETER_EFFECT + 1,
+    EFFECT_COUNT = WEAPON_COOLDOWN_INDICATOR + 1,
+
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 
@@ -935,9 +938,9 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UIElement,
 )
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(HealthBar,
-	position,
-	scale,
-	health
+	health,
+	is_enemy_hp_bar,
+	owner
 )
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(DashRecharge,
