@@ -173,7 +173,7 @@ void ParticleSystem::createParticles(PARTICLE_TYPE type, vec2 position, int coun
 
 Entity ParticleSystem::createDeathParticle(vec2 position)
 {
-    Entity entity = Entity();
+    Entity entity = getParticleFromPool(PARTICLE_TYPE::DEATH_PARTICLE);
 
     // create motion component
     Motion &motion = registry.motions.emplace(entity);
