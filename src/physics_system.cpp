@@ -3,7 +3,7 @@
 #include "world_init.hpp"
 #include "animation_system.hpp"
 #include <iostream>
-
+#include <queue>
 #include <glm/gtx/normalize_dot.hpp>
 // include lerp
 #include <glm/gtx/compatibility.hpp>

@@ -1160,13 +1160,16 @@ void WorldSystem::handle_collisions()
                             Mix_PlayChannel(-1, damage_sound, 0);
 						}
 
-						if (player.knockback_duration > 0.f && glm::length(bossMotion.velocity) > 0.1f)
+						if (player.knockback_duration > 0.f )
 						{
 							vec2 bossDirection = glm::length(bossMotion.velocity) > 0.0001f
 							? glm::normalize(bossMotion.velocity)
 							: vec2(1.f, 0.f); // default direction, rightwards
 						
 							vec2 knockBackDirection = bossDirection;
+                            
+                            // check if playermotion velocity is zero or very very low
+                            playerMotion.velocity = glm::length(playerMotion.velocity) < 0.00001f ? vec2(0.1f, 0.0f) : playerMotion.velocity;
 							playerMotion.velocity = knockBackDirection * 1000.f;
 							bossMotion.velocity = {0.f, 0.f};						
 						}
