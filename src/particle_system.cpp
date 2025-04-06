@@ -28,98 +28,144 @@ void ParticleSystem::step(float elapsed_ms)
         // Remove expired particles
         if (particle.lifetime_ms <= 0)
         {
-            registry.remove_all_components_of(entity);
+            returnParticleToPool(entity, particle.type);
             continue;
         }
 
         // update particle behavior based on type
         switch (particle.type)
         {
-            case PARTICLE_TYPE::DEATH_PARTICLE:
-            {
-                Motion& motion = registry.motions.get(entity);
+        case PARTICLE_TYPE::DEATH_PARTICLE:
+        {
+            Motion &motion = registry.motions.get(entity);
 
-                if (particle.state == PARTICLE_STATE::BURST)
+            if (particle.state == PARTICLE_STATE::BURST)
+            {
+                motion.velocity *= 0.98f;
+                particle.state_timer_ms -= elapsed_ms;
+                if (particle.state_timer_ms <= 0)
                 {
-                    motion.velocity *= 0.98f;
-                    particle.state_timer_ms -= elapsed_ms;
-                    if (particle.state_timer_ms <= 0)
-                    {
-                        particle.state = PARTICLE_STATE::FOLLOW;
-                        particle.state_timer_ms = 1000.f;
-                    }
+                    particle.state = PARTICLE_STATE::FOLLOW;
+                    particle.state_timer_ms = 1000.f;
                 }
-                else if (particle.state == PARTICLE_STATE::FOLLOW)
+            }
+            else if (particle.state == PARTICLE_STATE::FOLLOW)
+            {
+                if (!registry.players.entities.empty())
                 {
-                    if (!registry.players.entities.empty())
+                    Entity player_entity = registry.players.entities[0];
+                    Motion &player_motion = registry.motions.get(player_entity);
+                    vec2 direction = player_motion.position - motion.position;
+                    float distance = glm::length(direction);
+                    if (distance > 0.1f)
                     {
-                        Entity player_entity = registry.players.entities[0];
-                        Motion& player_motion = registry.motions.get(player_entity);
-                        vec2 direction = player_motion.position - motion.position;
-                        float distance = glm::length(direction);
-                        if (distance > 0.1f)
+                        direction = glm::normalize(direction);
+                        float speed_factor = particle.speed_factor * (1.0f + (1.0f - particle.lifetime_ms / particle.max_lifetime_ms) * 200.0f);
+                        motion.velocity += direction * speed_factor * (elapsed_ms / 1000.f);
+                        float max_speed = 600.0f;
+                        float current_speed = glm::length(motion.velocity);
+                        if (current_speed > max_speed)
                         {
-                            direction = glm::normalize(direction);
-                            float speed_factor = particle.speed_factor * (1.0f + (1.0f - particle.lifetime_ms / particle.max_lifetime_ms) * 200.0f);
-                            motion.velocity += direction * speed_factor * (elapsed_ms / 1000.f);
-                            float max_speed = 600.0f;
-                            float current_speed = glm::length(motion.velocity);
-                            if (current_speed > max_speed)
-                            {
-                                motion.velocity = glm::normalize(motion.velocity) * max_speed;
-                            }
+                            motion.velocity = glm::normalize(motion.velocity) * max_speed;
                         }
                     }
-                    float life_ratio = particle.lifetime_ms / particle.max_lifetime_ms;
-                    if (registry.colors.has(entity))
-                    {
-                        vec3& color = registry.colors.get(entity);
-                        color = color * life_ratio * 2.0f;
-                    }
                 }
-                break; 
-            }
-            case PARTICLE_TYPE::RIPPLE_PARTICLE:
-            {
-                Motion& motion = registry.motions.get(entity);
-                
-                motion.position += motion.velocity * (elapsed_ms / 1000.f);
-                
                 float life_ratio = particle.lifetime_ms / particle.max_lifetime_ms;
-                float start_size = 2.0f;
-                float end_size = 4.0f;
-                float current_size = start_size + (end_size - start_size) * (1.0f - life_ratio);
-                motion.scale = {current_size, current_size};
-                
                 if (registry.colors.has(entity))
                 {
-                    vec3& color = registry.colors.get(entity);
-                    color = color * life_ratio;
+                    vec3 &color = registry.colors.get(entity);
+                    color = color * life_ratio * 2.0f;
                 }
-                motion.velocity *= 0.97f;
-                
-                break;
             }
-            default:
-                break;
+            break;
+        }
+        case PARTICLE_TYPE::RIPPLE_PARTICLE:
+        {
+            Motion &motion = registry.motions.get(entity);
+
+            motion.position += motion.velocity * (elapsed_ms / 1000.f);
+
+            float life_ratio = particle.lifetime_ms / particle.max_lifetime_ms;
+            float start_size = 2.0f;
+            float end_size = 4.0f;
+            float current_size = start_size + (end_size - start_size) * (1.0f - life_ratio);
+            motion.scale = {current_size, current_size};
+
+            if (registry.colors.has(entity))
+            {
+                vec3 &color = registry.colors.get(entity);
+                color = color * life_ratio;
+            }
+            motion.velocity *= 0.97f;
+
+            break;
+        }
+        default:
+            break;
         }
     }
+}
+
+Entity ParticleSystem::getParticleFromPool(PARTICLE_TYPE type)
+{
+    auto &pool = particlePools[type];
+
+    if (!pool.empty())
+    {
+        Entity entity = pool.back();
+        pool.pop_back();
+        return entity;
+    }
+
+    // If pool is empty, create a new entity
+    return Entity();
+}
+
+void ParticleSystem::returnParticleToPool(Entity entity, PARTICLE_TYPE type)
+{
+    // remove from active particles by using manual iteration instead of std::remove
+    for (auto &pair : particlesByType)
+    {
+        auto &particles = pair.second;
+        for (auto it = particles.begin(); it != particles.end();)
+        {
+            if (it->id() == entity.id())
+            { 
+                it = particles.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+
+    // reset the particle for reuse
+    resetParticle(entity);
+    particlePools[type].push_back(entity);
+}
+
+void ParticleSystem::resetParticle(Entity entity)
+{
+    // Keep the entity but remove all components
+    // We'll re-add components when recycling from pool
+    registry.remove_all_components_of(entity);
 }
 
 void ParticleSystem::createParticles(PARTICLE_TYPE type, vec2 position, int count)
 {
     switch (type)
     {
-        case PARTICLE_TYPE::DEATH_PARTICLE:
-            for (int i = 0; i < count; i++)
-            {
-                Entity particle = createDeathParticle(position);
-                particlesByType[type].push_back(particle);
-            }
-            break;
-            /// add more particles type heree
-        default:
-            break;
+    case PARTICLE_TYPE::DEATH_PARTICLE:
+        for (int i = 0; i < count; i++)
+        {
+            Entity particle = createDeathParticle(position);
+            particlesByType[type].push_back(particle);
+        }
+        break;
+        /// add more particles type heree
+    default:
+        break;
     }
 }
 
@@ -168,23 +214,34 @@ Entity ParticleSystem::createDeathParticle(vec2 position)
     return entity;
 }
 
-Entity ParticleSystem::createRippleParticle(vec2 position, float lifetime_scale = 1.0f)
+Entity ParticleSystem::createRippleParticle(vec2 position, float lifetime_scale)
 {
-    Entity entity = Entity();
-    Motion& motion = registry.motions.emplace(entity);
-    motion.position = position;
+    // Get entity from pool or create new one
+    Entity entity = getParticleFromPool(PARTICLE_TYPE::RIPPLE_PARTICLE);
 
-    Particle& particle = registry.particles.emplace(entity);
+    // Setup motion component
+    Motion &motion = registry.motions.has(entity) ? registry.motions.get(entity) : registry.motions.emplace(entity);
+
+    motion.position = position;
+    motion.scale = {2.0f, 2.0f}; // Initial size
+
+    // setup particle component
+    Particle &particle = registry.particles.has(entity) ? registry.particles.get(entity) : registry.particles.emplace(entity);
+
     particle.type = PARTICLE_TYPE::RIPPLE_PARTICLE;
-    particle.max_lifetime_ms = (3000.0f + uniform_dist(rng) * 200.0f) * lifetime_scale;
+    particle.lifetime_ms = (3000.0f + uniform_dist(rng) * 200.0f) * lifetime_scale;
     particle.max_lifetime_ms = particle.lifetime_ms;
     particle.state = PARTICLE_STATE::FADE;
 
-    registry.renderRequests.insert(
-        entity,
-        {TEXTURE_ASSET_ID::PIXEL_PARTICLE,
-         EFFECT_ASSET_ID::TEXTURED,
-         GEOMETRY_BUFFER_ID::SPRITE});
+    // Setup render request if needed
+    if (!registry.renderRequests.has(entity))
+    {
+        registry.renderRequests.insert(
+            entity,
+            {TEXTURE_ASSET_ID::PIXEL_PARTICLE,
+             EFFECT_ASSET_ID::TEXTURED,
+             GEOMETRY_BUFFER_ID::SPRITE});
+    }
 
     return entity;
 }

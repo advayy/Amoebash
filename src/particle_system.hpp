@@ -27,8 +27,14 @@ private:
     // helper function to create a death particle
     Entity createDeathParticle(vec2 position);
 
+    // Get a particle from the pool or create a new one if pool is empty
+    Entity getParticleFromPool(PARTICLE_TYPE type);
+    void returnParticleToPool(Entity entity, PARTICLE_TYPE type);
+    void resetParticle(Entity entity);
+
     // track spawned particles by type (for potential optimizations???)
     std::unordered_map<PARTICLE_TYPE, std::vector<Entity>> particlesByType;
+    std::unordered_map<PARTICLE_TYPE, std::vector<Entity>> particlePools;
 
     // random number generator for particle variations
     std::default_random_engine rng;
