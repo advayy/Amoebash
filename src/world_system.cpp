@@ -512,7 +512,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 		}
 	}
 	handleProjectiles(elapsed_ms_since_last_update);
-	// std::cout << "WS:step - f9" << std::endl;
 
 	handleRippleEffect(elapsed_ms_since_last_update);
 
