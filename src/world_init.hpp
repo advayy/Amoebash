@@ -52,4 +52,4 @@ void damagePlayer(float damageAmount);
 int getRandomBuffType();
 Entity 	createGunCooldown();
 
-Entity createEffect(TEXTURE_ASSET_ID texture, vec2 position);
+Entity createEffect(TEXTURE_ASSET_ID texture, vec2 position, vec2 scale, int total_frames);

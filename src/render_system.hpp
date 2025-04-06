@@ -116,9 +116,10 @@ class RenderSystem
 		textures_path("ui_art/enemy_hp_bar.png"),
 		textures_path("ui_art/mitosis_boss_16_enemy_hp_bar.png"),
 		textures_path("ui_art/mitosis_boss_128_enemy_hp_bar.png"),
-		textures_path("effects/bacteriophage_enemy_explosion.png"),
-		textures_path("effects/rbc_enemy_explosion.png"),
-		textures_path("effects/spike_enemy_explosion.png"),
+		textures_path("effects/spike_enemy_explosion_effect.png"),
+		textures_path("effects/rbc_enemy_explosion_effect.png"),
+		textures_path("effects/bacteriophage_projectile_effect.png"),
+		textures_path("effects/gun_projectile_effect.png"),
 	};
 	std::array<GLuint, effect_count> effects;
 	// Make sure these paths remain in sync with the associated enumerators.

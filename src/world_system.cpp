@@ -820,6 +820,8 @@ void WorldSystem::handle_collisions()
 			{
 				Player& player = registry.players.get(entity);
 				Projectile& projectile = registry.projectiles.get(entity2);
+				Motion& projectile_motion = registry.motions.get(entity2);
+				createEffect(TEXTURE_ASSET_ID::BACTERIOPHAGE_ENEMY_PROJECTILE_EFFECT, projectile_motion.position, projectile_motion.scale * 1.3f, 4);
 
 				// Player takes damage
 				damagePlayer(projectile.damage);
@@ -900,6 +902,8 @@ void WorldSystem::handle_collisions()
 				// Invader takes damage
 
 				enemy.health -= projectile.damage;
+				Motion& projectileMotion = registry.motions.get(entity);
+				createEffect(TEXTURE_ASSET_ID::GUN_PROJECTILE_EFFECT, projectileMotion.position, projectileMotion.scale * 2.0f, 4);
 
 				// remove projectile
 				// registry.remove_all_components_of(entity);
@@ -924,15 +928,10 @@ void WorldSystem::handle_collisions()
                     Player& player = registry.players.get(registry.players.entities[0]);
                     player.germoney_count += 1;
 
-					createBuff(vec2(enemy_position.x, enemy_position.y));
-
-					if (registry.spikeEnemyAIs.has(entity2)) {
-						createEffect(TEXTURE_ASSET_ID::SPIKE_ENEMY_EXPLOSION, enemy_position);
-					} else if (registry.rbcEnemyAIs.has(entity2)) {
-						createEffect(TEXTURE_ASSET_ID::RBC_ENEMY_EXPLOSION, enemy_position);
-					} else if (registry.bacteriophageAIs.has(entity2)) {
-						createEffect(TEXTURE_ASSET_ID::BACTERIOPHAGE_EXPLOSION, enemy_position);
+					if (registry.rbcEnemyAIs.has(entity2)) {
+						createEffect(TEXTURE_ASSET_ID::RBC_ENEMY_EXPLOSION_EFFECT, enemy_position, enemy_motion.scale * 1.2f, 3);
 					}
+					createBuff(vec2(enemy_position.x, enemy_position.y));
 					
 					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15); 
 				}

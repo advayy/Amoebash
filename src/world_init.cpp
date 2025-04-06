@@ -901,35 +901,34 @@ void damagePlayer(float damageAmount) {
 	}
 }
 
-Entity createEffect(TEXTURE_ASSET_ID texture, vec2 position) {
-    Entity e = Entity();
+Entity createEffect(TEXTURE_ASSET_ID texture, vec2 position, vec2 scale, int total_frames) {
+    Entity entity = Entity();
 
-    Motion& motion = registry.motions.emplace(e);
+    Motion& motion = registry.motions.emplace(entity);
     motion.position = position;
-    motion.scale = vec2({64, 64});
-
-    Effect& effect = registry.effects.emplace(e);
-    effect.death_timer_ms = 300.f;
+    motion.scale = scale;
 
     registry.renderRequests.insert(
-        e,
+        entity,
         { texture, 
 		EFFECT_ASSET_ID::SPRITE_SHEET, 
-		GEOMETRY_BUFFER_ID::SPRITE });
+		GEOMETRY_BUFFER_ID::SPRITE});
 
-    Animation& anim = registry.animations.emplace(e);
-    anim.start_frame = 0;
-    anim.end_frame = 2;
-    anim.time_per_frame = 100.f;
-    anim.loop = ANIM_LOOP_TYPES::NO_LOOP;
+    Animation& animation = registry.animations.emplace(entity);
+    animation.start_frame = 0;
+    animation.end_frame = total_frames - 1;
+    animation.time_per_frame = 50.f;
+    animation.loop = ANIM_LOOP_TYPES::NO_LOOP;
 
-    SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(e);
-    spriteSheet.total_frames = 3;
+    SpriteSheetImage& spriteSheet = registry.spriteSheetImages.emplace(entity);
+    spriteSheet.total_frames = total_frames;
     spriteSheet.current_frame = 0;
 
-    SpriteSize& sprite = registry.spritesSizes.emplace(e);
-    sprite.width = 96;
-    sprite.height = 32;
+    SpriteSize& sprite = registry.spritesSizes.emplace(entity);
 
-    return e;
+	Effect& effect = registry.effects.emplace(entity);
+    effect.death_timer_ms = animation.time_per_frame * total_frames;
+
+
+    return entity;
 }
