@@ -270,19 +270,20 @@ bool WorldSystem::updateBoss()
 		vec2 offset = vec2(smallScale.x * 1.2f, 0.f);
 		vec2 pos1 = originalMotion.position - offset;
 		vec2 pos2 = originalMotion.position + offset;
+        
+		bosses_to_remove.push_back(boss);
+		bosses_to_remove.push_back(originalAI.associatedArrow);
 
 		Entity smallBoss1 = createBoss(renderer, pos1, BossState::IDLE, stage + 1);
 		Entity smallBoss2 = createBoss(renderer, pos2, BossState::IDLE, stage + 1);
-
-        bosses_to_remove.push_back(boss);
-		bosses_to_remove.push_back(originalAI.associatedArrow);
 	}
 
-    int size = bosses_to_remove.size();
-    for(int i = 0; i < size; i++) {
-        registry.remove_all_components_of(bosses_to_remove[i]);
-    }
-
+	for (int i = bosses_to_remove.size() - 1; i >= 0; --i) {
+		Entity boss = bosses_to_remove[i];
+		if (registry.motions.has(boss) || registry.enemies.has(boss) || registry.bossAIs.has(boss)) {
+			registry.remove_all_components_of(boss);
+		}
+	}
 	// terminal condition for the boss
 	return registry.bossAIs.size() == 0;
 }
@@ -464,7 +465,16 @@ void WorldSystem::updateDangerLevel(float elapsed_ms_since_last_update) {
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
-	// std::cout << "Level : " << level << std::endl;
+	Progression& prog = registry.progressions.get(registry.progressions.entities[0]);
+	if (prog.pickedInNucleus.size() > 0) {
+		for(int i = 0; i < prog.pickedInNucleus.size(); i++) {
+			applyBuff(registry.players.get(registry.players.entities[0]), prog.pickedInNucleus[i]);
+		}
+		prog.pickedInNucleus.clear();	
+	}
+
+
+	// // std::cout << "Level : " << level << std::endl;
 	updateDangerLevel(elapsed_ms_since_last_update);
 
 	updateCamera(elapsed_ms_since_last_update);
@@ -591,11 +601,13 @@ void WorldSystem::handlePlayerHealth(float elapsed_ms)
 void WorldSystem::triggerGameOver() {
 	Player& player = registry.players.get(registry.players.entities[0]);
 	Progression& p = registry.progressions.get(registry.progressions.entities[0]);
-				p.buffsFromLastRun = player.buffsCollected;
-				previous_state = current_state;
-				current_state = GameState::GAME_OVER;
-				createGameOverScreen();	
-				currentBiome = Biome::RED; 
+    p.buffsFromLastRun = player.buffsCollected;
+    p.germoney_savings = player.germoney_count;
+    previous_state = current_state;
+    current_state = GameState::GAME_OVER;
+    currentBiome = Biome::RED; 
+    createGameOverScreen();
+
 }
 
 // Handle player movement
@@ -669,7 +681,7 @@ void WorldSystem::goToNextLevel()
 		createProceduralMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), progress_map["tutorial_mode"], playerPosition);
 	} else {
 		createBossMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT), playerPosition);
-		createBoss(renderer, gridCellToPosition({10, 10}));
+	 	createBoss(renderer, gridCellToPosition({10, 10}));
 		// std::cout << "Boss created" << std::endl;
 	}
 
@@ -713,6 +725,7 @@ void WorldSystem::restart_game()
     
 	// FLAG
 	gameOver = false;
+	shopItemsPlaced = false;
 
 	next_projectile_ms = 0;
 
@@ -743,6 +756,11 @@ void WorldSystem::restart_game()
     // remove all tiles
     while (registry.tiles.entities.size() > 0)
         registry.remove_all_components_of(registry.tiles.entities.back());
+	
+	while (registry.shops.entities.size() > 0)
+        registry.remove_all_components_of(registry.shops.entities.back());
+	while (registry.overs.entities.size() > 0)
+        registry.remove_all_components_of(registry.overs.entities.back());
 
 	// debugging for memory/component leaks
 	registry.list_all_components();
@@ -796,13 +814,16 @@ void WorldSystem::restart_game()
 
     Player &player = registry.players.get(registry.players.entities[0]);
     Progression &prog = registry.progressions.get(registry.progressions.entities[0]);
-	for(int i = 0; i < prog.pickedInNucleus.size(); i++) {
-		applyBuff(player, prog.pickedInNucleus[i]);
-	}
-    prog.pickedInNucleus.clear();
-
-	createGunCooldown();
 	
+	// for(int i = 0; i < prog.pickedInNucleus.size(); i++) {
+	// 	applyBuff(player, prog.pickedInNucleus[i]);
+	// }
+    // prog.pickedInNucleus.clear();
+
+    player.germoney_count = prog.germoney_savings;
+	
+    createGunCooldown();
+
 	createMiniMap(renderer, vec2(MAP_WIDTH, MAP_HEIGHT));
 	emptyMiniMap();
 }
@@ -918,7 +939,13 @@ void WorldSystem::handle_collisions()
 					}
 
 					vec2 enemy_position = enemy_motion.position;
-                    removals.push_back(entity2);
+
+					if(!registry.bossAIs.has(entity2)) {
+                    	removals.push_back(entity2);
+					}
+					
+                    removeEnemyHPBar(entity2);
+
 					// level += 1;
 					Mix_PlayChannel(-1, enemy_death_sound, 0); // FLAG MORE SOUNDS
                     
@@ -1010,6 +1037,7 @@ void WorldSystem::handle_collisions()
                     vec2 enemy_position = enemy_motion.position;
                     points += 1;
                     removals.push_back(entity2);
+					removeEnemyHPBar(entity2);
                     Mix_PlayChannel(-1, enemy_death_sound, 0);
 
                     Player& player = registry.players.get(registry.players.entities[0]);
@@ -1031,7 +1059,7 @@ void WorldSystem::handle_collisions()
 						Player& player = registry.players.get(entity);
 						// need to check the rumble cool down
 
-						if (!bossAI.is_charging) {
+						if (!bossAI.is_charging || !bossAI.is_fleeing) {
 							damagePlayer(BOSS_RUMBLE_DAMAGE);
 
                             Mix_PlayChannel(-1, damage_sound, 0);
@@ -1039,10 +1067,13 @@ void WorldSystem::handle_collisions()
 
 						if (player.knockback_duration > 0.f && glm::length(bossMotion.velocity) > 0.1f)
 						{
-							vec2 bossDirection = glm::normalize(bossMotion.velocity);
+							vec2 bossDirection = glm::length(bossMotion.velocity) > 0.0001f
+							? glm::normalize(bossMotion.velocity)
+							: vec2(1.f, 0.f); // default direction, rightwards
+						
 							vec2 knockBackDirection = bossDirection;
 							playerMotion.velocity = knockBackDirection * 1000.f;
-                            bossMotion.velocity = {0.f, 0.f};
+							bossMotion.velocity = {0.f, 0.f};						
 						}
 					}
 				}
@@ -1147,6 +1178,7 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 				p.buffsFromLastRun = registry.players.get(registry.players.entities[0]).buffsCollected;		
 				previous_state = GameState::GAME_PLAY;
 				current_state = GameState::GAME_OVER;
+                triggerGameOver();
                 clearVignetteEffect();
 				createGameOverScreen();
 
@@ -1302,6 +1334,10 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				current_state = GameState::SHOP;
 				removeStartScreen();
 				createShopScreen();
+				if (!shopItemsPlaced) {
+					placeBuffsOnShopScreen();
+					shopItemsPlaced = true;
+				}
 			}
 			else if (clickedButton == ButtonType::INFOBUTTON) 
 			{
@@ -1316,12 +1352,53 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				Mix_PlayChannel(-1, click_sound, 0);
 				previous_state = current_state;
 				current_state = GameState::GAMEPLAY_CUTSCENE;
+
+                // assign player germoney count progression gemoney savings
+                Progression& p = registry.progressions.get(registry.progressions.entities[0]);
+                Player& player = registry.players.get(registry.players.entities[0]);
+                player.germoney_count = p.germoney_savings;
+
 				removeStartScreen();
 				createGameplayCutScene();
 			}
 		}
 		else if (current_state == GameState::SHOP && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
+
+			// SHOPPING LOGIC HERE
+			// if they clicked on a buff, buy it and depending on the type, alter progression, player buffs or game level,
+			// and deduct the buff price from the players progression savings
+			Entity e;
+			if(isClickableBuffClicked(&e)) {
+				// GET BUFF TYPE AND PRICE
+				ClickableBuff& c = registry.clickableBuffs.get(e);
+				Progression& p = registry.progressions.get(registry.progressions.entities[0]);
+
+				if(c.price <= p.germoney_savings) {
+					// MONEY SOUND {s}
+
+					// BUY AND APPLY
+					p.germoney_savings -= c.price;
+					
+					if(c.type == -1) {
+						level += 1; // hope this works xx
+					} else if (c.type == -2) {
+						if (p.slots_unlocked == 1) {
+							p.slots_unlocked = 4;
+						} else {
+							p.slots_unlocked = 9;
+						}
+					} else {
+						registry.progressions.get(registry.progressions.entities[0]).pickedInNucleus.push_back(c.type);
+					}
+
+					// remove buff
+					registry.remove_all_components_of(e);
+				} else {
+					// WOMP WOMP SOUND {s}
+				}
+			}
+
 			if (getClickedButton() == ButtonType::BACKBUTTON)
 			{
 				Mix_PlayChannel(-1, click_sound, 0);
@@ -1463,7 +1540,7 @@ bool WorldSystem::isClickableBuffClicked(Entity* return_e) {
 	return false;
 }
 
-void WorldSystem::handleClickableBuff(Entity e) {
+void WorldSystem::handleClickableBuff(Entity e) { // FOR NUCLEUS MENU 
 	// Find a free slot if there is one availibe
 	// move buff to slot if its not already in a slot, if it is move it to return position
 	Entity s;
@@ -1984,4 +2061,68 @@ void WorldSystem::loadProgress() {
 
 void WorldSystem::startTheme() {
 	Mix_PlayMusic(background_music, -1);
+}
+
+void WorldSystem::placeBuffsOnShopScreen() {
+	bool offerSlotBoost = false;
+	int unlocked = 0;
+
+	if(registry.progressions.get(registry.progressions.entities[0]).slots_unlocked < 9) {
+		offerSlotBoost = true;
+		unlocked = registry.progressions.get(registry.progressions.entities[0]).slots_unlocked;
+	}
+
+	int placed = 0;
+
+	for(int i = 0; i < registry.shops.entities.size(); i++) {
+		// Get the texture asset id, then check if its a plate, if so then get its position and put a clickable there.
+
+		if(!registry.renderRequests.has(registry.shops.entities[i])) {
+			continue;
+		}
+
+		RenderRequest& r = registry.renderRequests.get(registry.shops.entities[i]);
+
+		if(r.used_texture != TEXTURE_ASSET_ID::SHOP_PLATE) 
+		{
+			continue;
+		}
+
+		vec2 position = registry.motions.get(registry.shops.entities[i]).position;
+
+		if(placed == 0) {
+			ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, -1));
+			c.price = 1000.0;
+		} else {
+			if(offerSlotBoost) {
+				ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, -2));
+				c.price = 200.0 * unlocked;	// dynamic pricing
+				offerSlotBoost = false; // OFFERED NOW.
+			} else {
+				// GET RANDOM TYPE
+				// GET PRICE PER TYPE
+				int buffType = getRandomBuffType();
+				if(buffType == 11) {
+					buffType = 10;
+				}
+
+				std::vector<int> commonBuffs = {0, 1, 2, 3, 5, 6, 11};
+				std::vector<int> rareBuffs = {4, 8, 9, 12};
+				std::vector<int> eliteBuffs = {7, 10, 13, 14};
+
+				ClickableBuff& c = registry.clickableBuffs.get(createClickableShopBuff(position, buffType));
+				c.price = 1000;
+				
+				if (std::find(commonBuffs.begin(), commonBuffs.end(), buffType) != commonBuffs.end()) {
+					c.price = 50.0f;
+				} else if (std::find(rareBuffs.begin(), rareBuffs.end(), buffType) != rareBuffs.end()) {
+					c.price = 100.0f;
+				} else if (std::find(eliteBuffs.begin(), eliteBuffs.end(), buffType) != eliteBuffs.end()) {
+					c.price = 200.0f;
+				}
+			}
+		}
+
+		placed++;
+	}
 }
