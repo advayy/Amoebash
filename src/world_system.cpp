@@ -559,6 +559,12 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
             current_state = GameState::NEXT_LEVEL;
             Mix_PlayChannel(-1, portal_sound, 0);
             goToNextLevel();
+
+			if(level == 3 || level == 5) {
+				switchMusicThemeToBoss();
+			} else {
+				switchMusicBossToTheme();
+			}
             return true;
         } else {
             clearVignetteEffect();
@@ -2232,4 +2238,24 @@ void WorldSystem::placeBuffsOnShopScreen() {
 
 		placed++;
 	}
+}
+
+void WorldSystem::switchMusicThemeToBoss() {
+	Mix_FadeOutMusic(2000);
+
+	while (Mix_FadingMusic() == MIX_FADING_OUT) {
+		SDL_Delay(100);
+	}
+
+	Mix_FadeInMusic(boss_background_music, -1, 2000); // 2-second fade in
+}
+
+void WorldSystem::switchMusicBossToTheme() {
+	Mix_FadeOutMusic(2000);
+
+	while (Mix_FadingMusic() == MIX_FADING_OUT) {
+		SDL_Delay(100);
+	}
+
+	Mix_FadeInMusic(background_music, -1, 2000); // 2-second fade in
 }
