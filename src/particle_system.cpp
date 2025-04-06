@@ -8,6 +8,14 @@ extern ECSRegistry registry;
 
 ParticleSystem::ParticleSystem()
 {
+
+    for (int i = 0; i < 100; i++) {
+        particlePools[PARTICLE_TYPE::DEATH_PARTICLE].push_back(Entity());
+    }    
+    for (int i = 0; i < 300; i++) {
+        particlePools[PARTICLE_TYPE::RIPPLE_PARTICLE].push_back(Entity());
+    }
+
     // creatge random number generator
     std::random_device rd;
     rng = std::default_random_engine(rd());
@@ -144,14 +152,36 @@ void ParticleSystem::returnParticleToPool(Entity entity, PARTICLE_TYPE type)
 
     // reset the particle for reuse
     resetParticle(entity);
-    particlePools[type].push_back(entity);
+
+    const size_t MAX_POOL_SIZE = 300;
+    if (particlePools[type].size() < MAX_POOL_SIZE) {
+        particlePools[type].push_back(entity);
+    }
 }
 
 void ParticleSystem::resetParticle(Entity entity)
 {
-    // Keep the entity but remove all components
-    // We'll re-add components when recycling from pool
-    registry.remove_all_components_of(entity);
+    if (registry.motions.has(entity)) {
+        Motion& motion = registry.motions.get(entity);
+        motion.position = vec2(0.0f, 0.0f);
+        motion.velocity = vec2(0.0f, 0.0f);
+        motion.scale = vec2(1.0f, 1.0f);
+        motion.angle = 0.0f;
+    }
+    
+    if (registry.particles.has(entity)) {
+        Particle& particle = registry.particles.get(entity);
+        particle.lifetime_ms = 0.0f;
+        particle.max_lifetime_ms = 0.0f;
+        particle.state = PARTICLE_STATE::BURST;
+        particle.state_timer_ms = 0.0f;
+        particle.speed_factor = 0.0f;
+    }
+    
+    if (registry.colors.has(entity)) {
+        vec3& color = registry.colors.get(entity);
+        color = vec3(1.0f, 1.0f, 1.0f);
+    }
 }
 
 void ParticleSystem::createParticles(PARTICLE_TYPE type, vec2 position, int count)
@@ -173,10 +203,10 @@ void ParticleSystem::createParticles(PARTICLE_TYPE type, vec2 position, int coun
 
 Entity ParticleSystem::createDeathParticle(vec2 position)
 {
-    Entity entity = Entity();
+    Entity entity = getParticleFromPool(PARTICLE_TYPE::DEATH_PARTICLE);
 
-    // create motion component
-    Motion &motion = registry.motions.emplace(entity);
+    // Check if motion component exists before creating it
+    Motion &motion = registry.motions.has(entity) ? registry.motions.get(entity) : registry.motions.emplace(entity);
     motion.position = position;
     motion.angle = 0.0f;
 
@@ -190,28 +220,34 @@ Entity ParticleSystem::createDeathParticle(vec2 position)
     motion.scale = {size_factor / 2, size_factor};
 
     // random color (temporary)
-    // float r = 0.5f + uniform_dist(rng) * 0.2f;
-    // float g = 0.7f + uniform_dist(rng) * 0.3f;
-    // float b = 0.2f + uniform_dist(rng) * 0.2f;
     float r = 1.0f;
     float g = 1.0f;
     float b = 1.0f;
-    registry.colors.emplace(entity, vec3(r, g, b));
+    
+    // Check if color component exists
+    if (registry.colors.has(entity)) {
+        registry.colors.get(entity) = vec3(r, g, b);
+    } else {
+        registry.colors.emplace(entity, vec3(r, g, b));
+    }
 
-    // add  componentss
-    Particle &particle = registry.particles.emplace(entity);
+    // Check if particle component exists
+    Particle &particle = registry.particles.has(entity) ? registry.particles.get(entity) : registry.particles.emplace(entity);
     particle.type = PARTICLE_TYPE::DEATH_PARTICLE;
     particle.lifetime_ms = 1000.0f + uniform_dist(rng) * 500.0f;
     particle.max_lifetime_ms = particle.lifetime_ms;
     particle.state = PARTICLE_STATE::BURST;
-    particle.state_timer_ms = 300.0f + uniform_dist(rng) * 200.0f; // Time before following player
+    particle.state_timer_ms = 300.0f + uniform_dist(rng) * 200.0f;
     particle.speed_factor = 50.0f + uniform_dist(rng) * 50.0f;
 
-    registry.renderRequests.insert(
-        entity,
-        {TEXTURE_ASSET_ID::DEATH_PARTICLE,
-         EFFECT_ASSET_ID::TEXTURED,
-         GEOMETRY_BUFFER_ID::SPRITE});
+    // Check if render request exists
+    if (!registry.renderRequests.has(entity)) {
+        registry.renderRequests.insert(
+            entity,
+            {TEXTURE_ASSET_ID::DEATH_PARTICLE,
+             EFFECT_ASSET_ID::TEXTURED,
+             GEOMETRY_BUFFER_ID::SPRITE});
+    }
 
     return entity;
 }

@@ -536,7 +536,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 	// step the particle system only when its needed
 	// for optimaztion, we could only step the particles that are on screen
 	particle_system.step(elapsed_ms_since_last_update);
-	// particle_system.printPoolMetrics(); // DEBUG
+	particle_system.printPoolMetrics(); // DEBUG
     // update gun cooldown
     Gun &gun = registry.guns.get(registry.guns.entities[0]);
     if (gun.cooldown_timer_ms > 0.0f) {
