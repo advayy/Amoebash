@@ -7,8 +7,7 @@
 
 extern bool tutorial_mode;
 
-enum BUFF_TYPE
-{
+enum BUFF_TYPE {
 	TAIL = 0,
 	MITOCHONDRIA = TAIL + 1,
 	HEMOGLOBIN = MITOCHONDRIA + 1,
@@ -24,12 +23,28 @@ enum BUFF_TYPE
 	ENDOPLASMIC_RETICULUM = VACUOLE + 1,
 	OVOID = ENDOPLASMIC_RETICULUM + 1,
 	SECRETOR = OVOID + 1,
-	UNNAMED = SECRETOR + 1,
-	PEROXISOMES = UNNAMED + 1,
+	ORANGE = SECRETOR + 1,
+	PEROXISOMES = ORANGE + 1,
 	MUTATION = PEROXISOMES + 1,
 	FACEHUGGER = MUTATION + 1,
 	BLACK_GOO = FACEHUGGER + 1,
-	TOTAL_BUFF_COUNT = BLACK_GOO + 1,
+    INFO_BUFF1 = BLACK_GOO + 1,
+    INFO_BUFF2 = INFO_BUFF1 + 1,
+    INFO_BUFF3 = INFO_BUFF2 + 1,
+    INFO_BUFF4 = INFO_BUFF3 + 1,
+    INFO_BUFF5 = INFO_BUFF4 + 1,
+    INFO_BUFF6 = INFO_BUFF5 + 1,
+    INFO_BUFF7 = INFO_BUFF6 + 1,
+    INFO_BUFF8 = INFO_BUFF7 + 1,
+    INFO_BUFF9 = INFO_BUFF8 + 1,
+    INFO_BUFF10 = INFO_BUFF9 + 1,
+    INFO_BUFF11 = INFO_BUFF10 + 1,
+    INFO_BUFF12 = INFO_BUFF11 + 1,
+
+    INFO_BOSS1 = INFO_BUFF12 + 1,
+    INFO_BOSS2 = INFO_BOSS1 + 1,
+
+	TOTAL_BUFF_COUNT = INFO_BOSS2 + 1,
 
 	SLOT_INCREASE = TAIL - 2,
 	INJECTION = TAIL - 1,
@@ -799,6 +814,43 @@ struct PopupWithImage {
 };
 
 struct PopupElement {};
+
+const std::map<BUFF_TYPE, std::pair<std::string, std::string>> BUFF_TYPE_TO_TEXT = {
+	{TAIL, {"Flagella", "Gives you a 5% speed boost"}},
+	{MITOCHONDRIA, {"Mitochondria", "Reduces Dash cooldown by 5%"}},
+	{HEMOGLOBIN, {"Hemoglobin", "Reduces enemy detection range by 5%"}},
+	{GOLGI, {"Golgi Apparatus", "Increases your health by 10"}},
+	{CHLOROPLAST, {"Chloroplast", "Increases your healing rate"}},
+	{CELL_WALL, {"Cell Wall", "Negate the next time you take damage"}},
+	{AMINO_ACID, {"Amino Acid", "Increases your Dash damage"}},
+	{LYSOSOME, {"Lysosome", "Shoot 1 more projectile"}},
+	{CYTOPLASM, {"Cytoplasm", "Increases your health by 10"}},
+	{PILLI, {"Pilli", "Projectile Speed Bost"}},
+	{SPARE_NUCLEUS, {"Spare Nucleus", "1+ Lives"}},
+	{VACUOLE, {"Vacuole", "Heals some health instantly"}},
+	{ENDOPLASMIC_RETICULUM, {"Endoplasmic Reticulum", "Increase healing rate"}},
+	{OVOID, {"Oceloid", "Increases mini-map view range"}},
+	{SECRETOR, {"Secretor", "Increases dash drift"}},
+	{ORANGE, {"Orange", "Reduce bullet spread"}},
+	{PEROXISOMES, {"Peroxisomes", "Not Implemented"}},
+	{MUTATION, {"Mutation", "Not Implemented"}},
+	{FACEHUGGER, {"Facehugger", "Not Implemented"}},
+	{BLACK_GOO, {"Black Goo", "Not Implemented"}},
+    {INFO_BUFF1, {"Movement", "Use mouse to move around"}},
+    {INFO_BUFF2, {"Movement", "Left click to dash"}},
+    {INFO_BUFF3, {"Pause", "Use 'Space' to pause the game"}},
+    {INFO_BUFF4, {"Save/Load", "Save on pause, use 'L' to load game in the main menu"}},
+    {INFO_BUFF5, {"Attack", "Dash into enemies to damage them"}},
+    {INFO_BUFF6, {"Attack", "Use 'S' to shoot enemies"}},
+    {INFO_BUFF7, {"Buffs", "Collect buffs by killing enemies"}},
+    {INFO_BUFF8, {"Nucleus Menu", "Select buffs to take into your next run when you die"}},
+    {INFO_BUFF9, {"Germoney", "Kill enemies to collect Germoney"}},
+    {INFO_BUFF10, {"Shop", "Use germoney to purchase goods"}},
+    {INFO_BUFF11, {"Game", "5 levels and 2 bosses await"}},
+    {INFO_BUFF12, {"Portal", "Enter the portal to go to the next level"}},
+    {INFO_BOSS1, {"Mitosis", "Kill the bosses before they kill you"}},
+    {INFO_BOSS2, {"Brain", "One last step to victory"}},
+};
 
 // MACROS for "to_json" and "from_json" on user-defined structs
 

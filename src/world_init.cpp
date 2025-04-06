@@ -415,6 +415,8 @@ Entity createBossMap(RenderSystem* renderer, vec2 size, std::pair<int, int>& pla
 	playerPosition.first = 19;
 	playerPosition.second = 10;
 
+    createBuff(gridCellToPosition({10,17}), INFO_BOSS1);
+
 	return entity;
 }
 
@@ -476,36 +478,36 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
 			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},		
 			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1},		
 			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,2,0,1,1},		
-			{1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,9,0,0,1,1},		
-			{1,1,1,1,0,0,0,0,0,0,9,0,0,0,0,0,1,1,1,1},		
-			{1,1,0,0,0,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1},		
-			{1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1},		
-			{1,1,1,0,9,0,1,1,1,1,1,0,0,0,0,0,0,1,1,1},		
-			{1,1,1,0,0,0,0,0,1,1,0,0,0,9,0,0,0,1,1,1},		
-			{1,1,1,1,1,0,0,9,0,0,0,1,1,1,0,0,0,1,1,1},		
-			{1,1,1,1,1,1,0,0,0,1,1,1,1,1,0,9,0,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,INFO_BUFF12,0,0,1,1},		
+			{1,1,1,1,0,0,0,0,0,0,INFO_BUFF11,0,0,0,0,0,1,1,1,1},		
+			{1,1,0,0,0,0,INFO_BUFF10,0,1,0,0,0,1,1,1,1,1,1,1,1},		
+			{1,1,INFO_BUFF9,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1},		
+			{1,1,1,0,INFO_BUFF8,0,1,1,1,1,1,0,0,0,0,0,0,1,1,1},		
+			{1,1,1,0,0,0,0,0,1,1,0,0,0,INFO_BUFF6,0,0,0,1,1,1},		
+			{1,1,1,1,1,0,0,INFO_BUFF7,0,0,0,1,1,1,0,0,0,1,1,1},		
+			{1,1,1,1,1,1,0,0,0,1,1,1,1,1,0,INFO_BUFF5,0,1,1,1},		
 			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1},		
 			{1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1},		
-			{1,1,1,1,1,1,1,1,1,1,1,0,0,9,0,0,1,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,1,1,0,0,INFO_BUFF4,0,0,1,1,1,1},		
 			{1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1},		
-			{1,1,1,1,1,1,1,1,1,0,9,0,0,0,1,1,1,1,1,1},		
+			{1,1,1,1,1,1,1,1,1,0,INFO_BUFF3,0,0,0,1,1,1,1,1,1},		
 			{1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1},		
-			{1,0,0,9,0,0,0,9,0,0,0,0,1,1,1,1,1,1,1,1},		
+			{1,0,0,0,INFO_BUFF1,0,0,INFO_BUFF2,0,0,0,0,1,1,1,1,1,1,1,1},		
 			{1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1},		
 			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}		
 		};
 	
-		for (int y = 0; y < tutorial_map[0].size(); y++) {
-			for (int x = 0; x < tutorial_map.size(); x++) {
+        for (int y = 0; y < tutorial_map.size(); y++) {
+            for (int x = 0; x < tutorial_map.size(); x++) {
 				if (tutorial_map[x][y] == 1) {
 					map.map[y][x] = tileType::WALL;
 				} else if (tutorial_map[x][y] == 2) {
 					map.map[y][x] = tileType::PORTAL;
-				} else if (tutorial_map[x][y] == 9) {
-                    createBuff(gridCellToPosition({y,x}), 20);
-                    map.map[y][x] = tileType::EMPTY;
-                } else {
+				} else if (tutorial_map[x][y] == 0) {
 					map.map[y][x] = tileType::EMPTY;
+                } else {
+                    createBuff(gridCellToPosition({y,x}), static_cast<BUFF_TYPE>(tutorial_map[x][y]));
+                    map.map[y][x] = tileType::EMPTY;
 				}
 			}
 		}
@@ -868,7 +870,7 @@ int getDistance(const std::vector<std::vector<tileType>>& grid, std::pair<int,in
     return -1;
 }
 
-Entity createBuff(vec2 position, int buffType)
+Entity createBuff(vec2 position, BUFF_TYPE buffType)
 {
 	Entity entity = Entity();
 	Motion &motion = registry.motions.emplace(entity);
@@ -903,7 +905,7 @@ Entity createBuff(vec2 position, int buffType)
 	Buff &buff = registry.buffs.emplace(entity);
 
 	// Currently only the first 15 buffs are active
-    if (buffType != -1) {
+    if (buffType > BLACK_GOO) {
         buff.type = buffType;
         registry.renderRequests.insert(
             entity,

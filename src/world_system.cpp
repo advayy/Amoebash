@@ -607,7 +607,7 @@ void WorldSystem::triggerGameOver() {
     current_state = GameState::GAME_OVER;
     currentBiome = Biome::RED; 
     createGameOverScreen();
-
+    clearVignetteEffect();
 }
 
 // Handle player movement
@@ -1094,23 +1094,23 @@ bool WorldSystem::is_over() const
 // on key callback
 void WorldSystem::on_key(int key, int, int action, int mod)
 {
-    // if (action == GLFW_RELEASE && key == GLFW_KEY_N) {
-    //     if (progress_map["tutorial_mode"]) {
-    //         current_state = GameState::NEXT_LEVEL;
-    //         progress_map["tutorial_mode"] = false;
-    //         removeInfoBoxes();
-    //         goToNextLevel();
-    //         emptyMiniMap();
-    //     } else {
-    //         Entity screen_state_entity = renderer->get_screen_state_entity();
-    //         ScreenState &screen = registry.screenStates.get(screen_state_entity);
-    //         screen.darken_screen_factor = 1;
-    //         darken_screen_timer = 0.0f;
-    //         current_state = GameState::NEXT_LEVEL;
-    //         Mix_PlayChannel(-1, portal_sound, 0);
-    //         goToNextLevel();
-    //     }
-    // }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_N) {
+        if (progress_map["tutorial_mode"]) {
+            current_state = GameState::NEXT_LEVEL;
+            progress_map["tutorial_mode"] = false;
+            removeInfoBoxes();
+            goToNextLevel();
+            emptyMiniMap();
+        } else {
+            Entity screen_state_entity = renderer->get_screen_state_entity();
+            ScreenState &screen = registry.screenStates.get(screen_state_entity);
+            screen.darken_screen_factor = 1;
+            darken_screen_timer = 0.0f;
+            current_state = GameState::NEXT_LEVEL;
+            Mix_PlayChannel(-1, portal_sound, 0);
+            goToNextLevel();
+        }
+    }
 
 	// exit game w/ ESC
 	if (action == GLFW_RELEASE && key == GLFW_KEY_ESCAPE)
@@ -1178,16 +1178,7 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 		{
 			if (current_state == GameState::GAME_PLAY)
 			{
-				Progression& p = registry.progressions.get(registry.progressions.entities[0]);
-
-				p.buffsFromLastRun = registry.players.get(registry.players.entities[0]).buffsCollected;		
-				previous_state = GameState::GAME_PLAY;
-				current_state = GameState::GAME_OVER;
                 triggerGameOver();
-                clearVignetteEffect();
-				createGameOverScreen();
-
-				currentBiome = Biome::RED;
 			}
 		}
 	}
@@ -1466,10 +1457,8 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 
 		else if (current_state == GameState::VICTORY && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
-			previous_state = current_state;
-			current_state = GameState::START_SCREEN_ANIMATION;
 			removeCutScene();
-			restart_game();
+			triggerGameOver();
 		}
 	}
 }
@@ -1734,17 +1723,10 @@ void WorldSystem::applyBuff(Player& player, BUFF_TYPE buff_type)
 	case 19: // Black Goo  - temp turn screen dark?
 		//	Some nerf?
 		break;
-    
-    case 20: // info buff for text pop up
+    default: // INFO BUFF (tutorial)
         skipUIRender = true;
-        tutorialInfoBuffCount++;
-        break;
-    default:
-        std::cerr << "Unknown buff type: " << buff_type << std::endl;
         break;
 	}
-
-    std::cout << "TUTORIAL BUFF COUNT: " << tutorialInfoBuffCount << std::endl << std::endl;
     
 	if(!skipUIRender) {
         player.buffsCollected[buff_type] += 1;
