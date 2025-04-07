@@ -135,7 +135,7 @@ const float BUFF_HUD_SIZE = 16 * WORK_SCALE_FACTOR; // DONT USE YET!!
 
 // AMOEBA STATS
 // const float PLAYER_DEFAULT_HEALTH = 100;
-const float PLAYER_DEFAULT_HEALTH = 100000;
+const float PLAYER_DEFAULT_HEALTH = 100;
 const float PLAYER_SPEED = 200;
 const float PLAYER_DASH_SPEED = 500;
 const float PLAYER_DASH_RANGE = 200;
@@ -194,8 +194,8 @@ const float MIN_DETECTION_RANGE = 0.35f;
 
 // FINAL BOSS STATE TIMING
 const float FINAL_BOSS_BASE_COOLDOWN = 3000.f;
-const float FINAL_BOSS_SHOOT_DURATION = 7500.f; // how long it shoots
-const float FINAL_BOSS_TIRED_COOLDOWN = FINAL_BOSS_SHOOT_DURATION / 2.f; // how long you can attack boss
+const float FINAL_BOSS_SHOOT_DURATION = 5000.f; // how long it shoots
+const float FINAL_BOSS_TIRED_COOLDOWN = 10000; // how long you can attack boss
 
 // FINAL BOSS SHOOTING COOLDOWNS
 const float FINAL_BOSS_BASE_SHOOT_COOLDOWN = 750.f; // cooldown between shots
