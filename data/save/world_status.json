@@ -2,6 +2,9 @@
     "buffs": [
         {
             "buffType": 0
+        },
+        {
+            "buffType": 10
         }
     ],
     "map": {
@@ -456,26 +459,30 @@
     },
     "player": {
         "motion": {
-            "angle": -33.53965377807617,
+            "angle": 263.4294128417969,
             "position": {
-                "x": 4328.74267578125,
-                "y": 1632.5015869140625
+                "x": 3410.005126953125,
+                "y": 967.957275390625
             },
             "scale": {
                 "x": 64.0,
                 "y": 64.0
             },
             "velocity": {
-                "x": 0.0,
-                "y": 0.0
+                "x": -218.5549774169922,
+                "y": 25.173900604248047
             }
         },
         "playerStatus": {
             "angleConeRadius": 30.0,
             "buffsCollected": [
                 [
-                    0,
+                    10,
                     1
+                ],
+                [
+                    0,
+                    2
                 ]
             ],
             "bulletSpeed": 600.0,
@@ -484,28 +491,28 @@
             "dangerFactor": 1.0,
             "dashDecay": 1.0099999904632568,
             "dash_cooldown_ms": 1000,
-            "dash_cooldown_timer_ms": -48,
+            "dash_cooldown_timer_ms": -1793,
             "dash_count": 3,
             "dash_damage": 20,
             "dash_range": 200.0,
             "dash_speed": 500.0,
             "default_healing_timer": 2500.0,
             "detection_range": 1.0,
-            "extra_lives": 0,
-            "germoney_count": 1,
+            "extra_lives": 1,
+            "germoney_count": 31,
             "grid_position": {
-                "x": 16.0,
-                "y": 6.0
+                "x": 13.0,
+                "y": 3.0
             },
             "gun_projectile_damage": 15.0,
             "healing_rate": 0.0,
-            "healing_timer_ms": 366.8627624511719,
+            "healing_timer_ms": 1500.0396728515625,
             "knockback_duration": 0.0,
             "max_dash_count": 3,
             "max_health": 100000,
             "minimapViewRange": 3.0,
             "sheilds": 0,
-            "speed": 210
+            "speed": 220
         }
     },
     "progress": {
@@ -518,16 +525,16 @@
         {
             "angle": 0.0,
             "position": {
-                "x": 3940.37109375,
-                "y": 2064.825439453125
+                "x": 4204.84423828125,
+                "y": 1995.9002685546875
             },
             "scale": {
                 "x": 16.0,
                 "y": 16.0
             },
             "velocity": {
-                "x": -242.54505920410156,
-                "y": 176.55563354492188
+                "x": 162.7362518310547,
+                "y": 252.02561950683594
             }
         }
     ]

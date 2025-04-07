@@ -472,33 +472,87 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 				// spawn
 				ProceduralMap& map = registry.proceduralMaps.components[0];
 				std::vector<std::vector<tileType>> rawMap = map.map;
+				std::vector<std::vector<int>> spawnmap;
 
-				int width = rawMap[0].size(); 
-				int height = rawMap.size();   
+				if (enemyBehavior.phase == 1) {
+					spawnmap = {
+						{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+						{1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1},
+						{1,1,1,1,1,1,0,2,0,2,0,2,0,2,0,0,1,1,1,1},
+						{1,1,1,1,0,2,0,0,0,0,0,0,0,0,0,2,0,0,1,1},
+						{1,1,1,0,2,0,0,0,0,0,0,0,0,0,0,0,2,0,0,1},
+						{1,1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,1},
+						{1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+						{1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1},
+						{1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1},
+						{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+					};
+				} else if (enemyBehavior.phase == 2) {
+					spawnmap = {
+						{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+						{1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1},
+						{1,1,1,1,1,1,0,2,0,2,0,2,0,2,0,0,1,1,1,1},
+						{1,1,1,1,0,2,0,0,0,0,0,0,0,0,0,2,0,0,1,1},
+						{1,1,1,0,2,0,0,0,0,0,0,0,0,0,0,0,2,0,0,1},
+						{1,1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,1},
+						{1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,1,1,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+						{1,1,1,1,0,0,0,2,0,0,0,0,0,0,0,0,0,1,1,1},
+						{1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1},
+						{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+					};
+				} else {
+					spawnmap = {
+						{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+						{1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1},
+						{1,1,1,1,1,1,0,2,0,2,0,2,0,2,0,0,1,1,1,1},
+						{1,1,1,1,0,2,0,0,0,0,0,0,0,0,0,2,0,0,1,1},
+						{1,1,1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,2,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,1},
+						{1,0,0,0,0,2,0,0,0,0,0,0,0,2,0,0,0,0,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,1},
+						{1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,1},
+						{1,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,1},
+						{1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,1},
+						{1,1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+						{1,1,1,0,0,2,0,0,0,0,0,0,0,0,2,0,0,0,1,1},
+						{1,1,1,1,0,0,0,2,0,0,0,0,0,0,0,0,0,1,1,1},
+						{1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1},
+						{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+					};
+				}
 
-				int contourThickness = 2;
-				if (enemyBehavior.phase == 2) contourThickness = 3;
-				else if (enemyBehavior.phase == 3) contourThickness = 4;
-
-				for (int row = 0; row < height; ++row) {
-					for (int col = 0; col < width; ++col) {
-						bool isOnContour = (
-							row < contourThickness || row >= height - contourThickness ||
-							col < contourThickness || col >= width - contourThickness
-						);
-
-						if (isOnContour && rawMap[row][col] == tileType::EMPTY) {
-							float spawnChance = 0.4f;
-							if (enemyBehavior.phase == 2) spawnChance = 0.6f;
-							else if (enemyBehavior.phase == 3) spawnChance = 0.85f;
-
-							if ((float)rand() / RAND_MAX < spawnChance) {
-								createDenderite(nullptr, gridCellToPosition({ col, row }));
-							}
+				for (int i = 0; i < spawnmap.size(); i++) {
+					for (int j = 0; j < spawnmap[i].size(); j++) {
+						if (spawnmap[i][j] == 2) {
+							createDenderite(nullptr, gridCellToPosition({j ,i}));
 						}
 					}
 				}
-			
+
 				enemyBehavior.has_spawned = true;
 			} else {
 				if (registry.denderiteAIs.size() == 0) {
@@ -570,19 +624,19 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 				enemyBehavior.phase = 2;
 				enemyBehavior.state = FinalBossState::SPAWN_1;
 				enemyBehavior.cool_down = FINAL_BOSS_BASE_COOLDOWN;
-				changeAnimationFrames(enemyEntity, 9, 11);
+				changeAnimationFrames(enemyEntity, 8, 10);
 			} else if (enemy.health <= 1/3.f * enemy.total_health && enemyBehavior.phase == 2) {
 				enemyBehavior.phase = 3;
 				enemyBehavior.state = FinalBossState::SPAWN_1;
 				enemyBehavior.cool_down = FINAL_BOSS_BASE_COOLDOWN;
-				changeAnimationFrames(enemyEntity, 9, 11);
+				changeAnimationFrames(enemyEntity, 8, 10);
 			} else {
 				enemyBehavior.cool_down -= elapsed_ms;
 				if (enemyBehavior.cool_down <= 0.f) {
 					enemyBehavior.state = FinalBossState::SPAWN_1;
 					enemyBehavior.shoot_cool_down = FINAL_BOSS_BASE_SHOOT_COOLDOWN;
 					enemyBehavior.cool_down = FINAL_BOSS_BASE_COOLDOWN;
-					changeAnimationFrames(enemyEntity, 9, 11);
+					changeAnimationFrames(enemyEntity, 8, 10);
 				}
 			}
 			break;
