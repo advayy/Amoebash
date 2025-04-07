@@ -676,11 +676,19 @@ void WorldSystem::triggerGameOver() {
 	Player& player = registry.players.get(registry.players.entities[0]);
 	Progression& p = registry.progressions.get(registry.progressions.entities[0]);
     p.buffsFromLastRun = player.buffsCollected;
-    p.germoney_savings = player.germoney_count;
+    p.germoney_savings += player.germoney_count;
+	player.germoney_count = 0; // Move to savings
     previous_state = current_state;
     current_state = GameState::GAME_OVER;
     currentBiome = Biome::RED; 
-    createGameOverScreen();
+    
+
+	removeShopScreen();
+	shopScreenCreated = false;
+	registry.clickableBuffs.clear();
+	shopItemsPlaced = false;
+	
+	createGameOverScreen();
     clearVignetteEffect();
 }
 
@@ -836,9 +844,10 @@ void WorldSystem::restart_game()
     while (registry.tiles.entities.size() > 0)
         registry.remove_all_components_of(registry.tiles.entities.back());
 	
-	while (registry.shops.entities.size() > 0)
-        registry.remove_all_components_of(registry.shops.entities.back());
-	while (registry.overs.entities.size() > 0)
+	// while (registry.shops.entities.size() > 0)
+    //     registry.remove_all_components_of(registry.shops.entities.back());
+	
+		while (registry.overs.entities.size() > 0)
         registry.remove_all_components_of(registry.overs.entities.back());
 
 	// debugging for memory/component leaks
@@ -897,7 +906,7 @@ void WorldSystem::restart_game()
 	// }
     // prog.pickedInNucleus.clear();
 
-    player.germoney_count = prog.germoney_savings;
+    // player.germoney_count = prog.germoney_savings;
 	
     createGunCooldown();
 
@@ -1389,6 +1398,12 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 		if (checkLoadFileExists()) {
 			loadGame();
 			loadProgress();
+			if(registry.clickableBuffs.entities.size() > 0) {
+				removeShopScreen();
+				shopScreenCreated = false;
+				registry.clickableBuffs.clear();
+				shopItemsPlaced = false;
+			}
 		}
 	}
 
@@ -1511,7 +1526,13 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				previous_state = current_state;
 				current_state = GameState::SHOP;
 				removeStartScreen();
-				createShopScreen();
+
+				if(!shopScreenCreated) {
+					createShopScreen();
+					shopScreenCreated = true;
+				}
+				
+				
 				if (!shopItemsPlaced) {
 					placeBuffsOnShopScreen();
 					shopItemsPlaced = true;
@@ -1535,7 +1556,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
                 // assign player germoney count progression gemoney savings
                 Progression& p = registry.progressions.get(registry.progressions.entities[0]);
                 Player& player = registry.players.get(registry.players.entities[0]);
-				player.germoney_count += p.germoney_savings;
+				player.germoney_count = 0;
 
 				removeStartScreen();
 				createGameplayCutScene();
@@ -1573,6 +1594,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 					}
 
 					// remove buff
+					registry.list_all_components_of(e);
 					registry.remove_all_components_of(e);
 				} else {
 					// WOMP WOMP SOUND {s}
@@ -1582,7 +1604,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			if (getClickedButton() == ButtonType::BACKBUTTON)
 			{
 				Mix_PlayChannel(-1, click_sound, 0);
-				removeShopScreen();
+				// removeShopScreen();
 				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
 				current_state = previous_state;
@@ -1722,6 +1744,7 @@ bool WorldSystem::isClickableBuffClicked(Entity* return_e) {
 void WorldSystem::handleClickableBuff(Entity e) { // FOR NUCLEUS MENU 
 	// Find a free slot if there is one availibe
 	// move buff to slot if its not already in a slot, if it is move it to return position
+	
 	Entity s;
 
 	ClickableBuff& c = registry.clickableBuffs.get(e);
