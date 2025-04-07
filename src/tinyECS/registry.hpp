@@ -71,6 +71,7 @@ public:
 	ComponentContainer<DashRecharge> dashRecharges;
 	ComponentContainer<BuffUI> buffUIs;
 	ComponentContainer<ClickableBuff> clickableBuffs;
+	ComponentContainer<Effect> effects;
 
 	// enemy behaviors
 	ComponentContainer<SpikeEnemyAI> spikeEnemyAIs;
@@ -159,6 +160,7 @@ public:
 		registry_list.push_back(&followingProjectiles);
 		registry_list.push_back(&denderiteAIs);
 		registry_list.push_back(&texts);
+		registry_list.push_back(&effects);
 		registry_list.push_back(&imagePopups);
 		registry_list.push_back(&popupElements);
 	}

@@ -57,6 +57,8 @@ void damagePlayer(float damageAmount);
 BUFF_TYPE getRandomBuffType();
 Entity 	createGunCooldown();
 
+Entity createEffect(TEXTURE_ASSET_ID texture, vec2 position, vec2 scale, int total_frames);
+
 extern Biome currentBiome;
 void setCurrentBiomeByLevel(unsigned int level);
 Biome getBiomeForLevel(unsigned int level);

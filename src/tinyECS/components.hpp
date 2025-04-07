@@ -470,6 +470,10 @@ struct BossArrow {
 	bool draw = false;
 };
 
+struct Effect {
+    float death_timer_ms;
+};
+
 /**
  * The following enumerators represent global identifiers refering to graphic
  * assets. For example TEXTURE_ASSET_ID are the identifiers of each texture
@@ -567,7 +571,11 @@ enum class TEXTURE_ASSET_ID
     ENEMY_HP_BAR = SLOT_INCREASE_BUFF + 1, 
 	MITOSIS_BOSS_16_HP_BAR = ENEMY_HP_BAR + 1,
 	MITOSIS_BOSS_128_HP_BAR = MITOSIS_BOSS_16_HP_BAR + 1,
-    INFO_BUFF = MITOSIS_BOSS_128_HP_BAR + 1,
+	SPIKE_ENEMY_EXPLOSION_EFFECT = MITOSIS_BOSS_128_HP_BAR + 1,
+	RBC_ENEMY_EXPLOSION_EFFECT = SPIKE_ENEMY_EXPLOSION_EFFECT + 1,
+	BACTERIOPHAGE_ENEMY_PROJECTILE_EFFECT = RBC_ENEMY_EXPLOSION_EFFECT + 1,
+	GUN_PROJECTILE_EFFECT = BACTERIOPHAGE_ENEMY_PROJECTILE_EFFECT + 1,	
+	INFO_BUFF = GUN_PROJECTILE_EFFECT + 1,
 	CIRCLE = INFO_BUFF + 1,
 	RED_TILES = CIRCLE + 1,
 	RED_WALL = RED_TILES + 1,
@@ -1211,3 +1219,8 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Progression,
 	slots_unlocked,
 	germoney_savings
 )
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Effect,
+	death_timer_ms
+)
+

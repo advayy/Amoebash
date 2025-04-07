@@ -98,6 +98,7 @@ SpikeEnemyState AISystem::handleSpikeEnemyBehavior(Entity &enemyEntity, SpikeEne
                     enemy.health = 0;
                     Player &player = registry.players.get(registry.players.entities[0]);
 					damagePlayer(SPIKE_ENEMY_BOMB_DAMAGE);
+					createEffect(TEXTURE_ASSET_ID::SPIKE_ENEMY_EXPLOSION_EFFECT, enemyMotion.position, enemyMotion.scale * 1.6f, 4);
 				}
 			}
 		}
