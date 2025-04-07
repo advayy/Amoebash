@@ -1314,17 +1314,17 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 		toggleFPSDisplay();
 	}
 
-	// Resetting game
-	if (action == GLFW_RELEASE && key == GLFW_KEY_R)
-	{
-		int w, h;
-		glfwGetWindowSize(window, &w, &h);
+	// // Resetting game
+	// if (action == GLFW_RELEASE && key == GLFW_KEY_R)
+	// {
+	// 	int w, h;
+	// 	glfwGetWindowSize(window, &w, &h);
 
-		restart_game();
+	// 	restart_game();
 
-		previous_state = current_state;
-		current_state = GameState::START_SCREEN_ANIMATION;
-	}
+	// 	previous_state = current_state;
+	// 	current_state = GameState::START_SCREEN_ANIMATION;
+	// }
 
 	// Pausing Game
 	if (action == GLFW_RELEASE && key == GLFW_KEY_SPACE)
@@ -1411,6 +1411,7 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 				registry.clickableBuffs.clear();
 				shopItemsPlaced = false;
 			}
+			setCurrentBiomeByLevel(level); 
 		}
 	}
 
@@ -1565,6 +1566,13 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
                 Player& player = registry.players.get(registry.players.entities[0]);
 				player.germoney_count = 0;
 
+				removeShopScreen();
+				shopScreenCreated = false;
+				registry.clickableBuffs.clear();
+				shopItemsPlaced = false;
+				// reset shop
+
+
 				removeStartScreen();
 				createGameplayCutScene();
 			}
@@ -1611,7 +1619,6 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			if (getClickedButton() == ButtonType::BACKBUTTON)
 			{
 				Mix_PlayChannel(-1, click_sound, 0);
-				// removeShopScreen();
 				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
 				current_state = previous_state;
@@ -1862,6 +1869,8 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 	createBuffPopup(buff.type);
 }
 
+
+// -M4 Feature: GAME BALANCING
 void WorldSystem::applyBuff(Player& player, BUFF_TYPE buff_type)
 {
 	bool skipUIRender = false;

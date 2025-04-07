@@ -880,10 +880,13 @@ Entity createShopButton()
 	vec2 scale = SHOP_BUTTON_SCALE;
 	vec2 position = SHOP_BUTTON_COORDINATES;
 
-	return createButton(ButtonType::SHOPBUTTON,
+	Entity button = createButton(ButtonType::SHOPBUTTON,
 						position,
 						scale,
 						TEXTURE_ASSET_ID::SHOP_BUTTON);
+
+	// registry.shops.emplace(button);
+	return button;
 }
 
 Entity createInfoButton()
@@ -901,9 +904,9 @@ Entity createBackButton() {
 	vec2 scale = BACK_BUTTON_SCALE;
 	vec2 position = BACK_BUTTON_COORDINATES;
 
-	for (auto e : registry.buttons.entities) {
-			registry.buttons.remove(e);
-	}
+	// for (auto e : registry.buttons.entities) {
+	// 		registry.buttons.remove(e);
+	// }
 
 	return createButton(ButtonType::BACKBUTTON,
 						position,
@@ -957,6 +960,8 @@ Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, E
 	return entity;
 }
 
+
+// -M4 Feature: GAME BALANCING
 Entity createThermometer() {
 	Entity entity = Entity();
 

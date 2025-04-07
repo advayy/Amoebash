@@ -418,18 +418,26 @@ void RenderSystem::draw()
 		{
 			drawHexagon(entity, projection_2D);
 		}
-		else if ((registry.motions.has(entity) || !registry.spriteSheetImages.has(entity)) && !registry.tiles.has(entity) && !registry.gameScreens.has(entity) && !registry.miniMaps.has(entity) && !registry.portals.has(entity) && !registry.guns.has(entity))
+		else if ((registry.motions.has(entity) 
+				|| !registry.spriteSheetImages.has(entity)) 
+				&& !registry.tiles.has(entity) 
+				&& !registry.gameScreens.has(entity) 
+				&& !registry.miniMaps.has(entity) 
+				&& !registry.portals.has(entity) 
+				// && !registry.guns.has(entity)
+				&& !registry.shops.has(entity)
+				&& !registry.overs.has(entity))
 		{
 			drawTexturedMesh(entity, projection_2D);
 		}
 	}
 
-	// draw gun
-	for (Entity entity : registry.guns.entities)
-	{
-		if (registry.renderRequests.has(entity))
-			drawTexturedMesh(entity, projection_2D);
-	}
+	// // draw gun
+	// for (Entity entity : registry.guns.entities)
+	// {
+	// 	if (registry.renderRequests.has(entity))
+	// 		drawTexturedMesh(entity, projection_2D);
+	// }
 
 	// draw the mini map
 	// drawTexturedMesh(registry.miniMaps.entities[0], projection_2D);
