@@ -1345,6 +1345,14 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 		}
 	}
 
+	if(action == GLFW_RELEASE && key == GLFW_KEY_X) {
+		for(int i = 0; i < 30; i ++) {
+			Player& p = registry.players.get(registry.players.entities[0]);
+			// BUFFTYPE b = 
+			applyBuff(p, getRandomBuffType());
+		}
+	}
+
 	// Debugging - not used in A1, but left intact for the debug lines
 	if (key == GLFW_KEY_D)
 	{

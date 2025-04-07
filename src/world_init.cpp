@@ -530,8 +530,8 @@ Entity createFinalBoss(RenderSystem* renderer, vec2 position) {
 	);
 
 	Animation& a = registry.animations.emplace(entity);
-	a.start_frame = 9;
-	a.end_frame = 11;
+	a.start_frame = 8;
+	a.end_frame = 10;
 	a.time_per_frame = 100.0f;
 	a.loop = ANIM_LOOP_TYPES::LOOP;
 

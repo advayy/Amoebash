@@ -620,19 +620,19 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 				enemyBehavior.phase = 2;
 				enemyBehavior.state = FinalBossState::SPAWN_1;
 				enemyBehavior.cool_down = FINAL_BOSS_BASE_COOLDOWN;
-				changeAnimationFrames(enemyEntity, 9, 11);
+				changeAnimationFrames(enemyEntity, 8, 10);
 			} else if (enemy.health <= 1/3.f * enemy.total_health && enemyBehavior.phase == 2) {
 				enemyBehavior.phase = 3;
 				enemyBehavior.state = FinalBossState::SPAWN_1;
 				enemyBehavior.cool_down = FINAL_BOSS_BASE_COOLDOWN;
-				changeAnimationFrames(enemyEntity, 9, 11);
+				changeAnimationFrames(enemyEntity, 8, 10);
 			} else {
 				enemyBehavior.cool_down -= elapsed_ms;
 				if (enemyBehavior.cool_down <= 0.f) {
 					enemyBehavior.state = FinalBossState::SPAWN_1;
 					enemyBehavior.shoot_cool_down = FINAL_BOSS_BASE_SHOOT_COOLDOWN;
 					enemyBehavior.cool_down = FINAL_BOSS_BASE_COOLDOWN;
-					changeAnimationFrames(enemyEntity, 9, 11);
+					changeAnimationFrames(enemyEntity, 8, 10);
 				}
 			}
 			break;
