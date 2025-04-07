@@ -10,10 +10,10 @@
 
 - Advay Rajguru (85918902)
 - Mercury Mcindoe (85594505)
-- Saurav Banna (43442367)
 - Shrey Gangwar (76979327)
 - Hazel Chen (83988873)
 - Dany Raihan (53341608)
+- Saurav Banna (43442367)
 
 ---
 
@@ -40,9 +40,8 @@ Each enemy can also give you “Germoney”, which you can use in the Shop to bu
 
 ### ⌨️ **Keyboard Controls**
 
-- **S:** Shoot with the pet bacteriophage
-- **R:** Restart the game.
 - **Space:** Pause or resume gameplay.
+- **S:** Shoot projectile
 - **O:** Instantly trigger the **Game Over** screen.
 - **Q:** Quit the game and return to the **Start Screen**.
 - **L:** Load saved data on **Start Screen**.
@@ -73,6 +72,7 @@ Advanced Feature
 	- You can take a look at 'collision_detect.cpp' and 'collision_detect.hpp' in the collisions folder for further detail.
 
 ### **M3**
+
 Advanced Features
 - Particle Systems with Instanced Rendering
   - Every entity has a RenderRequest, but particles are skipped in the normal `RenderSystem::draw()` loop—they’re drawn separately via instancing.
