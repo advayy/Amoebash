@@ -913,7 +913,7 @@ const std::map<BUFF_TYPE, std::pair<std::string, std::string>> BUFF_TYPE_TO_TEXT
     {INFO_BUFF11, {"Game", "Five levels and Two bosses await"}},
     {INFO_BUFF12, {"Portal", "Find and enter portals to go to the next level"}},
     {INFO_BOSS1, {"Mitosis", "Kill the bosses before they kill you"}},
-    {INFO_BOSS2, {"Brain", "One last step to victory"}},
+    {INFO_BOSS2, {"Brain", "attack when its not electrified!, and after defeating the dendrites!"}},
 };
 
 // MACROS for "to_json" and "from_json" on user-defined structs
