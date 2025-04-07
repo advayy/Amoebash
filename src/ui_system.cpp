@@ -885,7 +885,7 @@ Entity createShopButton()
 						scale,
 						TEXTURE_ASSET_ID::SHOP_BUTTON);
 
-	registry.shops.emplace(button);
+	// registry.shops.emplace(button);
 	return button;
 }
 
@@ -904,9 +904,9 @@ Entity createBackButton() {
 	vec2 scale = BACK_BUTTON_SCALE;
 	vec2 position = BACK_BUTTON_COORDINATES;
 
-	for (auto e : registry.buttons.entities) {
-			registry.buttons.remove(e);
-	}
+	// for (auto e : registry.buttons.entities) {
+	// 		registry.buttons.remove(e);
+	// }
 
 	return createButton(ButtonType::BACKBUTTON,
 						position,
