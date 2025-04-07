@@ -880,10 +880,13 @@ Entity createShopButton()
 	vec2 scale = SHOP_BUTTON_SCALE;
 	vec2 position = SHOP_BUTTON_COORDINATES;
 
-	return createButton(ButtonType::SHOPBUTTON,
+	Entity button = createButton(ButtonType::SHOPBUTTON,
 						position,
 						scale,
 						TEXTURE_ASSET_ID::SHOP_BUTTON);
+
+	registry.shops.emplace(button);
+	return button;
 }
 
 Entity createInfoButton()
