@@ -102,3 +102,6 @@ Advanced Features
 Basic Features
 - Various buff stats, for instance in `applyBuff`, are applied with some capacity to prevent the game from becoming too easy.
 - Accordingly, enemy damage and patterns were deeply tested to make the game more playable without it being too hard or too easy.
+
+
+P.S. Maybe you can press "X" and enter god mode? Idk :)
