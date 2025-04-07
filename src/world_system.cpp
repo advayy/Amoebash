@@ -1411,6 +1411,7 @@ void WorldSystem::on_key(int key, int, int action, int mod)
 				registry.clickableBuffs.clear();
 				shopItemsPlaced = false;
 			}
+			setCurrentBiomeByLevel(level); 
 		}
 	}
 
