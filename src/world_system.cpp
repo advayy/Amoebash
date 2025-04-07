@@ -179,6 +179,8 @@ bool WorldSystem::start_and_load_sounds()
 	buy_sound = Mix_LoadWAV(audio_path("money.wav").c_str());
 	buff_pickup = Mix_LoadWAV(audio_path("chomp2.wav").c_str());
 	Mix_VolumeChunk(buff_pickup, MIX_MAX_VOLUME / 2);
+	Mix_VolumeChunk(portal_sound, MIX_MAX_VOLUME / 2);
+
 
 	if (background_music == nullptr || dash_sound == nullptr) // IDK why we do this anymore
 	{
