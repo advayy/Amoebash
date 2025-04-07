@@ -267,7 +267,6 @@ bool WorldSystem::updateBoss()
 		if (bossAI.stage == 3) continue;
 
 		if (enemy.health < enemy.total_health / 2.f) {
-			// bosses_to_split.push_back(boss);
 			Motion originalMotion = registry.motions.get(boss);
 			vec2 position = originalMotion.position;
 			vec2 scale = originalMotion.scale;
@@ -514,6 +513,17 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 			updateBossArrows();
 		} else {
             if (registry.portals.size() == 0) {
+				// remove boss arrows
+				std::vector<Entity> removals;
+				for (uint i = 0; i < registry.bossArrows.size(); i++) {
+					removals.push_back(registry.bossArrows.entities[i]);
+				}
+				
+				int size = removals.size();
+				for (int i = 0; i < size; i++) {
+					registry.remove_all_components_of(removals[i]);
+				}
+
                 Player& player = registry.players.get(registry.players.entities[0]);
                 Motion& player_motion = registry.motions.get(registry.players.entities[0]);
                 vec2 grid_pos = positionToGridCell(player_motion.position);
@@ -1051,6 +1061,13 @@ void WorldSystem::handle_collisions()
 					
 					particle_system.createParticles(PARTICLE_TYPE::DEATH_PARTICLE, enemy_position, 15); 
                     removals.push_back(entity2);
+
+					
+					if (registry.bossAIs.has(entity2)) {
+						BossAI& bossAI = registry.bossAIs.get(entity2);
+						Entity arrow = bossAI.associatedArrow;
+						removals.push_back(arrow);
+					}
 				}
 			}
 			else if (registry.players.has(entity))
@@ -1204,6 +1221,11 @@ void WorldSystem::handle_collisions()
 					
                     points += 1;
                     removals.push_back(entity2);
+					if (registry.bossAIs.has(entity2)) {
+						BossAI& bossAI = registry.bossAIs.get(entity2);
+						Entity arrow = bossAI.associatedArrow;
+						removals.push_back(arrow);
+					}
 					removeEnemyHPBar(entity2);
                     Mix_PlayChannel(-1, enemy_death_sound, 0);
 					
