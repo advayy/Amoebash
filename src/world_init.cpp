@@ -1147,6 +1147,7 @@ void clearVignetteEffect() {
 }
 
 
+// -M4 Feature: GAME BALANCING
 BUFF_TYPE getRandomBuffType() {
 	std::vector<BUFF_TYPE> commonBuffs = { TAIL, MITOCHONDRIA, HEMOGLOBIN, GOLGI, CELL_WALL, AMINO_ACID, VACUOLE };
 	std::vector<BUFF_TYPE> rareBuffs = { CHLOROPLAST, CYTOPLASM, PILLI, ENDOPLASMIC_RETICULUM };
