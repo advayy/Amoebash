@@ -960,6 +960,8 @@ Entity createUIElement(vec2 position, vec2 scale, TEXTURE_ASSET_ID texture_id, E
 	return entity;
 }
 
+
+// -M4 Feature: GAME BALANCING
 Entity createThermometer() {
 	Entity entity = Entity();
 

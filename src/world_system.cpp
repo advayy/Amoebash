@@ -1868,6 +1868,8 @@ void WorldSystem::collectBuff(Entity player_entity, Entity buff_entity)
 	createBuffPopup(buff.type);
 }
 
+
+// -M4 Feature: GAME BALANCING
 void WorldSystem::applyBuff(Player& player, BUFF_TYPE buff_type)
 {
 	bool skipUIRender = false;

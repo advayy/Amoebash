@@ -309,6 +309,7 @@ const std::unordered_map<int, std::string> BUFF_TYPE_TO_NAME = {
     {19, "Black Goo"}
 };
 
+// -M4 Feature: GAME BALANCING
 const float BUFF_DROP_CHANCE = 0.6f;
 const float BUFF_DROP_FAIL_CHANCE = 1.0f - BUFF_DROP_CHANCE;
 
@@ -331,6 +332,7 @@ const vec2 BUFF_POPUP_POS = { -WINDOW_WIDTH_PX / 8, WINDOW_HEIGHT_PX / 3.5 };
 const float BUFF_POPUP_GAP = 10;
 const float POPUP_DURATION = 5000;
 
+// -M4 Feature: GAME BALANCING
 // DANGER THERMOMETER 
 const float DEFAULT_DANGER_LEVEL = 1.0f;
 const float MAX_DANGER_LEVEL = 5.0f;
