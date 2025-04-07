@@ -172,7 +172,7 @@ private:
 	Mix_Chunk *click_sound;
 	Mix_Chunk *portal_sound;
 	Mix_Chunk *buy_sound;
-	Mix_Chunk *buff_pickup;
+	// Mix_Chunk *buff_pickup;
 
 	// debugging (fps etc..)
 	void toggleFPSDisplay();
