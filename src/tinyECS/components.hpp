@@ -919,16 +919,27 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Player,
 	dash_damage,
 	healing_rate,
 	healing_timer_ms,
+	default_healing_timer,
 	dash_count,
 	max_dash_count,
 	dash_cooldown_timer_ms,
 	dash_cooldown_ms,
 	dash_speed,
 	dash_range,
+	minimapViewRange,
+	dashDecay,
+	sheilds,
+	gun_projectile_damage,
+	bulletsPerShot,
+	angleConeRadius,
+	bulletSpeed,
+	extra_lives,
 	detection_range,
 	knockback_duration,
 	grid_position,
-	buffsCollected
+	buffsCollected,
+	germoney_count,
+	dangerFactor
 )
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Dashing,
@@ -1197,5 +1208,6 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Particle,
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Progression,
 	buffsFromLastRun,
 	pickedInNucleus,
-	slots_unlocked
+	slots_unlocked,
+	germoney_savings
 )

@@ -555,7 +555,7 @@ void RenderSystem::drawInfoText() {
 		"",
 		"Advay Rajguru, Mercury Mcindoe, Shrey Gangwar, Dany Raihan, Hazel Chen & Saurav Banna",
 		"",
-		"With a special shoutout to Carter Woodworth (netcarrot) for the amazing sound design"};
+		"With a special shoutout to Carter Woodworth for the amazing sound design"};
 	
 	float init_padding = 130;
 	float line_padding = 40;
@@ -570,7 +570,6 @@ void RenderSystem::drawInfoText() {
 void RenderSystem::drawGermoneyText() {
     Player &player = registry.players.get(registry.players.entities[0]);
     int germoney_count = player.germoney_count;
-
     vec2 screen_pos = vec2(WINDOW_WIDTH_PX * .09f, WINDOW_HEIGHT_PX * .0685f);
     if (germoney_count < 100) {
         screen_pos.x = WINDOW_WIDTH_PX * .095f;
