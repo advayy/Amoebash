@@ -88,6 +88,7 @@ void PhysicsSystem::step(float elapsed_ms)
 			if (denderiteAI.state == DenderiteState::HUNT) {
 				denderiteAI.timeSinceLastRecalc += elapsed_ms;
 
+				// compute if we need to recalculate the path
 				bool needsRecalc = denderiteAI.path.empty() ||
                            denderiteAI.timeSinceLastRecalc > denderiteAI.recalcTimeThreshold;
 
@@ -95,6 +96,7 @@ void PhysicsSystem::step(float elapsed_ms)
 					denderiteAI.path.clear();
             		denderiteAI.currentNodeIndex = 0;
 
+					// [M4 Feature]
 					if(find_path(denderiteAI.path, motion.position, player_motion.position)) {
 						denderiteAI.timeSinceLastRecalc = 0;
 					} else {
@@ -103,7 +105,9 @@ void PhysicsSystem::step(float elapsed_ms)
 					}
 				}
 
+				// progress with calculated path
 				if (!denderiteAI.path.empty()) {
+					// flag for path recalculation
 					if (denderiteAI.currentNodeIndex >= (int)denderiteAI.path.size()) {
 						motion.velocity = {0.f, 0.f};
 						motion.angle = 0.f;
@@ -510,6 +514,7 @@ std::vector<vec2> PhysicsSystem::getWorldVertices(const std::vector<TexturedVert
     return worldVertices;
 }
 
+// [M4 Feature]
 bool PhysicsSystem::find_path(std::vector<ivec2> & path, vec2 start_world, vec2 end_world)
 {	
 	const auto& map = registry.proceduralMaps.get(registry.proceduralMaps.entities[0]).map;

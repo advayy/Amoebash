@@ -298,6 +298,7 @@ bool WorldSystem::updateBoss()
 	return registry.bossAIs.size() == 0;
 }
 
+// indicator for boss when boss exists out of screen
 void WorldSystem::updateBossArrows() {
 	std::vector<Entity> removals;
 	

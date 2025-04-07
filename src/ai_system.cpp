@@ -454,6 +454,7 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 
 	switch (enemyBehavior.state)
 	{
+		// initial state before it starts to ATTACK!
 		case FinalBossState::INITIAL:
 		{
 			if (playerDetected)
@@ -464,6 +465,7 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 			break;
 		}
 
+		// spawn denderites on the map, numbers change per boss phase
 		case FinalBossState::SPAWN_1:
 		{
 			if (!enemyBehavior.has_spawned) {
@@ -509,6 +511,7 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 			break;
 		}
 
+		// shoot projectiles, with patterns dependent on boss phase
 		case FinalBossState::SPIRAL_SHOOT_1: {
 			enemyBehavior.spiral_duration -= elapsed_ms;
 			enemyBehavior.shoot_cool_down -= elapsed_ms;
@@ -560,6 +563,7 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 			break;
 		}
 
+		// Only attackable-state, transitions state when reaching certain health threshold
 		case FinalBossState::TIRED: {
 
 			if (enemy.health <= 2/3.f * enemy.total_health && enemyBehavior.phase == 1) {
@@ -595,6 +599,7 @@ DenderiteState AISystem::handleDenderiteBehavior(Entity& enemyEntity, DenderiteA
 
 	switch (enemyBehavior.state) {
 
+		// state when hunting down the player
 		case DenderiteState::HUNT:
 		{
 			if (playerDetected) {
@@ -605,6 +610,7 @@ DenderiteState AISystem::handleDenderiteBehavior(Entity& enemyEntity, DenderiteA
 			break;
 		}
 
+		// pierce through the player
 		case DenderiteState::PIERCE:
 		{
 			const float pierceSpeed = 1500.f;
@@ -633,6 +639,7 @@ DenderiteState AISystem::handleDenderiteBehavior(Entity& enemyEntity, DenderiteA
 			break;
 		}
 
+		// shoot projectiles at the player
 		case DenderiteState::SHOOT:
 		{
 			if (enemyMotion.angle != 0.f) {
