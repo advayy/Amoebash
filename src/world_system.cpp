@@ -1534,7 +1534,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
                 // assign player germoney count progression gemoney savings
                 Progression& p = registry.progressions.get(registry.progressions.entities[0]);
                 Player& player = registry.players.get(registry.players.entities[0]);
-				player.germoney_count += p.germoney_savings;
+				player.germoney_count = p.germoney_savings;
 
 				removeStartScreen();
 				createGameplayCutScene();
@@ -1625,8 +1625,8 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 		{
 			if (getClickedButton() == ButtonType::SAVEBUTTON)
 			{
-				Mix_PlayChannel(-1, click_sound, 0);
-				if (level < BOSS_LEVEL && !progress_map["tutorial_mode"]) {
+				if (level != BOSS_LEVEL && level != FINAL_BOSS_LEVEL && !progress_map["tutorial_mode"]) {
+					Mix_PlayChannel(-1, click_sound, 0);
 					saveGame();
 					saveProgress();
 				}
