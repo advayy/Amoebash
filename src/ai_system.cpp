@@ -604,7 +604,7 @@ FinalBossState AISystem::handleFinalBossBehaviour(Entity& enemyEntity, FinalBoss
 
 			if (enemyBehavior.spiral_duration <= 0.f) {
 				enemyBehavior.state = FinalBossState::TIRED;
-				changeAnimationFrames(enemyEntity, 1, 8);
+				changeAnimationFrames(enemyEntity, 0, 7);
 
 				enemyBehavior.spiral_duration = FINAL_BOSS_SHOOT_DURATION;
 				enemyBehavior.shoot_cool_down = FINAL_BOSS_BASE_SHOOT_COOLDOWN;
