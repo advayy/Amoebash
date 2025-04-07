@@ -1598,6 +1598,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 					
 					if(c.type == -1) {
 						level += 1; // hope this works xx
+						setCurrentBiomeByLevel(level); 
 					} else if (c.type == -2) {
 						if (p.slots_unlocked == 1) {
 							p.slots_unlocked = 4;

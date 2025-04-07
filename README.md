@@ -10,10 +10,10 @@
 
 - Advay Rajguru (85918902)
 - Mercury Mcindoe (85594505)
-- Saurav Banna (43442367)
 - Shrey Gangwar (76979327)
 - Hazel Chen (83988873)
 - Dany Raihan (53341608)
+- Saurav Banna (43442367)
 
 ---
 
@@ -40,8 +40,8 @@ Each enemy can also give you “Germoney”, which you can use in the Shop to bu
 
 ### ⌨️ **Keyboard Controls**
 
-- **R:** Restart the game.
 - **Space:** Pause or resume gameplay.
+- **S:** Shoot projectile
 - **O:** Instantly trigger the **Game Over** screen.
 - **Q:** Quit the game and return to the **Start Screen**.
 
@@ -64,7 +64,9 @@ Basic Features
   - We also use LERP during enemy patrol, in the `step()` method in `/src/physics_system.cpp`
 
 ### **M3**
+
 Advanced Features
+
 - Instanced Rendering
   - Every entity has a RenderRequest, but particles are skipped in the normal `RenderSystem::draw()` loop—they’re drawn separately via instancing.
   - Each particle’s transformation (position, rotation, scale) is computed and stored in an instance VBO.
