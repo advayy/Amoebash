@@ -55,8 +55,8 @@ WorldSystem::~WorldSystem()
 		Mix_FreeChunk(portal_sound);
 	if (buy_sound != nullptr)
 		Mix_FreeChunk(buy_sound);
-	// if (buff_pickup != nullptr)
-	// 	Mix_FreeChunk(buff_pickup);	
+	if (buff_pickup != nullptr)
+		Mix_FreeChunk(buff_pickup);	
 	
 	Mix_CloseAudio();
 
@@ -177,7 +177,8 @@ bool WorldSystem::start_and_load_sounds()
 	
 	// new sounds
 	buy_sound = Mix_LoadWAV(audio_path("money.wav").c_str());
-	// buff_pickup = Mix_LoadWAV(audio_path("chomp2.wav").c_str());
+	buff_pickup = Mix_LoadWAV(audio_path("chomp2.wav").c_str());
+	Mix_VolumeChunk(buff_pickup, MIX_MAX_VOLUME / 2);
 
 	if (background_music == nullptr || dash_sound == nullptr) // IDK why we do this anymore
 	{
@@ -1248,7 +1249,7 @@ void WorldSystem::handle_collisions()
 		else if (registry.buffs.has(entity2) && registry.players.has(entity))
 		{
 			collectBuff(entity, entity2);
-			// Mix_PlayChannel(-1, buff_pickup, 0);
+			Mix_PlayChannel(-1, buff_pickup, 0);
             removals.push_back(entity2);
 		}
 	}
