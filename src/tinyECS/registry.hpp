@@ -30,6 +30,7 @@ public:
 	ComponentContainer<Projectile> projectiles;
 	ComponentContainer<BacteriophageProjectile> bacteriophageProjectiles;
 	ComponentContainer<BossProjectile> bossProjectiles;
+	ComponentContainer<FinalBossProjectile> finalBossProjectiles;
     ComponentContainer<Portal> portals;
 
 	// mine
@@ -76,8 +77,12 @@ public:
 	ComponentContainer<SpikeEnemyAI> spikeEnemyAIs;
 	ComponentContainer<RBCEnemyAI> rbcEnemyAIs;
 	ComponentContainer<BacteriophageAI> bacteriophageAIs;
+	ComponentContainer<DenderiteAI> denderiteAIs;
 	ComponentContainer<BossAI> bossAIs;
+	ComponentContainer<FinalBossAI> finalBossAIs;
 	ComponentContainer<BossArrow> bossArrows;
+	ComponentContainer<SpiralProjectile> spiralProjectiles;
+	ComponentContainer<FollowingProjectile> followingProjectiles;
 
 	// particle
 	ComponentContainer<Particle> particles;
@@ -87,6 +92,8 @@ public:
 	ComponentContainer<Slot> slots;
 	ComponentContainer<Thermometer> thermometers;
     ComponentContainer<Text> texts;
+	ComponentContainer<PopupWithImage> imagePopups;
+	ComponentContainer<PopupElement> popupElements;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
@@ -147,8 +154,15 @@ public:
         registry_list.push_back(&clickableBuffs);
 		registry_list.push_back(&bossArrows);
 		registry_list.push_back(&thermometers);
+		registry_list.push_back(&finalBossAIs);
+		registry_list.push_back(&finalBossProjectiles);
+		registry_list.push_back(&spiralProjectiles);
+		registry_list.push_back(&followingProjectiles);
+		registry_list.push_back(&denderiteAIs);
 		registry_list.push_back(&texts);
 		registry_list.push_back(&effects);
+		registry_list.push_back(&imagePopups);
+		registry_list.push_back(&popupElements);
 	}
 
 	void clear_all_components()

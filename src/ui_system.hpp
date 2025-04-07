@@ -15,7 +15,7 @@ Entity createNucleusMenuNucleus();
 Entity createNucleusMenuSlot(vec2 position, int slotNumber);
 Entity createNucleusMenuScreen();
 Entity createPauseScreen();
-Entity createClickableBuffUI(vec2 position, int buffType);
+Entity createClickableBuffUI(vec2 position, BUFF_TYPE buffType);
 
 void createGameplayCutScene();
 Entity createEndingWinScene();
@@ -46,11 +46,25 @@ void createDashRecharge();
 Entity createEnemyHPBar(Entity enemy, TEXTURE_ASSET_ID texture_id);
 void removeEnemyHPBar(Entity enemy);
 
-Entity createBuffUI(vec2 position, int type);
-void renderCollectedBuff(RenderSystem *renderer, int buffType);
+Entity createBuffUI(vec2 position, BUFF_TYPE type, vec2 scale);
+Entity createRowBuffUI(vec2 position, BUFF_TYPE type);
+Entity createPopupBuffUI(vec2 position, BUFF_TYPE type);
+void renderCollectedBuff(RenderSystem *renderer, BUFF_TYPE buffType);
+
+Entity createText(std::string text, vec2 start_pos, vec3 color, float scale);
 
 void updateHuds();
-vec2 getBuffSlot (int buffType);
-void removeBuffUI(int buffType);
-vec2 getBuffSlot_uiPos (int buffType);
-void findAndRemove(std::unordered_map<int, int>& map, int N);
+vec2 getBuffSlot (BUFF_TYPE buffType);
+void removeBuffUI(BUFF_TYPE buffType);
+vec2 getBuffSlot_uiPos (BUFF_TYPE buffType);
+void findAndRemove(std::unordered_map<BUFF_TYPE, int>& map, BUFF_TYPE N);
+
+Entity createShopKeeper();
+Entity createShopBox();
+Entity createShopPlate(vec2 pos);
+Entity createClickableShopBuff(vec2 position, BUFF_TYPE buffType);
+
+void updatePopups(float elapsed_ms_since_last_update);
+void removePopups(std::function<bool(Entity&)> shouldRemove);
+Entity createBuffPopup(BUFF_TYPE type);
+vec2 imageCoordToTextCoord(vec2 imageCoord);

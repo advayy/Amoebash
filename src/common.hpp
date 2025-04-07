@@ -83,6 +83,7 @@ const float ENEMY_SIZE = 32 * WORK_SCALE_FACTOR;
 const float LARGE_ENEMY_SIZE = 64 * WORK_SCALE_FACTOR;
 const float PROJECTILE_SIZE = 8 * WORK_SCALE_FACTOR;
 const float BOSS_PROJECTILE_SIZE = 32 * WORK_SCALE_FACTOR;
+const float FINAL_BOSS_PROJECTILE_SIZE = 32 * WORK_SCALE_FACTOR;
 
 // PLAYER BB
 const float PLAYER_BB_WIDTH = (float)PLAYER_SIZE;
@@ -112,7 +113,6 @@ const float SPIKE_ENEMY_DETECTION_RADIUS = 300.0f;
 const float BACTERIOPHAGE_ENEMY_KEEP_AWAY_RADIUS = 150.f;
 const float BACTERIOPHAGE_ENEMY_DETECTION_RADIUS = 500.0f;
 const float BACTERIOPHAGE_ENEMY_SPEED = 150.0f;
-
 const float NEXT_LEVEL_BLACK_SCREEN_TIMER_MS = 1000.0f;
 
 // ENEMY STATS
@@ -123,6 +123,7 @@ const float MAX_ENEMIES_COUNT = MAX_BACTERIOPHAGE_COUNT + 20;
 
 const float BOSS_HEALTH = 200;
 const float SMALLEST_BOSS_HEALTH = BOSS_HEALTH / 8.f;
+const float FINAL_BOSS_HEALTH = 350.f;
 
 // LARGE ENEMY
 const float LARGE_ENEMY_BB_WIDTH = (float)LARGE_ENEMY_SIZE;
@@ -164,18 +165,40 @@ const float GUN_PROJECTILE_SPEED = 600.0f;
 const float PROJECTILE_BB_WIDTH = (float)PROJECTILE_SIZE;
 const float PROJECTILE_BB_HEIGHT = (float)PROJECTILE_SIZE;
 const vec2 BOSS_PROJECTILE = {BOSS_PROJECTILE_SIZE, BOSS_PROJECTILE_SIZE};
+const vec2 FINAL_BOSS_PROJECTILE = {FINAL_BOSS_PROJECTILE_SIZE, FINAL_BOSS_PROJECTILE_SIZE};
 const float BOSS_PROJECTILE_SPEED = 300.f;
 const float BOSS_BB_WIDTH = 128 * WORK_SCALE_FACTOR;
 const float BOSS_BB_HEIGHT = 128 * WORK_SCALE_FACTOR;
+const float FINAL_BOSS_BB_WIDTH = 256 * WORK_SCALE_FACTOR;
+const float FINAL_BOSS_BB_HEIGHT = 256 * WORK_SCALE_FACTOR;
 const float BOSS_DETECTION_RADIUS = SPIKE_ENEMY_DETECTION_RADIUS * 3.0f;
 const float BOSS_RUMBLE_DAMAGE = 10.f * 2.f;
 const float BOSS_PROJECTILE_DAMAGE = 5.f;
 const unsigned int BOSS_LEVEL = 3;
+// const unsigned int BOSS_LEVEL = 1;
+const unsigned int FINAL_BOSS_LEVEL = 5;
+// const unsigned int FINAL_BOSS_LEVEL = 1;
+
+
+const vec2 DENDERITE_SIZE = {64 * WORK_SCALE_FACTOR, 64 * WORK_SCALE_FACTOR};
+const float DENDERITE_RECALC_DURATION = 3000.f;
+const float DENDERITE_PROJECTILE_SPEED = PROJECTILE_SPEED * 2.f;
 
 // OTHER CONSTANTS
 const float DASH_DURATION_MS = 500.0f;
 const float VELOCITY_DECAY_RATE = 1.01f; // 0.95f;
+const float MAX_VELOCITY_DECAY_RATE = 1.04f;
+const float MAX_PROJECTILE_SPEED = 1500;
+const float MIN_DETECTION_RANGE = 0.35f;
 
+// FINAL BOSS STATE TIMING
+const float FINAL_BOSS_BASE_COOLDOWN = 3000.f;
+const float FINAL_BOSS_SHOOT_DURATION = 7500.f; // how long it shoots
+const float FINAL_BOSS_TIRED_COOLDOWN = FINAL_BOSS_SHOOT_DURATION / 2.f; // how long you can attack boss
+
+// FINAL BOSS SHOOTING COOLDOWNS
+const float FINAL_BOSS_BASE_SHOOT_COOLDOWN = 750.f; // cooldown between shots
+const float FINAL_BOSS_EYEBALL_SHOOT_COOLDOWN = 5000.f; // cooldown between shooting eyes
 // LOGO
 const float LOGO_WIDTH_PX = 383 * WORK_SCALE_FACTOR;
 const float LOGO_HEIGHT_PX = 122 * WORK_SCALE_FACTOR;
@@ -260,9 +283,33 @@ const vec2 GUN_UI_POS = {WEAPON_PILL_UI_POS.x - WEAPON_PILL_UI_WIDTH / 4,
                          WEAPON_PILL_UI_POS.y};
 const vec2 GUN_COOLDOWN_INDICATOR_SCALE = {20.f * UI_SCALE, 20.f * UI_SCALE};
 
+const std::unordered_map<int, std::string> BUFF_TYPE_TO_NAME = {
+    {-1, "Level Skip"},
+    {-2, "Nucleus Slots"},
+    {0, "Tail"},
+    {1, "Mitochondria"},
+    {2, "Hemoglobin"},
+    {3, "Golgi"},
+    {4, "Chloroplash"},
+    {5, "Cell Wall"},
+    {6, "Amino Acid"},
+    {7, "Lysosyme"},
+    {8, "CytoPlasm"},
+    {9, "Virality"},
+    {10, "Spare Nucleus"},
+    {11, "Vacuole"},
+    {12, "Endoplasmic Reticulum"},
+    {13, "Oceloid"},
+    {14, "Secretor"},
+    {15, "Orange"},
+    {16, "Peroxisomes"},
+    {17, "Mutation"},
+    {18, "Facehugger"},
+    {19, "Black Goo"}
+};
 
-// GAME BALANCE
-const int NUMBER_OF_BUFFS = 15;
+const float BUFF_DROP_CHANCE = 0.6f;
+const float BUFF_DROP_FAIL_CHANCE = 1.0f - BUFF_DROP_CHANCE;
 
 const float BUFF_WIDTH = 20.0f * WORK_SCALE_FACTOR;
 const float BUFF_HEIGHT = 20.0f * WORK_SCALE_FACTOR;
@@ -276,6 +323,12 @@ const int BUFF_NUM = (static_cast<int>(std::floor(
 const vec2 BUFF_START_POS = {
 	-(BUFF_NUM / 2) / 2 * BUFF_SPACING,
 	WINDOW_HEIGHT_PX / 2 - UI_MARGIN_Y - NUCLEUS_UI_HEIGHT / 2 + UI_SPACING + GERMONEY_UI_HEIGHT / 2};
+
+const float POPUP_BUFF_UI_WIDTH = 40.0f * UI_SCALE;
+const float POPUP_BUFF_UI_HEIGHT = 40.0f * UI_SCALE;
+const vec2 BUFF_POPUP_POS = { -WINDOW_WIDTH_PX / 8, WINDOW_HEIGHT_PX / 3.5 };
+const float BUFF_POPUP_GAP = 10;
+const float POPUP_DURATION = 5000;
 
 // DANGER THERMOMETER 
 const float DEFAULT_DANGER_LEVEL = 1.0f;
@@ -309,3 +362,7 @@ bool gl_has_errors();
 
 vec2 positionToGridCell(vec2 position);
 vec2 gridCellToPosition(vec2 gridCell);
+
+const vec2 SHOPKEEPER_SIZE = {274.f * WORK_SCALE_FACTOR, 203.f * WORK_SCALE_FACTOR};
+const vec2 PURCHASE_BOX_SCALE = {172.f * WORK_SCALE_FACTOR, 72.f * WORK_SCALE_FACTOR};
+const vec2 SHOP_PLATE_SCALE = {WORK_SCALE_FACTOR * 34.0, WORK_SCALE_FACTOR * 34.0};
