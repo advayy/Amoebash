@@ -136,6 +136,7 @@ Entity createStartScreen(vec2 position)
 // create shop screen and buttons
 Entity createShopScreen()
 {
+	
 	Entity shopScreenEntity = Entity();
 	Shop& shop = registry.shops.emplace(shopScreenEntity);
 
