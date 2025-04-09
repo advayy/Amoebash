@@ -553,7 +553,7 @@ void RenderSystem::drawDangerFactorText() {
 }
 
 void RenderSystem::drawInfoText() {
-	if (registry.infoBoxes.size() == 0) return;
+	// if (registry.infoBoxes.size() == 0) return;
 	vec2 screen_pos = worldToScreen(vec2(0, 0));
 	std::vector<std::string> infoText = {
 		"Welcome to the Amoebash!", "Our game is a top-down roguelike, with a focus on interesting movement.",
