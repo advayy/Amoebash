@@ -1288,7 +1288,6 @@ void WorldSystem::on_key(int key, int, int action, int mod)
         if (progress_map["tutorial_mode"]) {
             current_state = GameState::NEXT_LEVEL;
             progress_map["tutorial_mode"] = false;
-            removeInfoBoxes();
             goToNextLevel();
             emptyMiniMap();
         } else {
@@ -1553,7 +1552,6 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 				current_state = GameState::INFO;
 				removeStartScreen();
 				createInfoScreen();
-				createInfoBoxes();
 			}
 			else if (clickedButton == ButtonType::STARTBUTTON) 
 			{
@@ -1632,7 +1630,6 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 			{
 				Mix_PlayChannel(-1, click_sound, 0);
 				removeInfoScreen();
-				removeInfoBoxes();
 				createStartScreen(LOGO_POSITION);
 				GameState temp = current_state;
 				current_state = previous_state;

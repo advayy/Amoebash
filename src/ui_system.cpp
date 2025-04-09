@@ -4,51 +4,6 @@
 #include <random>
 #include <iostream>
 
-// create info boxes in tutorial mode
-void createInfoBoxes() {
-
-	TEXTURE_ASSET_ID baseTexture = TEXTURE_ASSET_ID::MOUSE_CONTROL_INFO;
-
-	for (int i = 0; i < 6; i ++) {
-		auto entity1 = Entity();
-		int x = (3  *  i) + 2;
-		int y = (i % 2 == 0) ? 11 : 8;
-		vec2 infoPosition = gridCellToPosition({x, y});
-	
-		Motion& motion1 = registry.motions.emplace(entity1);
-		motion1.position = infoPosition;
-
-		motion1.scale = {128.f * WORK_SCALE_FACTOR * 3, 128.f * WORK_SCALE_FACTOR};
-	
-		InfoBox& info1 = registry.infoBoxes.emplace(entity1);
-	
-		registry.renderRequests.insert(
-			entity1,
-			{
-				baseTexture,
-				EFFECT_ASSET_ID::TEXTURED,
-				GEOMETRY_BUFFER_ID::SPRITE
-			}
-		);
-
-		baseTexture = static_cast<TEXTURE_ASSET_ID>(static_cast<int>(baseTexture) + 1);
-	}
-}
-
-// remove info boxes in tutorial mode
-void removeInfoBoxes() {
-	std::vector<Entity> entityList;
-
-	for (auto e : registry.infoBoxes.entities) {
-		entityList.push_back(e);
-	}
-
-    int size = entityList.size();
-    for(int i = 0; i < size; i++) {
-        registry.remove_all_components_of(entityList[i]);
-    }
-	return;
-}
 
 Entity createMiniMap(RenderSystem *renderer, vec2 size)
 {

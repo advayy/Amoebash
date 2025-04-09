@@ -1,4 +1,4 @@
-# CMakeLists.txt for Towers vs. Invaders
+# CMakeLists.txt for Amoebash
 cmake_minimum_required(VERSION 3.1)
 
 project(amoebash)
@@ -162,7 +162,7 @@ if(IS_OS_LINUX)
 endif()
 
 
-# # Memory Sanitize
+## Memory Sanitizer
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
