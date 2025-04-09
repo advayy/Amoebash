@@ -751,58 +751,6 @@ Entity createProceduralMap(RenderSystem* renderer, vec2 size, bool tutorial_on, 
     return entity;
 }
 
-Entity createKey(RenderSystem *renderer, vec2 position) 
-{
-	auto entity = Entity();
-
-	auto &key = registry.keys.emplace(entity);
-
-	Mesh &mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::HEXAGON);
-	registry.meshPtrs.emplace(entity, &mesh);
-
-	auto &motion = registry.motions.emplace(entity);
-	motion.angle = 0.0f;
-	motion.velocity = {0.0f, 0.0f};
-	motion.position = position;
-	motion.scale = {HEXAGON_RADIUS, HEXAGON_RADIUS};
-
-	registry.renderRequests.insert(
-		entity,
-		{TEXTURE_ASSET_ID::KEY,
-		 EFFECT_ASSET_ID::HEXAGON,
-		 GEOMETRY_BUFFER_ID::HEXAGON}
-	);
-
-	return entity;
-}
-
-Entity createChest(RenderSystem *renderer, vec2 position)
-{
-	auto entity = Entity();
-
-	auto &chest = registry.chests.emplace(entity);
-
-	Mesh &mesh = renderer->getMesh(GEOMETRY_BUFFER_ID::HEXAGON);
-	registry.meshPtrs.emplace(entity, &mesh);
-
-	auto &motion = registry.motions.emplace(entity);
-	motion.angle = 0.0f;
-	motion.velocity = {0.0f, 0.0f};
-	motion.position = position;
-	motion.scale = {HEXAGON_RADIUS * 3.f, HEXAGON_RADIUS * 3.f};
-
-	registry.renderRequests.insert(
-		entity,
-		{
-			TEXTURE_ASSET_ID::CHEST,
-			EFFECT_ASSET_ID::HEXAGON,
-			GEOMETRY_BUFFER_ID::HEXAGON
-		}
-	);
- 
-	return entity;
-}
-
 
 Biome currentBiome = Biome::RED; // Default to red biome
 

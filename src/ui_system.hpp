@@ -3,8 +3,6 @@
 #include "tinyECS/tiny_ecs.hpp"
 #include "render_system.hpp"
 
-void removeInfoBoxes();
-void createInfoBoxes();
 Entity createMiniMap(RenderSystem *renderer, vec2 size);
 
 Entity createStartScreen(vec2 position = LOGO_POSITION_INITIAL);
