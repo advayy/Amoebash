@@ -1,5 +1,12 @@
 # Amoebash!
 
+## Gameplay Screenshots
+
+![Gameplay 1](./data/Gameplay%20Screenshots/gameplay_1.png)
+![Gameplay 2](./data/Gameplay%20Screenshots/gameplay_2.png)
+![Gameplay 3](./data/Gameplay%20Screenshots/gameplay_3.png)
+![Gameplay 4](./data/Gameplay%20Screenshots/gameplay_4.png)
+
 ## Table of Contents
 
 1. [Game Description](#game-description)
