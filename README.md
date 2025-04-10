@@ -51,7 +51,7 @@ As you defeat enemies, you'll also earn "Germoney" that can be spent in the Shop
 
 ### **Mouse Controls**
 
-- **Menu Navigation:**Left-Click on buttons to access the **Shop**, **Information Screens**, or to **Start the Game**.
+- **Menu Navigation:** Left-Click on buttons to access the **Shop**, **Information Screens**, or to **Start the Game**.
 - **In-Game Actions:**
   - Left-Click to dash in the chosen direction as the **Amoeba**.
   - Attacks will automatically trigger during the dash.
@@ -213,8 +213,8 @@ This game uses various assets and music, which are credited to their respective 
 
 ### Assets:
 
-- **"Pixel Art"** by [Advay Rajguru](https://www.advay.dev), licensed under **CC BY-NC 4.0**.
-- **"Effect Artwork"** by Hazel Chen, licensed under **CC BY-NC 4.0**.
+- **Pixel Art** by [Advay Rajguru](https://www.advay.dev), licensed under **CC BY-NC 4.0**.
+- **Effect Artwork** by Hazel Chen, licensed under **CC BY-NC 4.0**.
 
 ### Font:
 
