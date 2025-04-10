@@ -209,7 +209,7 @@ This game uses various assets and music, which are credited to their respective 
 
 ### Music:
 
-- **"All Sound Effects and Music"** by Carter Woodworth, licensed under **CC BY-NC 4.0**.
+- **All Sound Effects and Music** by Carter Woodworth, licensed under **CC BY-NC 4.0**.
 
 ### Assets:
 
