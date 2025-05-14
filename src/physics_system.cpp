@@ -530,7 +530,7 @@ bool PhysicsSystem::find_path(std::vector<ivec2> & path, vec2 start_world, vec2 
 
 	struct CompareNode {
 		bool operator()(const Node* a, const Node* b) const {
-			return a->f_cost() >= b->f_cost(); 
+			return a->f_cost() > b->f_cost(); 
 		}
 	};
 	

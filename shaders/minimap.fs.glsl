@@ -31,7 +31,7 @@ vec4 procColor() {
     if (iX == 0 || iX == map_width - 1 || iY == 0 || iY == map_height - 1) {
         fcolor = vec4(0.75, 0.75, 0.75, 1.0);
     } else if (map_visited_array[index] == 0) {
-        fcolor = vec4(0.0, 0.0, 0.0, 0.0);
+        fcolor = vec4(0.0, 0.0, 0.0, 1.0);
     } else {
         if (map_array[index] == 1) {
             fcolor = vec4(0.75, 0.75, 0.75, 1.0);
