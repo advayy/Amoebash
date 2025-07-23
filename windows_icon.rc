@@ -1,0 +1,3 @@
+// windows_icon.rc
+#include "winuser.h"
+IDI_ICON1 ICON "MyIcon.ico"

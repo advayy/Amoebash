@@ -51,8 +51,8 @@ if(IS_OS_MAC)
     target_sources(${PROJECT_NAME} PRIVATE ${ICON_ICNS})
 
 elseif(IS_OS_WINDOWS)
-    # Add Windows resource file for icon embedding
-    add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${WIN_RC_FILE})
+    # Add the Windows icon resource file
+    add_executable(${PROJECT_NAME} WIN32 ${SOURCE_FILES} ${WIN_RC_FILE})
 else()
     # Linux and others
     add_executable(${PROJECT_NAME} ${SOURCE_FILES})
