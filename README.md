@@ -98,17 +98,13 @@ sudo apt-get install libglfw3-dev libsdl2-dev libfreetype6-dev libglm-dev pkg-co
 Once dependencies are installed, switch to the Amoebash directory and run the following on command line
 
 ```
+mkdir -p build
+cd build
 cmake ..
 make
 ```
 
-Then run the following to start the game.
-
-```
-./amoebash
-```
-
----
+Then run the executable or app generated to start the game.
 
 ## **Technical Features**
 
