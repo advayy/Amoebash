@@ -1,18 +1,18 @@
-# CMakeLists.txt for Amoebash
 cmake_minimum_required(VERSION 3.1)
 
 project(amoebash)
 
-# use C++17
-set (CMAKE_CXX_STANDARD 17)
+# Use C++17
+set(CMAKE_CXX_STANDARD 17)
 
-# nice hierarchichal structure in MSVC
+# Nice hierarchical structure in MSVC
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# detect OS
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+# Detect OS
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(IS_OS_MAC 1)
-elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    set(MACOSX_BUNDLE TRUE)
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(IS_OS_LINUX 1)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(IS_OS_WINDOWS 1)
@@ -20,132 +20,125 @@ else()
     message(FATAL_ERROR "OS ${CMAKE_SYSTEM_NAME} was not recognized")
 endif()
 
-# Create executable target
-
 # Generate the shader folder location to the header
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/ext/project_path.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/ext/project_path.hpp")
 
-# You can switch to use the file GLOB for simplicity but at your own risk
+# Find source files
 file(GLOB_RECURSE SOURCE_FILES src/*.cpp src/*.hpp)
 
-# external libraries will be installed into /usr/local/include and /usr/local/lib but that folder is not automatically included in the search on MACs
-if (IS_OS_MAC)
+# Icon files
+set(ICON_ICNS "${CMAKE_CURRENT_SOURCE_DIR}/MyIcon.icns")  # macOS icon
+set(ICON_ICO "${CMAKE_CURRENT_SOURCE_DIR}/MyIcon.ico")    # Windows icon
+set(WIN_RC_FILE "${CMAKE_CURRENT_SOURCE_DIR}/windows_icon.rc")  # Windows resource script
+
+# External libraries for macOS
+if(IS_OS_MAC)
     include_directories(/usr/local/include)
     link_directories(/usr/local/lib)
-    # 2024-09-24 - added for M-series Mac's
     include_directories(/opt/homebrew/include)
     link_directories(/opt/homebrew/lib)
 endif()
 
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+# Add executable and set icon depending on platform
+if(IS_OS_MAC)
+    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCE_FILES})
+
+    # Set the icon filename (just the filename, no path)
+    set_property(TARGET ${PROJECT_NAME} PROPERTY MACOSX_BUNDLE_ICON_FILE MyIcon.icns)
+
+    # Add the icon to the bundle's Resources folder
+    set_source_files_properties(${ICON_ICNS} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    target_sources(${PROJECT_NAME} PRIVATE ${ICON_ICNS})
+
+elseif(IS_OS_WINDOWS)
+    # Add Windows resource file for icon embedding
+    add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${WIN_RC_FILE})
+else()
+    # Linux and others
+    add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+endif()
+
 target_include_directories(${PROJECT_NAME} PUBLIC src/)
 
 # Added this so policy CMP0065 doesn't scream
 set_target_properties(${PROJECT_NAME} PROPERTIES ENABLE_EXPORTS 0)
 
-# External header-only libraries in the ext/
+# External header-only libraries in ext/
 target_include_directories(${PROJECT_NAME} PUBLIC ext/stb_image/)
 target_include_directories(${PROJECT_NAME} PUBLIC ext/gl3w)
 
 # Find OpenGL
 find_package(OpenGL REQUIRED)
-
-if (OPENGL_FOUND)
-   target_include_directories(${PROJECT_NAME} PUBLIC ${OPENGL_INCLUDE_DIR})
-   target_link_libraries(${PROJECT_NAME} PUBLIC ${OPENGL_gl_LIBRARY})
+if(OPENGL_FOUND)
+    target_include_directories(${PROJECT_NAME} PUBLIC ${OPENGL_INCLUDE_DIR})
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${OPENGL_gl_LIBRARY})
 endif()
 
 # Find Freetype
 find_package(freetype REQUIRED)
-
-if (FREETYPE_FOUND)
+if(FREETYPE_FOUND)
     target_include_directories(${PROJECT_NAME} PUBLIC ${FREETYPE_INCLUDE_DIRS})
     target_link_libraries(${PROJECT_NAME} PUBLIC ${FREETYPE_LIBRARIES})
 endif()
 
-set(glm_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glm/cmake/glm) # if necessary
+# GLM
+set(glm_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glm/cmake/glm)
 find_package(glm REQUIRED)
 
-# glfw, sdl could be precompiled (on windows) or installed by a package manager (on OSX and Linux)
-if (IS_OS_LINUX OR IS_OS_MAC)
-    # Try to find packages rather than to use the precompiled ones
-    # Since we're on OSX or Linux, we can just use pkgconfig.
+# Platform-specific dependencies
+if(IS_OS_LINUX OR IS_OS_MAC)
     find_package(PkgConfig REQUIRED)
-
     pkg_search_module(GLFW REQUIRED glfw3)
-
     pkg_search_module(SDL2 REQUIRED sdl2)
     pkg_search_module(SDL2MIXER REQUIRED SDL2_mixer)
 
-    # Link Frameworks on OSX
-    if (IS_OS_MAC)
-       find_library(COCOA_LIBRARY Cocoa)
-       find_library(CF_LIBRARY CoreFoundation)
-       target_link_libraries(${PROJECT_NAME} PUBLIC ${COCOA_LIBRARY} ${CF_LIBRARY})
+    if(IS_OS_MAC)
+        find_library(COCOA_LIBRARY Cocoa)
+        find_library(CF_LIBRARY CoreFoundation)
+        target_link_libraries(${PROJECT_NAME} PUBLIC ${COCOA_LIBRARY} ${CF_LIBRARY})
     endif()
 
-    # Increase warning level
     target_compile_options(${PROJECT_NAME} PUBLIC "-Wall")
-elseif (IS_OS_WINDOWS)
-# https://stackoverflow.com/questions/17126860/cmake-link-precompiled-library-depending-on-os-and-architecture
+
+elseif(IS_OS_WINDOWS)
     set(GLFW_FOUND TRUE)
     set(SDL2_FOUND TRUE)
 
-    # include directories
     set(GLFW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/include")
     set(SDL2_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/include/SDL")
 
-    # library files
     set(GLFW_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3dll-x64.lib")
     set(SDL2_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x64.lib")
     set(SDL2MIXER_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x64.lib")
 
-    # matching DLLs
     set(GLFW_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib/glfw3-x64.dll")
     set(SDL_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2-x64.dll")
     set(SDLMIXER_DLL "${CMAKE_CURRENT_SOURCE_DIR}/ext/sdl/lib/SDL2_mixer-x64.dll")
-    # FreeType - Windows-specific (x64 only)
-    set (FREETYPE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/include")
-    set (FREETYPE_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/release static/vs2015-2022/win64/freetype.lib")
 
-    # copy DLLs to build folder and remove if necessary name
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${GLFW_DLL}"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/glfw3.dll")
+    set(FREETYPE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/include")
+    set(FREETYPE_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/ext/freetype/release static/vs2015-2022/win64/freetype.lib")
 
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${SDL_DLL}"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/SDL2.dll")
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${GLFW_DLL}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/glfw3.dll")
 
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${SDLMIXER_DLL}"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/SDL2_mixer.dll")
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${SDL_DLL}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/SDL2.dll")
 
-    # increase warning level from default 3 to 4
-    add_compile_options(/w4)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${SDLMIXER_DLL}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/SDL2_mixer.dll")
 
-    # turn warning "not all control paths return a value" into an error
-    add_compile_options(/we4715)
-
-    # use sane exception handling, rather than trying to catch segfaults and allowing resource
-    # leaks and UB. Yup... See "Default exception handling behavior" at
-    # https://docs.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model?view=vs-2019
-    add_compile_options(/EHsc)
-
-    # turn warning C4239 (non-standard extension that allows temporaries to be bound to
-    # non-const references, yay microsoft) into an error
-    add_compile_options(/we4239)
+    add_compile_options(/w4 /we4715 /EHsc /we4239)
 endif()
 
-# if we can't find the include and lib, then report error and quit.
-if (NOT GLFW_FOUND OR NOT SDL2_FOUND)
-    if (NOT GLFW_FOUND)
-        message(FATAL_ERROR "Can't find GLFW." )
-    else ()
-        message(FATAL_ERROR "Can't find SDL." )
+# Error if missing critical libs
+if(NOT GLFW_FOUND OR NOT SDL2_FOUND)
+    if(NOT GLFW_FOUND)
+        message(FATAL_ERROR "Can't find GLFW.")
+    else()
+        message(FATAL_ERROR "Can't find SDL.")
     endif()
 endif()
 
@@ -156,14 +149,12 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${SDL2_INCLUDE_DIRS})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ${GLFW_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2MIXER_LIBRARIES} glm::glm ${FREETYPE_LIBRARY})
 
-# needed to add this for Linux
+# Linux-specific linkage
 if(IS_OS_LINUX)
     target_link_libraries(${PROJECT_NAME} PUBLIC glfw ${CMAKE_DL_LIBS})
 endif()
 
-
-## Memory Sanitizer
-
+# Memory Sanitizer
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
 endif()
@@ -175,8 +166,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
 endif()
 
-if (MSVC AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_compile_options(/Zi /RTC1) # Generate debug info, enable runtime error checks
+if(MSVC AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_options(/Zi /RTC1)
 endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
